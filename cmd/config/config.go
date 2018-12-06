@@ -12,23 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package config
 
 import (
-	"github.com/random-dwi/kafkactl/cmd/config"
 	"github.com/spf13/cobra"
 )
 
-// configCmd represents the config command
-var configCmd = &cobra.Command{
+// ConfigCmd represents the config command
+var ConfigCmd = &cobra.Command{
 	Use:   "config",
 	Short: "show and edit configurations",
 }
 
 func init() {
-	RootCmd.AddCommand(configCmd)
-
-	configCmd.AddCommand(config.CurrentContextCmd)
-	configCmd.AddCommand(config.GetContextsCmd)
-	configCmd.AddCommand(config.UseContextCmd)
+	ConfigCmd.AddCommand(currentContextCmd)
+	ConfigCmd.AddCommand(getContextsCmd)
+	ConfigCmd.AddCommand(useContextCmd)
 }

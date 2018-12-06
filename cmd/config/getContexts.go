@@ -22,7 +22,7 @@ import (
 )
 
 // getContextsCmd represents the getContexts command
-var GetContextsCmd = &cobra.Command{
+var getContextsCmd = &cobra.Command{
 	Use:     "get-contexts",
 	Aliases: []string{"getContexts"},
 	Short:   "list configured contexts",

@@ -17,9 +17,12 @@ package cmd
 import (
 	"fmt"
 	"github.com/mitchellh/go-homedir"
+	"github.com/random-dwi/kafkactl/cmd/config"
+	"github.com/random-dwi/kafkactl/cmd/consume"
 	"github.com/random-dwi/kafkactl/cmd/create"
 	"github.com/random-dwi/kafkactl/cmd/deletion"
 	"github.com/random-dwi/kafkactl/cmd/get"
+	"github.com/random-dwi/kafkactl/cmd/produce"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"
@@ -28,8 +31,8 @@ import (
 var cfgFile string
 var Verbose bool
 
-// RootCmd represents the base command when called without any subcommands
-var RootCmd = &cobra.Command{
+// rootCmd represents the base command when called without any subcommands
+var rootCmd = &cobra.Command{
 	Use: "kafkactl",
 	BashCompletionFunction: bashCompletionFunc,
 	Short: "command-line interface for Apache Kafka",
@@ -37,9 +40,9 @@ var RootCmd = &cobra.Command{
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the RootCmd.
+// This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	if err := RootCmd.Execute(); err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
@@ -48,16 +51,19 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	RootCmd.AddCommand(get.GetCmd)
-	RootCmd.AddCommand(deletion.DeleteCmd)
-	RootCmd.AddCommand(create.CreateCmd)
+	rootCmd.AddCommand(get.GetCmd)
+	rootCmd.AddCommand(deletion.DeleteCmd)
+	rootCmd.AddCommand(create.CreateCmd)
+	rootCmd.AddCommand(config.ConfigCmd)
+	rootCmd.AddCommand(consume.ConsumeCmd)
+	rootCmd.AddCommand(produce.ProduceCmd)
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kafkactl.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kafkactl.yaml)")
 
-	RootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
+	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
 }
 
 // initConfig reads in config file and ENV variables if set.

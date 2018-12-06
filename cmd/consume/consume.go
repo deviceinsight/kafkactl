@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package consume
 
 import (
 	consumerTools "github.com/random-dwi/kafkactl/kafka/consumer"
@@ -28,8 +28,8 @@ var offsets []string
 
 var flags consumerTools.ConsumerFlags
 
-// consumeCmd represents the consume command
-var consumeCmd = &cobra.Command{
+// ConsumeCmd represents the consume command
+var ConsumeCmd = &cobra.Command{
 	Use:   "consume",
 	Short: "consume messages from a topic",
 	Args:  cobra.MinimumNArgs(1),
@@ -53,12 +53,11 @@ var consumeCmd = &cobra.Command{
 }
 
 func init() {
-	RootCmd.AddCommand(consumeCmd)
 
-	consumeCmd.Flags().BoolVarP(&flags.PrintKeys, "print-keys", "k", false, "print message printKeys")
-	consumeCmd.Flags().BoolVarP(&flags.PrintTimestamps, "print-timestamps", "t", false, "print message printTimestamps")
-	consumeCmd.Flags().StringVarP(&flags.ConsumerGroup, "consumer-group", "g", "", "consumer group to join")
-	//consumeCmd.Flags().StringArrayP(&offsets, "offset", "p", false, "print message headers")
+	ConsumeCmd.Flags().BoolVarP(&flags.PrintKeys, "print-keys", "k", false, "print message printKeys")
+	ConsumeCmd.Flags().BoolVarP(&flags.PrintTimestamps, "print-timestamps", "t", false, "print message printTimestamps")
+	ConsumeCmd.Flags().StringVarP(&flags.ConsumerGroup, "consumer-group", "g", "", "consumer group to join")
+	//ConsumeCmd.Flags().StringArrayP(&offsets, "offset", "p", false, "print message headers")
 
-	consumeCmd.Flags().StringVarP(&flags.OutputFormat, "output", "o", flags.OutputFormat, "Output format. One of: json|yaml")
+	ConsumeCmd.Flags().StringVarP(&flags.OutputFormat, "output", "o", flags.OutputFormat, "Output format. One of: json|yaml")
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package produce
 
 import (
 	"fmt"
@@ -20,8 +20,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// produceCmd represents the produce command
-var produceCmd = &cobra.Command{
+// ProduceCmd represents the produce command
+var ProduceCmd = &cobra.Command{
 	Use:   "produce",
 	Short: "produce messages to a topic",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -30,5 +30,4 @@ var produceCmd = &cobra.Command{
 }
 
 func init() {
-	RootCmd.AddCommand(produceCmd)
 }

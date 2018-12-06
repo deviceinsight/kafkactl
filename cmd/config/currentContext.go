@@ -21,7 +21,7 @@ import (
 )
 
 // currentContextCmd represents the currentContext command
-var CurrentContextCmd = &cobra.Command{
+var currentContextCmd = &cobra.Command{
 	Use:     "current-context",
 	Aliases: []string{"currentContext"},
 	Short:   "show current context",

@@ -23,7 +23,7 @@ import (
 )
 
 // useContextCmd represents the useContext command
-var UseContextCmd = &cobra.Command{
+var useContextCmd = &cobra.Command{
 	Use:     "use-context",
 	Aliases: []string{"useContext"},
 	Short:   "switch active context",
