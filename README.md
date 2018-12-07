@@ -14,9 +14,11 @@ command-line interface for interaction with kafka
 go get -u github.com/random-dwi/kafkactl
 ```
 
+**NOTE:** make sure that `kafkactl` is on PATH otherwise auto-completion won't work.
+
 ## configuration
 
-1. create `~/.kafkacli` with a definition of contexts that should be available 
+1. create `~/.kafkactl.yml` with a definition of contexts that should be available 
 
 ```yaml
 contexts:
@@ -32,8 +34,18 @@ contexts:
 current-context: localhost
 ```
 
-2. add the following line to `~/.bashrc` in order to get bash auto completion:
+2. in order to get auto completion add it in startup script of the shell:
+
+- for `bash` add the following to `~/.bashrc`:
 ```bash
 # kafkactl autocomplete
 source <(kafkactl completion bash)
 ```
+
+- for `zsh` add the following to `~/.zshrc`:
+```bash
+# kafkactl autocomplete
+source <(kafkactl completion zsh)
+```
+
+- `fish` is currently not supported. see: https://github.com/spf13/cobra/issues/350

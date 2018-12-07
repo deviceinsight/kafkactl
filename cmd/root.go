@@ -23,11 +23,9 @@ import (
 	"github.com/random-dwi/kafkactl/cmd/deletion"
 	"github.com/random-dwi/kafkactl/cmd/get"
 	"github.com/random-dwi/kafkactl/cmd/produce"
-	"github.com/random-dwi/kafkactl/util/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"
-	"path/filepath"
 )
 
 var cfgFile string
@@ -63,7 +61,7 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kafkactl)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kafkactl.yml)")
 
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
 }
@@ -81,14 +79,9 @@ func initConfig() {
 			os.Exit(1)
 		}
 
-		defaultConfig := filepath.Join(home, ".kafkactl")
-
-		if _, err := os.Stat(defaultConfig); os.IsNotExist(err) {
-			output.Failf("unable to find config file: %s", defaultConfig)
-		}
-
-		viper.SetConfigFile(defaultConfig)
-		viper.SetConfigType("yaml")
+		// Search config in home directory with name ".kafkactl.yml"
+		viper.AddConfigPath(home)
+		viper.SetConfigName(".kafkactl")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
