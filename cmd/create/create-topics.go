@@ -17,6 +17,7 @@ package create
 import (
 	"github.com/Shopify/sarama"
 	"github.com/random-dwi/kafkactl/util/output"
+	"strings"
 
 	"github.com/random-dwi/kafkactl/util"
 	"github.com/spf13/cobra"
@@ -26,6 +27,7 @@ type CreateTopicFlags struct {
 	partitions        int32
 	replicationFactor int16
 	validateOnly      bool
+	configs           []string
 }
 
 var flags CreateTopicFlags
@@ -51,6 +53,12 @@ var createTopicCmd = &cobra.Command{
 		topicDetails := sarama.TopicDetail{
 			NumPartitions:     flags.partitions,
 			ReplicationFactor: flags.replicationFactor,
+			ConfigEntries:     map[string]*string{},
+		}
+
+		for _, config := range flags.configs {
+			configParts := strings.Split(config, "=")
+			topicDetails.ConfigEntries[configParts[0]] = &configParts[1]
 		}
 
 		for _, topic := range args {
@@ -67,4 +75,5 @@ func init() {
 	createTopicCmd.Flags().Int32VarP(&flags.partitions, "partitions", "p", 1, "number of partitions")
 	createTopicCmd.Flags().Int16VarP(&flags.replicationFactor, "replication-factor", "r", 1, "replication factor")
 	createTopicCmd.Flags().BoolVarP(&flags.validateOnly, "validate-only", "V", false, "validate only")
+	createTopicCmd.Flags().StringArrayVarP(&flags.configs, "config", "C", flags.configs, "configs in format `key=value`")
 }

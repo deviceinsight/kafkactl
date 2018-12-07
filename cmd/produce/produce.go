@@ -25,7 +25,7 @@ var ProduceCmd = &cobra.Command{
 	Use:   "produce",
 	Short: "produce messages to a topic",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("produce called")
+		fmt.Println("not implemented, yet :/")
 	},
 }
 

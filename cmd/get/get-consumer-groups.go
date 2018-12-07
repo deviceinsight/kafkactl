@@ -15,6 +15,7 @@
 package get
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +25,7 @@ var getConsumerGroupsCmd = &cobra.Command{
 	Aliases: []string{"groups", "consumerGroups"},
 	Short:   "list available consumer groups",
 	Run: func(cmd *cobra.Command, args []string) {
-
+		fmt.Println("not implemented, yet :/")
 	},
 }
 

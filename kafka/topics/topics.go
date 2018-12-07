@@ -1,10 +1,14 @@
 package topics
 
-import "github.com/Shopify/sarama"
+import (
+	"github.com/Shopify/sarama"
+	"github.com/random-dwi/kafkactl/util/output"
+)
 
-type topic struct {
-	Name       string      `json:"name"`
-	Partitions []partition `json:"partitions,omitempty"`
+type Topic struct {
+	Name       string
+	Partitions []partition `json:",omitempty" yaml:",omitempty"`
+	Configs    []config    `json:",omitempty" yaml:",omitempty"`
 }
 
 type partition struct {
@@ -16,12 +20,18 @@ type partition struct {
 	ISRs         []int32 `json:",omitempty" yaml:",omitempty"`
 }
 
-func ReadTopic(client *sarama.Client, name string, readPartitions bool, readLeaders bool, readReplicas bool) (topic, error) {
+type config struct {
+	Name  string
+	Value string
+}
+
+func ReadTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, readPartitions bool, readLeaders bool, readReplicas bool, readConfigs bool) (Topic, error) {
 	var (
-		err error
-		ps  []int32
-		led *sarama.Broker
-		top = topic{Name: name}
+		err           error
+		ps            []int32
+		led           *sarama.Broker
+		configEntries []sarama.ConfigEntry
+		top           = Topic{Name: name}
 	)
 
 	if !readPartitions {
@@ -61,6 +71,26 @@ func ReadTopic(client *sarama.Client, name string, readPartitions bool, readLead
 		}
 
 		top.Partitions = append(top.Partitions, np)
+	}
+
+	if readConfigs {
+
+		configResource := sarama.ConfigResource{
+			Type: sarama.TopicResource,
+			Name: name,
+		}
+
+		if configEntries, err = (*admin).DescribeConfig(configResource); err != nil {
+			output.Failf("failed to describe config: %v", err)
+		}
+
+		for _, configEntry := range configEntries {
+
+			if !configEntry.Default {
+				entry := config{Name: configEntry.Name, Value: configEntry.Value}
+				top.Configs = append(top.Configs, entry)
+			}
+		}
 	}
 
 	return top, nil

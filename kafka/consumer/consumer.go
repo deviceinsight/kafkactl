@@ -38,6 +38,7 @@ type ConsumerFlags struct {
 	PrintTimestamps bool
 	ConsumerGroup   string
 	OutputFormat    string
+	Offsets         []string
 }
 
 type offset struct {
@@ -71,7 +72,7 @@ func CreateConsumerContext(clientContext *util.ClientContext, topic string, args
 	context.args = args
 	context.timeout = time.Duration(0)
 
-	context.offsets, err = parseOffsets("")
+	context.offsets, err = parseOffsets(args.Offsets)
 	if err != nil {
 		output.Failf("Failed to parse offsets: %s", err)
 	}
@@ -157,18 +158,18 @@ func parseOffset(str string) (offset, error) {
 	return result, nil
 }
 
-func parseOffsets(str string) (map[int32]Interval, error) {
+func parseOffsets(offsets []string) (map[int32]Interval, error) {
 	defaultInterval := Interval{
-		start: offset{relative: true, start: sarama.OffsetOldest},
+		start: offset{relative: true, start: sarama.OffsetNewest},
 		end:   offset{start: 1<<63 - 1},
 	}
 
-	if len(str) == 0 {
+	if len(offsets) == 0 {
 		return map[int32]Interval{-1: defaultInterval}, nil
 	}
 
 	result := map[int32]Interval{}
-	for _, partitionInfo := range strings.Split(str, ",") {
+	for _, partitionInfo := range offsets {
 		re := regexp.MustCompile("(all|\\d+)?=?([^:]+)?:?(.+)?")
 		matches := re.FindAllStringSubmatch(strings.TrimSpace(partitionInfo), -1)
 		if len(matches) != 1 || len(matches[0]) < 3 {
@@ -370,7 +371,27 @@ func (context *ConsumerContext) partitionLoop(pc sarama.PartitionConsumer, p int
 			m := context.newConsumedMessage(msg, context.encodeKey, context.encodeValue)
 
 			if context.args.OutputFormat == "" {
-				output.PrintStrings(*m.Value)
+				var row []string
+
+				if context.args.PrintKeys {
+					if m.Key != nil {
+						row = append(row, *m.Key)
+					} else {
+						row = append(row, "")
+					}
+				}
+				if context.args.PrintTimestamps {
+					if m.Timestamp != nil {
+						row = append(row, (*m.Timestamp).Format(time.RFC3339))
+					} else {
+						row = append(row, "")
+					}
+				}
+
+				row = append(row, *m.Value)
+
+				output.PrintStrings(strings.Join(row[:], "#"))
+
 			} else {
 				output.PrintObject(m, context.args.OutputFormat)
 			}

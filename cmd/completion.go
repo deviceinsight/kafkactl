@@ -23,8 +23,16 @@ const bashCompletionFunc = `
 __kafkactl_get_topics()
 {
     local kafkactl_topics_output out
-    if kafkactl_topics_output=$(kafkactl get topics 2>/dev/null); then
+    if kafkactl_topics_output=$(kafkactl get topics -o compact 2>/dev/null); then
         COMPREPLY=( $( compgen -W "${kafkactl_topics_output[*]}" -- "$cur" ) )
+    fi
+}
+
+__kafkactl_get_contexts()
+{
+    local kafkactl_contexts_output out
+    if kafkactl_contexts_output=$(kafkactl config get-contexts 2>/dev/null); then
+        COMPREPLY=( $( compgen -W "${kafkactl_contexts_output[*]}" -- "$cur" ) )
     fi
 }
 
@@ -32,6 +40,10 @@ __custom_func() {
     case ${last_command} in
         kafkactl_consume | kafkactl_produce | kafkactl_delete_topic)
             __kafkactl_get_topics
+            return
+            ;;
+		kafkactl_config_use-context)
+            __kafkactl_get_contexts
             return
             ;;
         *)
@@ -43,13 +55,7 @@ __custom_func() {
 // completionCmd represents the completion command
 var completionCmd = &cobra.Command{
 	Use:   "completion",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "generate bash completion",
 	Run: func(cmd *cobra.Command, args []string) {
 		rootCmd.GenBashCompletion(os.Stdout)
 	},

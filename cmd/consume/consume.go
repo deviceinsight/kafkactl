@@ -21,11 +21,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var fromBeginning bool
-var printKeys bool
-var printTimestamps bool
-var offsets []string
-
 var flags consumerTools.ConsumerFlags
 
 // ConsumeCmd represents the consume command
@@ -57,7 +52,7 @@ func init() {
 	ConsumeCmd.Flags().BoolVarP(&flags.PrintKeys, "print-keys", "k", false, "print message printKeys")
 	ConsumeCmd.Flags().BoolVarP(&flags.PrintTimestamps, "print-timestamps", "t", false, "print message printTimestamps")
 	ConsumeCmd.Flags().StringVarP(&flags.ConsumerGroup, "consumer-group", "g", "", "consumer group to join")
-	//ConsumeCmd.Flags().StringArrayP(&offsets, "offset", "p", false, "print message headers")
+	ConsumeCmd.Flags().StringArrayVarP(&flags.Offsets, "offset", "f", flags.Offsets, "define offsets for consumer")
 
 	ConsumeCmd.Flags().StringVarP(&flags.OutputFormat, "output", "o", flags.OutputFormat, "Output format. One of: json|yaml")
 }
