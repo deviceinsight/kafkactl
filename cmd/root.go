@@ -21,6 +21,7 @@ import (
 	"github.com/random-dwi/kafkactl/cmd/consume"
 	"github.com/random-dwi/kafkactl/cmd/create"
 	"github.com/random-dwi/kafkactl/cmd/deletion"
+	"github.com/random-dwi/kafkactl/cmd/describe"
 	"github.com/random-dwi/kafkactl/cmd/get"
 	"github.com/random-dwi/kafkactl/cmd/produce"
 	"github.com/spf13/cobra"
@@ -57,6 +58,7 @@ func init() {
 	rootCmd.AddCommand(config.ConfigCmd)
 	rootCmd.AddCommand(consume.ConsumeCmd)
 	rootCmd.AddCommand(produce.ProduceCmd)
+	rootCmd.AddCommand(describe.DescribeCmd)
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
