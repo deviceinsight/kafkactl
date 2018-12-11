@@ -14,7 +14,7 @@
 
 package main
 
-import "github.com/random-dwi/kafkactl/cmd"
+import "github.com/deviceinsight/kafkactl/cmd"
 
 func main() {
 	cmd.Execute()

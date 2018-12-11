@@ -4,3 +4,6 @@
 *.iws
 *.iml
 *.ipr
+
+### Binary
+kafkactl

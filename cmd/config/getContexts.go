@@ -1,36 +1,45 @@
-// Copyright © 2018 NAME HERE <EMAIL ADDRESS>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package config
 
 import (
 	"fmt"
+	"github.com/deviceinsight/kafkactl/output"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-// getContextsCmd represents the getContexts command
-var getContextsCmd = &cobra.Command{
+var outputFormat string
+
+var cmdGetContexts = &cobra.Command{
 	Use:     "get-contexts",
 	Aliases: []string{"getContexts"},
 	Short:   "list configured contexts",
 	Long:    `Output names of all configured contexts`,
 	Run: func(cmd *cobra.Command, args []string) {
 		contexts := viper.GetStringMap("contexts")
-		for name := range contexts {
-			fmt.Println(name)
+		currentContext := viper.GetString("current-context")
+
+		if outputFormat == "compact" {
+			for name := range contexts {
+				fmt.Println(name)
+			}
+		} else {
+			writer := output.CreateTableWriter()
+
+			writer.WriteHeader("ACTIVE", "NAME")
+			for context := range contexts {
+				if currentContext == context {
+					writer.Write("*", context)
+				} else {
+					writer.Write("", context)
+				}
+			}
+
+			writer.Flush()
 		}
 	},
+}
+
+func init() {
+	cmdGetContexts.Flags().StringVarP(&outputFormat, "output", "o", outputFormat, "Output format. One of: compact")
 }

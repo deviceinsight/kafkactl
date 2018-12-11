@@ -1,29 +1,15 @@
-// Copyright © 2018 NAME HERE <EMAIL ADDRESS>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package cmd
 
 import (
 	"fmt"
+	"github.com/deviceinsight/kafkactl/cmd/config"
+	"github.com/deviceinsight/kafkactl/cmd/consume"
+	"github.com/deviceinsight/kafkactl/cmd/create"
+	"github.com/deviceinsight/kafkactl/cmd/deletion"
+	"github.com/deviceinsight/kafkactl/cmd/describe"
+	"github.com/deviceinsight/kafkactl/cmd/get"
+	"github.com/deviceinsight/kafkactl/cmd/produce"
 	"github.com/mitchellh/go-homedir"
-	"github.com/random-dwi/kafkactl/cmd/config"
-	"github.com/random-dwi/kafkactl/cmd/consume"
-	"github.com/random-dwi/kafkactl/cmd/create"
-	"github.com/random-dwi/kafkactl/cmd/deletion"
-	"github.com/random-dwi/kafkactl/cmd/describe"
-	"github.com/random-dwi/kafkactl/cmd/get"
-	"github.com/random-dwi/kafkactl/cmd/produce"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"
@@ -32,7 +18,6 @@ import (
 var cfgFile string
 var Verbose bool
 
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use: "kafkactl",
 	BashCompletionFunction: bashCompletionFunc,
@@ -52,19 +37,15 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.AddCommand(get.GetCmd)
-	rootCmd.AddCommand(deletion.DeleteCmd)
-	rootCmd.AddCommand(create.CreateCmd)
-	rootCmd.AddCommand(config.ConfigCmd)
-	rootCmd.AddCommand(consume.ConsumeCmd)
-	rootCmd.AddCommand(produce.ProduceCmd)
-	rootCmd.AddCommand(describe.DescribeCmd)
+	rootCmd.AddCommand(config.CmdConfig)
+	rootCmd.AddCommand(consume.CmdConsume)
+	rootCmd.AddCommand(create.CmdCreate)
+	rootCmd.AddCommand(deletion.CmdDelete)
+	rootCmd.AddCommand(describe.CmdDescribe)
+	rootCmd.AddCommand(get.CmdGet)
+	rootCmd.AddCommand(produce.CmdProduce)
 
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kafkactl.yml)")
-
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
 }
 

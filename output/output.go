@@ -7,12 +7,12 @@ import (
 	"os"
 )
 
-func Quitf(msg string, args ...interface{}) {
-	Exitf(0, msg, args...)
-}
-
 func Failf(msg string, args ...interface{}) {
 	Exitf(1, msg, args...)
+}
+
+func Warnf(msg string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, msg+"\n", args...)
 }
 
 func Infof(msg string, args ...interface{}) {

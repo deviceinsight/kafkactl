@@ -1,33 +1,27 @@
-// Copyright © 2018 NAME HERE <EMAIL ADDRESS>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package produce
 
 import (
-	"fmt"
+	"github.com/deviceinsight/kafkactl/operations"
 
 	"github.com/spf13/cobra"
 )
 
-// ProduceCmd represents the produce command
-var ProduceCmd = &cobra.Command{
+var flags operations.ProducerFlags
+
+var CmdProduce = &cobra.Command{
 	Use:   "produce",
 	Short: "produce messages to a topic",
+	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("not implemented, yet :/")
+		(&operations.ProducerOperation{}).Produce(args[0], flags)
 	},
 }
 
 func init() {
+	CmdProduce.Flags().Int32VarP(&flags.Partition, "partition", "p", -1, "partition to produce to")
+	CmdProduce.Flags().StringVarP(&flags.Partitioner, "partitioner", "P", "", "The partitioning scheme to use. Can be `hash`, `manual`, or `random`")
+	CmdProduce.Flags().StringVarP(&flags.Key, "key", "k", "", "key to use for all messages")
+	CmdProduce.Flags().StringVarP(&flags.Value, "value", "V", "", "value to produce")
+	CmdProduce.Flags().StringVarP(&flags.Separator, "separator", "S", "", "separator to split key and value from stdin")
+	CmdProduce.Flags().BoolVarP(&flags.Silent, "silent", "s", false, "do not write to standard output")
 }

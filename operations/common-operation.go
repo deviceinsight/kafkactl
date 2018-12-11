@@ -1,11 +1,11 @@
-package util
+package operations
 
 import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
 	"github.com/Shopify/sarama"
-	"github.com/random-dwi/kafkactl/util/output"
+	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
@@ -27,7 +27,7 @@ type ClientContext struct {
 	kafkaVersion sarama.KafkaVersion
 }
 
-func CreateClientContext() ClientContext {
+func createClientContext() ClientContext {
 
 	var context ClientContext
 
@@ -41,7 +41,11 @@ func CreateClientContext() ClientContext {
 	return context
 }
 
-func CreateClient(context *ClientContext) (sarama.Client, error) {
+func createClient(context *ClientContext) (sarama.Client, error) {
+	return sarama.NewClient(context.brokers, createClientConfig(context))
+}
+
+func createClientConfig(context *ClientContext) *sarama.Config {
 	var (
 		err    error
 		usr    *user.User
@@ -51,7 +55,7 @@ func CreateClient(context *ClientContext) (sarama.Client, error) {
 	config.Version = context.kafkaVersion
 
 	if usr, err = user.Current(); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to read current user err=%v", err)
+		output.Warnf("Failed to read current user: %v", err)
 	}
 	config.ClientID = "kafkactl-" + sanitizeUsername(usr.Username)
 
@@ -64,10 +68,10 @@ func CreateClient(context *ClientContext) (sarama.Client, error) {
 		config.Net.TLS.Config = tlsConfig
 	}
 
-	return sarama.NewClient(context.brokers, config)
+	return config
 }
 
-func CreateClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
+func createClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
 	var (
 		err    error
 		usr    *user.User
@@ -93,7 +97,7 @@ func CreateClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
 	return sarama.NewClusterAdmin(context.brokers, config)
 }
 
-func CreateOffsetManager(client sarama.Client, group string) (sarama.OffsetManager, error) {
+func createOffsetManager(client sarama.Client, group string) (sarama.OffsetManager, error) {
 
 	if group == "" {
 		return nil, nil

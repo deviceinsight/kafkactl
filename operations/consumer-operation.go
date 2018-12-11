@@ -1,12 +1,11 @@
-package consumer
+package operations
 
 import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"github.com/Shopify/sarama"
-	"github.com/random-dwi/kafkactl/util"
-	"github.com/random-dwi/kafkactl/util/output"
+	"github.com/deviceinsight/kafkactl/output"
 	"os"
 	"regexp"
 	"strconv"
@@ -14,24 +13,6 @@ import (
 	"sync"
 	"time"
 )
-
-type ConsumerContext struct {
-	sync.Mutex
-
-	topic   string
-	offsets map[int32]Interval
-	args    ConsumerFlags
-
-	encodeValue string
-	encodeKey   string
-
-	timeout time.Duration
-
-	client        sarama.Client
-	consumer      sarama.Consumer
-	offsetManager sarama.OffsetManager
-	poms          map[int32]sarama.PartitionOffsetManager
-}
 
 type ConsumerFlags struct {
 	PrintKeys       bool
@@ -62,52 +43,82 @@ type consumedMessage struct {
 
 var offsetResume int64 = -3
 
-func CreateConsumerContext(clientContext *util.ClientContext, topic string, args ConsumerFlags) ConsumerContext {
+type ConsumerOperation struct {
+	sync.Mutex
 
-	var context ConsumerContext
+	topic   string
+	offsets map[int32]Interval
+	args    ConsumerFlags
+
+	encodeValue string
+	encodeKey   string
+
+	timeout time.Duration
+
+	client        sarama.Client
+	consumer      sarama.Consumer
+	offsetManager sarama.OffsetManager
+	poms          map[int32]sarama.PartitionOffsetManager
+}
+
+func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
+
+	operation.init(topic, flags)
+
+	partitions := operation.findPartitions()
+	if len(partitions) == 0 {
+		output.Failf("Found no partitions to consume")
+	}
+
+	defer operation.Close()
+
+	operation.consume(partitions)
+}
+
+func (operation *ConsumerOperation) init(topic string, args ConsumerFlags) {
 
 	var err error
 
-	context.topic = topic
-	context.args = args
-	context.timeout = time.Duration(0)
+	clientContext := createClientContext()
 
-	context.offsets, err = parseOffsets(args.Offsets)
+	operation.topic = topic
+	operation.args = args
+	operation.timeout = time.Duration(0)
+
+	operation.offsets, err = parseOffsets(args.Offsets)
 	if err != nil {
 		output.Failf("Failed to parse offsets: %s", err)
 	}
 
-	if context.client, err = util.CreateClient(clientContext); err != nil {
+	if operation.client, err = createClient(&clientContext); err != nil {
 		output.Failf("failed to create client: %v", err)
 	}
 
-	if context.offsetManager, err = util.CreateOffsetManager(context.client, context.args.ConsumerGroup); err != nil {
+	if operation.offsetManager, err = createOffsetManager(operation.client, operation.args.ConsumerGroup); err != nil {
 		output.Failf("failed to create offset manager: %v", err)
 	}
 
-	if context.consumer, err = sarama.NewConsumerFromClient(context.client); err != nil {
+	if operation.consumer, err = sarama.NewConsumerFromClient(operation.client); err != nil {
 		output.Failf("failed to create consumer: %v", err)
 	}
-
-	return context
 }
 
-func (context *ConsumerContext) FindPartitions() []int32 {
+func (operation *ConsumerOperation) findPartitions() []int32 {
 	var (
 		partitions []int32
 		res        []int32
 		err        error
 	)
-	if partitions, err = context.consumer.Partitions(context.topic); err != nil {
-		output.Failf("failed to read partitions for topic %v: %v", context.topic, err)
+	if partitions, err = operation.consumer.Partitions(operation.topic); err != nil {
+		output.Failf("failed to read partitions for topic %v: %v", operation.topic, err)
 	}
 
-	if _, hasDefault := context.offsets[-1]; hasDefault {
+	if _, hasDefault := operation.offsets[-1]; hasDefault {
 		return partitions
 	}
 
 	for _, p := range partitions {
-		if _, ok := context.offsets[p]; ok {
+		if _, ok := operation.offsets[p]; ok {
 			res = append(res, p)
 		}
 	}
@@ -217,19 +228,19 @@ func parseOffsets(offsets []string) (map[int32]Interval, error) {
 	return result, nil
 }
 
-func (context *ConsumerContext) Consume(partitions []int32) {
+func (operation *ConsumerOperation) consume(partitions []int32) {
 	var (
 		wg sync.WaitGroup
 	)
 
 	wg.Add(len(partitions))
 	for _, p := range partitions {
-		go func(p int32) { defer wg.Done(); context.consumePartition(p) }(p)
+		go func(p int32) { defer wg.Done(); operation.consumePartition(p) }(p)
 	}
 	wg.Wait()
 }
 
-func (context *ConsumerContext) consumePartition(partition int32) {
+func (operation *ConsumerOperation) consumePartition(partition int32) {
 	var (
 		offsets Interval
 		err     error
@@ -239,29 +250,29 @@ func (context *ConsumerContext) consumePartition(partition int32) {
 		ok      bool
 	)
 
-	if offsets, ok = context.offsets[partition]; !ok {
-		offsets, ok = context.offsets[-1]
+	if offsets, ok = operation.offsets[partition]; !ok {
+		offsets, ok = operation.offsets[-1]
 	}
 
-	if start, err = context.resolveOffset(offsets.start, partition); err != nil {
+	if start, err = operation.resolveOffset(offsets.start, partition); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to read start offset for partition %v err=%v\n", partition, err)
 		return
 	}
 
-	if end, err = context.resolveOffset(offsets.end, partition); err != nil {
+	if end, err = operation.resolveOffset(offsets.end, partition); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to read end offset for partition %v err=%v\n", partition, err)
 		return
 	}
 
-	if pcon, err = context.consumer.ConsumePartition(context.topic, partition, start); err != nil {
+	if pcon, err = operation.consumer.ConsumePartition(operation.topic, partition, start); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to consume partition %v err=%v\n", partition, err)
 		return
 	}
 
-	context.partitionLoop(pcon, partition, end)
+	operation.partitionLoop(pcon, partition, end)
 }
 
-func (context *ConsumerContext) resolveOffset(o offset, partition int32) (int64, error) {
+func (operation *ConsumerOperation) resolveOffset(o offset, partition int32) (int64, error) {
 	if !o.relative {
 		return o.start, nil
 	}
@@ -272,7 +283,7 @@ func (context *ConsumerContext) resolveOffset(o offset, partition int32) (int64,
 	)
 
 	if o.start == sarama.OffsetNewest || o.start == sarama.OffsetOldest {
-		if res, err = context.client.GetOffset(context.topic, partition, o.start); err != nil {
+		if res, err = operation.client.GetOffset(operation.topic, partition, o.start); err != nil {
 			return 0, err
 		}
 
@@ -282,10 +293,10 @@ func (context *ConsumerContext) resolveOffset(o offset, partition int32) (int64,
 
 		return res + o.diff, nil
 	} else if o.start == offsetResume {
-		if context.args.ConsumerGroup == "" {
+		if operation.args.ConsumerGroup == "" {
 			return 0, fmt.Errorf("cannot resume without consumer-group argument")
 		}
-		pom := context.getPOM(partition)
+		pom := operation.getPOM(partition)
 		next, _ := pom.NextOffset()
 		return next, nil
 	}
@@ -293,48 +304,48 @@ func (context *ConsumerContext) resolveOffset(o offset, partition int32) (int64,
 	return o.start + o.diff, nil
 }
 
-func (context *ConsumerContext) getPOM(p int32) sarama.PartitionOffsetManager {
-	context.Lock()
-	if context.poms == nil {
-		context.poms = map[int32]sarama.PartitionOffsetManager{}
+func (operation *ConsumerOperation) getPOM(p int32) sarama.PartitionOffsetManager {
+	operation.Lock()
+	if operation.poms == nil {
+		operation.poms = map[int32]sarama.PartitionOffsetManager{}
 	}
-	pom, ok := context.poms[p]
+	pom, ok := operation.poms[p]
 	if ok {
-		context.Unlock()
+		operation.Unlock()
 		return pom
 	}
 
-	pom, err := context.offsetManager.ManagePartition(context.topic, p)
+	pom, err := operation.offsetManager.ManagePartition(operation.topic, p)
 	if err != nil {
-		context.Unlock()
+		operation.Unlock()
 		output.Failf("failed to create partition offset manager err=%v", err)
 	}
-	context.poms[p] = pom
-	context.Unlock()
+	operation.poms[p] = pom
+	operation.Unlock()
 	return pom
 }
 
-func (context *ConsumerContext) Close() {
-	context.Lock()
+func (operation *ConsumerOperation) Close() {
+	operation.Lock()
 
-	for p, pom := range context.poms {
+	for p, pom := range operation.poms {
 		if err := pom.Close(); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to close partition offset manager for partition %v err=%v", p, err)
 		}
 	}
 
-	if err := context.consumer.Close(); err != nil {
+	if err := operation.consumer.Close(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to close consumer err=%v", err)
 	}
 
-	if err := context.client.Close(); err != nil {
+	if err := operation.client.Close(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to close client err=%v", err)
 	}
 
-	context.Unlock()
+	operation.Unlock()
 }
 
-func (context *ConsumerContext) partitionLoop(pc sarama.PartitionConsumer, p int32, end int64) {
+func (operation *ConsumerOperation) partitionLoop(pc sarama.PartitionConsumer, p int32, end int64) {
 	//defer logClose(fmt.Sprintf("partition consumer %v", p), pc)
 	var (
 		timer   *time.Timer
@@ -342,22 +353,22 @@ func (context *ConsumerContext) partitionLoop(pc sarama.PartitionConsumer, p int
 		timeout = make(<-chan time.Time)
 	)
 
-	if context.args.ConsumerGroup != "" {
-		pom = context.getPOM(p)
+	if operation.args.ConsumerGroup != "" {
+		pom = operation.getPOM(p)
 	}
 
 	for {
-		if context.timeout > 0 {
+		if operation.timeout > 0 {
 			if timer != nil {
 				timer.Stop()
 			}
-			timer = time.NewTimer(context.timeout)
+			timer = time.NewTimer(operation.timeout)
 			timeout = timer.C
 		}
 
 		select {
 		case <-timeout:
-			fmt.Fprintf(os.Stderr, "consuming from partition %v timed out after %s\n", p, context.timeout)
+			fmt.Fprintf(os.Stderr, "consuming from partition %v timed out after %s\n", p, operation.timeout)
 			return
 		case err := <-pc.Errors():
 			fmt.Fprintf(os.Stderr, "partition %v consumer encountered err %s", p, err)
@@ -368,19 +379,19 @@ func (context *ConsumerContext) partitionLoop(pc sarama.PartitionConsumer, p int
 				return
 			}
 
-			m := context.newConsumedMessage(msg, context.encodeKey, context.encodeValue)
+			m := operation.newConsumedMessage(msg, operation.encodeKey, operation.encodeValue)
 
-			if context.args.OutputFormat == "" {
+			if operation.args.OutputFormat == "" {
 				var row []string
 
-				if context.args.PrintKeys {
+				if operation.args.PrintKeys {
 					if m.Key != nil {
 						row = append(row, *m.Key)
 					} else {
 						row = append(row, "")
 					}
 				}
-				if context.args.PrintTimestamps {
+				if operation.args.PrintTimestamps {
 					if m.Timestamp != nil {
 						row = append(row, (*m.Timestamp).Format(time.RFC3339))
 					} else {
@@ -393,14 +404,14 @@ func (context *ConsumerContext) partitionLoop(pc sarama.PartitionConsumer, p int
 				output.PrintStrings(strings.Join(row[:], "#"))
 
 			} else {
-				output.PrintObject(m, context.args.OutputFormat)
+				output.PrintObject(m, operation.args.OutputFormat)
 			}
 
 			//ctx := printContext{output: m, done: make(chan struct{})}
 			//out <- ctx
 			//<-ctx.done
 
-			if context.args.ConsumerGroup != "" {
+			if operation.args.ConsumerGroup != "" {
 				pom.MarkOffset(msg.Offset+1, "")
 			}
 
@@ -411,16 +422,16 @@ func (context *ConsumerContext) partitionLoop(pc sarama.PartitionConsumer, p int
 	}
 }
 
-func (context *ConsumerContext) newConsumedMessage(m *sarama.ConsumerMessage, encodeKey, encodeValue string) consumedMessage {
+func (operation *ConsumerOperation) newConsumedMessage(m *sarama.ConsumerMessage, encodeKey, encodeValue string) consumedMessage {
 
 	var key *string
 	var timestamp *time.Time
 
-	if context.args.PrintKeys {
+	if operation.args.PrintKeys {
 		key = encodeBytes(m.Key, encodeKey)
 	}
 
-	if context.args.PrintTimestamps && !m.Timestamp.IsZero() {
+	if operation.args.PrintTimestamps && !m.Timestamp.IsZero() {
 		timestamp = &m.Timestamp
 	}
 
