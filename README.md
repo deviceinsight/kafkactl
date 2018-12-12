@@ -1,4 +1,4 @@
-# kafkactl
+# kafkactl - 0.0.1
 
 command-line interface for interaction with kafka
 
@@ -12,6 +12,21 @@ command-line interface for interaction with kafka
 
 ```bash
 go get -u github.com/deviceinsight/kafkactl
+```
+
+### from binary (linux x64 only)
+
+```bash
+## download the release
+wget https://github.com/deviceinsight/kafkactl/releases/download/0.0.1/kafkactl_x64.tar.xz
+## unpack the binary
+tar xvf kafkactl_x64.tar.xz
+## remove downloaded file
+rm kafkactl_x64.tar.xz
+## make kafkactl executable
+chmod +x kafkactl
+## move the binary in to your PATH.
+sudo mv kafkactl /usr/local/bin/kafkactl
 ```
 
 **NOTE:** make sure that `kafkactl` is on PATH otherwise auto-completion won't work.
