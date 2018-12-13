@@ -70,6 +70,9 @@ case $state in
       get)
         _arguments '2: :(topics)'
       ;;
+      completion)
+        _arguments '2: :(bash zsh)'
+      ;;
       config)
         _arguments '2: :(current-context get-contexts use-context)'
       ;;
@@ -77,12 +80,10 @@ case $state in
         _arguments '2: :(topic)'
       ;;
       consume)
-        _alternative \
-          "topic:topic names:($(kafkactl get topics -o compact))"
+        _alternative 'topic:topic names:($(kafkactl get topics -o compact))'
       ;;
       produce)
-        _alternative \
-          "topic:topic names:($(kafkactl get topics -o compact))"
+        _alternative 'topic:topic names:($(kafkactl get topics -o compact))'
       ;;
       *)
         _arguments '*: :_files'
@@ -92,12 +93,10 @@ case $state in
   level3)
     case $words[3] in
       topic)
-        _alternative \
-          "topic:topic names:($(kafkactl get topics -o compact))"
+        _alternative 'topic:topic names:($(kafkactl get topics -o compact))'
       ;;
       use-context)
-        _alternative \
-          "context:context names:($(kafkactl config get-contexts -o compact))"
+        _alternative 'context:context names:($(kafkactl config get-contexts -o compact))'
       ;;
       *)
         _arguments '*: :_files'

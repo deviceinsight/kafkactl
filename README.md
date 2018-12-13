@@ -33,7 +33,9 @@ sudo mv kafkactl /usr/local/bin/kafkactl
 
 ## configuration
 
-1. create `~/.kafkactl.yml` with a definition of contexts that should be available 
+### create a config file
+
+create `~/.kafkactl.yml` with a definition of contexts that should be available 
 
 ```yaml
 contexts:
@@ -49,7 +51,11 @@ contexts:
 current-context: localhost
 ```
 
-2. in order to get auto completion add it in startup script of the shell:
+### auto completion
+
+#### bash
+
+in order to get auto completion add it in startup script of the shell:
 
 - for `bash` add the following to `~/.bashrc`:
 ```bash
@@ -57,13 +63,27 @@ current-context: localhost
 source <(kafkactl completion bash)
 ```
 
-- for `zsh` add the following to `~/.zshrc`:
+#### zsh
+
+create file with completions:
+
 ```bash
-# kafkactl autocomplete
-source <(kafkactl completion zsh)
+mkdir ~/.zsh-completions
+kafkactl completion zsh > ~/.zsh-completions/_kafkactl
 ```
 
-- `fish` is currently not supported. see: https://github.com/spf13/cobra/issues/350
+to auto-load completion on zsh startup, edit `~/.zshrc`:
+```bash
+# folder of all of your autocomplete functions
+fpath=($HOME/.zsh-completions $fpath)
+
+# enable autocomplete function
+autoload -U compinit
+compinit
+```
+
+#### fish
+`fish` is currently not supported. see: https://github.com/spf13/cobra/issues/350
 
 ## examples
 
