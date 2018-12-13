@@ -163,3 +163,24 @@ func kafkaVersion(s string) sarama.KafkaVersion {
 
 	return v
 }
+
+func topicExists(client *sarama.Client, name string) (bool, error) {
+
+	var (
+		err    error
+		topics []string
+	)
+
+	if topics, err = (*client).Topics(); err != nil {
+		output.Failf("failed to read topics err=%v", err)
+		return false, err
+	}
+
+	for _, topic := range topics {
+		if topic == name {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}

@@ -105,14 +105,23 @@ func (operation *TopicOperation) DescribeTopic(topic string) {
 		client sarama.Client
 		admin  sarama.ClusterAdmin
 		err    error
+		exists bool
 	)
-
-	if admin, err = createClusterAdmin(&context); err != nil {
-		output.Failf("failed to create cluster admin: %v", err)
-	}
 
 	if client, err = createClient(&context); err != nil {
 		output.Failf("failed to create client err=%v", err)
+	}
+
+	if exists, err = topicExists(&client, topic); err != nil {
+		output.Failf("failed to read topics err=%v", err)
+	}
+
+	if !exists {
+		output.Failf("topic '%s' does not exist", topic)
+	}
+
+	if admin, err = createClusterAdmin(&context); err != nil {
+		output.Failf("failed to create cluster admin: %v", err)
 	}
 
 	var t, _ = readTopic(&client, &admin, topic, true, false, true, true)
