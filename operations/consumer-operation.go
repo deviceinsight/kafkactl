@@ -78,6 +78,7 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 func (operation *ConsumerOperation) init(topic string, args ConsumerFlags) {
 
 	var err error
+	var topExists bool
 
 	clientContext := createClientContext()
 
@@ -92,6 +93,14 @@ func (operation *ConsumerOperation) init(topic string, args ConsumerFlags) {
 
 	if operation.client, err = createClient(&clientContext); err != nil {
 		output.Failf("failed to create client: %v", err)
+	}
+
+	if topExists, err = topicExists(&operation.client, operation.topic); err != nil {
+		output.Failf("failed to read topics err=%v", err)
+	}
+
+	if !topExists {
+		output.Failf("topic '%s' does not exist", topic)
 	}
 
 	if operation.offsetManager, err = createOffsetManager(operation.client, operation.args.ConsumerGroup); err != nil {

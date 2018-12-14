@@ -25,6 +25,24 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 
 	clientContext := createClientContext()
 
+	var (
+		err       error
+		client    sarama.Client
+		topExists bool
+	)
+
+	if client, err = createClient(&clientContext); err != nil {
+		output.Failf("failed to create client err=%v", err)
+	}
+
+	if topExists, err = topicExists(&client, topic); err != nil {
+		output.Failf("failed to read topics err=%v", err)
+	}
+
+	if !topExists {
+		output.Failf("topic '%s' does not exist", topic)
+	}
+
 	config := createClientConfig(&clientContext)
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Return.Successes = true
