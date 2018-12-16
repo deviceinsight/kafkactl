@@ -1,0 +1,10 @@
+language: go
+
+go:
+  - "1.10.x"
+
+# Default for Travis and Go is to 'go get' all dependencies in 'install'. Since we use vendoring
+# with checked in dependencies we skip the install step.
+install: true
+
+script: go test -v ./...
