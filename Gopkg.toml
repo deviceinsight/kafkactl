@@ -34,8 +34,9 @@
   version = "1.0.0"
 
 [[constraint]]
+  # use master for cobra since there is no release containing https://github.com/spf13/cobra/pull/730
   name = "github.com/spf13/cobra"
-  version = "0.0.3"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/spf13/viper"
@@ -46,5 +47,6 @@
   version = "2.2.2"
 
 [prune]
+  non-go = true
   go-tests = true
   unused-packages = true
