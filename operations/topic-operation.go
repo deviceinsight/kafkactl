@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/output"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -152,6 +153,8 @@ func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) {
 	if topics, err = client.Topics(); err != nil {
 		output.Failf("failed to read topics err=%v", err)
 	}
+
+	sort.Strings(topics)
 
 	if flags.OutputFormat == "" {
 		tableWriter.WriteHeader("TOPIC", "PARTITIONS")
