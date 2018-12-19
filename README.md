@@ -87,6 +87,23 @@ compinit
 
 ## examples
 
+### consuming messages
+
+consuming messages from a topic can be done with:
+```bash
+kafkactl consume my-topic
+```
+
+in order to consume starting from the oldest offset use:
+```bash
+kafkactl consume my-topic --from-beginning
+```
+
+the following example prints message `key` and `timestamp` as well as `partition` and `offset` in `yaml` format:
+```bash
+kafkactl consume my-topic --print-keys --print-timestamps -o yaml
+```
+
 ### producing messages
 
 Producing messages can be done in multiple ways. If we want to produce a message with `key='my-key'`,
