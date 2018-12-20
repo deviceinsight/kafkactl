@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/deviceinsight/kafkactl/cmd/alter"
 	"github.com/deviceinsight/kafkactl/cmd/config"
 	"github.com/deviceinsight/kafkactl/cmd/consume"
 	"github.com/deviceinsight/kafkactl/cmd/create"
@@ -40,6 +41,7 @@ func init() {
 	rootCmd.AddCommand(config.CmdConfig)
 	rootCmd.AddCommand(consume.CmdConsume)
 	rootCmd.AddCommand(create.CmdCreate)
+	rootCmd.AddCommand(alter.CmdAlter)
 	rootCmd.AddCommand(deletion.CmdDelete)
 	rootCmd.AddCommand(describe.CmdDescribe)
 	rootCmd.AddCommand(get.CmdGet)

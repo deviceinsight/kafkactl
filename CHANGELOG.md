@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Add `alter topic` command for increasing partition count and editing topic configs
+
 ### Changed
 - Sort result of `kafkactl get topics`
 - `consume` now uses a simpler consumer without consumerGroup.
