@@ -1,6 +1,10 @@
+
 # kafkactl - 0.0.1
 
 command-line interface for interaction with kafka
+
+[![Build Status](https://travis-ci.com/deviceinsight/kafkactl.svg?branch=master)](
+  https://travis-ci.com/deviceinsight/kafkactl)
 
 ## features
 - auto-completion
