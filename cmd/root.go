@@ -19,10 +19,10 @@ var cfgFile string
 var Verbose bool
 
 var rootCmd = &cobra.Command{
-	Use: "kafkactl",
+	Use:                    "kafkactl",
 	BashCompletionFunction: bashCompletionFunc,
-	Short: "command-line interface for Apache Kafka",
-	Long:  `A command-line interface the simplifies interaction with Kafka.`,
+	Short:                  "command-line interface for Apache Kafka",
+	Long:                   `A command-line interface the simplifies interaction with Kafka.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -45,8 +45,9 @@ func init() {
 	rootCmd.AddCommand(get.CmdGet)
 	rootCmd.AddCommand(produce.CmdProduce)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kafkactl.yml)")
-	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
+	// use upper-case letters for shorthand params to avoid conflicts with local flags
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config-file", "C", "config file (default is $HOME/.kafkactl.yml)")
+	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "V", false, "verbose output")
 }
 
 // initConfig reads in config file and ENV variables if set.

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Sort result of `kafkactl get topics`
 - `consume` now uses a simpler consumer without consumerGroup.
+- Changed name of global flags to avoid collisions with local flags
 
 ### Fixed
 - Do not auto-create topics when using `describe`, `consume` or `produce`
