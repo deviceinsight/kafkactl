@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/deviceinsight/kafkactl/cmd/alter"
 	"github.com/deviceinsight/kafkactl/cmd/config"
 	"github.com/deviceinsight/kafkactl/cmd/consume"
 	"github.com/deviceinsight/kafkactl/cmd/create"
@@ -40,13 +41,14 @@ func init() {
 	rootCmd.AddCommand(config.CmdConfig)
 	rootCmd.AddCommand(consume.CmdConsume)
 	rootCmd.AddCommand(create.CmdCreate)
+	rootCmd.AddCommand(alter.CmdAlter)
 	rootCmd.AddCommand(deletion.CmdDelete)
 	rootCmd.AddCommand(describe.CmdDescribe)
 	rootCmd.AddCommand(get.CmdGet)
 	rootCmd.AddCommand(produce.CmdProduce)
 
 	// use upper-case letters for shorthand params to avoid conflicts with local flags
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config-file", "C", "config file (default is $HOME/.kafkactl.yml)")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config-file", "C", "", "config file (default is $HOME/.kafkactl.yml)")
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "V", false, "verbose output")
 }
 

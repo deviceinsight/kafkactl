@@ -40,6 +40,12 @@ type CreateTopicFlags struct {
 	Configs           []string
 }
 
+type AlterTopicFlags struct {
+	Partitions   int32
+	ValidateOnly bool
+	Configs      []string
+}
+
 type TopicOperation struct {
 }
 
@@ -127,6 +133,78 @@ func (operation *TopicOperation) DescribeTopic(topic string) {
 
 	var t, _ = readTopic(&client, &admin, topic, true, false, true, true)
 	output.PrintObject(t, "yaml")
+}
+
+func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags) {
+
+	context := createClientContext()
+
+	var (
+		client sarama.Client
+		admin  sarama.ClusterAdmin
+		err    error
+		exists bool
+	)
+
+	if client, err = createClient(&context); err != nil {
+		output.Failf("failed to create client err=%v", err)
+	}
+
+	if exists, err = topicExists(&client, topic); err != nil {
+		output.Failf("failed to read topics err=%v", err)
+	}
+
+	if !exists {
+		output.Failf("topic '%s' does not exist", topic)
+	}
+
+	if admin, err = createClusterAdmin(&context); err != nil {
+		output.Failf("failed to create cluster admin: %v", err)
+	}
+
+	var t, _ = readTopic(&client, &admin, topic, true, false, false, true)
+
+	if flags.Partitions != 0 {
+		if len(t.Partitions) > int(flags.Partitions) {
+			output.Failf("Decreasing the number of partitions is not supported")
+		}
+
+		var emptyAssignment [][]int32 = make([][]int32, 0, 0)
+
+		err = admin.CreatePartitions(topic, flags.Partitions, emptyAssignment, flags.ValidateOnly)
+		if err != nil {
+			output.Failf("Could not create partitions for topic '%s': %v", topic, err)
+		}
+	}
+
+	if len(flags.Configs) == 0 {
+		operation.DescribeTopic(topic)
+		return
+	}
+
+	mergedConfigEntries := make(map[string]*string)
+
+	for i, config := range t.Configs {
+		mergedConfigEntries[config.Name] = &(t.Configs[i].Value)
+	}
+
+	for _, config := range flags.Configs {
+		configParts := strings.Split(config, "=")
+
+		if len(configParts) == 2 {
+			if len(configParts[1]) == 0 {
+				delete(mergedConfigEntries, configParts[0])
+			} else {
+				mergedConfigEntries[configParts[0]] = &configParts[1]
+			}
+		}
+	}
+
+	if err = admin.AlterConfig(sarama.TopicResource, topic, mergedConfigEntries, flags.ValidateOnly); err != nil {
+		output.Failf("Could not alter topic config '%s': %v", topic, err)
+	}
+
+	operation.DescribeTopic(topic)
 }
 
 func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) {

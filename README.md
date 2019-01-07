@@ -138,3 +138,16 @@ kafkactl produce my-topic --key=my-key --value=my-value --partitioner=random
 kafkactl produce my-topic --key=my-key --value=my-value --partitioner=random
 ```
 
+### altering topics
+
+Using the `alter topic` command allows you to change the partition count and topic-level configurations of an existing topic.
+
+The partition count can be increased with:
+```bash
+kafkactl alter topic my-topic --partitions 32
+```
+
+The topic configs can be edited by supplying key value pairs as follows:
+```bash
+kafkactl alter topic my-topic --config retention.ms=3600 --config cleanup.policy=compact
+```
