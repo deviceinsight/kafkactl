@@ -48,7 +48,7 @@ func init() {
 	rootCmd.AddCommand(produce.CmdProduce)
 
 	// use upper-case letters for shorthand params to avoid conflicts with local flags
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config-file", "C", "config file (default is $HOME/.kafkactl.yml)")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config-file", "C", "", "config file (default is $HOME/.kafkactl.yml)")
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "V", false, "verbose output")
 }
 
