@@ -48,7 +48,7 @@ func init() {
 	rootCmd.AddCommand(produce.CmdProduce)
 
 	// use upper-case letters for shorthand params to avoid conflicts with local flags
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config-file", "C", "", "config file (default is $HOME/.kafkactl.yml)")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config-file", "C", "", "config file (defaults are $HOME/.kafkactl/config.yml, /etc/kafkactl/config.yml)")
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "V", false, "verbose output")
 }
 
@@ -65,9 +65,10 @@ func initConfig() {
 			os.Exit(1)
 		}
 
-		// Search config in home directory with name ".kafkactl.yml"
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".kafkactl")
+		// Search config in home directory with name "./kafkactl/config.yml" and in /etc/kafkactl/config.yml
+		viper.AddConfigPath("/etc/kafkactl")
+		viper.AddConfigPath(home + "/.kafkactl")
+		viper.SetConfigName("config")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
