@@ -39,7 +39,7 @@ sudo mv kafkactl /usr/local/bin/kafkactl
 
 ### create a config file
 
-create `~/.kafkactl.yml` with a definition of contexts that should be available 
+create `~/.kafkactl/config.yml` with a definition of contexts that should be available
 
 ```yaml
 contexts:
