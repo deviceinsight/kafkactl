@@ -1,0 +1,36 @@
+before:
+  hooks:
+    - go mod download
+builds:
+  - env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X github.com/deviceinsight/kafkactl/cmd.version={{.Version}} -X github.com/deviceinsight/kafkactl/cmd.gitCommit={{.ShortCommit}} -X github.com/deviceinsight/kafkactl/cmd.buildTime={{.Date}}
+    goos:
+      - darwin
+      - linux
+      - windows
+
+archive:
+  replacements:
+    darwin: Darwin
+    linux: Linux
+    windows: Windows
+    386: i386
+    amd64: x86_64
+  files:
+    - LICENSE.md
+    - CHANGELOG.md
+
+checksum:
+  name_template: 'checksums.txt'
+nfpm:
+  vendor: Device Insight GmbH
+  homepage: https://www.device-insight.com/
+  maintainer: Dirk Wilden <[dirk.wilden@device-insight.com]>
+  description: A command-line interface for interaction with Apache Kafka
+  license: Apache 2.0
+
+  formats:
+    - deb
+    - rpm
