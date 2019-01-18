@@ -3,6 +3,9 @@ language: go
 go:
   - "1.11.x"
 
+env:
+  - GO111MODULE=on
+
 #go_import_path: github.com/deviceinsight/kafkactl
 
 # Default for Travis and Go is to 'go get' all dependencies in 'install'. Since we use vendoring
