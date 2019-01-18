@@ -1,7 +1,7 @@
 language: go
 
 go:
-  - "1.10.x"
+  - "1.11.x"
 
 go_import_path: github.com/deviceinsight/kafkactl
 
@@ -10,3 +10,14 @@ go_import_path: github.com/deviceinsight/kafkactl
 install: true
 
 script: go test -v ./...
+
+# calls goreleaser
+deploy:
+- provider: script
+  skip_cleanup: true
+  script: curl -sL https://git.io/goreleaser | bash
+  on:
+#    tags: true
+    branch: feature/go-modules 
+    condition: $TRAVIS_OS_NAME = linux
+- 

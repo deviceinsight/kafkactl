@@ -4,11 +4,14 @@ before:
   hooks:
     # you may remove this if you don't use vgo
     - go mod download
-    # you may remove this if you don't need go generate
-    - go generate ./...
 builds:
 - env:
   - CGO_ENABLED=0
+  ldflags:
+  - -s -w
+  - -X github.com/deviceinsight/kafkactl/cmd.version={{.Version}}
+  - -X github.com/deviceinsight/kafkactl/cmd.gitCommit={{.ShortCommit}}
+  - -X github.com/deviceinsight/kafkactl/cmd.buildTime={{.Date}}
 archive:
   replacements:
     darwin: Darwin
