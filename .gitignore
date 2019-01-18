@@ -5,6 +5,9 @@
 *.iml
 *.ipr
 
+## goreleaser
+goreleaser.sh
+
 ### Binary
 dist
 kafkactl
