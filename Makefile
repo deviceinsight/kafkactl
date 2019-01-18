@@ -1,6 +1,6 @@
 BUILD_TS := $(shell date -Iseconds --utc)
 COMMIT_SHA := $(shell git rev-parse HEAD)
-VERSION ?= 0.0.1
+VERSION := $(shell git describe --abbrev=0 --tags)
 
 .DEFAULT_GOAL := build
 
