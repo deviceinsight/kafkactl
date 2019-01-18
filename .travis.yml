@@ -13,11 +13,10 @@ go:
 
 # calls goreleaser
 deploy:
-- provider: script
-  skip_cleanup: true
-  script: curl -sL https://git.io/goreleaser | bash
-  on:
-#    tags: true
-    branch: feature/go-modules 
-    condition: $TRAVIS_OS_NAME = linux
-- 
+  - provider: script
+    skip_cleanup: true
+    script: curl -sL https://git.io/goreleaser | bash
+    on:
+      branch: feature/go-modules
+      condition: $TRAVIS_OS_NAME = linux
+      #    tags: true
