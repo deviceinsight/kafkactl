@@ -6,6 +6,7 @@ VERSION ?= 0.0.1
 
 export CGO_ENABLED=0
 export GOOS=linux
+export GO111MODULE=on
 
 project=github.com/deviceinsight/kafkactl
 ld_flags := "-X $(project)/cmd.version=$(VERSION) -X $(project)/cmd.gitCommit=$(COMMIT_SHA) -X $(project)/cmd.buildTime=$(BUILD_TS)"
