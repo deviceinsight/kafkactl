@@ -1,25 +1,23 @@
 language: go
-
 go:
-  - "1.11.x"
-
+- 1.11.x
 env:
-  - GO111MODULE=on
-
-#go_import_path: github.com/deviceinsight/kafkactl
-
-# Default for Travis and Go is to 'go get' all dependencies in 'install'. Since we use vendoring
-# with checked in dependencies we skip the install step.
-#install: true
-
-#script: go test -v ./...
-
-# calls goreleaser
+- GO111MODULE=on
 deploy:
   - provider: script
     skip_cleanup: true
     script: curl -sL https://git.io/goreleaser > goreleaser.sh; bash goreleaser.sh --skip-publish --skip-validate
     on:
       branch: feature/go-modules
+      condition: $TRAVIS_OS_NAME = linux
+      #    tags: true
+  - provider: releases
+    api_key:
+      secure: mCfU2HzWjE9/a3Xw/etOezPpd8baw0Yb65NgyZqI2mJKGBwY1eOeaM1KnbFloutquKn8Xz1+V0n6jrbp8mzCYLVEYhDhGeN/rHT2UYrKn6Ydql5mcvorbT+psMieIX8MjIaoQdy+pFCjVIjNmL0W8SiaH2wvHw42yANiTZG6VfuHWn4VpNlqz2ghbeUNGLsoqzibNQWHWPj/NCrHoBDMB5UkYoL9fq2xWg1nV/i3xiYh59HAA4PC5z1mV+7c/GU0MrVDOXPpgeY6uY/PQ8HXGaHLTr8ys7QhFdtMeYXaiMS9tVWVr2DCM62x4w2DhNHqEGOMmV0uaty67MbUs6nl9OR+jMeRJpfrycB0WUEGfuE+7wAM6VWb7mr2/BAbBblgawxL57C/6k05CMmJFKqwHeR4QIegs3hmG5zRtPPkeGxPwLPvvoKyiz9DbTf4ZkYHQajeD7iFZsqOcGkN7Jhg2G8goTQ7nOUN/MxzFIvKUfQJnXdymcp13NKWK8T5/WpC6InpIbqV6yTvnGOeR/Y3Lc+prVSScHM+ozriCnrH1oAaZe+4SdLPywUxAZdTW1YvOg6SQ5NxzmmvadvZeUpjjkei4OeLGPVtCnwAXKLucjtEM7lC7Jal0GjT9euBF+tfHkUKyqp979wxF9UrHvDnqU7gEi5vqZHKmaNeWYyP6mo=
+    file_glob: true
+    file: dist/*
+    on:
+      branch: feature/go-modules
+      repo: deviceinsight/kafkactl
       condition: $TRAVIS_OS_NAME = linux
       #    tags: true
