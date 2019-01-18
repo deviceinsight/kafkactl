@@ -15,7 +15,7 @@ go:
 deploy:
   - provider: script
     skip_cleanup: true
-    script: curl -sL https://git.io/goreleaser | bash
+    script: curl -sL https://git.io/goreleaser | bash --skip-publish --skip-validate
     on:
       branch: feature/go-modules
       condition: $TRAVIS_OS_NAME = linux
