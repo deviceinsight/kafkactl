@@ -126,7 +126,7 @@ kafkactl produce my-topic --key=my-key --value=my-value --partition=2
 ```
 
 Additionally, a different partitioning scheme can be used. When a `key` is provided the default partitioner
-uses the `hash` of the `key` to assign a partition. so the same `key` will end up in the same partition: 
+uses the `hash` of the `key` to assign a partition. So the same `key` will end up in the same partition: 
 ```bash
 # the following 3 messages will all be inserted to the same partition
 kafkactl produce my-topic --key=my-key --value=my-value
