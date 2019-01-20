@@ -6,18 +6,18 @@ env:
 deploy:
   - provider: script
     skip_cleanup: true
-    script: curl -sL https://git.io/goreleaser > goreleaser.sh; bash goreleaser.sh --skip-publish --skip-validate
+    script: curl -sL https://git.io/goreleaser > goreleaser.sh; bash goreleaser.sh --skip-publish
     on:
-      branch: feature/go-modules
       condition: $TRAVIS_OS_NAME = linux
-      #    tags: true
+      tags: true
   - provider: releases
     api_key:
-      secure: mCfU2HzWjE9/a3Xw/etOezPpd8baw0Yb65NgyZqI2mJKGBwY1eOeaM1KnbFloutquKn8Xz1+V0n6jrbp8mzCYLVEYhDhGeN/rHT2UYrKn6Ydql5mcvorbT+psMieIX8MjIaoQdy+pFCjVIjNmL0W8SiaH2wvHw42yANiTZG6VfuHWn4VpNlqz2ghbeUNGLsoqzibNQWHWPj/NCrHoBDMB5UkYoL9fq2xWg1nV/i3xiYh59HAA4PC5z1mV+7c/GU0MrVDOXPpgeY6uY/PQ8HXGaHLTr8ys7QhFdtMeYXaiMS9tVWVr2DCM62x4w2DhNHqEGOMmV0uaty67MbUs6nl9OR+jMeRJpfrycB0WUEGfuE+7wAM6VWb7mr2/BAbBblgawxL57C/6k05CMmJFKqwHeR4QIegs3hmG5zRtPPkeGxPwLPvvoKyiz9DbTf4ZkYHQajeD7iFZsqOcGkN7Jhg2G8goTQ7nOUN/MxzFIvKUfQJnXdymcp13NKWK8T5/WpC6InpIbqV6yTvnGOeR/Y3Lc+prVSScHM+ozriCnrH1oAaZe+4SdLPywUxAZdTW1YvOg6SQ5NxzmmvadvZeUpjjkei4OeLGPVtCnwAXKLucjtEM7lC7Jal0GjT9euBF+tfHkUKyqp979wxF9UrHvDnqU7gEi5vqZHKmaNeWYyP6mo=
+      secure: GX/8chpYn1si1G5Is696TqURqcF6TV0GoyCdr0iFSbf/O9rQKhaMF1M/vuLgcmrScaSLs5WS0prpB1uQ/U4mofxu7Evo9pMTQuYBNmQqMtqZIgjUpJCNJWYuKjOjgPbknWn8tcCH5E9ALXHKTT9QKhqISMMi50y3P6kr5ZfSLZL7nPhu2AfhNuvBFxFifP/41aLyRzSl811Gese5hVwP9FBivc52lREYd3S2yRcLn1NafkyBu9kSn906KQW2I0F9/tSkv+jo5ciVMS+Qszh7JumvjGWFhZ1XLttXPxZLLNufd0iU00g+WyPV7iiVuNelE/r3v0m4pcRPzETEKkgTlqqUXs2+rcYEEGrR/Fv+YxPmrzbm/iSn30g79P1kQF8TL4q/BEc0lKbmMwID6ZdlmVCLz40wqtqMAbdFkr6dqn3twcaJZpVv3v0855Kkk//qePMMdpMkJAzuI12Yw+nbBzEOoP//mzQ1ZOGHkncOLuw0NDeepMx/EOn+ZzJ9em2GtO4PXzKjOKyUaiNSk2+sdMp+AmxOKGF4TAr6c0gwcDJoSoGVLyqwFitS4IX6q2054SzR47HRK/UmvzW7/K9ppTuPwpAUeAAPdVO0htPpddwTIJZrmz8BeXuN5ErzZCK1EXY0TfyMT1v4gavTzU8Lrkfl1muKM69wBvOCCWcmFuI=
     file_glob: true
     file: dist/*
+    skip_cleanup: true
+    draft: true
     on:
-      branch: feature/go-modules
-      repo: deviceinsight/kafkactl
+      repo: random-dwi/kafkactl
       condition: $TRAVIS_OS_NAME = linux
-      #    tags: true
+      tags: true
