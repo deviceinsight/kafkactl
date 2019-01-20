@@ -16,7 +16,6 @@ deploy:
     file_glob: true
     file: dist/*
     skip_cleanup: true
-    draft: true
     on:
       repo: random-dwi/kafkactl
       condition: $TRAVIS_OS_NAME = linux

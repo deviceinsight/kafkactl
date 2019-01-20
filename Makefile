@@ -27,3 +27,9 @@ build: test
 clean:
 	rm -f kafkactl
 	go clean -testcache
+
+# usage make version=0.0.4 release
+.PHONY: release
+release:
+	git tag -a $(version) -m "release $(version)"
+	git push random-dwi $(version)
