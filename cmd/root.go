@@ -10,6 +10,7 @@ import (
 	"github.com/deviceinsight/kafkactl/cmd/describe"
 	"github.com/deviceinsight/kafkactl/cmd/get"
 	"github.com/deviceinsight/kafkactl/cmd/produce"
+	"github.com/deviceinsight/kafkactl/output"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -57,6 +58,8 @@ func initConfig() {
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
+	} else if os.Getenv("KAFKA_CTL_CONFIG") != "" {
+		viper.SetConfigFile(os.Getenv("KAFKA_CTL_CONFIG"))
 	} else {
 		// Find home directory.
 		home, err := homedir.Dir()
@@ -71,6 +74,7 @@ func initConfig() {
 		viper.SetConfigName("config")
 	}
 
+	viper.SetConfigType("yml")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
@@ -79,8 +83,6 @@ func initConfig() {
 			fmt.Println("Using config file:", viper.ConfigFileUsed())
 		}
 	} else {
-		if Verbose {
-			fmt.Println("Error reading config file:", viper.ConfigFileUsed(), err)
-		}
+		output.Failf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err)
 	}
 }
