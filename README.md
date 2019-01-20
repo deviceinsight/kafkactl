@@ -61,7 +61,6 @@ The config file location is resolved by
  - or by evaluating the environment variable: `export KAFKA_CTL_CONFIG=$PATH_TO_CONFIG`
  - or as default the config file is looked up from one of the following locations: `~/.kafkactl/config.yml`, `/etc/kafkactl/config.yml`
 
-KAFKA_CTL_CONFIG
 
 ### Auto completion
 
