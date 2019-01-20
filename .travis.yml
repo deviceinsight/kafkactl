@@ -14,7 +14,9 @@ deploy:
     api_key:
       secure: GX/8chpYn1si1G5Is696TqURqcF6TV0GoyCdr0iFSbf/O9rQKhaMF1M/vuLgcmrScaSLs5WS0prpB1uQ/U4mofxu7Evo9pMTQuYBNmQqMtqZIgjUpJCNJWYuKjOjgPbknWn8tcCH5E9ALXHKTT9QKhqISMMi50y3P6kr5ZfSLZL7nPhu2AfhNuvBFxFifP/41aLyRzSl811Gese5hVwP9FBivc52lREYd3S2yRcLn1NafkyBu9kSn906KQW2I0F9/tSkv+jo5ciVMS+Qszh7JumvjGWFhZ1XLttXPxZLLNufd0iU00g+WyPV7iiVuNelE/r3v0m4pcRPzETEKkgTlqqUXs2+rcYEEGrR/Fv+YxPmrzbm/iSn30g79P1kQF8TL4q/BEc0lKbmMwID6ZdlmVCLz40wqtqMAbdFkr6dqn3twcaJZpVv3v0855Kkk//qePMMdpMkJAzuI12Yw+nbBzEOoP//mzQ1ZOGHkncOLuw0NDeepMx/EOn+ZzJ9em2GtO4PXzKjOKyUaiNSk2+sdMp+AmxOKGF4TAr6c0gwcDJoSoGVLyqwFitS4IX6q2054SzR47HRK/UmvzW7/K9ppTuPwpAUeAAPdVO0htPpddwTIJZrmz8BeXuN5ErzZCK1EXY0TfyMT1v4gavTzU8Lrkfl1muKM69wBvOCCWcmFuI=
     file_glob: true
-    file: dist/*
+    file:
+    - "dist/*.tar.gz"
+    - "CHANGELOG.md"
     skip_cleanup: true
     on:
       repo: random-dwi/kafkactl
