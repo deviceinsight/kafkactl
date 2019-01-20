@@ -32,8 +32,8 @@ clean:
 .PHONY: release
 release:
 	current_date=`date "+%Y-%m-%d"`; eval "sed -i 's/## \[Unreleased\].*/## [Unreleased]\n\n## $$version - $$current_date/g' CHANGELOG.md"
-	#git add "CHANGELOG.md"
-	#git commit -m "releases $(version)"
-	#git tag -a $(version) -m "release $(version)"
-	#git push random-dwi
-	#git push random-dwi $(version)
+	git add "CHANGELOG.md"
+	git commit -m "releases $(version)"
+	git tag -a $(version) -m "release $(version)"
+	git push random-dwi
+	git push random-dwi $(version)
