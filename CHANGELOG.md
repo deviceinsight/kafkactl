@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Add `alter topic` command for increasing partition count and editing topic configs
+- Add options to read config file from different locations
 
 ### Changed
 - Sort result of `kafkactl get topics`
