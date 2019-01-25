@@ -8,3 +8,6 @@
 ### Binary
 dist
 kafkactl
+
+### Snap
+snap.login

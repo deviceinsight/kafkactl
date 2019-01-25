@@ -34,3 +34,17 @@ nfpm:
   formats:
     - deb
     - rpm
+
+release:
+  disable: false
+
+snapcraft:
+  publish: true
+  summary: A command-line interface for interaction with Apache Kafka
+  description: |
+    A Commandline interface for Apache Kafka which provides useful features adapted from kubectl for Kubernetes.
+    Multiple kafka brokers can be configured in a config file and the active broker is also persisted within the config.
+    In addition kafkactl supports auto-completion for its commands as well as topic names.
+  apps:
+    kafkactl:
+      plugs: ["home", "network"]

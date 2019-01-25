@@ -5,10 +5,16 @@ addons:
   apt:
     packages:
     - rpm
+    - snapd
 env:
   global:
-    - GO111MODULE=on
-    - secure: InncDTPg/6mKwAmnlVOkWwARw8kDnfN7yf/UJtRyLqGnOX4AlLOxghTU47lFQno8FOiJpRaT/NJ/hyyFJCW9v4r+nboj6rT12fROmFgWgmJCFn/zsS9acIajAHjxd5EXEKhrhiCmdKNqFsnWzNyw788FBVVaRJZ6R5YLzNpNqfPJnv11/80RdIDFUqimdLEP/L5duGjEILdAw909u902I+hM4FsoznKLHqmR7W/kQ/G9ISgFv27gvCtN8w2Mms4NyI2V7L0gR8A27ZExIIY+SE6WW3XICojAfzupNs1eNqmwcrvuh2BXfWVCfjvyI7QvxQYYQYMCWKwTy3iVuabvO7JGdR7CxZQ/dZULFmomHX5ru8i9ZiN3ZQSnZqp94KeqWIYBHFGlz9tQE7Edxx4KAx5ADcBIMOfeSolzP0GRjwNL4oPjQ3q/sDO6bSZUpNlfWGQc2gmtz9l2Z5Ctit9cwc2BOQkwAvJcyuzHhx/JzOMvcRP0Ks8G7z8f24Za4glcrb6AD96u/TeViDrSZIj6V9zgFCejsO94kgPyLJ0LkJYJ0/TQlguFl7TRDmnjZrrac62IAiCOU4vmLpAMLWkwUeN+rSZzHIzxXbwzO5DMqdQTHVSjyJKkOw3uAYfMsCZ1BYR8+TkBkxWfpe3UAO5SuUADLqLZk+3W+1VovvezeF4=
+  - PATH=/snap/bin:$PATH
+  - GO111MODULE=on
+  - secure: L1ou057uY1CPmN3MNxMK9fCWbNfU4hDK9R2NzDVfUo2ZztNDK5/NjnySrc2jKb1UbhPJddEJSFQKbVENF8R+a1HAJI6xEieYLDbltoMSY9+iEQwOsj8nUQolaVEwvKn/MPbL3seBEoOiuwfltVeJAVZBLRkcfTXbyjRG2GGrY9fJ7h1A2EO0SKmpYmHWyvn6/NVTn5k3Gimu5k83tSKGMpCRoEEZTfhQoDTxMgOrI1S6wiHqgzLqS/sJmVhbORm115UVIGHGCssJ4NOWCI6neAfQc3V/9N3Lz8MTA3eey1d9v108/49+r72spNlyHoIjSRjLvwSksPKc0jMCDNtJyCBsmdbXz7YKt7owUXB1YFfRbRENTuyIeq2NNfGTka9JaJp86nrWc3uRC1EkGwCbOZOOMyv7ta7M+mKUGN5uqMyXA4q/75OzKl3oRmOKCs+YEGaCekfBliE5Cf+EmEmz81y2mzwKAOM4g1VrMc4ZzGoehV6v9ReMuILJ+PtqdZql6Rxmx3ZnmvvauoQJwS9ZySrLgjtysdBP8mCpWFCCrVYcCvQhrhz8XzkafywqhLJ+aBe/Wue32nv93316wk4Y17IydypzVIXD3gO8imCPXF1OD48leAa7XBWDv4g80L0Sff5aj4LFZ5eFOAVOTkamawXt5WSFEqtZ69XthZ6OxBo=
+install:
+- sudo snap install snapcraft --classic
+after_success:
+- test -n "$TRAVIS_TAG" && snapcraft login --with snap.login
 deploy:
 - provider: script
   skip_cleanup: true
@@ -16,3 +22,6 @@ deploy:
   on:
     condition: "$TRAVIS_OS_NAME = linux"
     tags: true
+before_install:
+- openssl aes-256-cbc -K $encrypted_10ec70445363_key -iv $encrypted_10ec70445363_iv
+  -in snap.login.enc -out snap.login -d

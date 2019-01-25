@@ -13,25 +13,28 @@ A command-line interface for interaction with Apache Kafka
 
 ## Installation
 
-### From source
+You can install the pre-compiled binary or compile from source.
+
+### Install the pre-compiled binary
+
+**snapcraft**:
 
 ```bash
-go get -u github.com/deviceinsight/kafkactl
+$ snap install kafkactl
 ```
 
-### From binary (linux x64 only)
+**deb/rpm**:
+
+Download the .deb or .rpm from the [releases page](https://github.com/deviceinsight/kafkactl/releases) and install with dpkg -i and rpm -i respectively.
+
+**manually**:
+
+Download the pre-compiled binaries from the [releases page](https://github.com/deviceinsight/kafkactl/releases) and copy to the desired location.
+
+### Compiling from source
 
 ```bash
-## download the release
-wget https://github.com/deviceinsight/kafkactl/releases/download/0.0.1/kafkactl_x64.tar.xz
-## unpack the binary
-tar xvf kafkactl_x64.tar.xz
-## remove downloaded file
-rm kafkactl_x64.tar.xz
-## make kafkactl executable
-chmod +x kafkactl
-## move the binary in to your PATH.
-sudo mv kafkactl /usr/local/bin/kafkactl
+$ go get -u github.com/deviceinsight/kafkactl
 ```
 
 **NOTE:** make sure that `kafkactl` is on PATH otherwise auto-completion won't work.
