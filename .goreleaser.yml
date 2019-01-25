@@ -2,14 +2,14 @@ before:
   hooks:
     - go mod download
 builds:
-- env:
-  - CGO_ENABLED=0
-  ldflags:
-  - -s -w -X github.com/deviceinsight/kafkactl/cmd.version={{.Version}} -X github.com/deviceinsight/kafkactl/cmd.gitCommit={{.ShortCommit}} -X github.com/deviceinsight/kafkactl/cmd.buildTime={{.Date}}
-  goos:
-  - darwin
-  - linux
-  - windows
+  - env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X github.com/deviceinsight/kafkactl/cmd.version={{.Version}} -X github.com/deviceinsight/kafkactl/cmd.gitCommit={{.ShortCommit}} -X github.com/deviceinsight/kafkactl/cmd.buildTime={{.Date}}
+    goos:
+      - darwin
+      - linux
+      - windows
 
 archive:
   replacements:
