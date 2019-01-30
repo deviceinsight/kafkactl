@@ -22,4 +22,5 @@ func init() {
 	CmdConsume.Flags().IntSliceP("partitions", "p", flags.Partitions, "partitions to consume. The default is to consume from all partitions.")
 	CmdConsume.Flags().BoolVarP(&flags.FromBeginning, "from-beginning", "b", false, "set offset for consumer to the oldest offset")
 	CmdConsume.Flags().StringVarP(&flags.OutputFormat, "output", "o", flags.OutputFormat, "Output format. One of: json|yaml")
+	CmdConsume.Flags().StringVarP(&flags.SchemaPath, "schema", "a", flags.SchemaPath, "path to avro schema file to use for deserialization of the value")
 }

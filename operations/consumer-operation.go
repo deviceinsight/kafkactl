@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/linkedin/goavro"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"strings"
@@ -16,6 +18,7 @@ type ConsumerFlags struct {
 	PrintKeys       bool
 	PrintTimestamps bool
 	OutputFormat    string
+	SchemaPath      string
 	Partitions      []int
 	FromBeginning   bool
 	BufferSize      int
@@ -38,7 +41,7 @@ type consumedMessage struct {
 	Partition int32
 	Offset    int64
 	Key       *string `json:",omitempty" yaml:",omitempty"`
-	Value     *string
+	Value     []byte
 	Timestamp *time.Time `json:",omitempty" yaml:",omitempty"`
 }
 
@@ -162,7 +165,37 @@ func (operation *ConsumerOperation) printMessage(msg *consumedMessage, flags Con
 			}
 		}
 
-		row = append(row, *msg.Value)
+		var value string
+
+		if flags.SchemaPath != "" {
+			schema, err := ioutil.ReadFile(flags.SchemaPath)
+
+			if err != nil {
+				output.Failf("failed to read avro schema at '%s'", flags.SchemaPath)
+			}
+
+			codec, err := goavro.NewCodec(string(schema))
+
+			if err != nil {
+				output.Failf("failed to parse avro schema: %s", err)
+			}
+
+			native, _, err := codec.NativeFromBinary(msg.Value)
+			if err != nil {
+				output.Failf("failed to parse avro data: %s", err)
+			}
+
+			textual, err := codec.TextualFromNative(nil, native)
+			if err != nil {
+				output.Failf("failed to convert value to avro data: %s", err)
+			}
+
+			value = string(textual)
+		} else {
+			value = *encodeBytes(msg.Value, flags.EncodeValue)
+		}
+
+		row = append(row, string(value))
 
 		output.PrintStrings(strings.Join(row[:], "#"))
 
@@ -188,7 +221,7 @@ func (operation *ConsumerOperation) newConsumedMessage(m *sarama.ConsumerMessage
 		Partition: m.Partition,
 		Offset:    m.Offset,
 		Key:       key,
-		Value:     encodeBytes(m.Value, flags.EncodeValue),
+		Value:     m.Value,
 		Timestamp: timestamp,
 	}
 }
