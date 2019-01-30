@@ -23,5 +23,6 @@ func init() {
 	CmdProduce.Flags().StringVarP(&flags.Key, "key", "k", "", "key to use for all messages")
 	CmdProduce.Flags().StringVarP(&flags.Value, "value", "v", "", "value to produce")
 	CmdProduce.Flags().StringVarP(&flags.Separator, "separator", "S", "", "separator to split key and value from stdin")
+	CmdProduce.Flags().StringVarP(&flags.SchemaPath, "schema", "a", "", "path to avro schema file to use for serialization of the value")
 	CmdProduce.Flags().BoolVarP(&flags.Silent, "silent", "s", false, "do not write to standard output")
 }

@@ -148,6 +148,23 @@ kafkactl produce my-topic --key=my-key --value=my-value --partitioner=random
 kafkactl produce my-topic --key=my-key --value=my-value --partitioner=random
 ```
 
+### Avro support
+
+The `produce` and `consume` commands support Avro serialization by supplying a schema with the `--schema` flag.
+
+```bash
+echo '{
+    "type": "record",
+    "name": "LongList",
+    "fields" : [
+       {"name": "next", "type": ["null", "LongList"], "default": null}
+    ]
+}' >> ./path/to/avro-schema.json
+
+kafkactl consume --schema ./path/to/avro-schema.json
+kafkactl produce --schema ./path/to/avro-schema.json --value '{"next":{"LongList":{}}}'
+```
+
 ### Altering topics
 
 Using the `alter topic` command allows you to change the partition count and topic-level configurations of an existing topic.

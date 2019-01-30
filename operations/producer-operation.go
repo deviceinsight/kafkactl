@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/linkedin/goavro"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -15,6 +16,7 @@ type ProducerFlags struct {
 	Separator   string
 	Key         string
 	Value       string
+	SchemaPath  string
 	Silent      bool
 }
 
@@ -77,8 +79,10 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 		message.Key = sarama.StringEncoder(flags.Key)
 	}
 
+	var value []byte
+
 	if flags.Value != "" {
-		message.Value = sarama.StringEncoder(flags.Value)
+		value = []byte(flags.Value)
 	} else if stdinAvailable() {
 		bytes, err := ioutil.ReadAll(os.Stdin)
 		if err != nil {
@@ -90,12 +94,40 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 				output.Failf("the provided input does not contain the separator %s", flags.Separator)
 			}
 			message.Key = sarama.StringEncoder(input[0])
-			message.Value = sarama.StringEncoder(input[1])
+			value = []byte(input[1])
 		} else {
-			message.Value = sarama.ByteEncoder(bytes)
+			value = bytes
 		}
 	} else {
 		output.Failf("value is required, or you have to provide the value on stdin")
+	}
+
+	if flags.SchemaPath != "" {
+		schema, err := ioutil.ReadFile(flags.SchemaPath)
+
+		if err != nil {
+			output.Failf("failed to read avro schema at '%s'", flags.SchemaPath)
+		}
+
+		codec, err := goavro.NewCodec(string(schema))
+
+		if err != nil {
+			output.Failf("failed to parse avro schema: %s", err)
+		}
+
+		native, _, err := codec.NativeFromTextual(value)
+		if err != nil {
+			output.Failf("failed to convert value to avro data: %s", err)
+		}
+
+		binary, err := codec.BinaryFromNative(nil, native)
+		if err != nil {
+			output.Failf("failed to convert value to avro data: %s", err)
+		}
+
+		message.Value = sarama.ByteEncoder(binary)
+	} else {
+		message.Value = sarama.ByteEncoder(value)
 	}
 
 	producer, err := sarama.NewSyncProducer(clientContext.brokers, config)
