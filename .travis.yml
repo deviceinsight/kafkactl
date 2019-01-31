@@ -20,8 +20,9 @@ deploy:
   skip_cleanup: true
   script: curl -sL https://git.io/goreleaser | bash
   on:
+    branch: "master"
     condition: "$TRAVIS_OS_NAME = linux"
     tags: true
-before_install:
+before_deploy:
 - openssl aes-256-cbc -K $encrypted_10ec70445363_key -iv $encrypted_10ec70445363_iv
   -in snap.login.enc -out snap.login -d
