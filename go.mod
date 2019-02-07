@@ -11,7 +11,8 @@ require (
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db
 	github.com/hashicorp/hcl v1.0.0
 	github.com/inconshreveable/mousetrap v1.0.0
-	github.com/linkedin/goavro v2.2.0
+	github.com/landoop/schema-registry v0.0.0-20181115093143-9861c67a815b
+	github.com/linkedin/goavro v0.0.0-20180427113916-2f3e1dff9761
 	github.com/magiconair/properties v1.8.0
 	github.com/mitchellh/go-homedir v1.0.0
 	github.com/mitchellh/mapstructure v1.1.2
