@@ -162,7 +162,11 @@ func (operation *ConsumerOperation) printMessage(msg *consumedMessage, flags Con
 			}
 		}
 
-		row = append(row, *msg.Value)
+		if msg.Value == nil {
+			row = append(row, "null")
+		} else {
+			row = append(row, *msg.Value)
+		}
 
 		output.PrintStrings(strings.Join(row[:], "#"))
 
