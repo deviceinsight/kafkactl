@@ -9,6 +9,7 @@ A command-line interface for interaction with Apache Kafka
 ## Features
 
 - Auto-completion
+- support for avro schemas
 - Configuration of different contexts
 
 ## Installation
@@ -150,20 +151,30 @@ kafkactl produce my-topic --key=my-key --value=my-value --partitioner=random
 
 ### Avro support
 
-The `produce` and `consume` commands support Avro serialization by supplying a schema with the `--schema` flag.
-
-```bash
-echo '{
-    "type": "record",
-    "name": "LongList",
-    "fields" : [
-       {"name": "next", "type": ["null", "LongList"], "default": null}
-    ]
-}' >> ./path/to/avro-schema.json
-
-kafkactl consume --schema ./path/to/avro-schema.json
-kafkactl produce --schema ./path/to/avro-schema.json --value '{"next":{"LongList":{}}}'
+In order to enable avro support you just have to add the schema registry to your configuration:
+```$yaml
+contexts:
+  localhost:
+    avro:
+      schemaregistry: localhost:9081
 ```
+
+#### Producing to an avro topic
+
+`kafkactl` will lookup the topic in the schema registry in order to determine if key or value needs to be avro encoded.
+If producing with the latest `schemaId` is sufficient, no additional configuration is needed an `kafkactl` handles
+this automatically.
+
+If however one needs to produce an older `schemaId` this can be achieved by providing the parameters `KeySchemaId`, `ValueSchemaId`.
+
+#### Consuming from an avro topic
+
+As for producing `kafkactl` will also lookup the topic in the schema registry to determine if key or value needs to be
+decoded with an avro schema.
+
+The `consume` command handles this automatically and no configuration is needed.
+
+An additional parameter `print-schema` can be provided to display the schema used for decoding.
 
 ### Altering topics
 

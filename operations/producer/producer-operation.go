@@ -1,24 +1,24 @@
-package operations
+package producer
 
 import (
-	"encoding/binary"
 	"fmt"
 	"github.com/Shopify/sarama"
+	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/output"
-	"github.com/linkedin/goavro"
 	"io/ioutil"
 	"os"
 	"strings"
 )
 
 type ProducerFlags struct {
-	Partitioner string
-	Partition   int32
-	Separator   string
-	Key         string
-	Value       string
-	ValueSchema string
-	Silent      bool
+	Partitioner   string
+	Partition     int32
+	Separator     string
+	Key           string
+	Value         string
+	KeySchemaId   int
+	ValueSchemaId int
+	Silent        bool
 }
 
 type ProducerOperation struct {
@@ -26,7 +26,7 @@ type ProducerOperation struct {
 
 func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 
-	clientContext := CreateClientContext()
+	clientContext := operations.CreateClientContext()
 
 	var (
 		err       error
@@ -34,11 +34,11 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 		topExists bool
 	)
 
-	if client, err = CreateClient(&clientContext); err != nil {
+	if client, err = operations.CreateClient(&clientContext); err != nil {
 		output.Failf("failed to create client err=%v", err)
 	}
 
-	if topExists, err = TopicExists(&client, topic); err != nil {
+	if topExists, err = operations.TopicExists(&client, topic); err != nil {
 		output.Failf("failed to read topics err=%v", err)
 	}
 
@@ -46,7 +46,7 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 		output.Failf("topic '%s' does not exist", topic)
 	}
 
-	config := CreateClientConfig(&clientContext)
+	config := operations.CreateClientConfig(&clientContext)
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Return.Successes = true
 
@@ -70,17 +70,24 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 		output.Failf("Partitioner %s not supported.", flags.Partitioner)
 	}
 
-	message := &sarama.ProducerMessage{Topic: topic, Partition: flags.Partition}
-
 	if flags.Separator != "" && (flags.Key != "" || flags.Value != "") {
 		output.Failf("separator is used to split stdin. it cannot be used together with key or value")
 	}
 
-	if flags.Key != "" {
-		message.Key = sarama.StringEncoder(flags.Key)
+	var serializer MessageSerializer
+
+	if clientContext.AvroSchemaRegistry != "" {
+		serializer = CreateAvroMessageSerializer(topic, clientContext.AvroSchemaRegistry)
+	} else {
+		serializer = DefaultMessageSerializer{topic: topic}
 	}
 
+	var key []byte
 	var value []byte
+
+	if flags.Key != "" {
+		key = []byte(flags.Key)
+	}
 
 	if flags.Value != "" {
 		value = []byte(flags.Value)
@@ -94,7 +101,7 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 			if len(input) < 2 {
 				output.Failf("the provided input does not contain the separator %s", flags.Separator)
 			}
-			message.Key = sarama.StringEncoder(input[0])
+			key = []byte(input[0])
 			value = []byte(input[1])
 		} else {
 			value = bytes
@@ -103,40 +110,7 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 		output.Failf("value is required, or you have to provide the value on stdin")
 	}
 
-	if flags.ValueSchema != "" {
-		schema, err := ioutil.ReadFile(flags.ValueSchema)
-
-		if err != nil {
-			output.Failf("failed to read avro schema at '%s'", flags.ValueSchema)
-		}
-
-		codec, err := goavro.NewCodec(string(schema))
-
-		if err != nil {
-			output.Failf("failed to parse avro schema: %s", err)
-		}
-
-		native, _, err := codec.NativeFromTextual(value)
-		if err != nil {
-			output.Failf("failed to convert value to avro data: %s", err)
-		}
-
-		data, err := codec.BinaryFromNative(nil, native)
-		if err != nil {
-			output.Failf("failed to convert value to avro data: %s", err)
-		}
-
-		var schemaVersion uint32 = 1
-
-		versionBytes := make([]byte, 5)
-		binary.BigEndian.PutUint32(versionBytes[1:], schemaVersion)
-
-		payload := append(versionBytes, data...)
-
-		message.Value = sarama.ByteEncoder(payload)
-	} else {
-		message.Value = sarama.ByteEncoder(value)
-	}
+	message := serializer.Serialize(key, value, flags)
 
 	producer, err := sarama.NewSyncProducer(clientContext.Brokers, config)
 	if err != nil {

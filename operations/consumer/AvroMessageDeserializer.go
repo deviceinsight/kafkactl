@@ -99,6 +99,17 @@ func (deserializer AvroMessageDeserializer) decode(rawData []byte, flags Consume
 	data := rawData[5:]
 	subject := deserializer.topic + "-" + avroSchemaType
 
+	subjects, err := deserializer.client.Subjects()
+
+	if err != nil {
+		output.Failf("failed to list available avro schemas (%v)", err)
+	}
+
+	if !contains(subjects, subject) {
+		// does not seem to be avro data
+		return decodedValue{value: encodeBytes(rawData, flags.EncodeValue)}
+	}
+
 	schema, err := deserializer.client.GetSchemaBySubject(subject, schemaId)
 
 	if err != nil {
@@ -161,12 +172,28 @@ func (deserializer AvroMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerM
 			}
 		}
 
-		row = append(row, *msg.Value)
+		var value string
+
+		if msg.Value != nil {
+			value = *msg.Value
+		} else {
+			value = "null"
+		}
+
+		row = append(row, string(value))
 
 		output.PrintStrings(strings.Join(row[:], "#"))
 
 	} else {
 		output.PrintObject(msg, flags.OutputFormat)
 	}
+}
 
+func contains(list []string, element string) bool {
+	for _, it := range list {
+		if it == element {
+			return true
+		}
+	}
+	return false
 }
