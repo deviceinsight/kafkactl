@@ -156,16 +156,31 @@ In order to enable avro support you just have to add the schema registry to your
 contexts:
   localhost:
     avro:
-      schemaregistry: localhost:9081
+      schemaregistry: localhost:8081
 ```
 
 #### Producing to an avro topic
 
 `kafkactl` will lookup the topic in the schema registry in order to determine if key or value needs to be avro encoded.
-If producing with the latest `schemaId` is sufficient, no additional configuration is needed an `kafkactl` handles
+If producing with the latest `schemaVersion` is sufficient, no additional configuration is needed an `kafkactl` handles
 this automatically.
 
-If however one needs to produce an older `schemaId` this can be achieved by providing the parameters `KeySchemaId`, `ValueSchemaId`.
+If however one needs to produce an older `schemaVersion` this can be achieved by providing the parameters `keySchemaVersion`, `valueSchemaVersion`.
+
+##### Example
+
+```bash
+# create a topic
+kafkactl create topic avro_topic
+# add a schema for the topic value
+curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+--data '{"schema": "{\"type\": \"record\", \"name\": \"LongList\", \"fields\" : [{\"name\": \"next\", \"type\": [\"null\", \"LongList\"], \"default\": null}]}"}' \
+http://localhost:8081/subjects/avro_topic-value/versions
+# produce a message
+kafkactl produce avro_topic --value {\"next\":{\"LongList\":{}}}
+# consume the message
+kafkactl consume avro_topic --from-beginning --print-schema -o yaml
+```
 
 #### Consuming from an avro topic
 

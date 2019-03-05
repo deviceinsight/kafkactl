@@ -29,7 +29,7 @@ func CreateAvroMessageSerializer(topic string, avroSchemaRegistry string) AvroMe
 	return serializer
 }
 
-func (serializer AvroMessageSerializer) encode(rawData []byte, schemaId int, avroSchemaType string) []byte {
+func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int, avroSchemaType string) []byte {
 
 	subject := serializer.topic + "-" + avroSchemaType
 
@@ -46,17 +46,17 @@ func (serializer AvroMessageSerializer) encode(rawData []byte, schemaId int, avr
 
 	var schema schemaregistry.Schema
 
-	if schemaId == -1 {
+	if schemaVersion == -1 {
 		schema, err = serializer.client.GetLatestSchema(subject)
 
 		if err != nil {
 			output.Failf("failed to find latest avro schema for subject: %s (%v)", subject, err)
 		}
 	} else {
-		schema, err = serializer.client.GetSchemaBySubject(subject, schemaId)
+		schema, err = serializer.client.GetSchemaBySubject(subject, schemaVersion)
 
 		if err != nil {
-			output.Failf("failed to find avro schema for subject: %s id: %d (%v)", subject, schemaId, err)
+			output.Failf("failed to find avro schema for subject: %s id: %d (%v)", subject, schemaVersion, err)
 		}
 	}
 
@@ -66,7 +66,7 @@ func (serializer AvroMessageSerializer) encode(rawData []byte, schemaId int, avr
 		output.Failf("failed to parse avro schema: %s", err)
 	}
 
-	native, _, err := codec.NativeFromBinary(rawData)
+	native, _, err := codec.NativeFromTextual(rawData)
 	if err != nil {
 		output.Failf("failed to convert value to avro data: %s", err)
 	}
@@ -88,10 +88,10 @@ func (serializer AvroMessageSerializer) Serialize(key, value []byte, flags Produ
 	message := &sarama.ProducerMessage{Topic: serializer.topic, Partition: flags.Partition}
 
 	if key != nil {
-		message.Key = sarama.ByteEncoder(serializer.encode(value, flags.KeySchemaId, "key"))
+		message.Key = sarama.ByteEncoder(serializer.encode(value, flags.KeySchemaVersion, "key"))
 	}
 
-	message.Value = sarama.ByteEncoder(serializer.encode(value, flags.ValueSchemaId, "value"))
+	message.Value = sarama.ByteEncoder(serializer.encode(value, flags.ValueSchemaVersion, "value"))
 
 	return message
 }

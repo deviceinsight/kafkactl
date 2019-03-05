@@ -110,13 +110,13 @@ func (deserializer AvroMessageDeserializer) decode(rawData []byte, flags Consume
 		return decodedValue{value: encodeBytes(rawData, flags.EncodeValue)}
 	}
 
-	schema, err := deserializer.client.GetSchemaBySubject(subject, schemaId)
+	schema, err := deserializer.client.GetSchemaByID(schemaId)
 
 	if err != nil {
 		output.Failf("failed to find avro schema for subject: %s id: %d (%v)", subject, schemaId, err)
 	}
 
-	avroCodec, err := goavro.NewCodec(schema.Schema)
+	avroCodec, err := goavro.NewCodec(schema)
 
 	if err != nil {
 		output.Failf("failed to parse avro schema %v", err)
@@ -133,7 +133,7 @@ func (deserializer AvroMessageDeserializer) decode(rawData []byte, flags Consume
 	}
 
 	decoded := string(textual)
-	return decodedValue{schema: schema.Schema, schemaId: schema.ID, value: &decoded}
+	return decodedValue{schema: schema, schemaId: schemaId, value: &decoded}
 }
 
 func (deserializer AvroMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerMessage, flags ConsumerFlags) {

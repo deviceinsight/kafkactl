@@ -22,7 +22,7 @@ func init() {
 	CmdProduce.Flags().StringVarP(&flags.Key, "key", "k", "", "key to use for all messages")
 	CmdProduce.Flags().StringVarP(&flags.Value, "value", "v", "", "value to produce")
 	CmdProduce.Flags().StringVarP(&flags.Separator, "separator", "S", "", "separator to split key and value from stdin")
-	CmdProduce.Flags().IntVarP(&flags.KeySchemaId, "key-schema-id", "K", -1, "avro schema id that should be used for key serialization (default is latest)")
-	CmdProduce.Flags().IntVarP(&flags.ValueSchemaId, "value-schema-id", "V", -1, "avro schema id that should be used for value serialization (default is latest)")
+	CmdProduce.Flags().IntVarP(&flags.KeySchemaVersion, "key-schema-version", "K", -1, "avro schema version that should be used for key serialization (default is latest)")
+	CmdProduce.Flags().IntVarP(&flags.ValueSchemaVersion, "value-schema-version", "i", -1, "avro schema version that should be used for value serialization (default is latest)")
 	CmdProduce.Flags().BoolVarP(&flags.Silent, "silent", "s", false, "do not write to standard output")
 }

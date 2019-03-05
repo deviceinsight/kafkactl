@@ -11,14 +11,14 @@ import (
 )
 
 type ProducerFlags struct {
-	Partitioner   string
-	Partition     int32
-	Separator     string
-	Key           string
-	Value         string
-	KeySchemaId   int
-	ValueSchemaId int
-	Silent        bool
+	Partitioner        string
+	Partition          int32
+	Separator          string
+	Key                string
+	Value              string
+	KeySchemaVersion   int
+	ValueSchemaVersion int
+	Silent             bool
 }
 
 type ProducerOperation struct {
