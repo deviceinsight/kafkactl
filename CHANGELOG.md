@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add Avro schema support in `produce` and `consume` commands
+
 ## 1.0.0 - 2019-01-23
 ### Added
 - Add `alter topic` command for increasing partition count and editing topic configs

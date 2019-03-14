@@ -1,19 +1,18 @@
 package produce
 
 import (
-	"github.com/deviceinsight/kafkactl/operations"
-
+	"github.com/deviceinsight/kafkactl/operations/producer"
 	"github.com/spf13/cobra"
 )
 
-var flags operations.ProducerFlags
+var flags producer.ProducerFlags
 
 var CmdProduce = &cobra.Command{
 	Use:   "produce",
 	Short: "produce messages to a topic",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		(&operations.ProducerOperation{}).Produce(args[0], flags)
+		(&producer.ProducerOperation{}).Produce(args[0], flags)
 	},
 }
 
@@ -23,5 +22,7 @@ func init() {
 	CmdProduce.Flags().StringVarP(&flags.Key, "key", "k", "", "key to use for all messages")
 	CmdProduce.Flags().StringVarP(&flags.Value, "value", "v", "", "value to produce")
 	CmdProduce.Flags().StringVarP(&flags.Separator, "separator", "S", "", "separator to split key and value from stdin")
+	CmdProduce.Flags().IntVarP(&flags.KeySchemaVersion, "key-schema-version", "K", -1, "avro schema version that should be used for key serialization (default is latest)")
+	CmdProduce.Flags().IntVarP(&flags.ValueSchemaVersion, "value-schema-version", "i", -1, "avro schema version that should be used for value serialization (default is latest)")
 	CmdProduce.Flags().BoolVarP(&flags.Silent, "silent", "s", false, "do not write to standard output")
 }

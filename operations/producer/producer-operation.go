@@ -1,8 +1,9 @@
-package operations
+package producer
 
 import (
 	"fmt"
 	"github.com/Shopify/sarama"
+	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/output"
 	"io/ioutil"
 	"os"
@@ -10,12 +11,14 @@ import (
 )
 
 type ProducerFlags struct {
-	Partitioner string
-	Partition   int32
-	Separator   string
-	Key         string
-	Value       string
-	Silent      bool
+	Partitioner        string
+	Partition          int32
+	Separator          string
+	Key                string
+	Value              string
+	KeySchemaVersion   int
+	ValueSchemaVersion int
+	Silent             bool
 }
 
 type ProducerOperation struct {
@@ -23,7 +26,7 @@ type ProducerOperation struct {
 
 func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 
-	clientContext := createClientContext()
+	clientContext := operations.CreateClientContext()
 
 	var (
 		err       error
@@ -31,11 +34,11 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 		topExists bool
 	)
 
-	if client, err = createClient(&clientContext); err != nil {
+	if client, err = operations.CreateClient(&clientContext); err != nil {
 		output.Failf("failed to create client err=%v", err)
 	}
 
-	if topExists, err = topicExists(&client, topic); err != nil {
+	if topExists, err = operations.TopicExists(&client, topic); err != nil {
 		output.Failf("failed to read topics err=%v", err)
 	}
 
@@ -43,7 +46,7 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 		output.Failf("topic '%s' does not exist", topic)
 	}
 
-	config := createClientConfig(&clientContext)
+	config := operations.CreateClientConfig(&clientContext)
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Return.Successes = true
 
@@ -67,18 +70,27 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 		output.Failf("Partitioner %s not supported.", flags.Partitioner)
 	}
 
-	message := &sarama.ProducerMessage{Topic: topic, Partition: flags.Partition}
-
 	if flags.Separator != "" && (flags.Key != "" || flags.Value != "") {
 		output.Failf("separator is used to split stdin. it cannot be used together with key or value")
 	}
 
+	var serializer MessageSerializer
+
+	if clientContext.AvroSchemaRegistry != "" {
+		serializer = CreateAvroMessageSerializer(topic, clientContext.AvroSchemaRegistry)
+	} else {
+		serializer = DefaultMessageSerializer{topic: topic}
+	}
+
+	var key []byte
+	var value []byte
+
 	if flags.Key != "" {
-		message.Key = sarama.StringEncoder(flags.Key)
+		key = []byte(flags.Key)
 	}
 
 	if flags.Value != "" {
-		message.Value = sarama.StringEncoder(flags.Value)
+		value = []byte(flags.Value)
 	} else if stdinAvailable() {
 		bytes, err := ioutil.ReadAll(os.Stdin)
 		if err != nil {
@@ -89,16 +101,18 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 			if len(input) < 2 {
 				output.Failf("the provided input does not contain the separator %s", flags.Separator)
 			}
-			message.Key = sarama.StringEncoder(input[0])
-			message.Value = sarama.StringEncoder(input[1])
+			key = []byte(input[0])
+			value = []byte(input[1])
 		} else {
-			message.Value = sarama.ByteEncoder(bytes)
+			value = bytes
 		}
 	} else {
 		output.Failf("value is required, or you have to provide the value on stdin")
 	}
 
-	producer, err := sarama.NewSyncProducer(clientContext.brokers, config)
+	message := serializer.Serialize(key, value, flags)
+
+	producer, err := sarama.NewSyncProducer(clientContext.Brokers, config)
 	if err != nil {
 		output.Failf("Failed to open Kafka producer: %s", err)
 	}

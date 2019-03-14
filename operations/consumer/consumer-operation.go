@@ -1,13 +1,11 @@
-package operations
+package consumer
 
 import (
-	"encoding/base64"
-	"encoding/hex"
 	"github.com/Shopify/sarama"
+	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/output"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"time"
 )
@@ -15,6 +13,7 @@ import (
 type ConsumerFlags struct {
 	PrintKeys       bool
 	PrintTimestamps bool
+	PrintAvroSchema bool
 	OutputFormat    string
 	Partitions      []int
 	FromBeginning   bool
@@ -34,12 +33,12 @@ type Interval struct {
 	end   offset
 }
 
-type consumedMessage struct {
+type ConsumedMessage struct {
 	Partition int32
 	Offset    int64
-	Key       *string `json:",omitempty" yaml:",omitempty"`
-	Value     *string
-	Timestamp *time.Time `json:",omitempty" yaml:",omitempty"`
+	Key       []byte
+	Value     []byte
+	Timestamp *time.Time
 }
 
 type ConsumerOperation struct {
@@ -47,7 +46,7 @@ type ConsumerOperation struct {
 
 func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 
-	clientContext := createClientContext()
+	clientContext := operations.CreateClientContext()
 
 	var (
 		err       error
@@ -55,11 +54,11 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 		topExists bool
 	)
 
-	if client, err = createClient(&clientContext); err != nil {
+	if client, err = operations.CreateClient(&clientContext); err != nil {
 		output.Failf("failed to create client err=%v", err)
 	}
 
-	if topExists, err = topicExists(&client, topic); err != nil {
+	if topExists, err = operations.TopicExists(&client, topic); err != nil {
 		output.Failf("failed to read topics err=%v", err)
 	}
 
@@ -74,9 +73,17 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 		initialOffset = sarama.OffsetNewest
 	}
 
-	c, err := sarama.NewConsumer(clientContext.brokers, nil)
+	c, err := sarama.NewConsumer(clientContext.Brokers, nil)
 	if err != nil {
 		output.Failf("Failed to start consumer: %s", err)
+	}
+
+	var deserializer MessageDeserializer
+
+	if clientContext.AvroSchemaRegistry != "" {
+		deserializer = CreateAvroMessageDeserializer(topic, clientContext.AvroSchemaRegistry)
+	} else {
+		deserializer = DefaultMessageDeserializer{}
 	}
 
 	var partitions []int32
@@ -129,8 +136,7 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 
 	go func() {
 		for msg := range messages {
-			m := operation.newConsumedMessage(msg, flags)
-			operation.printMessage(&m, flags)
+			deserializer.Deserialize(msg, flags)
 		}
 	}()
 
@@ -141,76 +147,4 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 	if err := c.Close(); err != nil {
 		output.Failf("Failed to close consumer: ", err)
 	}
-}
-
-func (operation *ConsumerOperation) printMessage(msg *consumedMessage, flags ConsumerFlags) {
-	if flags.OutputFormat == "" {
-		var row []string
-
-		if flags.PrintKeys {
-			if msg.Key != nil {
-				row = append(row, *msg.Key)
-			} else {
-				row = append(row, "")
-			}
-		}
-		if flags.PrintTimestamps {
-			if msg.Timestamp != nil {
-				row = append(row, (*msg.Timestamp).Format(time.RFC3339))
-			} else {
-				row = append(row, "")
-			}
-		}
-
-		if msg.Value == nil {
-			row = append(row, "null")
-		} else {
-			row = append(row, *msg.Value)
-		}
-
-		output.PrintStrings(strings.Join(row[:], "#"))
-
-	} else {
-		output.PrintObject(msg, flags.OutputFormat)
-	}
-}
-
-func (operation *ConsumerOperation) newConsumedMessage(m *sarama.ConsumerMessage, flags ConsumerFlags) consumedMessage {
-
-	var key *string
-	var timestamp *time.Time
-
-	if flags.PrintKeys {
-		key = encodeBytes(m.Key, flags.EncodeKey)
-	}
-
-	if flags.PrintTimestamps && !m.Timestamp.IsZero() {
-		timestamp = &m.Timestamp
-	}
-
-	return consumedMessage{
-		Partition: m.Partition,
-		Offset:    m.Offset,
-		Key:       key,
-		Value:     encodeBytes(m.Value, flags.EncodeValue),
-		Timestamp: timestamp,
-	}
-}
-
-func encodeBytes(data []byte, encoding string) *string {
-	if data == nil {
-		return nil
-	}
-
-	var str string
-	switch encoding {
-	case "hex":
-		str = hex.EncodeToString(data)
-	case "base64":
-		str = base64.StdEncoding.EncodeToString(data)
-	default:
-		str = string(data)
-	}
-
-	return &str
 }

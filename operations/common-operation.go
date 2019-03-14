@@ -19,47 +19,49 @@ var (
 )
 
 type ClientContext struct {
-	name         string
-	brokers      []string
-	tlsCA        string
-	tlsCert      string
-	tlsCertKey   string
-	kafkaVersion sarama.KafkaVersion
+	Name               string
+	Brokers            []string
+	TlsCA              string
+	TlsCert            string
+	TlsCertKey         string
+	KafkaVersion       sarama.KafkaVersion
+	AvroSchemaRegistry string
 }
 
-func createClientContext() ClientContext {
+func CreateClientContext() ClientContext {
 
 	var context ClientContext
 
-	context.name = viper.GetString("current-context")
-	context.brokers = viper.GetStringSlice("contexts." + context.name + ".brokers")
-	context.tlsCA = viper.GetString("contexts." + context.name + ".tlsCA")
-	context.tlsCert = viper.GetString("contexts." + context.name + ".tlsCert")
-	context.tlsCertKey = viper.GetString("contexts." + context.name + ".tlsCertKey")
-	context.kafkaVersion = kafkaVersion(viper.GetString("contexts." + context.name + ".kafkaVersion"))
+	context.Name = viper.GetString("current-context")
+	context.Brokers = viper.GetStringSlice("contexts." + context.Name + ".brokers")
+	context.TlsCA = viper.GetString("contexts." + context.Name + ".tlsCA")
+	context.TlsCert = viper.GetString("contexts." + context.Name + ".tlsCert")
+	context.TlsCertKey = viper.GetString("contexts." + context.Name + ".tlsCertKey")
+	context.KafkaVersion = kafkaVersion(viper.GetString("contexts." + context.Name + ".kafkaVersion"))
+	context.AvroSchemaRegistry = viper.GetString("contexts." + context.Name + ".avro.schemaRegistry")
 
 	return context
 }
 
-func createClient(context *ClientContext) (sarama.Client, error) {
-	return sarama.NewClient(context.brokers, createClientConfig(context))
+func CreateClient(context *ClientContext) (sarama.Client, error) {
+	return sarama.NewClient(context.Brokers, CreateClientConfig(context))
 }
 
-func createClientConfig(context *ClientContext) *sarama.Config {
+func CreateClientConfig(context *ClientContext) *sarama.Config {
 	var (
 		err    error
 		usr    *user.User
 		config = sarama.NewConfig()
 	)
 
-	config.Version = context.kafkaVersion
+	config.Version = context.KafkaVersion
 
 	if usr, err = user.Current(); err != nil {
 		output.Warnf("Failed to read current user: %v", err)
 	}
 	config.ClientID = "kafkactl-" + sanitizeUsername(usr.Username)
 
-	tlsConfig, err := setupCerts(context.tlsCert, context.tlsCA, context.tlsCertKey)
+	tlsConfig, err := setupCerts(context.TlsCert, context.TlsCA, context.TlsCertKey)
 	if err != nil {
 		output.Failf("failed to setup certificates err=%v", err)
 	}
@@ -78,14 +80,14 @@ func createClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
 		config = sarama.NewConfig()
 	)
 
-	config.Version = context.kafkaVersion
+	config.Version = context.KafkaVersion
 
 	if usr, err = user.Current(); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to read current user err=%v", err)
 	}
 	config.ClientID = "kafkactl-" + sanitizeUsername(usr.Username)
 
-	tlsConfig, err := setupCerts(context.tlsCert, context.tlsCA, context.tlsCertKey)
+	tlsConfig, err := setupCerts(context.TlsCert, context.TlsCA, context.TlsCertKey)
 	if err != nil {
 		output.Failf("failed to setup certificates err=%v", err)
 	}
@@ -94,16 +96,7 @@ func createClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
 		config.Net.TLS.Config = tlsConfig
 	}
 
-	return sarama.NewClusterAdmin(context.brokers, config)
-}
-
-func createOffsetManager(client sarama.Client, group string) (sarama.OffsetManager, error) {
-
-	if group == "" {
-		return nil, nil
-	}
-
-	return sarama.NewOffsetManagerFromClient(group, client)
+	return sarama.NewClusterAdmin(context.Brokers, config)
 }
 
 func sanitizeUsername(u string) string {
@@ -164,7 +157,7 @@ func kafkaVersion(s string) sarama.KafkaVersion {
 	return v
 }
 
-func topicExists(client *sarama.Client, name string) (bool, error) {
+func TopicExists(client *sarama.Client, name string) (bool, error) {
 
 	var (
 		err    error

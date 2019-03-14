@@ -9,6 +9,7 @@ A command-line interface for interaction with Apache Kafka
 ## Features
 
 - Auto-completion
+- support for avro schemas
 - Configuration of different contexts
 
 ## Installation
@@ -147,6 +148,48 @@ kafkactl produce my-topic --key=my-key --value=my-value --partitioner=random
 kafkactl produce my-topic --key=my-key --value=my-value --partitioner=random
 kafkactl produce my-topic --key=my-key --value=my-value --partitioner=random
 ```
+
+### Avro support
+
+In order to enable avro support you just have to add the schema registry to your configuration:
+```$yaml
+contexts:
+  localhost:
+    avro:
+      schemaregistry: localhost:8081
+```
+
+#### Producing to an avro topic
+
+`kafkactl` will lookup the topic in the schema registry in order to determine if key or value needs to be avro encoded.
+If producing with the latest `schemaVersion` is sufficient, no additional configuration is needed an `kafkactl` handles
+this automatically.
+
+If however one needs to produce an older `schemaVersion` this can be achieved by providing the parameters `keySchemaVersion`, `valueSchemaVersion`.
+
+##### Example
+
+```bash
+# create a topic
+kafkactl create topic avro_topic
+# add a schema for the topic value
+curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+--data '{"schema": "{\"type\": \"record\", \"name\": \"LongList\", \"fields\" : [{\"name\": \"next\", \"type\": [\"null\", \"LongList\"], \"default\": null}]}"}' \
+http://localhost:8081/subjects/avro_topic-value/versions
+# produce a message
+kafkactl produce avro_topic --value {\"next\":{\"LongList\":{}}}
+# consume the message
+kafkactl consume avro_topic --from-beginning --print-schema -o yaml
+```
+
+#### Consuming from an avro topic
+
+As for producing `kafkactl` will also lookup the topic in the schema registry to determine if key or value needs to be
+decoded with an avro schema.
+
+The `consume` command handles this automatically and no configuration is needed.
+
+An additional parameter `print-schema` can be provided to display the schema used for decoding.
 
 ### Altering topics
 

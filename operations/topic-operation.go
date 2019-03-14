@@ -51,7 +51,7 @@ type TopicOperation struct {
 
 func (operation *TopicOperation) CreateTopics(topics []string, flags CreateTopicFlags) {
 
-	context := createClientContext()
+	context := CreateClientContext()
 
 	var (
 		err   error
@@ -84,7 +84,7 @@ func (operation *TopicOperation) CreateTopics(topics []string, flags CreateTopic
 
 func (operation *TopicOperation) DeleteTopics(topics []string) {
 
-	context := createClientContext()
+	context := CreateClientContext()
 
 	var (
 		err   error
@@ -106,7 +106,7 @@ func (operation *TopicOperation) DeleteTopics(topics []string) {
 
 func (operation *TopicOperation) DescribeTopic(topic string) {
 
-	context := createClientContext()
+	context := CreateClientContext()
 
 	var (
 		client sarama.Client
@@ -115,11 +115,11 @@ func (operation *TopicOperation) DescribeTopic(topic string) {
 		exists bool
 	)
 
-	if client, err = createClient(&context); err != nil {
+	if client, err = CreateClient(&context); err != nil {
 		output.Failf("failed to create client err=%v", err)
 	}
 
-	if exists, err = topicExists(&client, topic); err != nil {
+	if exists, err = TopicExists(&client, topic); err != nil {
 		output.Failf("failed to read topics err=%v", err)
 	}
 
@@ -137,7 +137,7 @@ func (operation *TopicOperation) DescribeTopic(topic string) {
 
 func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags) {
 
-	context := createClientContext()
+	context := CreateClientContext()
 
 	var (
 		client sarama.Client
@@ -146,11 +146,11 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 		exists bool
 	)
 
-	if client, err = createClient(&context); err != nil {
+	if client, err = CreateClient(&context); err != nil {
 		output.Failf("failed to create client err=%v", err)
 	}
 
-	if exists, err = topicExists(&client, topic); err != nil {
+	if exists, err = TopicExists(&client, topic); err != nil {
 		output.Failf("failed to read topics err=%v", err)
 	}
 
@@ -209,7 +209,7 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 
 func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) {
 
-	context := createClientContext()
+	context := CreateClientContext()
 
 	var (
 		err    error
@@ -224,7 +224,7 @@ func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) {
 		output.Failf("failed to create cluster admin: %v", err)
 	}
 
-	if client, err = createClient(&context); err != nil {
+	if client, err = CreateClient(&context); err != nil {
 		output.Failf("failed to create client err=%v", err)
 	}
 
