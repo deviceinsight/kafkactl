@@ -10,7 +10,8 @@ env:
   global:
   - PATH=/snap/bin:$PATH
   - GO111MODULE=on
-  - secure: IJqWihG1mBLWyhvJJq4GKFOnsHi9uyLTImYXsE35TrJSLEXriuPuHvr5lXFG83VFFoYlXqrCHTfdW+L4zxDuVF5Y+nn57ZBdU4zidUW9Wr7dswKed0oC14T7bEBe5Ys29VECTh5+LuSbxIk7o9taPBT3wJTDUSmrJGwJRViZQI1dIXNde0o6A9PUF3cVZG13Y5rV5oDuJvpMOyCx5ESyd0d8ILnUGjKToC8udjt9Kb6DtVTT7h/VzkKE0pA99aYhRdQf0jpE/dmQcJSc5tfmnZJzLUriLlcUhYcRsAG/qsqn4RR9RgfTHl6y2gHSyK4KMggUcNPK2Dwtd1nxehrGZ2X9LUH7KNmLvEYYgqGIJm8TfsKoOHmw+N5/qVeTPj7tjiRsqZzn3L/x1IaFDnYU0Vr9bvgvlWtk09yN5OBw1RA6CKGRoE8g7UaqzDHg2cJVcoh40qUWm3TuV4UkWrnwVsClHJWt5rcw5ipCyu8E9fjjPHt/fVLk2ZI56bKL3EV75fyNOSb1FWytwPtFvH4ty9d4igDXSUxGxrW6iWiMyUeilQGQgRhRSqQbetGD17cPu75FJfukxjECN3tF5IlxAfHwPW/Gr64WrqX0PrGgTJtin2LDpSTOtENQ/c8ltDUXTe0TQ29ZPSQpBoiqkOhDqoOoVuYAQjmB7St0mv3kCYE=
+  # travis encrypt GITHUB_TOKEN=xyz --add env.global --com
+  - secure: 2DkN+G+FseExExKHvvMlltvTmaVbpREBFU1T5eR6ZhOwksxtCDQrWfswh7fjzpCluwSXmf4Gm31PesPIcZdVNY03t7OxWPv8o9ol+y1DcJbw4Q5FwSxCbDVrLf6D1D2CXyqM6EXoYxU/xbgEp7M0M+l1m9dYIUXTRk++AP0oTN1psDQ4g/wb9YqhkXQhUl7GFZTv3xf8AE3L9x7Q6ezH9BFCVgYSW8XPGpGEQLBaE86x9EE4Z5pztFT1loCCOk83FCHScaCrpdhEHOtSsyhtV3RvVtiBeY0j6PkKnoWiaq8eugNABT6gPoOF1Fnw0Qfbe6SIreOlND+LKtr0K1+usTG/RWRQ/ofdqTqTo6/xMDOY6QwlM+YnPMk/wLqoR1zgLxDW8urozLWC13MtPPrFJHPlIA5WisO71Yv2HrhciFfYcFMG34JOlYvqxU4Py6qOlWIuqcFzQAFd8wI5sleC5ovsNjwa2MX9QqkLyuQaaeG8avFacN1YZtw6NBXrBUCLEkWU2sOLz7qH97WfG889XNuoB3RNe3STaL1nxnzFbNZIGXTIMIYSYlVKhrHsC6FENarpIZtwXijrRCM017EDyRbzntHd8hDvpIuyU3nLJ8CfRRiSeVKIlFlwVMA9eJ0OapHLEnxxSEnYTKU1zgt7xVUAhNqHLSzUxCZ6I7osxLI=
 install:
 - sudo snap install snapcraft --classic
 after_success:
@@ -20,7 +21,7 @@ deploy:
   skip_cleanup: true
   script: curl -sL https://git.io/goreleaser | bash
   on:
-    branch: "master"
+    branch: master
     condition: "$TRAVIS_OS_NAME = linux"
     tags: true
 before_deploy:

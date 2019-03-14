@@ -29,6 +29,12 @@ clean:
 	go clean -testcache
 
 # usage make version=0.0.4 release
+#
+# manually executing goreleaser:
+# export GITHUB_TOKEN=xyz
+# snapcraft login
+# goreleaser --rm-dist
+#
 .PHONY: release
 release:
 	current_date=`date "+%Y-%m-%d"`; eval "sed -i 's/## \[Unreleased\].*/## [Unreleased]\n\n## $$version - $$current_date/g' CHANGELOG.md"
