@@ -28,7 +28,7 @@ type partitionDetail struct {
 }
 
 type consumerGroupMember struct {
-	Host               string
+	ClientHost         string
 	ClientId           string
 	AssignedPartitions []topicPartitions
 }
@@ -42,6 +42,7 @@ type consumerGroupDescription struct {
 
 type DescribeConsumerGroupFlags struct {
 	ShowPartitionDetails bool
+	FilterTopic          string
 }
 
 type GetConsumerGroupFlags struct {
@@ -86,11 +87,13 @@ func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeCon
 				output.Failf("failed to get group member assignment: %v", err)
 			}
 
-			topicPartitions := createTopicPartitions(memberAssignment.Topics)
+			topicPartitions := createTopicPartitions(memberAssignment.Topics, flags)
 
-			cgMember := consumerGroupMember{Host: member.ClientHost, ClientId: member.ClientId, AssignedPartitions: topicPartitions}
+			if len(topicPartitions) == 0 {
+				continue
+			}
 
-			consumerGroupDescription.Members = append(consumerGroupDescription.Members, cgMember)
+			consumerGroupDescription.Members = addMember(consumerGroupDescription.Members, member.ClientHost, member.ClientId, topicPartitions)
 
 			offsets, err := admin.ListConsumerGroupOffsets(description.GroupId, memberAssignment.Topics)
 
@@ -121,19 +124,35 @@ func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeCon
 					topicPartitions[i].TotalLag += lag
 				}
 			}
-
-			output.PrintObject(consumerGroupDescription, "yaml")
 		}
+		output.PrintObject(consumerGroupDescription, "yaml")
 	}
 }
 
-func createTopicPartitions(topics map[string][]int32) []topicPartitions {
+func addMember(members []consumerGroupMember, clientHost string, clientId string, topicPartitions []topicPartitions) []consumerGroupMember {
+
+	// try to update an existing member
+	for i, member := range members {
+		if member.ClientHost == clientHost && member.ClientId == clientId {
+			members[i].AssignedPartitions = append(member.AssignedPartitions, topicPartitions...)
+			return members
+		}
+	}
+
+	member := consumerGroupMember{ClientHost: clientHost, ClientId: clientId, AssignedPartitions: topicPartitions}
+	return append(members, member)
+}
+
+func createTopicPartitions(topics map[string][]int32, flags DescribeConsumerGroupFlags) []topicPartitions {
 
 	topicPartitionList := make([]topicPartitions, 0)
 
 	var topicsSorted []string
+
 	for topic := range topics {
-		topicsSorted = append(topicsSorted, topic)
+		if flags.FilterTopic == "" || topic == flags.FilterTopic {
+			topicsSorted = append(topicsSorted, topic)
+		}
 	}
 	sort.Strings(topicsSorted)
 

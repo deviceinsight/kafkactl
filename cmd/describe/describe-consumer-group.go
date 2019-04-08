@@ -19,4 +19,5 @@ var cmdDescribeConsumerGroup = &cobra.Command{
 
 func init() {
 	cmdDescribeConsumerGroup.Flags().BoolVarP(&consumerGroupFlags.ShowPartitionDetails, "partitions", "p", false, "show detailed information for each partition")
+	cmdDescribeConsumerGroup.Flags().StringVarP(&consumerGroupFlags.FilterTopic, "topic", "t", "", "show group details for given topic only")
 }
