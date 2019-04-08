@@ -69,7 +69,7 @@ func (operation *TopicOperation) CreateTopics(topics []string, flags CreateTopic
 		admin sarama.ClusterAdmin
 	)
 
-	if admin, err = createClusterAdmin(&context); err != nil {
+	if admin, err = CreateClusterAdmin(&context); err != nil {
 		output.Failf("failed to create cluster admin: %v", err)
 	}
 
@@ -102,7 +102,7 @@ func (operation *TopicOperation) DeleteTopics(topics []string) {
 		admin sarama.ClusterAdmin
 	)
 
-	if admin, err = createClusterAdmin(&context); err != nil {
+	if admin, err = CreateClusterAdmin(&context); err != nil {
 		output.Failf("failed to create cluster admin: %v", err)
 	}
 
@@ -138,7 +138,7 @@ func (operation *TopicOperation) DescribeTopic(topic string) {
 		output.Failf("topic '%s' does not exist", topic)
 	}
 
-	if admin, err = createClusterAdmin(&context); err != nil {
+	if admin, err = CreateClusterAdmin(&context); err != nil {
 		output.Failf("failed to create cluster admin: %v", err)
 	}
 
@@ -169,7 +169,7 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 		output.Failf("topic '%s' does not exist", topic)
 	}
 
-	if admin, err = createClusterAdmin(&context); err != nil {
+	if admin, err = CreateClusterAdmin(&context); err != nil {
 		output.Failf("failed to create cluster admin: %v", err)
 	}
 
@@ -231,7 +231,7 @@ func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) {
 
 	tableWriter := output.CreateTableWriter()
 
-	if admin, err = createClusterAdmin(&context); err != nil {
+	if admin, err = CreateClusterAdmin(&context); err != nil {
 		output.Failf("failed to create cluster admin: %v", err)
 	}
 

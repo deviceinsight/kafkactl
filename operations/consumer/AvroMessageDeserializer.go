@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/util"
 	"github.com/landoop/schema-registry"
 	"github.com/linkedin/goavro"
 	"strconv"
@@ -107,7 +108,7 @@ func (deserializer AvroMessageDeserializer) decode(rawData []byte, flags Consume
 		output.Failf("failed to list available avro schemas (%v)", err)
 	}
 
-	if !contains(subjects, subject) {
+	if !util.Contains(subjects, subject) {
 		// does not seem to be avro data
 		return decodedValue{value: encodeBytes(rawData, flags.EncodeValue)}
 	}
@@ -191,13 +192,4 @@ func (deserializer AvroMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerM
 	} else {
 		output.PrintObject(msg, flags.OutputFormat)
 	}
-}
-
-func contains(list []string, element string) bool {
-	for _, it := range list {
-		if it == element {
-			return true
-		}
-	}
-	return false
 }

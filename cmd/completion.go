@@ -17,6 +17,14 @@ __kafkactl_get_topics()
     fi
 }
 
+__kafkactl_get_consumer_groups()
+{
+    local kafkactl_cg_output out
+    if kafkactl_cg_output=$(kafkactl get cg -o compact 2>/dev/null); then
+        COMPREPLY=( $( compgen -W "${kafkactl_cg_output[*]}" -- "$cur" ) )
+    fi
+}
+
 __kafkactl_get_contexts()
 {
     local kafkactl_contexts_output out
@@ -27,8 +35,12 @@ __kafkactl_get_contexts()
 
 __kafkactl_custom_func() {
     case ${last_command} in
-        kafkactl_consume | kafkactl_produce | kafkactl_delete_topic | kafkactl_describe_topic)
+        kafkactl_consume | kafkactl_produce | kafkactl_delete_topic | kafkactl_describe_topic | kafkactl_get_consumer-groups)
             __kafkactl_get_topics
+            return
+            ;;
+		kafkactl_describe_consumer-group)
+            __kafkactl_get_consumer_groups
             return
             ;;
 		kafkactl_config_use-context)
@@ -94,6 +106,12 @@ case $state in
     case $words[3] in
       topic)
         _alternative "topic:topic names:($(kafkactl get topics -o compact))"
+      ;;
+      consumer-groups)
+        _alternative "topic:topic names:($(kafkactl get topics -o compact))"
+      ;;
+      consumer-group)
+        _alternative "consumer-group:consumer-group names:($(kafkactl get cg -o compact))"
       ;;
       use-context)
         _alternative "context:context names:($(kafkactl config get-contexts -o compact))"
