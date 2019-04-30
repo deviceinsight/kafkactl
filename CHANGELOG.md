@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Additional config file locations added. See README.md for details.
+
 ## 1.1.0 - 2019-03-14
 
 ### Added

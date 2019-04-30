@@ -11,7 +11,6 @@ import (
 	"github.com/deviceinsight/kafkactl/cmd/get"
 	"github.com/deviceinsight/kafkactl/cmd/produce"
 	"github.com/deviceinsight/kafkactl/output"
-	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"
@@ -26,6 +25,8 @@ var rootCmd = &cobra.Command{
 	Short:                  "command-line interface for Apache Kafka",
 	Long:                   `A command-line interface the simplifies interaction with Kafka.`,
 }
+
+var configPaths = []string{"$HOME/.config/kafkactl", "$HOME/.kafkactl", "$SNAP_DATA/kafkactl", "/etc/kafkactl"}
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -49,7 +50,7 @@ func init() {
 	rootCmd.AddCommand(produce.CmdProduce)
 
 	// use upper-case letters for shorthand params to avoid conflicts with local flags
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config-file", "C", "", "config file (defaults are $HOME/.kafkactl/config.yml, /etc/kafkactl/config.yml)")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config-file", "C", "", fmt.Sprintf("config file. one of: %v", configPaths))
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "V", false, "verbose output")
 }
 
@@ -61,16 +62,9 @@ func initConfig() {
 	} else if os.Getenv("KAFKA_CTL_CONFIG") != "" {
 		viper.SetConfigFile(os.Getenv("KAFKA_CTL_CONFIG"))
 	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+		for _, path := range configPaths {
+			viper.AddConfigPath(os.ExpandEnv(path))
 		}
-
-		// Search config in home directory with name "./kafkactl/config.yml" and in /etc/kafkactl/config.yml
-		viper.AddConfigPath("/etc/kafkactl")
-		viper.AddConfigPath(home + "/.kafkactl")
 		viper.SetConfigName("config")
 	}
 
