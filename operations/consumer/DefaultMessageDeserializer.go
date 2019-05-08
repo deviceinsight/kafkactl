@@ -77,6 +77,6 @@ func (deserializer DefaultMessageDeserializer) Deserialize(rawMsg *sarama.Consum
 		output.PrintStrings(strings.Join(row[:], "#"))
 
 	} else {
-		output.PrintObject(rawMsg, flags.OutputFormat)
+		output.PrintObject(msg, flags.OutputFormat)
 	}
 }

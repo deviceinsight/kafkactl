@@ -17,11 +17,11 @@ type topic struct {
 
 type partition struct {
 	Id           int32
-	OldestOffset int64
-	NewestOffset int64
+	OldestOffset int64   `json:"oldestOffset" yaml:"oldestOffset"`
+	NewestOffset int64   `json:"newestOffset" yaml:"newestOffset"`
 	Leader       string  `json:",omitempty" yaml:",omitempty"`
-	Replicas     []int32 `json:",omitempty" yaml:",omitempty"`
-	ISRs         []int32 `json:",omitempty" yaml:",omitempty"`
+	Replicas     []int32 `json:",omitempty" yaml:",omitempty,flow"`
+	ISRs         []int32 `json:"inSyncReplicas,omitempty" yaml:"inSyncReplicas,omitempty,flow"`
 }
 
 type config struct {
