@@ -328,35 +328,35 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 
 		go func(partitionId int32) {
 
-			np := partition{Id: p}
+			np := partition{Id: partitionId}
 
 			if requestedFields.partitionOffset {
-				if np.OldestOffset, err = (*client).GetOffset(name, p, sarama.OffsetOldest); err != nil {
-					output.Failf("unable to read oldest offset for topic %s partition %d", name, p)
+				if np.OldestOffset, err = (*client).GetOffset(name, partitionId, sarama.OffsetOldest); err != nil {
+					output.Failf("unable to read oldest offset for topic %s partition %d", name, partitionId)
 				}
 
-				if np.NewestOffset, err = (*client).GetOffset(name, p, sarama.OffsetNewest); err != nil {
-					output.Failf("unable to read newest offset for topic %s partition %d", name, p)
+				if np.NewestOffset, err = (*client).GetOffset(name, partitionId, sarama.OffsetNewest); err != nil {
+					output.Failf("unable to read newest offset for topic %s partition %d", name, partitionId)
 				}
 			}
 
 			if requestedFields.partitionLeader {
-				if led, err = (*client).Leader(name, p); err != nil {
-					output.Failf("unable to read leader for topic %s partition %d", name, p)
+				if led, err = (*client).Leader(name, partitionId); err != nil {
+					output.Failf("unable to read leader for topic %s partition %d", name, partitionId)
 				}
 				np.Leader = led.Addr()
 			}
 
 			if requestedFields.partitionReplicas {
-				if np.Replicas, err = (*client).Replicas(name, p); err != nil {
-					output.Failf("unable to read replicas for topic %s partition %d", name, p)
+				if np.Replicas, err = (*client).Replicas(name, partitionId); err != nil {
+					output.Failf("unable to read replicas for topic %s partition %d", name, partitionId)
 				}
 				sort.Slice(np.Replicas, func(i, j int) bool { return np.Replicas[i] < np.Replicas[j] })
 			}
 
 			if requestedFields.partitionISRs {
-				if np.ISRs, err = (*client).InSyncReplicas(name, p); err != nil {
-					output.Failf("unable to read inSyncReplicas for topic %s partition %d", name, p)
+				if np.ISRs, err = (*client).InSyncReplicas(name, partitionId); err != nil {
+					output.Failf("unable to read inSyncReplicas for topic %s partition %d", name, partitionId)
 				}
 				sort.Slice(np.ISRs, func(i, j int) bool { return np.ISRs[i] < np.ISRs[j] })
 			}
