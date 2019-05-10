@@ -23,13 +23,16 @@ func CreateTableWriter() TableWriter {
 }
 
 func (writer *TableWriter) WriteHeader(columns ...string) {
-	writer.client.Init(os.Stdout, 0, 0, 5, ' ', 0)
-	writer.initialized = true
-
+	writer.Initialize()
 	_, err := fmt.Fprintln(writer.client, strings.Join(columns[:], "\t"))
 	if err != nil {
 		Failf("Failed to write table header: %s", err)
 	}
+}
+
+func (writer *TableWriter) Initialize() {
+	writer.client.Init(os.Stdout, 0, 0, 5, ' ', 0)
+	writer.initialized = true
 }
 
 func (writer *TableWriter) Write(columns ...string) {

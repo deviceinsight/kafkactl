@@ -24,6 +24,17 @@ type partition struct {
 	ISRs         []int32 `json:"inSyncReplicas,omitempty" yaml:"inSyncReplicas,omitempty,flow"`
 }
 
+type requestedTopicFields struct {
+	partitionId       bool
+	partitionOffset   bool
+	partitionLeader   bool
+	partitionReplicas bool
+	partitionISRs     bool
+	config            bool
+}
+
+var allFields = requestedTopicFields{partitionId: true, partitionOffset: true, partitionLeader: true, partitionReplicas: true, partitionISRs: true, config: true}
+
 type config struct {
 	Name  string
 	Value string
@@ -131,7 +142,7 @@ func (operation *TopicOperation) DescribeTopic(topic string) {
 		output.Failf("failed to create cluster admin: %v", err)
 	}
 
-	var t, _ = readTopic(&client, &admin, topic, true, false, true, true)
+	var t, _ = readTopic(&client, &admin, topic, allFields)
 	output.PrintObject(t, "yaml")
 }
 
@@ -162,14 +173,14 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 		output.Failf("failed to create cluster admin: %v", err)
 	}
 
-	var t, _ = readTopic(&client, &admin, topic, true, false, false, true)
+	var t, _ = readTopic(&client, &admin, topic, requestedTopicFields{partitionId: true, config: true})
 
 	if flags.Partitions != 0 {
 		if len(t.Partitions) > int(flags.Partitions) {
 			output.Failf("Decreasing the number of partitions is not supported")
 		}
 
-		var emptyAssignment [][]int32 = make([][]int32, 0, 0)
+		var emptyAssignment = make([][]int32, 0, 0)
 
 		err = admin.CreatePartitions(topic, flags.Partitions, emptyAssignment, flags.ValidateOnly)
 		if err != nil {
@@ -232,34 +243,68 @@ func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) {
 		output.Failf("failed to read topics err=%v", err)
 	}
 
-	sort.Strings(topics)
+	var requestedFields requestedTopicFields
 
 	if flags.OutputFormat == "" {
+		requestedFields = requestedTopicFields{partitionId: true}
 		tableWriter.WriteHeader("TOPIC", "PARTITIONS")
 	} else if flags.OutputFormat == "compact" {
-		output.PrintStrings(topics...)
-		return
+		tableWriter.Initialize()
 	} else if flags.OutputFormat == "wide" {
+		requestedFields = requestedTopicFields{partitionId: true, config: true}
 		tableWriter.WriteHeader("TOPIC", "PARTITIONS", "CONFIGS")
+	} else if flags.OutputFormat == "json" {
+		requestedFields = allFields
+	} else if flags.OutputFormat == "yaml" {
+		requestedFields = allFields
+	} else {
+		output.Failf("unknown outputFormat: %s", flags.OutputFormat)
 	}
 
+	topicChannel := make(chan topic)
+
+	// read topics in parallel
 	for _, topic := range topics {
-		var t, _ = readTopic(&client, &admin, topic, true, false, true, true)
-		if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
-			output.PrintObject(t, flags.OutputFormat)
-		} else if flags.OutputFormat == "wide" {
+		go func(topic string) {
+			t, err := readTopic(&client, &admin, topic, requestedFields)
+			if err != nil {
+				output.Failf("unable to read topic %s: %v", topic, err)
+			}
+			topicChannel <- t
+		}(topic)
+	}
+
+	topicList := make([]topic, 0, len(topics))
+	for range topics {
+		topicList = append(topicList, <-topicChannel)
+	}
+
+	sort.Slice(topicList, func(i, j int) bool {
+		return topicList[i].Name < topicList[j].Name
+	})
+
+	if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
+		output.PrintObject(topicList, flags.OutputFormat)
+	} else if flags.OutputFormat == "wide" {
+		for _, t := range topicList {
 			tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions)), getConfigString(t.Configs))
-		} else {
+		}
+	} else if flags.OutputFormat == "compact" {
+		for _, t := range topicList {
+			tableWriter.Write(t.Name)
+		}
+	} else {
+		for _, t := range topicList {
 			tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions)))
 		}
 	}
 
-	if flags.OutputFormat == "wide" || flags.OutputFormat == "" {
+	if flags.OutputFormat == "wide" || flags.OutputFormat == "compact" || flags.OutputFormat == "" {
 		tableWriter.Flush()
 	}
 }
 
-func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, readPartitions bool, readLeaders bool, readReplicas bool, readConfigs bool) (topic, error) {
+func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, requestedFields requestedTopicFields) (topic, error) {
 	var (
 		err           error
 		ps            []int32
@@ -268,7 +313,7 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 		top           = topic{Name: name}
 	)
 
-	if !readPartitions {
+	if !requestedFields.partitionId {
 		return top, nil
 	}
 
@@ -276,38 +321,59 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 		return top, err
 	}
 
+	partitionChannel := make(chan partition)
+
+	// read partitions in parallel
 	for _, p := range ps {
-		np := partition{Id: p}
 
-		if np.OldestOffset, err = (*client).GetOffset(name, p, sarama.OffsetOldest); err != nil {
-			return top, err
-		}
+		go func(partitionId int32) {
 
-		if np.NewestOffset, err = (*client).GetOffset(name, p, sarama.OffsetNewest); err != nil {
-			return top, err
-		}
+			np := partition{Id: p}
 
-		if readLeaders {
-			if led, err = (*client).Leader(name, p); err != nil {
-				return top, err
-			}
-			np.Leader = led.Addr()
-		}
+			if requestedFields.partitionOffset {
+				if np.OldestOffset, err = (*client).GetOffset(name, p, sarama.OffsetOldest); err != nil {
+					output.Failf("unable to read oldest offset for topic %s partition %d", name, p)
+				}
 
-		if readReplicas {
-			if np.Replicas, err = (*client).Replicas(name, p); err != nil {
-				return top, err
+				if np.NewestOffset, err = (*client).GetOffset(name, p, sarama.OffsetNewest); err != nil {
+					output.Failf("unable to read newest offset for topic %s partition %d", name, p)
+				}
 			}
 
-			if np.ISRs, err = (*client).InSyncReplicas(name, p); err != nil {
-				return top, err
+			if requestedFields.partitionLeader {
+				if led, err = (*client).Leader(name, p); err != nil {
+					output.Failf("unable to read leader for topic %s partition %d", name, p)
+				}
+				np.Leader = led.Addr()
 			}
-		}
 
-		top.Partitions = append(top.Partitions, np)
+			if requestedFields.partitionReplicas {
+				if np.Replicas, err = (*client).Replicas(name, p); err != nil {
+					output.Failf("unable to read replicas for topic %s partition %d", name, p)
+				}
+				sort.Slice(np.Replicas, func(i, j int) bool { return np.Replicas[i] < np.Replicas[j] })
+			}
+
+			if requestedFields.partitionISRs {
+				if np.ISRs, err = (*client).InSyncReplicas(name, p); err != nil {
+					output.Failf("unable to read inSyncReplicas for topic %s partition %d", name, p)
+				}
+				sort.Slice(np.ISRs, func(i, j int) bool { return np.ISRs[i] < np.ISRs[j] })
+			}
+
+			partitionChannel <- np
+		}(p)
 	}
 
-	if readConfigs {
+	for range ps {
+		top.Partitions = append(top.Partitions, <-partitionChannel)
+	}
+
+	sort.Slice(top.Partitions, func(i, j int) bool {
+		return top.Partitions[i].Id < top.Partitions[j].Id
+	})
+
+	if requestedFields.config {
 
 		configResource := sarama.ConfigResource{
 			Type: sarama.TopicResource,
