@@ -28,13 +28,9 @@ var rootCmd = &cobra.Command{
 
 var configPaths = []string{"$HOME/.config/kafkactl", "$HOME/.kafkactl", "$SNAP_DATA/kafkactl", "/etc/kafkactl"}
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+func KafkactlCommand(streams output.IOStreams) *cobra.Command {
+	rootCmd.SetOutput(streams.Out)
+	return rootCmd
 }
 
 func init() {
@@ -74,7 +70,7 @@ func initConfig() {
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		if Verbose {
-			fmt.Println("Using config file:", viper.ConfigFileUsed())
+			output.Debugf("Using config file:", viper.ConfigFileUsed())
 		}
 	} else {
 		output.Failf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err)

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"github.com/deviceinsight/kafkactl/output"
 
 	"github.com/spf13/cobra"
@@ -21,7 +20,7 @@ var cmdGetContexts = &cobra.Command{
 
 		if outputFormat == "compact" {
 			for name := range contexts {
-				fmt.Println(name)
+				output.Infof("%s", name)
 			}
 		} else {
 			writer := output.CreateTableWriter()

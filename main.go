@@ -14,8 +14,18 @@
 
 package main
 
-import "github.com/deviceinsight/kafkactl/cmd"
+import (
+	"github.com/deviceinsight/kafkactl/cmd"
+	"github.com/deviceinsight/kafkactl/output"
+	"os"
+)
 
 func main() {
-	cmd.Execute()
+
+	ioStreams := output.DefaultIOStreams()
+
+	if err := cmd.KafkactlCommand(ioStreams).Execute(); err != nil {
+		output.Warnf("%v", err)
+		os.Exit(1)
+	}
 }

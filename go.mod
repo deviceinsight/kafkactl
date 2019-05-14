@@ -3,6 +3,7 @@ module github.com/deviceinsight/kafkactl
 require (
 	github.com/DataDog/zstd v1.3.4
 	github.com/Shopify/sarama v1.20.0
+	github.com/cpuguy83/go-md2man v1.0.10 // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/eapache/go-resiliency v1.1.0
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21

@@ -11,17 +11,25 @@ export GO111MODULE=on
 project=github.com/deviceinsight/kafkactl
 ld_flags := "-X $(project)/cmd.version=$(VERSION) -X $(project)/cmd.gitCommit=$(COMMIT_SHA) -X $(project)/cmd.buildTime=$(BUILD_TS)"
 
+.DEFAULT_GOAL := all
+.PHONY: all
+all: vet test build
+
 .PHONY: vet
 vet:
 	go vet ./...
 
 .PHONY: test
-test: vet
+test:
 	go test ./...
 
 .PHONY: build
-build: test
+build:
 	go build -ldflags $(ld_flags) -o kafkactl
+
+.PHONY: docs
+docs: build
+	./kafkactl docs --directory docs --single-page
 
 .PHONY: clean
 clean:

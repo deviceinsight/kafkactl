@@ -1,7 +1,6 @@
 package producer
 
 import (
-	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/output"
@@ -126,7 +125,7 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 	if err != nil {
 		output.Failf("Failed to produce message: %s", err)
 	} else if !flags.Silent {
-		fmt.Printf("topic=%s\tpartition=%d\toffset=%d\n", topic, partition, offset)
+		output.Infof("topic=%s\tpartition=%d\toffset=%d\n", topic, partition, offset)
 	}
 }
 
