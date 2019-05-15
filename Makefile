@@ -29,7 +29,8 @@ build:
 
 .PHONY: docs
 docs: build
-	./kafkactl docs --directory docs --single-page
+	touch /tmp/empty.yaml
+	./kafkactl docs --directory docs --single-page --config-file=/tmp/empty.yaml
 
 .PHONY: clean
 clean:
