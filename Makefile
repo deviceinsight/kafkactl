@@ -13,7 +13,7 @@ ld_flags := "-X $(project)/cmd.version=$(VERSION) -X $(project)/cmd.gitCommit=$(
 
 .DEFAULT_GOAL := all
 .PHONY: all
-all: vet test build
+all: vet test build docs
 
 .PHONY: vet
 vet:
