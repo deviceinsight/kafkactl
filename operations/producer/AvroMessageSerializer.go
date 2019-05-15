@@ -40,7 +40,7 @@ func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int
 		output.Failf("failed to list available avro schemas (%v)", err)
 	}
 
-	if !util.Contains(subjects, subject) {
+	if !util.ContainsString(subjects, subject) {
 		// does not seem to be avro data
 		return rawData
 	}

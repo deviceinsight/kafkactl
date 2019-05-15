@@ -108,7 +108,7 @@ func (deserializer AvroMessageDeserializer) decode(rawData []byte, flags Consume
 		output.Failf("failed to list available avro schemas (%v)", err)
 	}
 
-	if !util.Contains(subjects, subject) {
+	if !util.ContainsString(subjects, subject) {
 		// does not seem to be avro data
 		return decodedValue{value: encodeBytes(rawData, flags.EncodeValue)}
 	}

@@ -18,6 +18,6 @@ var cmdDescribeConsumerGroup = &cobra.Command{
 }
 
 func init() {
-	cmdDescribeConsumerGroup.Flags().BoolVarP(&consumerGroupFlags.ShowPartitionDetails, "partitions", "p", false, "show detailed information for each partition")
+	cmdDescribeConsumerGroup.Flags().BoolVarP(&consumerGroupFlags.OnlyPartitionsWithLag, "only-with-lag", "l", false, "show only partitions that have a lag")
 	cmdDescribeConsumerGroup.Flags().StringVarP(&consumerGroupFlags.FilterTopic, "topic", "t", "", "show group details for given topic only")
 }

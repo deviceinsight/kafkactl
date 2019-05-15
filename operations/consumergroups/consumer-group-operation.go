@@ -13,36 +13,41 @@ type consumerGroup struct {
 	ProtocolType string
 }
 
-type topicPartitions struct {
-	Topic            string
-	Partitions       []int32           `json:",omitempty" yaml:",omitempty,flow"`
-	PartitionDetails []partitionDetail `json:",omitempty" yaml:",omitempty"`
-	TotalLag         int64
+type topicPartitionOffsets struct {
+	Name       string
+	Partitions []partitionOffset `json:",omitempty" yaml:",omitempty"`
+	TotalLag   int64             `json:"totalLag" yaml:"totalLag"`
 }
 
-type partitionDetail struct {
+type topicPartition struct {
+	Name       string
+	Partitions []int32 `json:"," yaml:",flow"`
+}
+
+type partitionOffset struct {
 	Partition      int32
-	NewestOffset   int64
-	ConsumerOffset int64
+	NewestOffset   int64 `json:"newestOffset" yaml:"newestOffset"`
+	ConsumerOffset int64 `json:"consumerOffset" yaml:"consumerOffset"`
 	Lag            int64
 }
 
 type consumerGroupMember struct {
-	ClientHost         string
-	ClientId           string
-	AssignedPartitions []topicPartitions
+	ClientHost         string           `json:"clientHost" yaml:"clientHost"`
+	ClientId           string           `json:"clientId" yaml:"clientId"`
+	AssignedPartitions []topicPartition `json:"assignedPartitions" yaml:"assignedPartitions"`
 }
 
 type consumerGroupDescription struct {
 	Group    consumerGroup
 	Protocol string
 	State    string
+	Topics   []topicPartitionOffsets
 	Members  []consumerGroupMember
 }
 
 type DescribeConsumerGroupFlags struct {
-	ShowPartitionDetails bool
-	FilterTopic          string
+	OnlyPartitionsWithLag bool
+	FilterTopic           string
 }
 
 type GetConsumerGroupFlags struct {
@@ -54,7 +59,7 @@ type ConsumerGroupOperation struct {
 
 func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeConsumerGroupFlags, group string) {
 
-	context := operations.CreateClientContext()
+	ctx := operations.CreateClientContext()
 
 	var (
 		err          error
@@ -63,11 +68,11 @@ func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeCon
 		descriptions []*sarama.GroupDescription
 	)
 
-	if client, err = operations.CreateClient(&context); err != nil {
+	if client, err = operations.CreateClient(&ctx); err != nil {
 		output.Failf("failed to create client err=%v", err)
 	}
 
-	if admin, err = operations.CreateClusterAdmin(&context); err != nil {
+	if admin, err = operations.CreateClusterAdmin(&ctx); err != nil {
 		output.Failf("failed to create cluster admin: %v", err)
 	}
 
@@ -75,9 +80,26 @@ func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeCon
 		output.Failf("failed to describe consumer group: %v", err)
 	}
 
+	// admin.ListConsumerGroupOffsets(group, nil) can be used to fetch the offsets when
+	// https://github.com/Shopify/sarama/pull/1374 is merged
+	coordinator, err := client.Coordinator(group)
+	if err != nil {
+		output.Failf("failed to get coordinator: %v", err)
+	}
+
+	request := &sarama.OffsetFetchRequest{
+		// this will only work starting from version 0.10.2.0
+		Version:       2,
+		ConsumerGroup: group,
+	}
+
+	offsets, err := coordinator.FetchOffset(request)
+
+	topicPartitions := createTopicPartitions(offsets, client, flags)
+
 	for _, description := range descriptions {
 		cg := consumerGroup{Name: description.GroupId, ProtocolType: description.ProtocolType}
-		consumerGroupDescription := consumerGroupDescription{Group: cg, Protocol: description.Protocol, State: description.State, Members: make([]consumerGroupMember, 0)}
+		consumerGroupDescription := consumerGroupDescription{Group: cg, Protocol: description.Protocol, State: description.State, Topics: topicPartitions, Members: make([]consumerGroupMember, 0)}
 
 		for _, member := range description.Members {
 
@@ -87,69 +109,69 @@ func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeCon
 				output.Failf("failed to get group member assignment: %v", err)
 			}
 
-			topicPartitions := createTopicPartitions(memberAssignment.Topics, flags)
+			assignedPartitions := filterAssignedPartitions(memberAssignment.Topics, topicPartitions)
 
-			if len(topicPartitions) == 0 {
-				continue
-			}
+			consumerGroupDescription.Members = addMember(consumerGroupDescription.Members, member.ClientHost, member.ClientId, assignedPartitions)
 
-			consumerGroupDescription.Members = addMember(consumerGroupDescription.Members, member.ClientHost, member.ClientId, topicPartitions)
-
-			offsets, err := admin.ListConsumerGroupOffsets(description.GroupId, memberAssignment.Topics)
-
-			if err != nil {
-				output.Failf("failed to get group offsets: %v", err)
-			}
-
-			for i, topicPartition := range topicPartitions {
-
-				topic := topicPartition.Topic
-
-				for _, partition := range topicPartition.Partitions {
-
-					offset, err := client.GetOffset(topic, partition, sarama.OffsetNewest)
-
-					if err != nil {
-						output.Failf("failed to get offset for topic %s partition %d: %v", topic, partition, err)
-					}
-
-					lag := offset - offsets.Blocks[topic][partition].Offset
-
-					if flags.ShowPartitionDetails {
-						detail := partitionDetail{Partition: partition, NewestOffset: offset, ConsumerOffset: offsets.Blocks[topic][partition].Offset, Lag: lag}
-						topicPartitions[i].PartitionDetails = append(topicPartitions[i].PartitionDetails, detail)
-						topicPartitions[i].Partitions = make([]int32, 0)
-					}
-
-					topicPartitions[i].TotalLag += lag
-				}
-			}
 		}
 		output.PrintObject(consumerGroupDescription, "yaml")
 	}
 }
 
-func addMember(members []consumerGroupMember, clientHost string, clientId string, topicPartitions []topicPartitions) []consumerGroupMember {
+func filterAssignedPartitions(assignedPartitions map[string][]int32, topicPartitions []topicPartitionOffsets) map[string][]int32 {
 
-	// try to update an existing member
-	for i, member := range members {
-		if member.ClientHost == clientHost && member.ClientId == clientId {
-			members[i].AssignedPartitions = append(member.AssignedPartitions, topicPartitions...)
-			return members
+	result := make(map[string][]int32)
+
+	for topic, partitions := range assignedPartitions {
+		for _, t := range topicPartitions {
+			if t.Name == topic {
+				resultPartitions := make([]int32, 0)
+				for _, partitionOffset := range t.Partitions {
+					if util.ContainsInt32(partitions, partitionOffset.Partition) {
+						resultPartitions = append(resultPartitions, partitionOffset.Partition)
+					}
+				}
+				result[topic] = resultPartitions
+			}
 		}
 	}
 
-	member := consumerGroupMember{ClientHost: clientHost, ClientId: clientId, AssignedPartitions: topicPartitions}
-	return append(members, member)
+	return result
 }
 
-func createTopicPartitions(topics map[string][]int32, flags DescribeConsumerGroupFlags) []topicPartitions {
+func addMember(members []consumerGroupMember, clientHost string, clientId string, assignedPartitions map[string][]int32) []consumerGroupMember {
 
-	topicPartitionList := make([]topicPartitions, 0)
+	topicPartitionList := make([]topicPartition, 0)
 
 	var topicsSorted []string
 
-	for topic := range topics {
+	for topic := range assignedPartitions {
+		topicsSorted = append(topicsSorted, topic)
+	}
+	sort.Strings(topicsSorted)
+
+	for _, topic := range topicsSorted {
+		if topic != "" {
+			topicPartitions := topicPartition{Name: topic, Partitions: assignedPartitions[topic]}
+			topicPartitionList = append(topicPartitionList, topicPartitions)
+		}
+	}
+
+	if len(assignedPartitions) == 0 {
+		return members
+	} else {
+		member := consumerGroupMember{ClientHost: clientHost, ClientId: clientId, AssignedPartitions: topicPartitionList}
+		return append(members, member)
+	}
+}
+
+func createTopicPartitions(offsets *sarama.OffsetFetchResponse, client sarama.Client, flags DescribeConsumerGroupFlags) []topicPartitionOffsets {
+
+	topicPartitionList := make([]topicPartitionOffsets, 0)
+
+	var topicsSorted []string
+
+	for topic := range offsets.Blocks {
 		if flags.FilterTopic == "" || topic == flags.FilterTopic {
 			topicsSorted = append(topicsSorted, topic)
 		}
@@ -158,8 +180,29 @@ func createTopicPartitions(topics map[string][]int32, flags DescribeConsumerGrou
 
 	for _, topic := range topicsSorted {
 		if topic != "" {
-			details := make([]partitionDetail, 0)
-			topicPartitions := topicPartitions{Topic: topic, Partitions: topics[topic], PartitionDetails: details}
+
+			details := make([]partitionOffset, 0, len(offsets.Blocks[topic]))
+
+			var totalLag int64 = 0
+
+			for partition := range offsets.Blocks[topic] {
+
+				offset, err := client.GetOffset(topic, partition, sarama.OffsetNewest)
+				if err != nil {
+					output.Failf("failed to get offset for topic %s partition %d: %v", topic, partition, err)
+				}
+
+				lag := offset - offsets.Blocks[topic][partition].Offset
+
+				if !flags.OnlyPartitionsWithLag || lag > 0 {
+					detail := partitionOffset{Partition: partition, NewestOffset: offset, ConsumerOffset: offsets.Blocks[topic][partition].Offset, Lag: lag}
+					details = append(details, detail)
+
+					totalLag += lag
+				}
+			}
+
+			topicPartitions := topicPartitionOffsets{Name: topic, Partitions: details, TotalLag: totalLag}
 			topicPartitionList = append(topicPartitionList, topicPartitions)
 		}
 	}
@@ -169,7 +212,7 @@ func createTopicPartitions(topics map[string][]int32, flags DescribeConsumerGrou
 
 func (operation *ConsumerGroupOperation) GetConsumerGroups(flags GetConsumerGroupFlags, topic string) {
 
-	context := operations.CreateClientContext()
+	ctx := operations.CreateClientContext()
 
 	var (
 		err    error
@@ -177,7 +220,7 @@ func (operation *ConsumerGroupOperation) GetConsumerGroups(flags GetConsumerGrou
 		groups map[string]string
 	)
 
-	if admin, err = operations.CreateClusterAdmin(&context); err != nil {
+	if admin, err = operations.CreateClusterAdmin(&ctx); err != nil {
 		output.Failf("failed to create cluster admin: %v", err)
 	}
 
@@ -247,8 +290,8 @@ func filterGroups(admin sarama.ClusterAdmin, groupNames []string, topic string) 
 				output.Failf("failed to get group member metadata: %v", err)
 			}
 
-			if util.Contains(metaData.Topics, topic) {
-				if !util.Contains(topicGroups, description.GroupId) {
+			if util.ContainsString(metaData.Topics, topic) {
+				if !util.ContainsString(topicGroups, description.GroupId) {
 					topicGroups = append(topicGroups, description.GroupId)
 				}
 			}
