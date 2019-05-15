@@ -13,7 +13,7 @@ ld_flags := "-X $(project)/cmd.version=$(VERSION) -X $(project)/cmd.gitCommit=$(
 
 .DEFAULT_GOAL := all
 .PHONY: all
-all: vet test build
+all: vet test build docs
 
 .PHONY: vet
 vet:
@@ -29,7 +29,8 @@ build:
 
 .PHONY: docs
 docs: build
-	./kafkactl docs --directory docs --single-page
+	touch /tmp/empty.yaml
+	./kafkactl docs --directory docs --single-page --config-file=/tmp/empty.yaml
 
 .PHONY: clean
 clean:

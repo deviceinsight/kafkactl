@@ -1,7 +1,0 @@
-theme: jekyll-theme-slate
-plugins:
-  - jekyll-relative-links
-markdown: kramdown
-relative_links:
-  enabled: true
-  collections: true

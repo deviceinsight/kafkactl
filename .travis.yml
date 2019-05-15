@@ -17,6 +17,13 @@ install:
 after_success:
 - test -n "$TRAVIS_TAG" && snapcraft login --with snap.login
 deploy:
+- provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN
+  target_branch: gh-pages
+  keep_history: true
+  on:
+    branch: master
 - provider: script
   skip_cleanup: true
   script: curl -sL https://git.io/goreleaser | bash

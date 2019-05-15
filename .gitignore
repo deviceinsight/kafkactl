@@ -6,6 +6,7 @@
 *.ipr
 
 ### Binary
+docs
 dist
 kafkactl
 
