@@ -6,6 +6,8 @@ import (
 	"github.com/deviceinsight/kafkactl/output"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -16,6 +18,7 @@ type ConsumerFlags struct {
 	PrintAvroSchema bool
 	OutputFormat    string
 	Partitions      []int
+	Offsets         []string
 	FromBeginning   bool
 	BufferSize      int
 	EncodeValue     string
@@ -66,13 +69,6 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 		output.Failf("topic '%s' does not exist", topic)
 	}
 
-	var initialOffset int64
-	if flags.FromBeginning {
-		initialOffset = sarama.OffsetOldest
-	} else {
-		initialOffset = sarama.OffsetNewest
-	}
-
 	c, err := sarama.NewConsumer(clientContext.Brokers, nil)
 	if err != nil {
 		output.Failf("Failed to start consumer: %s", err)
@@ -115,6 +111,7 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 	}()
 
 	for _, partition := range partitions {
+		initialOffset := getInitialOffset(flags, partition)
 		pc, err := c.ConsumePartition(topic, partition, initialOffset)
 		if err != nil {
 			output.Failf("Failed to start consumer for partition %d: %s", partition, err)
@@ -146,5 +143,37 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 
 	if err := c.Close(); err != nil {
 		output.Failf("Failed to close consumer: ", err)
+	}
+}
+
+func getInitialOffset(flags ConsumerFlags, currentPartition int32) int64 {
+
+	for _, offsetFlag := range flags.Offsets {
+		offsetParts := strings.Split(offsetFlag, "=")
+
+		if len(offsetParts) == 2 {
+
+			partition, err := strconv.Atoi(offsetParts[0])
+			if err != nil {
+				output.Failf("unable to parse offset parameter: %s (%v)", offsetFlag, err)
+			}
+
+			if int32(partition) != currentPartition {
+				continue
+			}
+
+			offset, err := strconv.ParseInt(offsetParts[1], 10, 64)
+			if err != nil {
+				output.Failf("unable to parse offset parameter: %s (%v)", offsetFlag, err)
+			}
+
+			return offset
+		}
+	}
+
+	if flags.FromBeginning {
+		return sarama.OffsetOldest
+	} else {
+		return sarama.OffsetNewest
 	}
 }
