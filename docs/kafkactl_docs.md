@@ -253,13 +253,14 @@ kafkactl consume TOPIC [flags]
 #### Options
 
 ```
-  -b, --from-beginning     set offset for consumer to the oldest offset
-  -h, --help               help for consume
-  -o, --output string      Output format. One of: json|yaml
-  -p, --partitions ints    partitions to consume. The default is to consume from all partitions.
-  -k, --print-keys         print message keys
-  -a, --print-schema       print details about avro schema used for decoding
-  -t, --print-timestamps   print message timestamps
+  -b, --from-beginning                                                                   set offset for consumer to the oldest offset
+  -h, --help                                                                             help for consume
+      --offset partition=offset (for partitions not specified, other parameters apply)   offsets in format partition=offset (for partitions not specified, other parameters apply)
+  -o, --output string                                                                    Output format. One of: json|yaml
+  -p, --partitions ints                                                                  partitions to consume. The default is to consume from all partitions.
+  -k, --print-keys                                                                       print message keys
+  -a, --print-schema                                                                     print details about avro schema used for decoding
+  -t, --print-timestamps                                                                 print message timestamps
 ```
 
 #### Options inherited from parent commands
