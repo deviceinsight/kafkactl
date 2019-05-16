@@ -185,22 +185,34 @@ func createTopicPartitions(offsets *sarama.OffsetFetchResponse, client sarama.Cl
 
 			var totalLag int64 = 0
 
+			partitionChannel := make(chan partitionOffset)
+
 			for partition := range offsets.Blocks[topic] {
 
-				offset, err := client.GetOffset(topic, partition, sarama.OffsetNewest)
-				if err != nil {
-					output.Failf("failed to get offset for topic %s partition %d: %v", topic, partition, err)
-				}
+				go func(partition int32) {
 
-				lag := offset - offsets.Blocks[topic][partition].Offset
+					offset, err := client.GetOffset(topic, partition, sarama.OffsetNewest)
+					if err != nil {
+						output.Failf("failed to get offset for topic %s partition %d: %v", topic, partition, err)
+					}
 
-				if !flags.OnlyPartitionsWithLag || lag > 0 {
-					detail := partitionOffset{Partition: partition, NewestOffset: offset, ConsumerOffset: offsets.Blocks[topic][partition].Offset, Lag: lag}
-					details = append(details, detail)
+					lag := offset - offsets.Blocks[topic][partition].Offset
 
-					totalLag += lag
-				}
+					if !flags.OnlyPartitionsWithLag || lag > 0 {
+						partitionChannel <- partitionOffset{Partition: partition, NewestOffset: offset, ConsumerOffset: offsets.Blocks[topic][partition].Offset, Lag: lag}
+					}
+				}(partition)
 			}
+
+			for range offsets.Blocks[topic] {
+				partitionOffset := <-partitionChannel
+				details = append(details, partitionOffset)
+				totalLag += partitionOffset.Lag
+			}
+
+			sort.Slice(details, func(i, j int) bool {
+				return details[i].Partition < details[j].Partition
+			})
 
 			topicPartitions := topicPartitionOffsets{Name: topic, Partitions: details, TotalLag: totalLag}
 			topicPartitionList = append(topicPartitionList, topicPartitions)
