@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/util"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
@@ -109,7 +110,7 @@ esac
 `
 
 var cmdCompletion = &cobra.Command{
-	Use: "completion SHELL",
+	Use:                   "completion SHELL",
 	DisableFlagsInUseLine: true,
 	ValidArgs:             []string{"bash", "zsh"},
 	Short:                 "Output shell completion code for the specified shell (bash or zsh)",
@@ -130,6 +131,8 @@ var cmdCompletion = &cobra.Command{
 			err = runCompletionBash(os.Stdout)
 		} else if shell == "zsh" {
 			err = runCompletionZsh(os.Stdout)
+		} else if shell == "fish" {
+			err = runCompletionFish(cmd, os.Stdout)
 		} else {
 			output.Failf("Unsupported shell type %q.", shell)
 		}
@@ -154,4 +157,9 @@ func runCompletionZsh(out io.Writer) error {
 	//return rootCmd.GenZshCompletion(out)
 	_, err := io.WriteString(out, zshCompletion)
 	return err
+}
+
+func runCompletionFish(cmd *cobra.Command, out io.Writer) error {
+	// wait until this is merged: https://github.com/spf13/cobra/pull/754
+	return util.GenFishCompletion(cmd, out)
 }

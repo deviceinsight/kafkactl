@@ -8,7 +8,7 @@ A command-line interface for interaction with Apache Kafka
 
 ## Features
 
-- Auto-completion
+- command auto-completion for bash, zsh, fish
 - support for avro schemas
 - Configuration of different contexts
 
@@ -101,7 +101,14 @@ compinit
 ```
 
 #### fish
-`fish` is currently not supported. see: https://github.com/spf13/cobra/issues/350
+
+Create file with completions:
+
+```bash
+mkdir ~/.config/fish/completions
+kafkactl completion fish > ~/.config/fish/completions/kafkactl.fish
+```
+
 
 ## Examples
 
