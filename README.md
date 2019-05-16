@@ -255,3 +255,17 @@ kafkactl describe consumer-group my-group --topic my-topic
 # using command alias
 kafkactl describe cg my-group
 ```
+
+### Reset consumer group offsets
+
+in order to ensure the reset does what it is expected, per default only
+the results are printed without actually executing it. Use the additional parameter `--execute` to perform the reset. 
+
+```bash
+# reset offset of for all partitions to oldest offset
+kafkactl reset offset my-group --topic my-topic --oldest
+# reset offset of for all partitions to newest offset
+kafkactl reset offset my-group --topic my-topic --newest
+# reset offset for a single partition to specific offset
+kafkactl reset offset my-group --topic my-topic --partition 5 --offset 100
+```

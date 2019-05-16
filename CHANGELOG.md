@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add 'config view` command, to view current config
 - Add `get consumer-groups` command to list available consumer groups
 - Add `describe consumer-group` command to see details of consumer group
+- Add `reset offset` command to reset consumer group offsets
 
 ## 1.1.0 - 2019-03-14
 
