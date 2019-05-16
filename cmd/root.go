@@ -17,7 +17,6 @@ import (
 )
 
 var cfgFile string
-var Verbose bool
 
 var rootCmd = &cobra.Command{
 	Use:                    "kafkactl",
@@ -47,7 +46,7 @@ func init() {
 
 	// use upper-case letters for shorthand params to avoid conflicts with local flags
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config-file", "C", "", fmt.Sprintf("config file. one of: %v", configPaths))
-	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "V", false, "verbose output")
+	rootCmd.PersistentFlags().BoolVarP(&output.Verbose, "verbose", "V", false, "verbose output")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -69,9 +68,7 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		if Verbose {
-			output.Debugf("Using config file:", viper.ConfigFileUsed())
-		}
+		output.Debugf("Using config file: %s", viper.ConfigFileUsed())
 	} else {
 		output.Failf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err)
 	}

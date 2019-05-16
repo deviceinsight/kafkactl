@@ -7,6 +7,8 @@ import (
 	"os"
 )
 
+var Verbose = false
+
 func Failf(msg string, args ...interface{}) {
 	Exitf(1, msg, args...)
 }
@@ -20,7 +22,9 @@ func Infof(msg string, args ...interface{}) {
 }
 
 func Debugf(msg string, args ...interface{}) {
-	_, _ = fmt.Fprintf(IoStreams.Out, msg+"\n", args...)
+	if Verbose {
+		_, _ = fmt.Fprintf(IoStreams.Out, msg+"\n", args...)
+	}
 }
 
 func Exitf(code int, msg string, args ...interface{}) {

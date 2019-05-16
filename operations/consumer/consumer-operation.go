@@ -106,9 +106,11 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 		signals := make(chan os.Signal, 1)
 		signal.Notify(signals, os.Kill, os.Interrupt)
 		<-signals
-		output.Infof("Initiating shutdown of consumer...")
+		output.Debugf("Initiating shutdown of consumer...")
 		close(closing)
 	}()
+
+	output.Debugf("Start consuming topic: %s", topic)
 
 	for _, partition := range partitions {
 		initialOffset := getInitialOffset(flags, partition)
@@ -116,6 +118,8 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 		if err != nil {
 			output.Failf("Failed to start consumer for partition %d: %s", partition, err)
 		}
+
+		output.Debugf("Start consuming partition %d from offset %d", partition, initialOffset)
 
 		go func(pc sarama.PartitionConsumer) {
 			<-closing
@@ -138,7 +142,7 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 	}()
 
 	wg.Wait()
-	output.Infof("Done consuming topic: %s", topic)
+	output.Debugf("Done consuming topic: %s", topic)
 	close(messages)
 
 	if err := c.Close(); err != nil {
