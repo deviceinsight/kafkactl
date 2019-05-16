@@ -77,8 +77,10 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 	var deserializer MessageDeserializer
 
 	if clientContext.AvroSchemaRegistry != "" {
+		output.Debugf("using AvroMessageDeserializer")
 		deserializer = CreateAvroMessageDeserializer(topic, clientContext.AvroSchemaRegistry)
 	} else {
+		output.Debugf("using DefaultMessageDeserializer")
 		deserializer = DefaultMessageDeserializer{}
 	}
 
