@@ -90,7 +90,7 @@ func (deserializer AvroMessageDeserializer) newAvroMessage(msg *sarama.ConsumerM
 func (deserializer AvroMessageDeserializer) decode(rawData []byte, flags ConsumerFlags, avroSchemaType string) decodedValue {
 
 	if len(rawData) < 5 {
-		// does not seem to be avro data
+		output.Debugf("does not seem to be avro data")
 		return decodedValue{value: encodeBytes(rawData, flags.EncodeValue)}
 	}
 
@@ -98,6 +98,8 @@ func (deserializer AvroMessageDeserializer) decode(rawData []byte, flags Consume
 	schemaId := int(binary.BigEndian.Uint32(rawData[1:5]))
 	data := rawData[5:]
 	subject := deserializer.topic + "-" + avroSchemaType
+
+	output.Debugf("decode %s and id %d", subject, schemaId)
 
 	subjects, err := deserializer.client.Subjects()
 
@@ -137,6 +139,8 @@ func (deserializer AvroMessageDeserializer) decode(rawData []byte, flags Consume
 }
 
 func (deserializer AvroMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerMessage, flags ConsumerFlags) {
+
+	output.Debugf("start to deserialize avro message...")
 
 	msg := deserializer.newAvroMessage(rawMsg, flags)
 
