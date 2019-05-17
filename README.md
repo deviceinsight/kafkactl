@@ -56,6 +56,20 @@ contexts:
     - remote-cluster001:9092
     - remote-cluster002:9092
     - remote-cluster003:9092
+    # optional: tls config
+    tlsCA: my-ca
+    tlsCert: my-cert
+    tlsCertKey: my-key
+    
+    # optional: clientID config (defaults to kafkactl-{username})
+    clientID: my-client-id
+    
+    # optional: kafkaVersion (defaults to 2.0.0)
+	kafkaVersion: 1.1.1
+	
+	# optional: avro schema registry
+	avro:
+	  schemaRegistry: localhost:8081
 
 current-context: localhost
 ```
@@ -166,7 +180,7 @@ In order to enable avro support you just have to add the schema registry to your
 contexts:
   localhost:
     avro:
-      schemaregistry: localhost:8081
+      schemaRegistry: localhost:8081
 ```
 
 #### Producing to an avro topic

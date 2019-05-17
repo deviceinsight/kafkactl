@@ -4,10 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"log"
 	"os"
 )
 
-var Verbose = false
+var DebugLogger StdLogger = log.New(ioutil.Discard, "[kafkactl] ", log.LstdFlags)
+
+// StdLogger is used to log error messages.
+type StdLogger interface {
+	Print(v ...interface{})
+	Printf(format string, v ...interface{})
+	Println(v ...interface{})
+}
 
 func Failf(msg string, args ...interface{}) {
 	Exitf(1, msg, args...)
@@ -22,9 +31,7 @@ func Infof(msg string, args ...interface{}) {
 }
 
 func Debugf(msg string, args ...interface{}) {
-	if Verbose {
-		_, _ = fmt.Fprintf(IoStreams.Out, msg+"\n", args...)
-	}
+	DebugLogger.Printf(msg+"\n", args...)
 }
 
 func Exitf(code int, msg string, args ...interface{}) {

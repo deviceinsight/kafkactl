@@ -69,7 +69,7 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 		output.Failf("topic '%s' does not exist", topic)
 	}
 
-	c, err := sarama.NewConsumer(clientContext.Brokers, nil)
+	c, err := sarama.NewConsumer(clientContext.Brokers, client.Config())
 	if err != nil {
 		output.Failf("Failed to start consumer: %s", err)
 	}

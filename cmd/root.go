@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/cmd/alter"
 	"github.com/deviceinsight/kafkactl/cmd/config"
 	"github.com/deviceinsight/kafkactl/cmd/consume"
@@ -13,10 +14,12 @@ import (
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"log"
 	"os"
 )
 
 var cfgFile string
+var Verbose bool
 
 var rootCmd = &cobra.Command{
 	Use:                    "kafkactl",
@@ -46,7 +49,7 @@ func init() {
 
 	// use upper-case letters for shorthand params to avoid conflicts with local flags
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config-file", "C", "", fmt.Sprintf("config file. one of: %v", configPaths))
-	rootCmd.PersistentFlags().BoolVarP(&output.Verbose, "verbose", "V", false, "verbose output")
+	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "V", false, "verbose output")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -61,6 +64,11 @@ func initConfig() {
 			viper.AddConfigPath(os.ExpandEnv(path))
 		}
 		viper.SetConfigName("config")
+	}
+
+	if Verbose {
+		sarama.Logger = log.New(os.Stderr, "[sarama  ] ", log.LstdFlags)
+		output.DebugLogger = log.New(os.Stderr, "[kafkactl] ", log.LstdFlags)
 	}
 
 	viper.SetConfigType("yml")
