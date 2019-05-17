@@ -8,7 +8,6 @@ import (
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/viper"
 	"io/ioutil"
-	"os"
 	"os/user"
 	"regexp"
 	"strings"
@@ -24,6 +23,7 @@ type ClientContext struct {
 	TlsCA              string
 	TlsCert            string
 	TlsCertKey         string
+	ClientID           string
 	KafkaVersion       sarama.KafkaVersion
 	AvroSchemaRegistry string
 }
@@ -37,6 +37,7 @@ func CreateClientContext() ClientContext {
 	context.TlsCA = viper.GetString("contexts." + context.Name + ".tlsCA")
 	context.TlsCert = viper.GetString("contexts." + context.Name + ".tlsCert")
 	context.TlsCertKey = viper.GetString("contexts." + context.Name + ".tlsCertKey")
+	context.ClientID = viper.GetString("contexts." + context.Name + ".clientID")
 	context.KafkaVersion = kafkaVersion(viper.GetString("contexts." + context.Name + ".kafkaVersion"))
 	context.AvroSchemaRegistry = viper.GetString("contexts." + context.Name + ".avro.schemaRegistry")
 
@@ -50,16 +51,11 @@ func CreateClient(context *ClientContext) (sarama.Client, error) {
 func CreateClientConfig(context *ClientContext) *sarama.Config {
 	var (
 		err    error
-		usr    *user.User
 		config = sarama.NewConfig()
 	)
 
 	config.Version = context.KafkaVersion
-
-	if usr, err = user.Current(); err != nil {
-		output.Warnf("Failed to read current user: %v", err)
-	}
-	config.ClientID = "kafkactl-" + sanitizeUsername(usr.Username)
+	config.ClientID = getClientID(context)
 
 	tlsConfig, err := setupCerts(context.TlsCert, context.TlsCA, context.TlsCertKey)
 	if err != nil {
@@ -76,16 +72,11 @@ func CreateClientConfig(context *ClientContext) *sarama.Config {
 func createClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
 	var (
 		err    error
-		usr    *user.User
 		config = sarama.NewConfig()
 	)
 
 	config.Version = context.KafkaVersion
-
-	if usr, err = user.Current(); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to read current user err=%v", err)
-	}
-	config.ClientID = "kafkactl-" + sanitizeUsername(usr.Username)
+	config.ClientID = getClientID(context)
 
 	tlsConfig, err := setupCerts(context.TlsCert, context.TlsCA, context.TlsCertKey)
 	if err != nil {
@@ -97,6 +88,23 @@ func createClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
 	}
 
 	return sarama.NewClusterAdmin(context.Brokers, config)
+}
+
+func getClientID(context *ClientContext) string {
+
+	var (
+		err error
+		usr *user.User
+	)
+
+	if context.ClientID != "" {
+		return context.ClientID
+	} else if usr, err = user.Current(); err != nil {
+		output.Warnf("Failed to read current user: %v", err)
+		return "kafkactl"
+	} else {
+		return "kafkactl-" + sanitizeUsername(usr.Username)
+	}
 }
 
 func sanitizeUsername(u string) string {
@@ -146,6 +154,7 @@ func setupCerts(certPath, caPath, keyPath string) (*tls.Config, error) {
 
 func kafkaVersion(s string) sarama.KafkaVersion {
 	if s == "" {
+		output.Debugf("Assuming kafkaVersion: %s", sarama.V2_0_0_0)
 		return sarama.V2_0_0_0
 	}
 
@@ -153,6 +162,8 @@ func kafkaVersion(s string) sarama.KafkaVersion {
 	if err != nil {
 		output.Failf(err.Error())
 	}
+
+	output.Debugf("Using kafkaVersion: %s", v)
 
 	return v
 }
