@@ -65,11 +65,11 @@ contexts:
     clientID: my-client-id
     
     # optional: kafkaVersion (defaults to 2.0.0)
-	kafkaVersion: 1.1.1
-	
-	# optional: avro schema registry
-	avro:
-	  schemaRegistry: localhost:8081
+    kafkaVersion: 1.1.1
+
+    # optional: avro schema registry
+    avro:
+      schemaRegistry: localhost:8081
 
 current-context: localhost
 ```
