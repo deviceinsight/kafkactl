@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Additional config file locations added. See README.md for details
 - Added `offset` parameter to `consume`
 - Support for basic auto completion in fish shell
+- Add 'config view` command, to view current config
 
 ## 1.1.0 - 2019-03-14
 

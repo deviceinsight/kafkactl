@@ -13,4 +13,5 @@ func init() {
 	CmdConfig.AddCommand(cmdCurrentContext)
 	CmdConfig.AddCommand(cmdGetContexts)
 	CmdConfig.AddCommand(cmdUseContext)
+	CmdConfig.AddCommand(cmdView)
 }
