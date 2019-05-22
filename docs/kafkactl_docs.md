@@ -145,6 +145,7 @@ show and edit configurations
 * [kafkactl config current-context](kafkactl_config_current-context.md)	 - show current context
 * [kafkactl config get-contexts](kafkactl_config_get-contexts.md)	 - list configured contexts
 * [kafkactl config use-context](kafkactl_config_use-context.md)	 - switch active context
+* [kafkactl config view](kafkactl_config_view.md)	 - show contents of config file
 
 
 #### kafkactl config current-context
@@ -224,6 +225,36 @@ kafkactl config use-context [flags]
 
 ```
   -h, --help   help for use-context
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl config](kafkactl_config.md)	 - show and edit configurations
+
+
+#### kafkactl config view
+
+show contents of config file
+
+##### Synopsis
+
+Shows the contents of the config file that is currently used
+
+```
+kafkactl config view [flags]
+```
+
+##### Options
+
+```
+  -h, --help   help for view
 ```
 
 ##### Options inherited from parent commands
