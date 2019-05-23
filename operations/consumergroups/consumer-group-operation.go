@@ -81,6 +81,14 @@ func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeCon
 		output.Failf("failed to describe consumer group: %v", err)
 	}
 
+	if flags.FilterTopic != "" {
+		if topics, err := client.Topics(); err != nil {
+			output.Failf("failed to list available topics: %v", err)
+		} else if !util.ContainsString(topics, flags.FilterTopic) {
+			output.Failf("topic does not exist: %s", flags.FilterTopic)
+		}
+	}
+
 	// admin.ListConsumerGroupOffsets(group, nil) can be used to fetch the offsets when
 	// https://github.com/Shopify/sarama/pull/1374 is merged
 	coordinator, err := client.Coordinator(group)
@@ -201,14 +209,18 @@ func createTopicPartitions(offsets *sarama.OffsetFetchResponse, client sarama.Cl
 
 					if !flags.OnlyPartitionsWithLag || lag > 0 {
 						partitionChannel <- partitionOffset{Partition: partition, NewestOffset: offset, ConsumerOffset: offsets.Blocks[topic][partition].Offset, Lag: lag}
+					} else {
+						partitionChannel <- partitionOffset{Partition: -1}
 					}
 				}(partition)
 			}
 
 			for range offsets.Blocks[topic] {
 				partitionOffset := <-partitionChannel
-				details = append(details, partitionOffset)
-				totalLag += partitionOffset.Lag
+				if partitionOffset.Partition != -1 {
+					details = append(details, partitionOffset)
+					totalLag += partitionOffset.Lag
+				}
 			}
 
 			sort.Slice(details, func(i, j int) bool {
