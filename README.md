@@ -237,7 +237,7 @@ In order to get a list of consumer groups the `get consumer-groups` command can 
 # all available consumer groups
 kafkactl get consumer-groups 
 # only consumer groups for a single topic
-kafkactl get consumer-groups my-topic
+kafkactl get consumer-groups --topic my-topic
 # using command alias
 kafkactl get cg
 ```
@@ -248,8 +248,10 @@ is provided details will be printed for each partition otherwise the partitions 
 ```bash
 # describe a consumer group
 kafkactl describe consumer-group my-group 
-# show details for each partition
-kafkactl describe consumer-group my-group --partitions
+# show partition details only for partitions with lag
+kafkactl describe consumer-group my-group --only-with-lag
+# show details only for a single topic
+kafkactl describe consumer-group my-group --topic my-topic
 # using command alias
 kafkactl describe cg my-group
 ```

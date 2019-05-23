@@ -52,6 +52,7 @@ type DescribeConsumerGroupFlags struct {
 
 type GetConsumerGroupFlags struct {
 	OutputFormat string
+	FilterTopic  string
 }
 
 type ConsumerGroupOperation struct {
@@ -222,7 +223,7 @@ func createTopicPartitions(offsets *sarama.OffsetFetchResponse, client sarama.Cl
 	return topicPartitionList
 }
 
-func (operation *ConsumerGroupOperation) GetConsumerGroups(flags GetConsumerGroupFlags, topic string) {
+func (operation *ConsumerGroupOperation) GetConsumerGroups(flags GetConsumerGroupFlags) {
 
 	ctx := operations.CreateClientContext()
 
@@ -246,8 +247,8 @@ func (operation *ConsumerGroupOperation) GetConsumerGroups(flags GetConsumerGrou
 		groupNames = append(groupNames, k)
 	}
 
-	if topic != "" {
-		groupNames = filterGroups(admin, groupNames, topic)
+	if flags.FilterTopic != "" {
+		groupNames = filterGroups(admin, groupNames, flags.FilterTopic)
 	}
 
 	sort.Strings(groupNames)
@@ -293,6 +294,11 @@ func filterGroups(admin sarama.ClusterAdmin, groupNames []string, topic string) 
 	topicGroups := make([]string, 0)
 
 	for _, description := range descriptions {
+
+		if description.ProtocolType != "consumer" {
+			output.Debugf("do not filter on group %s, because protocolType is: %s", description.GroupId, description.ProtocolType)
+			continue
+		}
 
 		for _, member := range description.Members {
 
