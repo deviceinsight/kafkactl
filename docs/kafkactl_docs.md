@@ -17,7 +17,7 @@ A command-line interface the simplifies interaction with Kafka.
 ### SEE ALSO
 
 * [kafkactl alter](kafkactl_alter.md)	 - alter topics
-* [kafkactl completion](kafkactl_completion.md)	 - Output shell completion code for the specified shell (bash or zsh)
+* [kafkactl completion](kafkactl_completion.md)	 - Output shell completion code for the specified shell (bash,zsh,fish)
 * [kafkactl config](kafkactl_config.md)	 - show and edit configurations
 * [kafkactl consume](kafkactl_consume.md)	 - consume messages from a topic
 * [kafkactl create](kafkactl_create.md)	 - create topics
@@ -90,11 +90,11 @@ kafkactl alter topic [flags]
 
 ### kafkactl completion
 
-Output shell completion code for the specified shell (bash or zsh)
+Output shell completion code for the specified shell (bash,zsh,fish)
 
 #### Synopsis
 
-Output shell completion code for the specified shell (bash or zsh)
+Output shell completion code for the specified shell (bash,zsh,fish)
 
 ```
 kafkactl completion SHELL
