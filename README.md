@@ -3,8 +3,8 @@
 
 A command-line interface for interaction with Apache Kafka
 
-[![Build Status](https://travis-ci.com/deviceinsight/kafkactl.svg?branch=master)](
-  https://travis-ci.com/deviceinsight/kafkactl)
+[![Build Status](https://travis-ci.com/deviceinsight/kafkactl.svg?branch=master)](https://travis-ci.com/deviceinsight/kafkactl)
+| [![command docs](https://img.shields.io/badge/command-docs-blue.svg)](https://deviceinsight.github.io/kafkactl/)  
 
 ## Features
 
@@ -125,6 +125,12 @@ Create file with completions:
 mkdir ~/.config/fish/completions
 kafkactl completion fish > ~/.config/fish/completions/kafkactl.fish
 ```
+
+## Command documentation
+
+The documentation for all available commands can be found here:
+
+[![command docs](https://img.shields.io/badge/command-docs-blue.svg)](https://deviceinsight.github.io/kafkactl/)
 
 
 ## Examples
