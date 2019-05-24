@@ -35,7 +35,7 @@ __kafkactl_get_contexts()
 
 __kafkactl_custom_func() {
     case ${last_command} in
-        kafkactl_consume | kafkactl_produce | kafkactl_delete_topic | kafkactl_describe_topic)
+        kafkactl_consume | kafkactl_produce | kafkactl_delete_topic | kafkactl_describe_topic | kafkactl_alter_topic)
             __kafkactl_get_topics
             return
             ;;

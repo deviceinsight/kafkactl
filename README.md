@@ -12,6 +12,8 @@ A command-line interface for interaction with Apache Kafka
 - support for avro schemas
 - Configuration of different contexts
 
+[![asciicast](https://asciinema.org/a/vmxrTA0h8CAXPnJnSFk5uHKzr.svg)](https://asciinema.org/a/vmxrTA0h8CAXPnJnSFk5uHKzr)
+
 ## Installation
 
 You can install the pre-compiled binary or compile from source.
