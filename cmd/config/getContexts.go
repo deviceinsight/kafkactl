@@ -40,5 +40,5 @@ var cmdGetContexts = &cobra.Command{
 }
 
 func init() {
-	cmdGetContexts.Flags().StringVarP(&outputFormat, "output", "o", outputFormat, "Output format. One of: compact")
+	cmdGetContexts.Flags().StringVarP(&outputFormat, "output", "o", outputFormat, "output format. One of: compact")
 }

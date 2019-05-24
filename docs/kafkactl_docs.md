@@ -22,8 +22,8 @@ A command-line interface the simplifies interaction with Kafka.
 * [kafkactl consume](kafkactl_consume.md)	 - consume messages from a topic
 * [kafkactl create](kafkactl_create.md)	 - create topics
 * [kafkactl delete](kafkactl_delete.md)	 - delete topics
-* [kafkactl describe](kafkactl_describe.md)	 - describe topics
-* [kafkactl get](kafkactl_get.md)	 - get info about topics
+* [kafkactl describe](kafkactl_describe.md)	 - describe topics, consumerGroups
+* [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups
 * [kafkactl produce](kafkactl_produce.md)	 - produce messages to a topic
 * [kafkactl version](kafkactl_version.md)	 - print the version of kafkactl
 
@@ -194,7 +194,7 @@ kafkactl config get-contexts [flags]
 
 ```
   -h, --help            help for get-contexts
-  -o, --output string   Output format. One of: compact
+  -o, --output string   output format. One of: compact
 ```
 
 ##### Options inherited from parent commands
@@ -287,7 +287,7 @@ kafkactl consume TOPIC [flags]
   -b, --from-beginning                                                                   set offset for consumer to the oldest offset
   -h, --help                                                                             help for consume
       --offset partition=offset (for partitions not specified, other parameters apply)   offsets in format partition=offset (for partitions not specified, other parameters apply)
-  -o, --output string                                                                    Output format. One of: json|yaml
+  -o, --output string                                                                    output format. One of: json|yaml
   -p, --partitions ints                                                                  partitions to consume. The default is to consume from all partitions.
   -k, --print-keys                                                                       print message keys
   -a, --print-schema                                                                     print details about avro schema used for decoding
@@ -426,11 +426,11 @@ kafkactl delete topic [flags]
 
 ### kafkactl describe
 
-describe topics
+describe topics, consumerGroups
 
 #### Synopsis
 
-describe topics
+describe topics, consumerGroups
 
 #### Options
 
@@ -448,7 +448,40 @@ describe topics
 #### SEE ALSO
 
 * [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
+* [kafkactl describe consumer-group](kafkactl_describe_consumer-group.md)	 - describe a consumerGroup
 * [kafkactl describe topic](kafkactl_describe_topic.md)	 - describe a topic
+
+
+#### kafkactl describe consumer-group
+
+describe a consumerGroup
+
+##### Synopsis
+
+describe a consumerGroup
+
+```
+kafkactl describe consumer-group GROUP [flags]
+```
+
+##### Options
+
+```
+  -h, --help            help for consumer-group
+  -l, --only-with-lag   show only partitions that have a lag
+  -t, --topic string    show group details for given topic only
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl describe](kafkactl_describe.md)	 - describe topics, consumerGroups
 
 
 #### kafkactl describe topic
@@ -460,7 +493,7 @@ describe a topic
 describe a topic
 
 ```
-kafkactl describe topic [flags]
+kafkactl describe topic TOPIC [flags]
 ```
 
 ##### Options
@@ -478,16 +511,16 @@ kafkactl describe topic [flags]
 
 ##### SEE ALSO
 
-* [kafkactl describe](kafkactl_describe.md)	 - describe topics
+* [kafkactl describe](kafkactl_describe.md)	 - describe topics, consumerGroups
 
 
 ### kafkactl get
 
-get info about topics
+get info about topics, consumerGroups
 
 #### Synopsis
 
-get info about topics
+get info about topics, consumerGroups
 
 #### Options
 
@@ -505,7 +538,40 @@ get info about topics
 #### SEE ALSO
 
 * [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
+* [kafkactl get consumer-groups](kafkactl_get_consumer-groups.md)	 - list available consumerGroups
 * [kafkactl get topics](kafkactl_get_topics.md)	 - list available topics
+
+
+#### kafkactl get consumer-groups
+
+list available consumerGroups
+
+##### Synopsis
+
+list available consumerGroups
+
+```
+kafkactl get consumer-groups [flags]
+```
+
+##### Options
+
+```
+  -h, --help            help for consumer-groups
+  -o, --output string   output format. One of: json|yaml|wide|compact
+  -t, --topic string    show groups for given topic only
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups
 
 
 #### kafkactl get topics
@@ -524,7 +590,7 @@ kafkactl get topics [flags]
 
 ```
   -h, --help            help for topics
-  -o, --output string   Output format. One of: json|yaml|wide|compact
+  -o, --output string   output format. One of: json|yaml|wide|compact
 ```
 
 ##### Options inherited from parent commands
@@ -536,7 +602,7 @@ kafkactl get topics [flags]
 
 ##### SEE ALSO
 
-* [kafkactl get](kafkactl_get.md)	 - get info about topics
+* [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups
 
 
 ### kafkactl produce
@@ -558,7 +624,7 @@ kafkactl produce [flags]
   -k, --key string                 key to use for all messages
   -K, --key-schema-version int     avro schema version that should be used for key serialization (default is latest) (default -1)
   -p, --partition int32            partition to produce to (default -1)
-  -P, --partitioner hash           The partitioning scheme to use. Can be hash, `manual`, or `random`
+  -P, --partitioner hash           the partitioning scheme to use. Can be hash, `manual`, or `random`
   -S, --separator string           separator to split key and value from stdin
   -s, --silent                     do not write to standard output
   -v, --value string               value to produce

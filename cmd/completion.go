@@ -17,6 +17,14 @@ __kafkactl_get_topics()
     fi
 }
 
+__kafkactl_get_consumer_groups()
+{
+    local kafkactl_cg_output out
+    if kafkactl_cg_output=$(kafkactl get cg -o compact 2>/dev/null); then
+        COMPREPLY=( $( compgen -W "${kafkactl_cg_output[*]}" -- "$cur" ) )
+    fi
+}
+
 __kafkactl_get_contexts()
 {
     local kafkactl_contexts_output out
@@ -29,6 +37,10 @@ __kafkactl_custom_func() {
     case ${last_command} in
         kafkactl_consume | kafkactl_produce | kafkactl_delete_topic | kafkactl_describe_topic)
             __kafkactl_get_topics
+            return
+            ;;
+		kafkactl_describe_consumer-group)
+            __kafkactl_get_consumer_groups
             return
             ;;
 		kafkactl_config_use-context)
@@ -65,16 +77,16 @@ case $state in
         _arguments '2: :(topic)'
       ;;
       describe)
-        _arguments '2: :(topic)'
+        _arguments '2: :(topic consumer-group)'
       ;;
       get)
-        _arguments '2: :(topics)'
+        _arguments '2: :(topics consumer-groups)'
       ;;
       completion)
-        _arguments '2: :(bash zsh)'
+        _arguments '2: :(bash zsh fish)'
       ;;
       config)
-        _arguments '2: :(current-context get-contexts use-context)'
+        _arguments '2: :(current-context get-contexts use-context view)'
       ;;
       create)
         _arguments '2: :(topic)'
@@ -94,6 +106,9 @@ case $state in
     case $words[3] in
       topic)
         _alternative "topic:topic names:($(kafkactl get topics -o compact))"
+      ;;
+      consumer-group)
+        _alternative "consumer-group:consumer-group names:($(kafkactl get cg -o compact))"
       ;;
       use-context)
         _alternative "context:context names:($(kafkactl config get-contexts -o compact))"

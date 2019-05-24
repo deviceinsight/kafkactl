@@ -69,7 +69,7 @@ func CreateClientConfig(context *ClientContext) *sarama.Config {
 	return config
 }
 
-func createClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
+func CreateClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
 	var (
 		err    error
 		config = sarama.NewConfig()

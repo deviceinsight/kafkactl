@@ -5,6 +5,9 @@
 *.iml
 *.ipr
 
+### Visual Studio Code
+.vscode
+
 ### Binary
 docs
 dist

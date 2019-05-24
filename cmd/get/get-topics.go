@@ -16,5 +16,5 @@ var cmdGetTopics = &cobra.Command{
 }
 
 func init() {
-	cmdGetTopics.Flags().StringVarP(&flags.OutputFormat, "output", "o", flags.OutputFormat, "Output format. One of: json|yaml|wide|compact")
+	cmdGetTopics.Flags().StringVarP(&flags.OutputFormat, "output", "o", flags.OutputFormat, "output format. One of: json|yaml|wide|compact")
 }
