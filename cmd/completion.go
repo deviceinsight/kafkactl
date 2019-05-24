@@ -127,8 +127,8 @@ esac
 var cmdCompletion = &cobra.Command{
 	Use:                   "completion SHELL",
 	DisableFlagsInUseLine: true,
-	ValidArgs:             []string{"bash", "zsh"},
-	Short:                 "Output shell completion code for the specified shell (bash or zsh)",
+	ValidArgs:             []string{"bash", "zsh", "fish"},
+	Short:                 "Output shell completion code for the specified shell (bash,zsh,fish)",
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if len(args) == 0 {
@@ -147,7 +147,7 @@ var cmdCompletion = &cobra.Command{
 		} else if shell == "zsh" {
 			err = runCompletionZsh(os.Stdout)
 		} else if shell == "fish" {
-			err = runCompletionFish(cmd, os.Stdout)
+			err = runCompletionFish(cmd.Root(), os.Stdout)
 		} else {
 			output.Failf("Unsupported shell type %q.", shell)
 		}
