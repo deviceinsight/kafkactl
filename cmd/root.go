@@ -11,6 +11,7 @@ import (
 	"github.com/deviceinsight/kafkactl/cmd/describe"
 	"github.com/deviceinsight/kafkactl/cmd/get"
 	"github.com/deviceinsight/kafkactl/cmd/produce"
+	"github.com/deviceinsight/kafkactl/cmd/reset"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -46,6 +47,7 @@ func init() {
 	rootCmd.AddCommand(describe.CmdDescribe)
 	rootCmd.AddCommand(get.CmdGet)
 	rootCmd.AddCommand(produce.CmdProduce)
+	rootCmd.AddCommand(reset.CmdReset)
 
 	// use upper-case letters for shorthand params to avoid conflicts with local flags
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config-file", "C", "", fmt.Sprintf("config file. one of: %v", configPaths))

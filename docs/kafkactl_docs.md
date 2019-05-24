@@ -25,6 +25,7 @@ A command-line interface the simplifies interaction with Kafka.
 * [kafkactl describe](kafkactl_describe.md)	 - describe topics, consumerGroups
 * [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups
 * [kafkactl produce](kafkactl_produce.md)	 - produce messages to a topic
+* [kafkactl reset](kafkactl_reset.md)	 - reset consumerGroupsOffset
 * [kafkactl version](kafkactl_version.md)	 - print the version of kafkactl
 
 
@@ -641,6 +642,70 @@ kafkactl produce [flags]
 #### SEE ALSO
 
 * [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
+
+
+### kafkactl reset
+
+reset consumerGroupsOffset
+
+#### Synopsis
+
+reset consumerGroupsOffset
+
+#### Options
+
+```
+  -h, --help   help for reset
+```
+
+#### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -V, --verbose              verbose output
+```
+
+#### SEE ALSO
+
+* [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
+* [kafkactl reset consumer-group-offset](kafkactl_reset_consumer-group-offset.md)	 - reset a consumer group offset
+
+
+#### kafkactl reset consumer-group-offset
+
+reset a consumer group offset
+
+##### Synopsis
+
+reset a consumer group offset
+
+```
+kafkactl reset consumer-group-offset GROUP [flags]
+```
+
+##### Options
+
+```
+  -e, --execute           execute the reset (as default only the results are displayed for validation)
+  -h, --help              help for consumer-group-offset
+      --newest            set the offset to newest offset (for all partitions or the specified partition)
+      --offset int        set offset to this value. offset with value -1 is ignored (default -1)
+      --oldest            set the offset to oldest offset (for all partitions or the specified partition)
+  -o, --output string     output format. One of: json|yaml
+  -p, --partition int32   partition to apply the offset. -1 stands for all partitions (default -1)
+  -t, --topic string      topic to change offset for
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl reset](kafkactl_reset.md)	 - reset consumerGroupsOffset
 
 
 ### kafkactl version
