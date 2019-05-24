@@ -95,6 +95,12 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 		if err != nil {
 			output.Failf("Failed to read data from the standard input: %s", err)
 		}
+
+		if len(bytes) > 0 && bytes[len(bytes)-1] == 10 {
+			// remove trailing return
+			bytes = bytes[:len(bytes)-1]
+		}
+
 		if flags.Separator != "" {
 			input := strings.SplitN(string(bytes[:]), flags.Separator, 2)
 			if len(input) < 2 {
