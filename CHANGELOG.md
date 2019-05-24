@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `describe consumer-group` command to see details of consumer group
 - Add `reset offset` command to reset consumer group offsets
 
+### Fixed
+- Improved performance of `get topics` through concurrent requests
+
 ## 1.1.0 - 2019-03-14
 
 ### Added
