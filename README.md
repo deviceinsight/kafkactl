@@ -229,3 +229,29 @@ The topic configs can be edited by supplying key value pairs as follows:
 ```bash
 kafkactl alter topic my-topic --config retention.ms=3600 --config cleanup.policy=compact
 ```
+
+### Consumer groups
+
+In order to get a list of consumer groups the `get consumer-groups` command can be used:
+```bash
+# all available consumer groups
+kafkactl get consumer-groups 
+# only consumer groups for a single topic
+kafkactl get consumer-groups --topic my-topic
+# using command alias
+kafkactl get cg
+```
+
+To get detailed information about the consumer group use `describe consumer-group`. If the parameter `--partitions`
+is provided details will be printed for each partition otherwise the partitions are aggregated to the clients.
+
+```bash
+# describe a consumer group
+kafkactl describe consumer-group my-group 
+# show partition details only for partitions with lag
+kafkactl describe consumer-group my-group --only-with-lag
+# show details only for a single topic
+kafkactl describe consumer-group my-group --topic my-topic
+# using command alias
+kafkactl describe cg my-group
+```

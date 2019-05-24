@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/util"
 	"github.com/landoop/schema-registry"
 	"github.com/linkedin/goavro"
 )
@@ -39,7 +40,7 @@ func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int
 		output.Failf("failed to list available avro schemas (%v)", err)
 	}
 
-	if !contains(subjects, subject) {
+	if !util.ContainsString(subjects, subject) {
 		// does not seem to be avro data
 		return rawData
 	}
@@ -94,13 +95,4 @@ func (serializer AvroMessageSerializer) Serialize(key, value []byte, flags Produ
 	message.Value = sarama.ByteEncoder(serializer.encode(value, flags.ValueSchemaVersion, "value"))
 
 	return message
-}
-
-func contains(list []string, element string) bool {
-	for _, it := range list {
-		if it == element {
-			return true
-		}
-	}
-	return false
 }

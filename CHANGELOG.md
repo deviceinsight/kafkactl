@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `offset` parameter to `consume`
 - Support for basic auto completion in fish shell
 - Add 'config view` command, to view current config
+- Add `get consumer-groups` command to list available consumer groups
+- Add `describe consumer-group` command to see details of consumer group
 
 ## 1.1.0 - 2019-03-14
 
