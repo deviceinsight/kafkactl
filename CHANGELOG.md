@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fixed producing value as key in case an avro schema registry is configured.
+
 ## 1.2.0 - 2019-05-24
 
 ### Added

@@ -89,7 +89,7 @@ func (serializer AvroMessageSerializer) Serialize(key, value []byte, flags Produ
 	message := &sarama.ProducerMessage{Topic: serializer.topic, Partition: flags.Partition}
 
 	if key != nil {
-		message.Key = sarama.ByteEncoder(serializer.encode(value, flags.KeySchemaVersion, "key"))
+		message.Key = sarama.ByteEncoder(serializer.encode(key, flags.KeySchemaVersion, "key"))
 	}
 
 	message.Value = sarama.ByteEncoder(serializer.encode(value, flags.ValueSchemaVersion, "value"))
