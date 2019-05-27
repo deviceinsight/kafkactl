@@ -14,7 +14,9 @@ env:
   - secure: 2DkN+G+FseExExKHvvMlltvTmaVbpREBFU1T5eR6ZhOwksxtCDQrWfswh7fjzpCluwSXmf4Gm31PesPIcZdVNY03t7OxWPv8o9ol+y1DcJbw4Q5FwSxCbDVrLf6D1D2CXyqM6EXoYxU/xbgEp7M0M+l1m9dYIUXTRk++AP0oTN1psDQ4g/wb9YqhkXQhUl7GFZTv3xf8AE3L9x7Q6ezH9BFCVgYSW8XPGpGEQLBaE86x9EE4Z5pztFT1loCCOk83FCHScaCrpdhEHOtSsyhtV3RvVtiBeY0j6PkKnoWiaq8eugNABT6gPoOF1Fnw0Qfbe6SIreOlND+LKtr0K1+usTG/RWRQ/ofdqTqTo6/xMDOY6QwlM+YnPMk/wLqoR1zgLxDW8urozLWC13MtPPrFJHPlIA5WisO71Yv2HrhciFfYcFMG34JOlYvqxU4Py6qOlWIuqcFzQAFd8wI5sleC5ovsNjwa2MX9QqkLyuQaaeG8avFacN1YZtw6NBXrBUCLEkWU2sOLz7qH97WfG889XNuoB3RNe3STaL1nxnzFbNZIGXTIMIYSYlVKhrHsC6FENarpIZtwXijrRCM017EDyRbzntHd8hDvpIuyU3nLJ8CfRRiSeVKIlFlwVMA9eJ0OapHLEnxxSEnYTKU1zgt7xVUAhNqHLSzUxCZ6I7osxLI=
 install:
 - sudo snap install snapcraft --classic
-after_success:
+before_deploy:
+- openssl aes-256-cbc -K $encrypted_10ec70445363_key -iv $encrypted_10ec70445363_iv
+  -in snap.login.enc -out snap.login -d
 - test -n "$TRAVIS_TAG" && snapcraft login --with snap.login
 deploy:
 - provider: pages
@@ -31,6 +33,4 @@ deploy:
     branch: master
     condition: "$TRAVIS_OS_NAME = linux"
     tags: true
-before_deploy:
-- openssl aes-256-cbc -K $encrypted_10ec70445363_key -iv $encrypted_10ec70445363_iv
-  -in snap.login.enc -out snap.login -d
+
