@@ -93,7 +93,7 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 			output.Failf("Failed to get the list of partitions: %s", err)
 		}
 	} else {
-		for partition := range flags.Partitions {
+		for _, partition := range flags.Partitions {
 			partitions = append(partitions, int32(partition))
 		}
 	}
