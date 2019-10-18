@@ -4,9 +4,11 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/output"
-	"io/ioutil"
+	"bufio"
+//"io/ioutil"
 	"os"
 	"strings"
+//"time"
 )
 
 type ProducerFlags struct {
@@ -18,6 +20,7 @@ type ProducerFlags struct {
 	KeySchemaVersion   int
 	ValueSchemaVersion int
 	Silent             bool
+	RateInSeconds      int
 }
 
 type ProducerOperation struct {
@@ -81,6 +84,31 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 		serializer = DefaultMessageSerializer{topic: topic}
 	}
 
+  if flags.RateInSeconds == -1 {
+			output.Infof("No rate limiting was set, running without constraints")
+  } else {
+// Basic rate limiting from google
+// taken from https://github.com/golang/go/wiki/RateLimiting
+//
+//    rate := time.Second / flags.RateInSeconds
+//    burstLimit := 100
+//    tick := time.NewTicker(rate)
+//    defer tick.Stop()
+//    throttle := make(chan time.Time, burstLimit)
+//    go func() {
+//      for t := range tick.C {
+//        select {
+//          case throttle <- t:
+//          default:
+//        }
+//      }  // does not exit after tick.Stop()
+//    }()
+//    for req := range requests {
+//      <-throttle  // rate limit our Service.Method RPCs
+//      go client.Call("Service.Method", req, ...)
+//    }
+  }
+
 	var key []byte
 	var value []byte
 
@@ -91,48 +119,51 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 	if flags.Value != "" {
 		value = []byte(flags.Value)
 	} else if stdinAvailable() {
-		bytes, err := ioutil.ReadAll(os.Stdin)
-		if err != nil {
-			output.Failf("Failed to read data from the standard input: %s", err)
-		}
-
-		if len(bytes) > 0 && bytes[len(bytes)-1] == 10 {
-			// remove trailing return
-			bytes = bytes[:len(bytes)-1]
-		}
-
-		if flags.Separator != "" {
-			input := strings.SplitN(string(bytes[:]), flags.Separator, 2)
-			if len(input) < 2 {
-				output.Failf("the provided input does not contain the separator %s", flags.Separator)
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			bytes, err := scanner.Text(), scanner.Err()
+			if err != nil {
+				output.Failf("Failed to read data from the standard input: %s", err)
 			}
-			key = []byte(input[0])
-			value = []byte(input[1])
-		} else {
-			value = bytes
+
+			if flags.Separator != "" {
+				// In this case we need to buffer the requests or use another seperator to seperate messages
+				input := strings.SplitN(string(bytes[:]), flags.Separator, 2)
+				if len(input) < 2 {
+					output.Failf("the provided input does not contain the separator %s", flags.Separator)
+			}
+				key = []byte(input[0])
+				value = []byte(input[1])
+			} else {
+        value = []byte(bytes)
+			}
+			message := serializer.Serialize(key, value, flags)
+
+			producer, err := sarama.NewSyncProducer(clientContext.Brokers, config)
+			if err != nil {
+				output.Failf("Failed to open Kafka producer: %s", err)
+			}
+      defer func() {
+				if err := producer.Close(); err != nil {
+					output.Warnf("Failed to close Kafka producer cleanly:", err)
+				}
+			}()
+
+			partition, offset, err := producer.SendMessage(message)
+			if err != nil {
+				output.Failf("Failed to produce message: %s", err)
+			} else if !flags.Silent {
+				output.Infof("topic=%s\tpartition=%d\toffset=%d\n", topic, partition, offset)
+			}
+		}
+
+		if scanner.Err() != nil {
+			output.Failf("Failed to read data from the standard input: %s", err)
 		}
 	} else {
 		output.Failf("value is required, or you have to provide the value on stdin")
 	}
 
-	message := serializer.Serialize(key, value, flags)
-
-	producer, err := sarama.NewSyncProducer(clientContext.Brokers, config)
-	if err != nil {
-		output.Failf("Failed to open Kafka producer: %s", err)
-	}
-	defer func() {
-		if err := producer.Close(); err != nil {
-			output.Warnf("Failed to close Kafka producer cleanly:", err)
-		}
-	}()
-
-	partition, offset, err := producer.SendMessage(message)
-	if err != nil {
-		output.Failf("Failed to produce message: %s", err)
-	} else if !flags.Silent {
-		output.Infof("topic=%s\tpartition=%d\toffset=%d\n", topic, partition, offset)
-	}
 }
 
 func stdinAvailable() bool {
