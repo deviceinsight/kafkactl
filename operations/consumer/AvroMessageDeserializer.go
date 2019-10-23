@@ -36,6 +36,7 @@ func CreateAvroMessageDeserializer(topic string, avroSchemaRegistry string) Avro
 type avroMessage struct {
 	Partition     int32
 	Offset        int64
+	Headers       map[string]string `json:",omitempty" yaml:",omitempty"`
 	KeySchema     *string `json:"keySchema,omitempty" yaml:"keySchema,omitempty"`
 	KeySchemaId   *int    `json:"keySchemaId,omitempty" yaml:"keySchemaId,omitempty"`
 	Key           *string `json:",omitempty" yaml:",omitempty"`
@@ -72,6 +73,10 @@ func (deserializer AvroMessageDeserializer) newAvroMessage(msg *sarama.ConsumerM
 
 	if flags.PrintTimestamps && !msg.Timestamp.IsZero() {
 		avroMessage.Timestamp = &msg.Timestamp
+	}
+
+	if flags.PrintHeaders {
+		avroMessage.Headers = encodeRecordHeaders(msg.Headers)
 	}
 
 	if flags.PrintAvroSchema {
@@ -147,6 +152,20 @@ func (deserializer AvroMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerM
 
 	if flags.OutputFormat == "" {
 		var row []string
+
+		if flags.PrintHeaders {
+			if msg.Headers != nil {
+				var column []string
+
+				for key, value := range msg.Headers {
+					column = append(column, key + ":" + value)
+				}
+
+				row = append(row, strings.Join(column[:], ","))
+			} else {
+				row = append(row, "")
+			}
+		}
 
 		if flags.PrintKeys {
 			if msg.Key != nil {
