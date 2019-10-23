@@ -290,6 +290,7 @@ kafkactl consume TOPIC [flags]
       --offset partition=offset (for partitions not specified, other parameters apply)   offsets in format partition=offset (for partitions not specified, other parameters apply)
   -o, --output string                                                                    output format. One of: json|yaml
   -p, --partitions ints                                                                  partitions to consume. The default is to consume from all partitions.
+      --print-headers                                                                    print message headers
   -k, --print-keys                                                                       print message keys
   -a, --print-schema                                                                     print details about avro schema used for decoding
   -t, --print-timestamps                                                                 print message timestamps
