@@ -27,3 +27,24 @@ func encodeBytes(data []byte, encoding string) *string {
 
 	return &str
 }
+
+func encodeRecordHeaders(headers []*sarama.RecordHeader) map[string]string {
+	if headers == nil {
+		return nil
+	}
+
+	data := make(map[string]string)
+
+	for _, header := range headers {
+		if header.Key == nil {
+			continue
+		}
+
+		key := *encodeBytes(header.Key, "")
+		value := *encodeBytes(header.Value, "")
+
+		data[key] = value
+	}
+
+	return data
+}
