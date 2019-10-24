@@ -6,6 +6,7 @@ import (
 	"github.com/deviceinsight/kafkactl/output"
 	"os"
 	"os/signal"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,6 +23,7 @@ type ConsumerFlags struct {
 	Offsets         []string
 	FromBeginning   bool
 	BufferSize      int
+	Tail            int
 	EncodeValue     string
 	EncodeKey       string
 }
@@ -100,9 +102,11 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 	}
 
 	var (
-		messages = make(chan *sarama.ConsumerMessage, flags.BufferSize)
-		closing  = make(chan struct{})
-		wg       sync.WaitGroup
+		messages          = make(chan *sarama.ConsumerMessage, flags.BufferSize)
+		closing           = make(chan struct{})
+		wgPartition       sync.WaitGroup
+		wgConsumerActive  sync.WaitGroup
+		wgPendingMessages sync.WaitGroup
 	)
 
 	go func() {
@@ -116,44 +120,115 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 	output.Debugf("Start consuming topic: %s", topic)
 
 	for _, partition := range partitions {
-		initialOffset := getInitialOffset(flags, partition)
-		pc, err := c.ConsumePartition(topic, partition, initialOffset)
-		if err != nil {
-			output.Failf("Failed to start consumer for partition %d: %s", partition, err)
-		}
-
-		output.Debugf("Start consuming partition %d from offset %d", partition, initialOffset)
-
-		go func(pc sarama.PartitionConsumer) {
-			<-closing
-			pc.AsyncClose()
-		}(pc)
-
-		wg.Add(1)
-		go func(pc sarama.PartitionConsumer) {
-			defer wg.Done()
-			for message := range pc.Messages() {
-				messages <- message
+		wgPartition.Add(1)
+		go func(partition int32) {
+			defer wgPartition.Done()
+			initialOffset, limit := getInitialOffset(client, topic, flags, partition)
+			pc, err := c.ConsumePartition(topic, partition, initialOffset)
+			if err != nil {
+				output.Failf("Failed to start consumer for partition %d: %s", partition, err)
 			}
-		}(pc)
+
+			if limit > 0 {
+				output.Debugf("Start consuming partition %d from offset %d", partition, initialOffset)
+			} else {
+				output.Debugf("Skipping partition %d", partition)
+				return
+			}
+
+			go func(pc sarama.PartitionConsumer) {
+				<-closing
+				pc.AsyncClose()
+			}(pc)
+
+			wgConsumerActive.Add(1)
+			go func(pc sarama.PartitionConsumer) {
+				defer wgConsumerActive.Done()
+				messageCount := 0
+				for message := range pc.Messages() {
+					messages <- message
+					messageCount += 1
+					if limit > 0 && messageCount >= limit {
+						output.Debugf("stop consuming partition %d limit reached: %d", partition, limit)
+						pc.AsyncClose()
+						break
+					}
+				}
+			}(pc)
+		}(partition)
 	}
 
-	go func() {
-		for msg := range messages {
-			deserializer.Deserialize(msg, flags)
-		}
-	}()
+	if flags.Tail > 0 {
 
-	wg.Wait()
+		wgPendingMessages.Add(1)
+
+		go func() {
+			defer wgPendingMessages.Done()
+
+			sortedMessages := make([]*sarama.ConsumerMessage, 0)
+
+			for msg := range messages {
+				sortedMessages = insertSorted(sortedMessages, msg)
+				if len(sortedMessages) > flags.Tail {
+					sortedMessages = sortedMessages[:flags.Tail]
+				}
+			}
+			lastIndex := len(sortedMessages) - 1
+			for i := range sortedMessages {
+				deserializer.Deserialize(sortedMessages[lastIndex-i], flags)
+			}
+		}()
+
+	} else {
+		//just print the messages
+		go func() {
+			for msg := range messages {
+				deserializer.Deserialize(msg, flags)
+			}
+		}()
+	}
+
+	wgPartition.Wait()
+	output.Debugf("Done waiting for partitions")
+	wgConsumerActive.Wait()
 	output.Debugf("Done consuming topic: %s", topic)
 	close(messages)
+	wgPendingMessages.Wait()
+	output.Debugf("Done waiting for messages")
 
 	if err := c.Close(); err != nil {
 		output.Failf("Failed to close consumer: ", err)
 	}
 }
 
-func getInitialOffset(flags ConsumerFlags, currentPartition int32) int64 {
+func getInitialOffset(client sarama.Client, topic string, flags ConsumerFlags, currentPartition int32) (int64, int) {
+
+	if flags.Tail > 0 && len(flags.Offsets) > 0 {
+		output.Failf("parameters offset and tail cannot be used together")
+	} else if flags.Tail > 0 {
+
+		var (
+			err          error
+			NewestOffset int64
+			OldestOffset int64
+		)
+
+		if NewestOffset, err = client.GetOffset(topic, currentPartition, sarama.OffsetNewest); err != nil {
+			output.Failf("failed to get offset for topic %s Partition %d: %v", topic, currentPartition, err)
+		}
+
+		if OldestOffset, err = client.GetOffset(topic, currentPartition, sarama.OffsetOldest); err != nil {
+			output.Failf("failed to get offset for topic %s Partition %d: %v", topic, currentPartition, err)
+		}
+
+		offset := NewestOffset - int64(flags.Tail)
+		limit := flags.Tail
+		if offset < OldestOffset {
+			offset = OldestOffset
+			limit = int(NewestOffset - OldestOffset)
+		}
+		return offset, limit
+	}
 
 	for _, offsetFlag := range flags.Offsets {
 		offsetParts := strings.Split(offsetFlag, "=")
@@ -174,13 +249,23 @@ func getInitialOffset(flags ConsumerFlags, currentPartition int32) int64 {
 				output.Failf("unable to parse offset parameter: %s (%v)", offsetFlag, err)
 			}
 
-			return offset
+			return offset, -1
 		}
 	}
 
 	if flags.FromBeginning {
-		return sarama.OffsetOldest
+		return sarama.OffsetOldest, -1
 	} else {
-		return sarama.OffsetNewest
+		return sarama.OffsetNewest, -1
 	}
+}
+
+func insertSorted(messages []*sarama.ConsumerMessage, message *sarama.ConsumerMessage) []*sarama.ConsumerMessage {
+	index := sort.Search(len(messages), func(i int) bool {
+		return messages[i].Timestamp.Before(message.Timestamp)
+	})
+	messages = append(messages, nil)
+	copy(messages[index+1:], messages[index:])
+	messages[index] = message
+	return messages
 }
