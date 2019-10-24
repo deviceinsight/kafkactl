@@ -158,10 +158,9 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 		}(partition)
 	}
 
+	wgPendingMessages.Add(1)
+
 	if flags.Tail > 0 {
-
-		wgPendingMessages.Add(1)
-
 		go func() {
 			defer wgPendingMessages.Done()
 
@@ -182,6 +181,7 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 	} else {
 		//just print the messages
 		go func() {
+			defer wgPendingMessages.Done()
 			for msg := range messages {
 				deserializer.Deserialize(msg, flags)
 			}
