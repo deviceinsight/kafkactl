@@ -129,7 +129,7 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 				output.Failf("Failed to start consumer for partition %d: %s", partition, err)
 			}
 
-			if limit > 0 {
+			if limit != 0 {
 				output.Debugf("Start consuming partition %d from offset %d", partition, initialOffset)
 			} else {
 				output.Debugf("Skipping partition %d", partition)
