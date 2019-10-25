@@ -24,6 +24,7 @@ type ConsumerFlags struct {
 	FromBeginning   bool
 	BufferSize      int
 	Tail            int
+	Exit            bool
 	EncodeValue     string
 	EncodeKey       string
 }
@@ -123,7 +124,7 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 		wgPartition.Add(1)
 		go func(partition int32) {
 			defer wgPartition.Done()
-			initialOffset, lastOffset := getOffsetBounds(client, topic, flags, partition)
+			initialOffset, lastOffset := getOffsetBounds(&client, topic, flags, partition)
 			pc, err := c.ConsumePartition(topic, partition, initialOffset)
 			if err != nil {
 				output.Failf("Failed to start consumer for partition %d: %s", partition, err)
@@ -199,32 +200,31 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 	}
 }
 
-func getOffsetBounds(client sarama.Client, topic string, flags ConsumerFlags, currentPartition int32) (int64, int64) {
+func getOffsetBounds(client *sarama.Client, topic string, flags ConsumerFlags, currentPartition int32) (int64, int64) {
 
-	if flags.Tail > 0 && len(flags.Offsets) > 0 {
-		output.Failf("parameters offset and tail cannot be used together")
+	if flags.Exit && len(flags.Offsets) == 0 && !flags.FromBeginning {
+		output.Failf("parameter --exit has to be used in combination with --from-beginning or --offset")
+	} else if flags.Tail > 0 && len(flags.Offsets) > 0 {
+		output.Failf("parameters --offset and --tail cannot be used together")
 	} else if flags.Tail > 0 {
 
-		var (
-			err          error
-			NewestOffset int64
-			OldestOffset int64
-		)
+		newestOffset, oldestOffset := getBoundaryOffsets(client, topic, currentPartition)
 
-		if NewestOffset, err = client.GetOffset(topic, currentPartition, sarama.OffsetNewest); err != nil {
-			output.Failf("failed to get offset for topic %s Partition %d: %v", topic, currentPartition, err)
-		}
-
-		if OldestOffset, err = client.GetOffset(topic, currentPartition, sarama.OffsetOldest); err != nil {
-			output.Failf("failed to get offset for topic %s Partition %d: %v", topic, currentPartition, err)
-		}
-
-		minOffset := NewestOffset - int64(flags.Tail)
-		maxOffset := NewestOffset - 1
-		if minOffset < OldestOffset {
-			minOffset = OldestOffset
+		minOffset := newestOffset - int64(flags.Tail)
+		maxOffset := newestOffset - 1
+		if minOffset < oldestOffset {
+			minOffset = oldestOffset
 		}
 		return minOffset, maxOffset
+	}
+
+	lastOffset := int64(-1)
+	oldestOffset := sarama.OffsetOldest
+
+	if flags.Exit {
+		newestOffset, oldestOff := getBoundaryOffsets(client, topic, currentPartition)
+		lastOffset = newestOffset - 1
+		oldestOffset = oldestOff
 	}
 
 	for _, offsetFlag := range flags.Offsets {
@@ -246,15 +246,28 @@ func getOffsetBounds(client sarama.Client, topic string, flags ConsumerFlags, cu
 				output.Failf("unable to parse offset parameter: %s (%v)", offsetFlag, err)
 			}
 
-			return offset, -1
+			return offset, lastOffset
 		}
 	}
 
 	if flags.FromBeginning {
-		return sarama.OffsetOldest, -1
+		return oldestOffset, lastOffset
 	} else {
 		return sarama.OffsetNewest, -1
 	}
+}
+
+func getBoundaryOffsets(client *sarama.Client, topic string, partition int32) (newestOffset int64, oldestOffset int64) {
+	var err error
+
+	if newestOffset, err = (*client).GetOffset(topic, partition, sarama.OffsetNewest); err != nil {
+		output.Failf("failed to get offset for topic %s Partition %d: %v", topic, partition, err)
+	}
+
+	if oldestOffset, err = (*client).GetOffset(topic, partition, sarama.OffsetOldest); err != nil {
+		output.Failf("failed to get offset for topic %s Partition %d: %v", topic, partition, err)
+	}
+	return newestOffset, oldestOffset
 }
 
 func insertSorted(messages []*sarama.ConsumerMessage, message *sarama.ConsumerMessage) []*sarama.ConsumerMessage {
