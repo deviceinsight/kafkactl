@@ -1,11 +1,12 @@
 package producer
 
 import (
+	"bufio"
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/output"
-	"io/ioutil"
 	"os"
+	"os/signal"
 	"strings"
 )
 
@@ -81,42 +82,6 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 		serializer = DefaultMessageSerializer{topic: topic}
 	}
 
-	var key []byte
-	var value []byte
-
-	if flags.Key != "" {
-		key = []byte(flags.Key)
-	}
-
-	if flags.Value != "" {
-		value = []byte(flags.Value)
-	} else if stdinAvailable() {
-		bytes, err := ioutil.ReadAll(os.Stdin)
-		if err != nil {
-			output.Failf("Failed to read data from the standard input: %s", err)
-		}
-
-		if len(bytes) > 0 && bytes[len(bytes)-1] == 10 {
-			// remove trailing return
-			bytes = bytes[:len(bytes)-1]
-		}
-
-		if flags.Separator != "" {
-			input := strings.SplitN(string(bytes[:]), flags.Separator, 2)
-			if len(input) < 2 {
-				output.Failf("the provided input does not contain the separator %s", flags.Separator)
-			}
-			key = []byte(input[0])
-			value = []byte(input[1])
-		} else {
-			value = bytes
-		}
-	} else {
-		output.Failf("value is required, or you have to provide the value on stdin")
-	}
-
-	message := serializer.Serialize(key, value, flags)
-
 	producer, err := sarama.NewSyncProducer(clientContext.Brokers, config)
 	if err != nil {
 		output.Failf("Failed to open Kafka producer: %s", err)
@@ -127,11 +92,79 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 		}
 	}()
 
-	partition, offset, err := producer.SendMessage(message)
-	if err != nil {
-		output.Failf("Failed to produce message: %s", err)
-	} else if !flags.Silent {
-		output.Infof("topic=%s\tpartition=%d\toffset=%d\n", topic, partition, offset)
+	var key string
+	var value string
+
+	if flags.Key != "" && flags.Separator != "" {
+		output.Failf("parameters --key and --separator cannot be used together")
+	} else if flags.Key != "" {
+		key = flags.Key
+	}
+
+	if flags.Value != "" {
+		// produce a single message
+		message := serializer.Serialize([]byte(key), []byte(flags.Value), flags)
+		partition, offset, err := producer.SendMessage(message)
+		if err != nil {
+			output.Failf("Failed to produce message: %s", err)
+		} else if !flags.Silent {
+			output.Infof("message produced (partition=%d\toffset=%d)\n", partition, offset)
+		}
+	} else if stdinAvailable() {
+
+		cancel := make(chan struct{})
+
+		go func() {
+			signals := make(chan os.Signal, 1)
+			signal.Notify(signals, os.Kill, os.Interrupt)
+			<-signals
+			close(cancel)
+		}()
+
+		messageCount := 0
+		// print an empty line that will be replaced when updating the status
+		output.Statusf("")
+
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+
+			select {
+			case <-cancel:
+				break
+			default:
+			}
+
+			line, err := scanner.Text(), scanner.Err()
+			if err != nil {
+				output.Failf("Failed to read data from the standard input: %v", err)
+			}
+
+			if flags.Separator != "" {
+				input := strings.SplitN(line, flags.Separator, 2)
+				if len(input) < 2 {
+					output.Failf("the provided input does not contain the separator %s", flags.Separator)
+				}
+				key = input[0]
+				value = input[1]
+			} else {
+				value = line
+			}
+
+			messageCount += 1
+			message := serializer.Serialize([]byte(key), []byte(value), flags)
+			_, _, err = producer.SendMessage(message)
+			if err != nil {
+				output.Failf("Failed to produce message: %s", err)
+			} else if !flags.Silent {
+				if messageCount%100 == 0 {
+					output.Statusf("\r%d messages produced", messageCount)
+				}
+			}
+		}
+
+		output.Infof("\r%d messages produced", messageCount)
+	} else {
+		output.Failf("value is required, or you have to provide the value on stdin")
 	}
 }
 
