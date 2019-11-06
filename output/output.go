@@ -30,6 +30,10 @@ func Infof(msg string, args ...interface{}) {
 	_, _ = fmt.Fprintf(IoStreams.Out, msg+"\n", args...)
 }
 
+func Statusf(msg string, args ...interface{}) {
+	_, _ = fmt.Fprintf(IoStreams.Out, msg, args...)
+}
+
 func Debugf(msg string, args ...interface{}) {
 	DebugLogger.Printf(msg+"\n", args...)
 }
