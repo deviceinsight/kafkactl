@@ -173,6 +173,13 @@ echo "my-value" | kafkactl produce my-topic --key=my-key
 kafkactl produce my-topic --key=my-key --value=my-value
 ```
 
+If we have a file containing messages where each line contains `key` and `value` separated by `#`, the file can be
+used as input to produce messages to topic `my-topic`:
+
+```bash
+cat myfile | kafkactl produce my-topic --separator=#
+```
+
 It is also possible to specify the partition to insert the message:
 ```bash
 kafkactl produce my-topic --key=my-key --value=my-value --partition=2
