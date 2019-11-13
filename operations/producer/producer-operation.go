@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"time"
 )
 
 type ProducerFlags struct {
@@ -122,6 +123,9 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 		}()
 
 		messageCount := 0
+		keyColumnIdx := 0
+		valueColumnIdx := 1
+		columnCount := 2
 		// print an empty line that will be replaced when updating the status
 		output.Statusf("")
 
@@ -136,16 +140,24 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 
 			line, err := scanner.Text(), scanner.Err()
 			if err != nil {
-				output.Failf("Failed to read data from the standard input: %v", err)
+				failWithMessageCount(messageCount, "Failed to read data from the standard input: %v", err)
+			}
+
+			if strings.TrimSpace(line) == "" {
+				continue
 			}
 
 			if flags.Separator != "" {
-				input := strings.SplitN(line, flags.Separator, 2)
+				input := strings.Split(line, flags.Separator)
 				if len(input) < 2 {
-					output.Failf("the provided input does not contain the separator %s", flags.Separator)
+					failWithMessageCount(messageCount, "the provided input does not contain the separator %s", flags.Separator)
+				} else if len(input) == 3 && messageCount == 0 {
+					keyColumnIdx, valueColumnIdx, columnCount = resolveColumns(input)
+				} else if len(input) != columnCount {
+					failWithMessageCount(messageCount, "line contains unexpected amount of separators:\n%s", line)
 				}
-				key = input[0]
-				value = input[1]
+				key = input[keyColumnIdx]
+				value = input[valueColumnIdx]
 			} else {
 				value = line
 			}
@@ -154,7 +166,7 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 			message := serializer.Serialize([]byte(key), []byte(value), flags)
 			_, _, err = producer.SendMessage(message)
 			if err != nil {
-				output.Failf("Failed to produce message: %s", err)
+				failWithMessageCount(messageCount, "Failed to produce message: %s", err)
 			} else if !flags.Silent {
 				if messageCount%100 == 0 {
 					output.Statusf("\r%d messages produced", messageCount)
@@ -166,6 +178,29 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 	} else {
 		output.Failf("value is required, or you have to provide the value on stdin")
 	}
+}
+
+func resolveColumns(line []string) (keyColumnIdx, valueColumnIdx, columnCount int) {
+	if isTimestamp(line[0]) {
+		output.Warnf("assuming column 0 to be message timestamp. Column will be ignored")
+		return 1, 2, 3
+	} else if isTimestamp(line[1]) {
+		output.Warnf("assuming column 1 to be message timestamp. Column will be ignored")
+		return 0, 2, 3
+	} else {
+		output.Failf("line contains unexpected amount of separators:\n%s", line)
+		return -1, -1, -1
+	}
+}
+
+func isTimestamp(value string) bool {
+	_, e := time.Parse(time.RFC3339, value)
+	return e == nil
+}
+
+func failWithMessageCount(messageCount int, errorMessage string, args ...interface{}) {
+	output.Infof("\r%d messages produced", messageCount)
+	output.Failf(errorMessage, args)
 }
 
 func stdinAvailable() bool {

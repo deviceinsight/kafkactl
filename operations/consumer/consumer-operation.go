@@ -19,6 +19,7 @@ type ConsumerFlags struct {
 	PrintAvroSchema bool
 	PrintHeaders    bool
 	OutputFormat    string
+	Separator       string
 	Partitions      []int
 	Offsets         []string
 	FromBeginning   bool
