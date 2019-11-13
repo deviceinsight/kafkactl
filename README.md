@@ -162,6 +162,11 @@ If one is only interested in the last `n` messages this can be achieved by `--ta
 kafkactl consume my-topic --tail=5
 ```
 
+The consumer can be stopped when the latest offset is reached using `--exit` parameter e.g.:
+```bash
+kafkactl consume my-topic --from-beginning --exit
+```
+
 ### Producing messages
 
 Producing messages can be done in multiple ways. If we want to produce a message with `key='my-key'`,
@@ -179,6 +184,9 @@ used as input to produce messages to topic `my-topic`:
 ```bash
 cat myfile | kafkactl produce my-topic --separator=#
 ```
+
+**NOTE:** if the file was generated with `kafkactl consume --print-keys --print-timestamps my-topic` the produce
+command is able to detect the message timestamp in the input and will ignore it. 
 
 It is also possible to specify the partition to insert the message:
 ```bash

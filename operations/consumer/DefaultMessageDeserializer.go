@@ -14,7 +14,7 @@ type defaultMessage struct {
 	Partition int32
 	Offset    int64
 	Headers   map[string]string `json:",omitempty" yaml:",omitempty"`
-	Key       *string `json:",omitempty" yaml:",omitempty"`
+	Key       *string           `json:",omitempty" yaml:",omitempty"`
 	Value     *string
 	Timestamp *time.Time `json:",omitempty" yaml:",omitempty"`
 }
@@ -35,14 +35,14 @@ func (deserializer DefaultMessageDeserializer) newDefaultMessage(msg *sarama.Con
 		timestamp = &msg.Timestamp
 	}
 
-    if flags.PrintHeaders {
+	if flags.PrintHeaders {
 		headers = encodeRecordHeaders(msg.Headers)
 	}
 
 	return defaultMessage{
 		Partition: msg.Partition,
 		Offset:    msg.Offset,
-		Headers:    headers,
+		Headers:   headers,
 		Key:       key,
 		Value:     value,
 		Timestamp: timestamp,
@@ -61,7 +61,7 @@ func (deserializer DefaultMessageDeserializer) Deserialize(rawMsg *sarama.Consum
 				var column []string
 
 				for key, value := range msg.Headers {
-					column = append(column, key + ":" + value)
+					column = append(column, key+":"+value)
 				}
 
 				row = append(row, strings.Join(column[:], ","))
@@ -93,9 +93,9 @@ func (deserializer DefaultMessageDeserializer) Deserialize(rawMsg *sarama.Consum
 			value = "null"
 		}
 
-		row = append(row, string(value))
+		row = append(row, value)
 
-		output.PrintStrings(strings.Join(row[:], "#"))
+		output.PrintStrings(strings.Join(row[:], flags.Separator))
 
 	} else {
 		output.PrintObject(msg, flags.OutputFormat)

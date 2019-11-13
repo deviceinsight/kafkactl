@@ -285,6 +285,7 @@ kafkactl consume TOPIC [flags]
 #### Options
 
 ```
+  -e, --exit                                                                             stop consuming when latest offset is reached
   -b, --from-beginning                                                                   set offset for consumer to the oldest offset
   -h, --help                                                                             help for consume
       --offset partition=offset (for partitions not specified, other parameters apply)   offsets in format partition=offset (for partitions not specified, other parameters apply)
@@ -294,6 +295,7 @@ kafkactl consume TOPIC [flags]
   -k, --print-keys                                                                       print message keys
   -a, --print-schema                                                                     print details about avro schema used for decoding
   -t, --print-timestamps                                                                 print message timestamps
+  -s, --separator string                                                                 separator to split key and value (default "#")
       --tail int                                                                         show only the last n messages on the topic (default -1)
 ```
 
