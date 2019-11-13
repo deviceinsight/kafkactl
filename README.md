@@ -164,11 +164,12 @@ kafkactl produce my-topic --key=my-key --value=my-value
 ```
 
 If we have a file containing messages where each line contains `key` and `value` separated by `#`, the file can be
-used as input to produce messages to topic `my-topic`:
+used as input to produce messages to topic `my-topic` with rate limiting:
 
 ```bash
-cat myfile | kafkactl produce my-topic --separator=#
+cat myfile | kafkactl produce my-topic --separator=# --rate=200
 ```
+
 
 It is also possible to specify the partition to insert the message:
 ```bash
