@@ -123,14 +123,14 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 		wgPartition.Add(1)
 		go func(partition int32) {
 			defer wgPartition.Done()
-			initialOffset, limit := getInitialOffset(client, topic, flags, partition)
+			initialOffset, lastOffset := getOffsetBounds(client, topic, flags, partition)
 			pc, err := c.ConsumePartition(topic, partition, initialOffset)
 			if err != nil {
 				output.Failf("Failed to start consumer for partition %d: %s", partition, err)
 			}
 
-			if limit != 0 {
-				output.Debugf("Start consuming partition %d from offset %d", partition, initialOffset)
+			if lastOffset == -1 || initialOffset <= lastOffset {
+				output.Debugf("Start consuming partition %d from offset %d to %d", partition, initialOffset, lastOffset)
 			} else {
 				output.Debugf("Skipping partition %d", partition)
 				return
@@ -144,12 +144,10 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 			wgConsumerActive.Add(1)
 			go func(pc sarama.PartitionConsumer) {
 				defer wgConsumerActive.Done()
-				messageCount := 0
 				for message := range pc.Messages() {
 					messages <- message
-					messageCount += 1
-					if limit > 0 && messageCount >= limit {
-						output.Debugf("stop consuming partition %d limit reached: %d", partition, limit)
+					if lastOffset > 0 && message.Offset >= lastOffset {
+						output.Debugf("stop consuming partition %d limit reached: %d", partition, lastOffset)
 						pc.AsyncClose()
 						break
 					}
@@ -201,7 +199,7 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 	}
 }
 
-func getInitialOffset(client sarama.Client, topic string, flags ConsumerFlags, currentPartition int32) (int64, int) {
+func getOffsetBounds(client sarama.Client, topic string, flags ConsumerFlags, currentPartition int32) (int64, int64) {
 
 	if flags.Tail > 0 && len(flags.Offsets) > 0 {
 		output.Failf("parameters offset and tail cannot be used together")
@@ -221,13 +219,12 @@ func getInitialOffset(client sarama.Client, topic string, flags ConsumerFlags, c
 			output.Failf("failed to get offset for topic %s Partition %d: %v", topic, currentPartition, err)
 		}
 
-		offset := NewestOffset - int64(flags.Tail)
-		limit := flags.Tail
-		if offset < OldestOffset {
-			offset = OldestOffset
-			limit = int(NewestOffset - OldestOffset)
+		minOffset := NewestOffset - int64(flags.Tail)
+		maxOffset := NewestOffset - 1
+		if minOffset < OldestOffset {
+			minOffset = OldestOffset
 		}
-		return offset, limit
+		return minOffset, maxOffset
 	}
 
 	for _, offsetFlag := range flags.Offsets {
