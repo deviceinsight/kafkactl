@@ -185,6 +185,9 @@ used as input to produce messages to topic `my-topic`:
 cat myfile | kafkactl produce my-topic --separator=#
 ```
 
+**NOTE:** if the file was generated with `kafkactl consume --print-keys --print-timestamps my-topic` the produce
+command is able to detect the message timestamp in the input and will ignore it. 
+
 It is also possible to specify the partition to insert the message:
 ```bash
 kafkactl produce my-topic --key=my-key --value=my-value --partition=2
