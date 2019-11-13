@@ -294,6 +294,7 @@ kafkactl consume TOPIC [flags]
   -k, --print-keys                                                                       print message keys
   -a, --print-schema                                                                     print details about avro schema used for decoding
   -t, --print-timestamps                                                                 print message timestamps
+      --tail int                                                                         show only the last n messages on the topic (default -1)
 ```
 
 #### Options inherited from parent commands
