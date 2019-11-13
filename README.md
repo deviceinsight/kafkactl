@@ -152,6 +152,16 @@ The following example prints message `key` and `timestamp` as well as `partition
 kafkactl consume my-topic --print-keys --print-timestamps -o yaml
 ```
 
+Headers of kafka messages can be printed with the parameter `--print-headers` e.g.:
+```bash
+kafkactl consume my-topic --print-headers -o yaml
+```
+
+If one is only interested in the last `n` messages this can be achieved by `--tail` e.g.:
+```bash
+kafkactl consume my-topic --tail=5
+```
+
 ### Producing messages
 
 Producing messages can be done in multiple ways. If we want to produce a message with `key='my-key'`,
