@@ -1,14 +1,13 @@
 package producer
 
 import (
+	"bufio"
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/output"
-	"bufio"
-//"io/ioutil"
 	"os"
+	"os/signal"
 	"strings"
-//"time"
 )
 
 type ProducerFlags struct {
@@ -84,86 +83,90 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 		serializer = DefaultMessageSerializer{topic: topic}
 	}
 
-  if flags.RateInSeconds == -1 {
-			output.Infof("No rate limiting was set, running without constraints")
-  } else {
-// Basic rate limiting from google
-// taken from https://github.com/golang/go/wiki/RateLimiting
-//
-//    rate := time.Second / flags.RateInSeconds
-//    burstLimit := 100
-//    tick := time.NewTicker(rate)
-//    defer tick.Stop()
-//    throttle := make(chan time.Time, burstLimit)
-//    go func() {
-//      for t := range tick.C {
-//        select {
-//          case throttle <- t:
-//          default:
-//        }
-//      }  // does not exit after tick.Stop()
-//    }()
-//    for req := range requests {
-//      <-throttle  // rate limit our Service.Method RPCs
-//      go client.Call("Service.Method", req, ...)
-//    }
-  }
+	producer, err := sarama.NewSyncProducer(clientContext.Brokers, config)
+	if err != nil {
+		output.Failf("Failed to open Kafka producer: %s", err)
+	}
+	defer func() {
+		if err := producer.Close(); err != nil {
+			output.Warnf("Failed to close Kafka producer cleanly:", err)
+		}
+	}()
 
-	var key []byte
-	var value []byte
+	var key string
+	var value string
 
-	if flags.Key != "" {
-		key = []byte(flags.Key)
+	if flags.Key != "" && flags.Separator != "" {
+		output.Failf("parameters --key and --separator cannot be used together")
+	} else if flags.Key != "" {
+		key = flags.Key
 	}
 
 	if flags.Value != "" {
-		value = []byte(flags.Value)
+		// produce a single message
+		message := serializer.Serialize([]byte(key), []byte(flags.Value), flags)
+		partition, offset, err := producer.SendMessage(message)
+		if err != nil {
+			output.Failf("Failed to produce message: %s", err)
+		} else if !flags.Silent {
+			output.Infof("message produced (partition=%d\toffset=%d)\n", partition, offset)
+		}
 	} else if stdinAvailable() {
+
+		cancel := make(chan struct{})
+
+		go func() {
+			signals := make(chan os.Signal, 1)
+			signal.Notify(signals, os.Kill, os.Interrupt)
+			<-signals
+			close(cancel)
+		}()
+
+		messageCount := 0
+		// print an empty line that will be replaced when updating the status
+		output.Statusf("")
+
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
-			bytes, err := scanner.Text(), scanner.Err()
+
+			select {
+			case <-cancel:
+				break
+			default:
+			}
+
+			line, err := scanner.Text(), scanner.Err()
 			if err != nil {
-				output.Failf("Failed to read data from the standard input: %s", err)
+				output.Failf("Failed to read data from the standard input: %v", err)
 			}
 
 			if flags.Separator != "" {
-				// In this case we need to buffer the requests or use another seperator to seperate messages
-				input := strings.SplitN(string(bytes[:]), flags.Separator, 2)
+				input := strings.SplitN(line, flags.Separator, 2)
 				if len(input) < 2 {
 					output.Failf("the provided input does not contain the separator %s", flags.Separator)
-			}
-				key = []byte(input[0])
-				value = []byte(input[1])
-			} else {
-        value = []byte(bytes)
-			}
-			message := serializer.Serialize(key, value, flags)
-
-			producer, err := sarama.NewSyncProducer(clientContext.Brokers, config)
-			if err != nil {
-				output.Failf("Failed to open Kafka producer: %s", err)
-			}
-      defer func() {
-				if err := producer.Close(); err != nil {
-					output.Warnf("Failed to close Kafka producer cleanly:", err)
 				}
-			}()
+				key = input[0]
+				value = input[1]
+			} else {
+				value = line
+			}
 
-			partition, offset, err := producer.SendMessage(message)
+			messageCount += 1
+			message := serializer.Serialize([]byte(key), []byte(value), flags)
+			_, _, err = producer.SendMessage(message)
 			if err != nil {
 				output.Failf("Failed to produce message: %s", err)
 			} else if !flags.Silent {
-				output.Infof("topic=%s\tpartition=%d\toffset=%d\n", topic, partition, offset)
+				if messageCount%100 == 0 {
+					output.Statusf("\r%d messages produced", messageCount)
+				}
 			}
 		}
 
-		if scanner.Err() != nil {
-			output.Failf("Failed to read data from the standard input: %s", err)
-		}
+		output.Infof("\r%d messages produced", messageCount)
 	} else {
 		output.Failf("value is required, or you have to provide the value on stdin")
 	}
-
 }
 
 func stdinAvailable() bool {

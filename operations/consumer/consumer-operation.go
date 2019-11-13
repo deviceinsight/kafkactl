@@ -16,6 +16,7 @@ type ConsumerFlags struct {
 	PrintKeys       bool
 	PrintTimestamps bool
 	PrintAvroSchema bool
+	PrintHeaders    bool
 	OutputFormat    string
 	Partitions      []int
 	Offsets         []string
