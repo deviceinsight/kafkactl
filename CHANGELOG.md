@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.3.0 - 2019-11-13
+
 ### Added
 - Add parameter `--print-headers` to print kafka message headers when consuming messages
 - Add parameter `--tail` to consume only the last `n` messages from a topic
