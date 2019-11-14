@@ -630,6 +630,7 @@ kafkactl produce [flags]
   -K, --key-schema-version int     avro schema version that should be used for key serialization (default is latest) (default -1)
   -p, --partition int32            partition to produce to (default -1)
   -P, --partitioner hash           the partitioning scheme to use. Can be hash, `manual`, or `random`
+  -r, --rate int                   amount of messages per second to produce on the topic (default -1)
   -S, --separator string           separator to split key and value from stdin
   -s, --silent                     do not write to standard output
   -v, --value string               value to produce

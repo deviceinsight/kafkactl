@@ -2,9 +2,10 @@ package producer
 
 import (
 	"bufio"
-	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/Shopify/sarama"
+	"go.uber.org/ratelimit"
 	"os"
 	"os/signal"
 	"strings"
@@ -12,14 +13,15 @@ import (
 )
 
 type ProducerFlags struct {
-	Partitioner        string
-	Partition          int32
-	Separator          string
-	Key                string
-	Value              string
-	KeySchemaVersion   int
+	Partitioner				 string
+	Partition					 int32
+	Separator					 string
+	Key								 string
+	Value							 string
+	KeySchemaVersion	 int
 	ValueSchemaVersion int
-	Silent             bool
+	Silent						 bool
+	RateInSeconds			 int
 }
 
 type ProducerOperation struct {
@@ -30,8 +32,8 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 	clientContext := operations.CreateClientContext()
 
 	var (
-		err       error
-		client    sarama.Client
+		err				error
+		client		sarama.Client
 		topExists bool
 	)
 
@@ -129,6 +131,15 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 		// print an empty line that will be replaced when updating the status
 		output.Statusf("")
 
+		var rl ratelimit.Limiter
+
+		if flags.RateInSeconds == -1 {
+			output.Debugf("No rate limiting was set, running without constraints")
+			rl = ratelimit.NewUnlimited()
+		} else {
+			rl = ratelimit.New(flags.RateInSeconds) // per second
+		}
+
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
 
@@ -164,11 +175,12 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 
 			messageCount += 1
 			message := serializer.Serialize([]byte(key), []byte(value), flags)
+			rl.Take()
 			_, _, err = producer.SendMessage(message)
 			if err != nil {
 				failWithMessageCount(messageCount, "Failed to produce message: %s", err)
 			} else if !flags.Silent {
-				if messageCount%100 == 0 {
+				if messageCount % 100 == 0 {
 					output.Statusf("\r%d messages produced", messageCount)
 				}
 			}

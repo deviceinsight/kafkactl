@@ -31,6 +31,7 @@ require (
 	github.com/stretchr/objx v0.1.1 // indirect
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/ugorji/go/codec v0.0.0-20190320090025-2dc34c0b8780 // indirect
+	go.uber.org/ratelimit v0.1.0
 	golang.org/x/crypto v0.0.0-20190404164418-38d8ce5564a5 // indirect
 	golang.org/x/text v0.3.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
