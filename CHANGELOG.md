@@ -17,7 +17,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add parameter `--exit` to stop consuming when the latest offset is reached
 - Add parameter `--separator` to consume command to customize the separator
 - Allow producing multiple messages from stdin
-* Add rate limiting for multiple messages with `--rate` flag
 
 ## 1.2.1 - 2019-05-27
 
