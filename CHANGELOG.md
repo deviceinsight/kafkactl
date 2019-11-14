@@ -6,8 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.3.0 - 2019-11-13
+
 ### Added
-- Add option `print-headers` to print kafka message headers
+- Add parameter `--print-headers` to print kafka message headers when consuming messages
+- Add parameter `--tail` to consume only the last `n` messages from a topic
+- Add parameter `--exit` to stop consuming when the latest offset is reached
+- Add parameter `--separator` to consume command to customize the separator
 - Allow producing multiple messages from stdin
 * Add rate limiting for multiple messages with `--rate` flag
 

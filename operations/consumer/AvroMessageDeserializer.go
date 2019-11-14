@@ -37,11 +37,11 @@ type avroMessage struct {
 	Partition     int32
 	Offset        int64
 	Headers       map[string]string `json:",omitempty" yaml:",omitempty"`
-	KeySchema     *string `json:"keySchema,omitempty" yaml:"keySchema,omitempty"`
-	KeySchemaId   *int    `json:"keySchemaId,omitempty" yaml:"keySchemaId,omitempty"`
-	Key           *string `json:",omitempty" yaml:",omitempty"`
-	ValueSchema   *string `json:"valueSchema,omitempty" yaml:"valueSchema,omitempty"`
-	ValueSchemaId *int    `json:"valueSchemaId,omitempty" yaml:"valueSchemaId,omitempty"`
+	KeySchema     *string           `json:"keySchema,omitempty" yaml:"keySchema,omitempty"`
+	KeySchemaId   *int              `json:"keySchemaId,omitempty" yaml:"keySchemaId,omitempty"`
+	Key           *string           `json:",omitempty" yaml:",omitempty"`
+	ValueSchema   *string           `json:"valueSchema,omitempty" yaml:"valueSchema,omitempty"`
+	ValueSchemaId *int              `json:"valueSchemaId,omitempty" yaml:"valueSchemaId,omitempty"`
 	Value         *string
 	Timestamp     *time.Time `json:",omitempty" yaml:",omitempty"`
 }
@@ -158,7 +158,7 @@ func (deserializer AvroMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerM
 				var column []string
 
 				for key, value := range msg.Headers {
-					column = append(column, key + ":" + value)
+					column = append(column, key+":"+value)
 				}
 
 				row = append(row, strings.Join(column[:], ","))
@@ -206,7 +206,7 @@ func (deserializer AvroMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerM
 
 		row = append(row, string(value))
 
-		output.PrintStrings(strings.Join(row[:], "#"))
+		output.PrintStrings(strings.Join(row[:], flags.Separator))
 
 	} else {
 		output.PrintObject(msg, flags.OutputFormat)

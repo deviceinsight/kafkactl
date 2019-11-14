@@ -152,6 +152,21 @@ The following example prints message `key` and `timestamp` as well as `partition
 kafkactl consume my-topic --print-keys --print-timestamps -o yaml
 ```
 
+Headers of kafka messages can be printed with the parameter `--print-headers` e.g.:
+```bash
+kafkactl consume my-topic --print-headers -o yaml
+```
+
+If one is only interested in the last `n` messages this can be achieved by `--tail` e.g.:
+```bash
+kafkactl consume my-topic --tail=5
+```
+
+The consumer can be stopped when the latest offset is reached using `--exit` parameter e.g.:
+```bash
+kafkactl consume my-topic --from-beginning --exit
+```
+
 ### Producing messages
 
 Producing messages can be done in multiple ways. If we want to produce a message with `key='my-key'`,
@@ -164,12 +179,20 @@ kafkactl produce my-topic --key=my-key --value=my-value
 ```
 
 If we have a file containing messages where each line contains `key` and `value` separated by `#`, the file can be
-used as input to produce messages to topic `my-topic` with rate limiting:
+used as input to produce messages to topic `my-topic`:
+
+```bash
+cat myfile | kafkactl produce my-topic --separator=#
+```
+
+**NOTE:** if the file was generated with `kafkactl consume --print-keys --print-timestamps my-topic` the produce
+command is able to detect the message timestamp in the input and will ignore it. 
+
+the number of messages produced per second can be controlled with the `--rate` paramter:
 
 ```bash
 cat myfile | kafkactl produce my-topic --separator=# --rate=200
 ```
-
 
 It is also possible to specify the partition to insert the message:
 ```bash
