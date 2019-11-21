@@ -17,6 +17,7 @@ import (
 	"github.com/spf13/viper"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 var cfgFile string
@@ -76,10 +77,62 @@ func initConfig() {
 	viper.SetConfigType("yml")
 	viper.AutomaticEnv() // read in environment variables that match
 
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
+	readConfig()
+}
+
+func readConfig() {
+	var err error
+	if err = viper.ReadInConfig(); err == nil {
+		output.Debugf("Using config file: %s", viper.ConfigFileUsed())
+		return
+	}
+
+	if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+		output.Failf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err)
+	} else {
+		err = generateDefaultConfig()
+		if err != nil {
+			output.Failf("Error generating default config: %v", err)
+		}
+	}
+
+	// We read generated config now
+	if err = viper.ReadInConfig(); err == nil {
 		output.Debugf("Using config file: %s", viper.ConfigFileUsed())
 	} else {
 		output.Failf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err)
 	}
+}
+
+// generateDefaultConfig generates default config in case there is no config
+func generateDefaultConfig() error {
+	if err := os.MkdirAll(os.ExpandEnv(configPaths[0]), os.FileMode(0700)); err != nil {
+		return err
+	}
+	pathToConfig := filepath.Join(os.ExpandEnv(configPaths[0]), "config.yml")
+	f, err := os.Create(pathToConfig)
+	if err != nil {
+		return fmt.Errorf("failed to generate default config at %s", pathToConfig)
+	}
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			output.Failf("unable to close file: %v", err)
+		}
+	}(f)
+
+	defaultConfigContent := `
+contexts:
+  localhost:
+    brokers:
+    - localhost:9092
+current-context: localhost`
+
+	_, err = f.WriteString(defaultConfigContent)
+
+	if err == nil {
+		output.Debugf("generated default config at %s", pathToConfig)
+	}
+
+	return err
 }
