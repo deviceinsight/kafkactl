@@ -106,20 +106,33 @@ func readConfig() {
 
 // generateDefaultConfig generates default config in case there is no config
 func generateDefaultConfig() error {
-	os.MkdirAll(os.ExpandEnv(configPaths[0]), os.FileMode(0700))
+	if err := os.MkdirAll(os.ExpandEnv(configPaths[0]), os.FileMode(0700)); err != nil {
+		return err
+	}
 	pathToConfig := filepath.Join(os.ExpandEnv(configPaths[0]), "config.yml")
 	f, err := os.Create(pathToConfig)
 	if err != nil {
-		return fmt.Errorf("Failed to generate default config at %s", pathToConfig)
+		return fmt.Errorf("failed to generate default config at %s", pathToConfig)
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			output.Failf("unable to close file: %v", err)
+		}
+	}(f)
 
-	defaultConfigContent := `contexts:
+	defaultConfigContent := `
+contexts:
   localhost:
     brokers:
     - localhost:9092
 current-context: localhost`
-	f.WriteString(defaultConfigContent)
 
-	return nil
+	_, err = f.WriteString(defaultConfigContent)
+
+	if err == nil {
+		output.Debugf("generated default config at %s", pathToConfig)
+	}
+
+	return err
 }
