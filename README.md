@@ -44,9 +44,12 @@ $ go get -u github.com/deviceinsight/kafkactl
 
 ## Configuration
 
+If no config file is found, a default config is generated in `$HOME/.config/kafkactl/config.yml`.
+This configuration is suitable to get started with a single node cluster on a local machine. 
+
 ### Create a config file
 
-Create `~/.kafkactl/config.yml` with a definition of contexts that should be available
+Create `$HOME/.config/kafkactl/config.yml` with a definition of contexts that should be available
 
 ```yaml
 contexts:
