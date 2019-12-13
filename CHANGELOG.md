@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.4.0 - 2019-12-13
+
 ### Added
 - Add rate limiting for multiple messages with `--rate` flag
 - A default config file is now generated when no config was found
