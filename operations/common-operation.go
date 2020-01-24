@@ -26,6 +26,7 @@ type ClientContext struct {
 	ClientID           string
 	KafkaVersion       sarama.KafkaVersion
 	AvroSchemaRegistry string
+	DefaultPartitioner string
 }
 
 func CreateClientContext() ClientContext {
@@ -40,6 +41,7 @@ func CreateClientContext() ClientContext {
 	context.ClientID = viper.GetString("contexts." + context.Name + ".clientID")
 	context.KafkaVersion = kafkaVersion(viper.GetString("contexts." + context.Name + ".kafkaVersion"))
 	context.AvroSchemaRegistry = viper.GetString("contexts." + context.Name + ".avro.schemaRegistry")
+	context.DefaultPartitioner = viper.GetString("contexts." + context.Name + ".defaultPartitioner")
 
 	return context
 }
