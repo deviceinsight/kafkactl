@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- parameter `--partitioner` for produce command now supports additional partitioners `hash-ref` and `murmur2`. The
+ default has also been changed to `murmur2` in order to be consistent with the java kafka client.
+- `defaultPartitioner` can now be configured for a context in the config file
+
 ## 1.4.0 - 2019-12-13
 
 ### Added

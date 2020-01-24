@@ -2,9 +2,10 @@ package producer
 
 import (
 	"bufio"
+	"github.com/Shopify/sarama"
+	"github.com/burdiyan/kafkautil"
 	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/output"
-	"github.com/Shopify/sarama"
 	"go.uber.org/ratelimit"
 	"os"
 	"os/signal"
@@ -13,15 +14,15 @@ import (
 )
 
 type ProducerFlags struct {
-	Partitioner				 string
-	Partition					 int32
-	Separator					 string
-	Key								 string
-	Value							 string
-	KeySchemaVersion	 int
+	Partitioner        string
+	Partition          int32
+	Separator          string
+	Key                string
+	Value              string
+	KeySchemaVersion   int
 	ValueSchemaVersion int
-	Silent						 bool
-	RateInSeconds			 int
+	Silent             bool
+	RateInSeconds      int
 }
 
 type ProducerOperation struct {
@@ -32,8 +33,8 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 	clientContext := operations.CreateClientContext()
 
 	var (
-		err				error
-		client		sarama.Client
+		err       error
+		client    sarama.Client
 		topExists bool
 	)
 
@@ -53,15 +54,25 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Return.Successes = true
 
-	switch flags.Partitioner {
+	partitioner := clientContext.DefaultPartitioner
+	if flags.Partitioner != "" {
+		partitioner = flags.Partitioner
+	}
+
+	switch partitioner {
 	case "":
 		if flags.Partition >= 0 {
 			config.Producer.Partitioner = sarama.NewManualPartitioner
 		} else {
-			config.Producer.Partitioner = sarama.NewHashPartitioner
+			config.Producer.Partitioner = kafkautil.NewJVMCompatiblePartitioner
 		}
+	case "murmur2":
+		// https://github.com/Shopify/sarama/issues/1424
+		config.Producer.Partitioner = kafkautil.NewJVMCompatiblePartitioner
 	case "hash":
 		config.Producer.Partitioner = sarama.NewHashPartitioner
+	case "hash-ref":
+		config.Producer.Partitioner = sarama.NewReferenceHashPartitioner
 	case "random":
 		config.Producer.Partitioner = sarama.NewRandomPartitioner
 	case "manual":
@@ -180,7 +191,7 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 			if err != nil {
 				failWithMessageCount(messageCount, "Failed to produce message: %s", err)
 			} else if !flags.Silent {
-				if messageCount % 100 == 0 {
+				if messageCount%100 == 0 {
 					output.Statusf("\r%d messages produced", messageCount)
 				}
 			}

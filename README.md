@@ -76,6 +76,10 @@ contexts:
     # optional: avro schema registry
     avro:
       schemaRegistry: localhost:8081
+    
+    # optional: changes the default partitioner
+    defaultPartitioner: "hash"
+
 
 current-context: localhost
 ```
