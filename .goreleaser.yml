@@ -11,40 +11,43 @@ builds:
       - linux
       - windows
 
-archive:
-  replacements:
-    darwin: Darwin
-    linux: Linux
-    windows: Windows
-    386: i386
-    amd64: x86_64
-  files:
-    - LICENSE.md
-    - CHANGELOG.md
+archives:
+  - id: default
+    replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+    files:
+      - LICENSE.md
+      - CHANGELOG.md
 
 checksum:
   name_template: 'checksums.txt'
-nfpm:
-  vendor: Device Insight GmbH
-  homepage: https://www.device-insight.com/
-  maintainer: Dirk Wilden <[dirk.wilden@device-insight.com]>
-  description: A command-line interface for interaction with Apache Kafka
-  license: Apache 2.0
+nfpms:
+  - id: default
+    vendor: Device Insight GmbH
+    homepage: https://www.device-insight.com/
+    maintainer: Dirk Wilden <[dirk.wilden@device-insight.com]>
+    description: A command-line interface for interaction with Apache Kafka
+    license: Apache 2.0
 
-  formats:
-    - deb
-    - rpm
+    formats:
+      - deb
+      - rpm
 
 release:
   disable: false
 
-snapcraft:
-  publish: true
-  summary: A command-line interface for interaction with Apache Kafka
-  description: |
-    A Commandline interface for Apache Kafka which provides useful features adapted from kubectl for Kubernetes.
-    Multiple kafka brokers can be configured in a config file and the active broker is also persisted within the config.
-    In addition kafkactl supports auto-completion for its commands as well as topic names.
-  apps:
-    kafkactl:
-      plugs: ["home", "network"]
+snapcrafts:
+  - id: default
+    publish: true
+    summary: A command-line interface for interaction with Apache Kafka
+    description: |
+      A Commandline interface for Apache Kafka which provides useful features adapted from kubectl for Kubernetes.
+      Multiple kafka brokers can be configured in a config file and the active broker is also persisted within the config.
+      In addition kafkactl supports auto-completion for its commands as well as topic names.
+    apps:
+      kafkactl:
+        plugs: ["home", "network"]

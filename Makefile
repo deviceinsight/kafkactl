@@ -42,7 +42,7 @@ clean:
 # manually executing goreleaser:
 # export GITHUB_TOKEN=xyz
 # snapcraft login
-# goreleaser --rm-dist
+# goreleaser --rm-dist (--skip-validate)
 #
 .PHONY: release
 release:
