@@ -629,7 +629,7 @@ kafkactl produce [flags]
   -k, --key string                 key to use for all messages
   -K, --key-schema-version int     avro schema version that should be used for key serialization (default is latest) (default -1)
   -p, --partition int32            partition to produce to (default -1)
-  -P, --partitioner hash           the partitioning scheme to use. Can be hash, `manual`, or `random`
+  -P, --partitioner murmur2        the partitioning scheme to use. Can be murmur2, `hash`, `hash-ref` `manual`, or `random`. (default is murmur2)
   -r, --rate int                   amount of messages per second to produce on the topic (default -1)
   -S, --separator string           separator to split key and value from stdin
   -s, --silent                     do not write to standard output
