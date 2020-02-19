@@ -148,7 +148,7 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 				defer wgConsumerActive.Done()
 				for message := range pc.Messages() {
 					messages <- message
-					if lastOffset > 0 && message.Offset >= lastOffset {
+					if lastOffset >= 0 && message.Offset >= lastOffset {
 						output.Debugf("stop consuming partition %d limit reached: %d", partition, lastOffset)
 						pc.AsyncClose()
 						break
