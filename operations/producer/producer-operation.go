@@ -3,7 +3,6 @@ package producer
 import (
 	"bufio"
 	"github.com/Shopify/sarama"
-	"github.com/burdiyan/kafkautil"
 	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/output"
 	"go.uber.org/ratelimit"
@@ -64,11 +63,11 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 		if flags.Partition >= 0 {
 			config.Producer.Partitioner = sarama.NewManualPartitioner
 		} else {
-			config.Producer.Partitioner = kafkautil.NewJVMCompatiblePartitioner
+			config.Producer.Partitioner = NewJVMCompatiblePartitioner
 		}
 	case "murmur2":
 		// https://github.com/Shopify/sarama/issues/1424
-		config.Producer.Partitioner = kafkautil.NewJVMCompatiblePartitioner
+		config.Producer.Partitioner = NewJVMCompatiblePartitioner
 	case "hash":
 		config.Producer.Partitioner = sarama.NewHashPartitioner
 	case "hash-ref":

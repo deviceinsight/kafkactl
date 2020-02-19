@@ -386,7 +386,7 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 
 		for _, configEntry := range configEntries {
 
-			if !configEntry.Default {
+			if !configEntry.Default && configEntry.Source != sarama.SourceDefault {
 				entry := config{Name: configEntry.Name, Value: configEntry.Value}
 				top.Configs = append(top.Configs, entry)
 			}

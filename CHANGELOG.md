@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support for Kafka 2.4.0
+
 ## 1.5.0 - 2020-01-24
 
 ### Added
