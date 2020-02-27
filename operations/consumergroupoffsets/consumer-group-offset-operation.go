@@ -73,7 +73,7 @@ func (operation *ConsumerGroupOffsetOperation) ResetConsumerGroupOffset(flags Re
 
 	topics := []string{flags.Topic}
 
-	consumer.ready = make(chan bool, 0)
+	consumer.ready = make(chan bool)
 	err = consumerGroup.Consume(backgroundCtx, topics, &consumer)
 	if err != nil {
 		panic(err)

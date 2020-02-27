@@ -3,6 +3,7 @@ package alter
 import (
 	"github.com/deviceinsight/kafkactl/cmd/validation"
 	"github.com/deviceinsight/kafkactl/operations"
+	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
 
@@ -25,6 +26,10 @@ func init() {
 	cmdAlterTopic.Flags().StringArrayVarP(&flags.Configs, "config", "c", flags.Configs, "configs in format `key=value`")
 	cmdAlterTopic.Flags().BoolVarP(&flags.ValidateOnly, "validate-only", "v", false, "validate only")
 
-	validation.MarkFlagAtLeastOneRequired(cmdAlterTopic.Flags(), "partitions")
-	validation.MarkFlagAtLeastOneRequired(cmdAlterTopic.Flags(), "config")
+	if err := validation.MarkFlagAtLeastOneRequired(cmdAlterTopic.Flags(), "partitions"); err != nil {
+		output.Failf("internal error: %v", err)
+	}
+	if err := validation.MarkFlagAtLeastOneRequired(cmdAlterTopic.Flags(), "config"); err != nil {
+		output.Failf("internal error: %v", err)
+	}
 }

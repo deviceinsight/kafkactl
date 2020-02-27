@@ -97,6 +97,10 @@ func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeCon
 
 	offsets, err := admin.ListConsumerGroupOffsets(group, nil)
 
+	if err != nil {
+		output.Failf("failed to list consumer-group offsets: %v", err)
+	}
+
 	topicPartitions := createTopicPartitions(offsets, client, flags)
 
 	for _, description := range descriptions {

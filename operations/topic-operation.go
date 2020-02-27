@@ -222,7 +222,7 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 			output.Failf("Decreasing the number of partitions is not supported")
 		}
 
-		var emptyAssignment = make([][]int32, 0, 0)
+		var emptyAssignment = make([][]int32, 0)
 
 		err = admin.CreatePartitions(topic, flags.Partitions, emptyAssignment, flags.ValidateOnly)
 		if err != nil {
