@@ -11,13 +11,22 @@ export GO111MODULE=on
 project=github.com/deviceinsight/kafkactl
 ld_flags := "-X $(project)/cmd.version=$(VERSION) -X $(project)/cmd.gitCommit=$(COMMIT_SHA) -X $(project)/cmd.buildTime=$(BUILD_TS)"
 
+FILES    := $(shell find . -name '*.go' -type f -not -name '*.pb.go' -not -name '*_generated.go' -not -name '*_test.go')
+TESTS    := $(shell find . -name '*.go' -type f -not -name '*.pb.go' -not -name '*_generated.go' -name '*_test.go')
+
 .DEFAULT_GOAL := all
 .PHONY: all
-all: vet test build docs
+all: vet fmt lint test build docs
 
 .PHONY: vet
 vet:
 	go vet ./...
+
+fmt:
+	gofmt -s -l -w $(FILES) $(TESTS)
+
+lint:
+	golangci-lint run
 
 .PHONY: test
 test:

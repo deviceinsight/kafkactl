@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -28,17 +29,6 @@ type ConsumerFlags struct {
 	Exit            bool
 	EncodeValue     string
 	EncodeKey       string
-}
-
-type offset struct {
-	relative bool
-	start    int64
-	diff     int64
-}
-
-type Interval struct {
-	start offset
-	end   offset
 }
 
 type ConsumedMessage struct {
@@ -113,7 +103,7 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 
 	go func() {
 		signals := make(chan os.Signal, 1)
-		signal.Notify(signals, os.Kill, os.Interrupt)
+		signal.Notify(signals, syscall.SIGTERM, os.Interrupt)
 		<-signals
 		output.Debugf("Initiating shutdown of consumer...")
 		close(closing)

@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -129,7 +130,7 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 
 		go func() {
 			signals := make(chan os.Signal, 1)
-			signal.Notify(signals, os.Kill, os.Interrupt)
+			signal.Notify(signals, syscall.SIGTERM, os.Interrupt)
 			<-signals
 			close(cancel)
 		}()

@@ -474,6 +474,9 @@ kafkactl describe consumer-group GROUP [flags]
 ```
   -h, --help            help for consumer-group
   -l, --only-with-lag   show only partitions that have a lag
+  -o, --output string   output format. One of: json|yaml|wide
+  -m, --print-members   print group members (default true)
+  -T, --print-topics    print topic details (default true)
   -t, --topic string    show group details for given topic only
 ```
 
@@ -504,7 +507,9 @@ kafkactl describe topic TOPIC [flags]
 ##### Options
 
 ```
-  -h, --help   help for topic
+  -h, --help            help for topic
+  -o, --output string   output format. One of: json|yaml|wide
+  -c, --print-configs   print configs (default true)
 ```
 
 ##### Options inherited from parent commands

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support for Kafka 2.4.0
+- Add support for different output format for `describe consumer-groups`, `describe topic` and change default output format.
+- Add parameter `--print-configs` to `describe topic` to control if configs shall be printed
+- Add parameter `--print-members` to `describe consumer-groups` to control if members shall be printed
+- Add parameter `--print-topics` to `describe consumer-groups` to control if topics shall be printed
 
 ## 1.5.0 - 2020-01-24
 

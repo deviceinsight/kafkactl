@@ -1,11 +1,14 @@
 package consumergroups
 
 import (
+	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/deviceinsight/kafkactl/util"
 	"sort"
+	"strconv"
+	"strings"
 )
 
 type consumerGroup struct {
@@ -41,13 +44,16 @@ type consumerGroupDescription struct {
 	Group    consumerGroup
 	Protocol string
 	State    string
-	Topics   []topicPartitionOffsets
-	Members  []consumerGroupMember
+	Topics   []topicPartitionOffsets `json:",omitempty" yaml:",omitempty"`
+	Members  []consumerGroupMember   `json:",omitempty" yaml:",omitempty"`
 }
 
 type DescribeConsumerGroupFlags struct {
 	OnlyPartitionsWithLag bool
 	FilterTopic           string
+	OutputFormat          string
+	PrintTopics           bool
+	PrintMembers          bool
 }
 
 type GetConsumerGroupFlags struct {
@@ -89,20 +95,11 @@ func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeCon
 		}
 	}
 
-	// admin.ListConsumerGroupOffsets(group, nil) can be used to fetch the offsets when
-	// https://github.com/Shopify/sarama/pull/1374 is merged
-	coordinator, err := client.Coordinator(group)
+	offsets, err := admin.ListConsumerGroupOffsets(group, nil)
+
 	if err != nil {
-		output.Failf("failed to get coordinator: %v", err)
+		output.Failf("failed to list consumer-group offsets: %v", err)
 	}
-
-	request := &sarama.OffsetFetchRequest{
-		// this will only work starting from version 0.10.2.0
-		Version:       2,
-		ConsumerGroup: group,
-	}
-
-	offsets, err := coordinator.FetchOffset(request)
 
 	topicPartitions := createTopicPartitions(offsets, client, flags)
 
@@ -121,9 +118,56 @@ func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeCon
 			assignedPartitions := filterAssignedPartitions(memberAssignment.Topics, topicPartitions)
 
 			consumerGroupDescription.Members = addMember(consumerGroupDescription.Members, member.ClientHost, member.ClientId, assignedPartitions)
-
 		}
-		output.PrintObject(consumerGroupDescription, "yaml")
+
+		sort.Slice(consumerGroupDescription.Members, func(i, j int) bool {
+			return consumerGroupDescription.Members[i].ClientId < consumerGroupDescription.Members[j].ClientId
+		})
+
+		if !flags.PrintTopics {
+			consumerGroupDescription.Topics = nil
+		} else if flags.OutputFormat == "wide" || flags.OutputFormat == "" {
+			tableWriter := output.CreateTableWriter()
+			tableWriter.WriteHeader("TOPIC", "PARTITION", "NEWEST_OFFSET", "CONSUMER_OFFSET", "LAG")
+
+			for _, topic := range consumerGroupDescription.Topics {
+				for _, partition := range topic.Partitions {
+					tableWriter.Write(topic.Name, strconv.Itoa(int(partition.Partition)), strconv.Itoa(int(partition.NewestOffset)), strconv.Itoa(int(partition.ConsumerOffset)), strconv.Itoa(int(partition.Lag)))
+				}
+			}
+
+			tableWriter.Flush()
+			output.PrintStrings("")
+		}
+
+		if !flags.PrintMembers {
+			consumerGroupDescription.Members = nil
+		} else if flags.OutputFormat == "wide" || flags.OutputFormat == "" {
+			tableWriter := output.CreateTableWriter()
+			tableWriter.WriteHeader("CLIENT_HOST", "CLIENT_ID", "TOPIC", "ASSIGNED_PARTITIONS")
+
+			for _, m := range consumerGroupDescription.Members {
+				for _, topic := range m.AssignedPartitions {
+					partitions := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(topic.Partitions)), ","), "[]")
+					tableWriter.Write(m.ClientHost, m.ClientId, topic.Name, partitions)
+				}
+			}
+
+			tableWriter.Flush()
+			output.PrintStrings("")
+		}
+
+		tableWriter := output.CreateTableWriter()
+
+		if flags.OutputFormat == "" || flags.OutputFormat == "wide" {
+			tableWriter.WriteHeader("PARTITION", "OLDEST_OFFSET", "NEWEST_OFFSET", "LEADER", "REPLICAS", "IN_SYNC_REPLICAS")
+		} else if flags.OutputFormat != "json" && flags.OutputFormat != "yaml" {
+			output.Failf("unknown outputFormat: %s", flags.OutputFormat)
+		}
+
+		if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
+			output.PrintObject(consumerGroupDescription, flags.OutputFormat)
+		}
 	}
 }
 
@@ -134,13 +178,7 @@ func filterAssignedPartitions(assignedPartitions map[string][]int32, topicPartit
 	for topic, partitions := range assignedPartitions {
 		for _, t := range topicPartitions {
 			if t.Name == topic {
-				resultPartitions := make([]int32, 0)
-				for _, partitionOffset := range t.Partitions {
-					if util.ContainsInt32(partitions, partitionOffset.Partition) {
-						resultPartitions = append(resultPartitions, partitionOffset.Partition)
-					}
-				}
-				result[topic] = resultPartitions
+				result[topic] = partitions
 			}
 		}
 	}

@@ -57,6 +57,11 @@ type AlterTopicFlags struct {
 	Configs      []string
 }
 
+type DescribeTopicFlags struct {
+	PrintConfigs bool
+	OutputFormat string
+}
+
 type TopicOperation struct {
 }
 
@@ -115,7 +120,7 @@ func (operation *TopicOperation) DeleteTopics(topics []string) {
 	}
 }
 
-func (operation *TopicOperation) DescribeTopic(topic string) {
+func (operation *TopicOperation) DescribeTopic(topic string, flags DescribeTopicFlags) {
 
 	context := CreateClientContext()
 
@@ -143,7 +148,44 @@ func (operation *TopicOperation) DescribeTopic(topic string) {
 	}
 
 	var t, _ = readTopic(&client, &admin, topic, allFields)
-	output.PrintObject(t, "yaml")
+
+	if flags.PrintConfigs {
+		if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
+			t.Configs = nil
+		} else {
+			configTableWriter := output.CreateTableWriter()
+			configTableWriter.WriteHeader("CONFIG", "VALUE")
+
+			for _, c := range t.Configs {
+				configTableWriter.Write(c.Name, c.Value)
+			}
+
+			configTableWriter.Flush()
+			output.PrintStrings("")
+		}
+	}
+
+	partitionTableWriter := output.CreateTableWriter()
+
+	if flags.OutputFormat == "" || flags.OutputFormat == "wide" {
+		partitionTableWriter.WriteHeader("PARTITION", "OLDEST_OFFSET", "NEWEST_OFFSET", "LEADER", "REPLICAS", "IN_SYNC_REPLICAS")
+	} else if flags.OutputFormat != "json" && flags.OutputFormat != "yaml" {
+		output.Failf("unknown outputFormat: %s", flags.OutputFormat)
+	}
+
+	if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
+		output.PrintObject(t, flags.OutputFormat)
+	} else if flags.OutputFormat == "wide" || flags.OutputFormat == "" {
+		for _, p := range t.Partitions {
+			replicas := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(p.Replicas)), ","), "[]")
+			inSyncReplicas := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(p.ISRs)), ","), "[]")
+			partitionTableWriter.Write(strconv.Itoa(int(p.Id)), strconv.Itoa(int(p.OldestOffset)), strconv.Itoa(int(p.NewestOffset)), p.Leader, replicas, inSyncReplicas)
+		}
+	}
+
+	if flags.OutputFormat == "" || flags.OutputFormat == "wide" {
+		partitionTableWriter.Flush()
+	}
 }
 
 func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags) {
@@ -180,7 +222,7 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 			output.Failf("Decreasing the number of partitions is not supported")
 		}
 
-		var emptyAssignment = make([][]int32, 0, 0)
+		var emptyAssignment = make([][]int32, 0)
 
 		err = admin.CreatePartitions(topic, flags.Partitions, emptyAssignment, flags.ValidateOnly)
 		if err != nil {
@@ -189,7 +231,7 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 	}
 
 	if len(flags.Configs) == 0 {
-		operation.DescribeTopic(topic)
+		operation.DescribeTopic(topic, DescribeTopicFlags{})
 		return
 	}
 
@@ -215,7 +257,7 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 		output.Failf("Could not alter topic config '%s': %v", topic, err)
 	}
 
-	operation.DescribeTopic(topic)
+	operation.DescribeTopic(topic, DescribeTopicFlags{})
 }
 
 func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) {
@@ -229,8 +271,6 @@ func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) {
 		topics []string
 	)
 
-	tableWriter := output.CreateTableWriter()
-
 	if admin, err = CreateClusterAdmin(&context); err != nil {
 		output.Failf("failed to create cluster admin: %v", err)
 	}
@@ -243,6 +283,7 @@ func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) {
 		output.Failf("failed to read topics err=%v", err)
 	}
 
+	tableWriter := output.CreateTableWriter()
 	var requestedFields requestedTopicFields
 
 	if flags.OutputFormat == "" {
