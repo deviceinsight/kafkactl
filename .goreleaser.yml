@@ -39,6 +39,7 @@ nfpms:
 
 release:
   disable: false
+  draft: false
 
 snapcrafts:
   - id: default
@@ -51,3 +52,24 @@ snapcrafts:
     apps:
       kafkactl:
         plugs: ["home", "network"]
+
+brews:
+  -
+    github:
+      owner: deviceinsight
+      name: homebrew-packages
+
+    commit_author:
+      name: goreleaserbot
+      email: goreleaser@device-insight.com
+
+    folder: Formula
+
+    homepage: https://www.device-insight.com/
+
+    description: |
+      A Commandline interface for Apache Kafka which provides useful features adapted from kubectl for Kubernetes.
+      Multiple kafka brokers can be configured in a config file and the active broker is also persisted within the config.
+      In addition kafkactl supports auto-completion for its commands as well as topic names.
+
+    skip_upload: false

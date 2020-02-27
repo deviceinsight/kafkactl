@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add parameter `--print-members` to `describe consumer-groups` to control if members shall be printed
 - Add parameter `--print-topics` to `describe consumer-groups` to control if topics shall be printed
 - Add alias `list` for `get` command (e.g. `list topics`)
+- kafkactl is now installable with `homebrew`
+
 ## 1.5.0 - 2020-01-24
 
 ### Added
