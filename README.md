@@ -23,7 +23,17 @@ You can install the pre-compiled binary or compile from source.
 **snapcraft**:
 
 ```bash
-$ snap install kafkactl
+snap install kafkactl
+```
+
+**homebrew**:
+```bash
+# install tap repostory once
+brew tap deviceinsight/packages
+# install kafkactl
+brew install deviceinsight/packages/kafkactl
+# upgrade kafkactl
+brew upgrade deviceinsight/packages/kafkactl
 ```
 
 **deb/rpm**:
@@ -37,7 +47,7 @@ Download the pre-compiled binaries from the [releases page](https://github.com/d
 ### Compiling from source
 
 ```bash
-$ go get -u github.com/deviceinsight/kafkactl
+go get -u github.com/deviceinsight/kafkactl
 ```
 
 **NOTE:** make sure that `kafkactl` is on PATH otherwise auto-completion won't work.
