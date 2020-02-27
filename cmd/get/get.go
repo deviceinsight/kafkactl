@@ -5,8 +5,9 @@ import (
 )
 
 var CmdGet = &cobra.Command{
-	Use:   "get",
-	Short: "get info about topics, consumerGroups",
+	Use:     "get",
+	Aliases: []string{"list"},
+	Short:   "get info about topics, consumerGroups",
 }
 
 func init() {
