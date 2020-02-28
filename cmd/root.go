@@ -18,6 +18,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var cfgFile string
@@ -127,6 +128,11 @@ contexts:
     brokers:
     - localhost:9092
 current-context: localhost`
+
+	if os.Getenv("BROKER") != "" {
+		// this is useful for running in docker
+		defaultConfigContent = strings.Replace(defaultConfigContent, "localhost:9092", os.Getenv("BROKER"), -1)
+	}
 
 	_, err = f.WriteString(defaultConfigContent)
 

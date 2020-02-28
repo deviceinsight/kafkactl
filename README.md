@@ -143,6 +143,20 @@ mkdir ~/.config/fish/completions
 kafkactl completion fish > ~/.config/fish/completions/kafkactl.fish
 ```
 
+## Running in docker
+
+Assuming your Kafka broker is accessible as `kafka:9092`, you can list topics by running: 
+
+```bash
+docker run --env BROKER=kafka:9092 deviceinsight/kafkactl:latest get topics
+```
+
+If a more elaborate config is needed, you can mount it as a volume:
+
+```bash
+docker run -v /absolute/path/to/config.yml:/etc/kafkactl/config.yml deviceinsight/kafkactl get topics
+``` 
+
 ## Command documentation
 
 The documentation for all available commands can be found here:
