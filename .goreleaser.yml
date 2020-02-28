@@ -73,3 +73,11 @@ brews:
       In addition kafkactl supports auto-completion for its commands as well as topic names.
 
     skip_upload: false
+
+dockers:
+  -
+    binaries:
+      - kafkactl
+    image_templates:
+      - "deviceinsight/kafkactl:latest"
+      - "deviceinsight/kafkactl:{{ .Tag }}"
