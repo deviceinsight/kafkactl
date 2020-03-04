@@ -76,6 +76,8 @@ contexts:
     tlsCA: my-ca
     tlsCert: my-cert
     tlsCertKey: my-key
+    # set tlsInsecure to true to ignore all tls verification (defaults to false)
+    tlsInsecure: false
     
     # optional: clientID config (defaults to kafkactl-{username})
     clientID: my-client-id
