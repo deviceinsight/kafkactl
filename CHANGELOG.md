@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.7.0 - 2020-03-05
+
 ### Added
 - Add configuration option `tlsInsecure` to be able to connect with TLS to IP address served brokers.
 - Add parameter `--file` to produce command to allow reading messages from a file directly
