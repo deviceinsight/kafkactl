@@ -630,13 +630,15 @@ kafkactl produce [flags]
 #### Options
 
 ```
+  -f, --file string                file to read input from
   -h, --help                       help for produce
   -k, --key string                 key to use for all messages
   -K, --key-schema-version int     avro schema version that should be used for key serialization (default is latest) (default -1)
+  -L, --lineSeparator string       separator to split multiple messages from stdin or file (default "\n")
   -p, --partition int32            partition to produce to (default -1)
   -P, --partitioner murmur2        the partitioning scheme to use. Can be murmur2, `hash`, `hash-ref` `manual`, or `random`. (default is murmur2)
   -r, --rate int                   amount of messages per second to produce on the topic (default -1)
-  -S, --separator string           separator to split key and value from stdin
+  -S, --separator string           separator to split key and value from stdin or file
   -s, --silent                     do not write to standard output
   -v, --value string               value to produce
   -i, --value-schema-version int   avro schema version that should be used for value serialization (default is latest) (default -1)

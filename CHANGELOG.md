@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add configuration option `tlsInsecure` to be able to connect with TLS to IP address served brokers.
+- Add parameter `--file` to produce command to allow reading messages from a file directly
+- Add parameter `--lineSeparator` to produce command to split multiple messages by a custom delimiter
 
 ## 1.6.0 - 2020-02-28
 
