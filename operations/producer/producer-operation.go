@@ -6,6 +6,7 @@ import (
 	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/output"
 	"go.uber.org/ratelimit"
+	"io"
 	"os"
 	"os/signal"
 	"strings"
@@ -17,6 +18,8 @@ type ProducerFlags struct {
 	Partitioner        string
 	Partition          int32
 	Separator          string
+	LineSeparator      string
+	File               string
 	Key                string
 	Value              string
 	KeySchemaVersion   int
@@ -124,7 +127,7 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 		} else if !flags.Silent {
 			output.Infof("message produced (partition=%d\toffset=%d)\n", partition, offset)
 		}
-	} else if stdinAvailable() {
+	} else if flags.File != "" || stdinAvailable() {
 
 		cancel := make(chan struct{})
 
@@ -151,7 +154,23 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 			rl = ratelimit.New(flags.RateInSeconds) // per second
 		}
 
-		scanner := bufio.NewScanner(os.Stdin)
+		var inputReader io.Reader
+
+		if flags.File != "" {
+			inputReader, err = os.Open(flags.File)
+			if err != nil {
+				output.Failf("unable to read input file %s: %v", flags.File, err)
+			}
+		} else {
+			inputReader = os.Stdin
+		}
+
+		scanner := bufio.NewScanner(inputReader)
+
+		if len(flags.LineSeparator) > 0 && flags.LineSeparator != "\n" {
+			scanner.Split(splitAt(flags.LineSeparator))
+		}
+
 		for scanner.Scan() {
 
 			select {
@@ -229,4 +248,28 @@ func failWithMessageCount(messageCount int, errorMessage string, args ...interfa
 func stdinAvailable() bool {
 	stat, _ := os.Stdin.Stat()
 	return (stat.Mode() & os.ModeCharDevice) == 0
+}
+
+func splitAt(delimiter string) func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+
+	return func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+
+		// Return nothing if at end of file and no data passed
+		if atEOF && len(data) == 0 {
+			return 0, nil, nil
+		}
+
+		// Find the index of the input of the separator delimiter
+		if i := strings.Index(string(data), delimiter); i >= 0 {
+			return i + len(delimiter), data[0:i], nil
+		}
+
+		// If we're at EOF, we have a final, non-terminated line. Return it.
+		if atEOF {
+			return len(data), data, nil
+		}
+
+		// Request more data.
+		return 0, nil, nil
+	}
 }

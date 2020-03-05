@@ -218,10 +218,20 @@ used as input to produce messages to topic `my-topic`:
 cat myfile | kafkactl produce my-topic --separator=#
 ```
 
+The same can be accomplished without piping the file to stdin with the `--file` parameter:
+```bash
+kafkactl produce my-topic --separator=# --file=myfile
+```
+
+If the messages in the input file need to be split by a different delimiter than `\n` a custom line separator can be provided:
+ ```bash
+ kafkactl produce my-topic --separator=# --lineSeparator=|| --file=myfile
+ ```
+
 **NOTE:** if the file was generated with `kafkactl consume --print-keys --print-timestamps my-topic` the produce
 command is able to detect the message timestamp in the input and will ignore it. 
 
-the number of messages produced per second can be controlled with the `--rate` paramter:
+the number of messages produced per second can be controlled with the `--rate` parameter:
 
 ```bash
 cat myfile | kafkactl produce my-topic --separator=# --rate=200
