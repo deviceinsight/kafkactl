@@ -23,6 +23,7 @@ type ClientContext struct {
 	TlsCA              string
 	TlsCert            string
 	TlsCertKey         string
+	TlsInsecure        bool
 	ClientID           string
 	KafkaVersion       sarama.KafkaVersion
 	AvroSchemaRegistry string
@@ -38,6 +39,7 @@ func CreateClientContext() ClientContext {
 	context.TlsCA = viper.GetString("contexts." + context.Name + ".tlsCA")
 	context.TlsCert = viper.GetString("contexts." + context.Name + ".tlsCert")
 	context.TlsCertKey = viper.GetString("contexts." + context.Name + ".tlsCertKey")
+	context.TlsInsecure = viper.GetBool("contexts." + context.Name + ".tlsInsecure")
 	context.ClientID = viper.GetString("contexts." + context.Name + ".clientID")
 	context.KafkaVersion = kafkaVersion(viper.GetString("contexts." + context.Name + ".kafkaVersion"))
 	context.AvroSchemaRegistry = viper.GetString("contexts." + context.Name + ".avro.schemaRegistry")
@@ -59,7 +61,7 @@ func CreateClientConfig(context *ClientContext) *sarama.Config {
 	config.Version = context.KafkaVersion
 	config.ClientID = getClientID(context)
 
-	tlsConfig, err := setupCerts(context.TlsCert, context.TlsCA, context.TlsCertKey)
+	tlsConfig, err := setupCerts(context.TlsInsecure, context.TlsCert, context.TlsCA, context.TlsCertKey)
 	if err != nil {
 		output.Failf("failed to setup certificates err=%v", err)
 	}
@@ -80,7 +82,7 @@ func CreateClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
 	config.Version = context.KafkaVersion
 	config.ClientID = getClientID(context)
 
-	tlsConfig, err := setupCerts(context.TlsCert, context.TlsCA, context.TlsCertKey)
+	tlsConfig, err := setupCerts(context.TlsInsecure, context.TlsCert, context.TlsCA, context.TlsCertKey)
 	if err != nil {
 		output.Failf("failed to setup certificates err=%v", err)
 	}
@@ -120,7 +122,10 @@ func sanitizeUsername(u string) string {
 
 // setupCerts takes the paths to a tls certificate, CA, and certificate key in
 // a PEM format and returns a constructed tls.Config object.
-func setupCerts(certPath, caPath, keyPath string) (*tls.Config, error) {
+func setupCerts(insecure bool, certPath, caPath, keyPath string) (*tls.Config, error) {
+	if insecure {
+		return &tls.Config{InsecureSkipVerify: true}, nil
+	}
 	if certPath == "" && caPath == "" && keyPath == "" {
 		return nil, nil
 	}

@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add configuration option `tlsInsecure` to be able to connect with TLS to IP address served brokers.
+
 ## 1.6.0 - 2020-02-28
 
 ### Added
