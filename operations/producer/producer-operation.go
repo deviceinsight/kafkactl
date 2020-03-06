@@ -88,7 +88,7 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 	}
 
 	if flags.Separator != "" && (flags.Key != "" || flags.Value != "") {
-		output.Failf("separator is used to split stdin. it cannot be used together with key or value")
+		output.Failf("separator is used to split input from stdin/file. it cannot be used together with key or value")
 	}
 
 	var serializer MessageSerializer
@@ -168,7 +168,7 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 		scanner := bufio.NewScanner(inputReader)
 
 		if len(flags.LineSeparator) > 0 && flags.LineSeparator != "\n" {
-			scanner.Split(splitAt(flags.LineSeparator))
+			scanner.Split(splitAt(convertControlChars(flags.LineSeparator)))
 		}
 
 		for scanner.Scan() {
@@ -189,7 +189,7 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 			}
 
 			if flags.Separator != "" {
-				input := strings.Split(line, flags.Separator)
+				input := strings.Split(line, convertControlChars(flags.Separator))
 				if len(input) < 2 {
 					failWithMessageCount(messageCount, "the provided input does not contain the separator %s", flags.Separator)
 				} else if len(input) == 3 && messageCount == 0 {
@@ -220,6 +220,13 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) {
 	} else {
 		output.Failf("value is required, or you have to provide the value on stdin")
 	}
+}
+
+func convertControlChars(value string) string {
+	value = strings.Replace(value, "\\n", "\n", -1)
+	value = strings.Replace(value, "\\r", "\r", -1)
+	value = strings.Replace(value, "\\t", "\t", -1)
+	return value
 }
 
 func resolveColumns(line []string) (keyColumnIdx, valueColumnIdx, columnCount int) {
