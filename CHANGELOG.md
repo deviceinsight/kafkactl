@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- add configuration option `sasl` for connection with SASL PLAIN username and password
+
 ## 1.7.0 - 2020-03-05
 
 ### Added
