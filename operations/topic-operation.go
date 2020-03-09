@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"math/rand"
+	"github.com/deviceinsight/kafkactl/util"
 	"sort"
 	"strconv"
 	"strings"
@@ -263,7 +264,7 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 		}
 	}
 
-	if flags.ReplicationFactor != 0 {
+	if flags.ReplicationFactor > 0 {
 
 		var brokers = client.Brokers()
 
@@ -271,30 +272,28 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 			output.Failf("Replication factor for topic '%s' must not exceed the number of available brokers", topic)
 		}
 
-		t, _ = readTopic(&client, &admin, topic, requestedTopicFields{partitionId: true, config: true})
+		t, _ = readTopic(&client, &admin, topic, requestedTopicFields{partitionId: true, partitionReplicas: true})
 
-		var partitionAssignments = make([][]int32, 0, int16(len(t.Partitions)))
-
-		for _, partition := range t.Partitions {
-			_ = partition
-
-			var assignment = make([]int32, 0, flags.ReplicationFactor)
-
-			var brokerIndex = rand.Intn(int(flags.ReplicationFactor))
-
-			for i := 0; i < int(flags.ReplicationFactor); i++ {
-				if brokerIndex >= len(brokers) {
-					brokerIndex = 0
-				}
-				// TODO make sure the assignments are well distributed
-				assignment = append(assignment, brokers[brokerIndex].ID())
-				brokerIndex++
-			}
-
-			partitionAssignments = append(partitionAssignments, assignment)
+		brokerReplicaCount := make(map[int32]int)
+		for _, broker := range brokers {
+			brokerReplicaCount[broker.ID()] = 0
 		}
 
-		err = admin.AlterPartitionReassignments(topic, partitionAssignments)
+		for _, partition := range t.Partitions {
+			for _, brokerId := range partition.Replicas {
+				brokerReplicaCount[brokerId] += 1
+			}
+		}
+
+		var replicaAssignment = make([][]int32, 0, int16(len(t.Partitions)))
+
+		for _, partition := range t.Partitions {
+
+			var replicas = getTargetReplicas(partition.Replicas, brokerReplicaCount, flags.ReplicationFactor)
+			replicaAssignment = append(replicaAssignment, replicas)
+		}
+
+		err = admin.AlterPartitionReassignments(topic, replicaAssignment)
 		if err != nil {
 			output.Failf("Could not create partitions for topic '%s': %v", topic, err)
 		}
@@ -351,6 +350,51 @@ func (operation *TopicOperation) ListTopicsNames() ([]string, error) {
 	} else {
 		return topics, nil
 	}
+}
+
+func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int, targetReplicationFactor int16) []int32 {
+
+	replicas := currentReplicas
+
+	for len(replicas) > int(targetReplicationFactor) {
+
+		sort.Slice(replicas, func(i, j int) bool {
+			brokerI := replicas[i]
+			brokerJ := replicas[j]
+			return brokerReplicaCount[brokerI] < brokerReplicaCount[brokerJ] || (brokerReplicaCount[brokerI] == brokerReplicaCount[brokerJ] && brokerI < brokerJ)
+		})
+
+		lastReplica := replicas[len(replicas)-1]
+		replicas = replicas[:len(replicas)-1]
+		brokerReplicaCount[lastReplica] -= 1
+	}
+
+	var unusedBrokerIds []int32
+
+	if len(replicas) < int(targetReplicationFactor) {
+		for brokerId := range brokerReplicaCount {
+			if !util.ContainsInt32(replicas, brokerId) {
+				unusedBrokerIds = append(unusedBrokerIds, brokerId)
+			}
+		}
+		if len(unusedBrokerIds) < (int(targetReplicationFactor) - len(replicas)) {
+			output.Failf("not enough brokers")
+		}
+	}
+
+	for len(replicas) < int(targetReplicationFactor) {
+
+		sort.Slice(unusedBrokerIds, func(i, j int) bool {
+			brokerI := replicas[i]
+			brokerJ := replicas[j]
+			return brokerReplicaCount[brokerI] > brokerReplicaCount[brokerJ] || (brokerReplicaCount[brokerI] == brokerReplicaCount[brokerJ] && brokerI > brokerJ)
+		})
+
+		replicas = append(replicas, unusedBrokerIds[0])
+		brokerReplicaCount[unusedBrokerIds[0]] += 1
+	}
+
+	return replicas
 }
 
 func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) error {

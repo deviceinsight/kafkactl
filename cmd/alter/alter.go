@@ -8,10 +8,11 @@ func NewAlterCmd() *cobra.Command {
 
 	var cmdAlter = &cobra.Command{
 		Use:   "alter",
-		Short: "alter topics",
+		Aliases: []string{"edit"},
+		Short:   "alter topics, partitions",
 	}
 
 	cmdAlter.AddCommand(newAlterTopicCmd())
-
+	cmdAlter.AddCommand(newAlterPartitionCmd())
 	return cmdAlter
 }
