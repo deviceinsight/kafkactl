@@ -3,7 +3,6 @@ package operations
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/viper"
