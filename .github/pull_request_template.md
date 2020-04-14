@@ -13,7 +13,7 @@ Please delete options that are not relevant.
 - [ ] New feature (non-breaking change which adds functionality)
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
 
-# Documentation
+## Documentation
 
 - [ ] the change is mentioned in the `## [Unreleased]` section of `CHANGELOG.md`
 - [ ] the configuration yaml was changed and the example config in `README.md` was updated
