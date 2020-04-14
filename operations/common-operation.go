@@ -17,6 +17,12 @@ var (
 	invalidClientIDCharactersRegExp = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
 )
 
+type SaslConfig struct {
+	Enabled  bool
+	Username string
+	Password string
+}
+
 type ClientContext struct {
 	Name               string
 	Brokers            []string
@@ -24,6 +30,7 @@ type ClientContext struct {
 	TlsCert            string
 	TlsCertKey         string
 	TlsInsecure        bool
+	Sasl               SaslConfig
 	ClientID           string
 	KafkaVersion       sarama.KafkaVersion
 	AvroSchemaRegistry string
@@ -31,7 +38,6 @@ type ClientContext struct {
 }
 
 func CreateClientContext() ClientContext {
-
 	var context ClientContext
 
 	context.Name = viper.GetString("current-context")
@@ -44,6 +50,9 @@ func CreateClientContext() ClientContext {
 	context.KafkaVersion = kafkaVersion(viper.GetString("contexts." + context.Name + ".kafkaVersion"))
 	context.AvroSchemaRegistry = viper.GetString("contexts." + context.Name + ".avro.schemaRegistry")
 	context.DefaultPartitioner = viper.GetString("contexts." + context.Name + ".defaultPartitioner")
+	context.Sasl.Enabled = viper.GetBool("contexts." + context.Name + ".sasl.enabled")
+	context.Sasl.Username = viper.GetString("contexts." + context.Name + ".sasl.username")
+	context.Sasl.Password = viper.GetString("contexts." + context.Name + ".sasl.password")
 
 	return context
 }
@@ -70,6 +79,13 @@ func CreateClientConfig(context *ClientContext) *sarama.Config {
 		config.Net.TLS.Config = tlsConfig
 	}
 
+	if context.Sasl.Enabled {
+		output.Debugf("SASL is enabled.")
+		config.Net.SASL.Enable = true
+		config.Net.SASL.User = context.Sasl.Username
+		config.Net.SASL.Password = context.Sasl.Password
+	}
+
 	return config
 }
 
@@ -89,6 +105,13 @@ func CreateClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
 	if tlsConfig != nil {
 		config.Net.TLS.Enable = true
 		config.Net.TLS.Config = tlsConfig
+	}
+
+	if context.Sasl.Enabled {
+		output.Debugf("SASL is enabled.")
+		config.Net.SASL.Enable = true
+		config.Net.SASL.User = context.Sasl.Username
+		config.Net.SASL.Password = context.Sasl.Password
 	}
 
 	return sarama.NewClusterAdmin(context.Brokers, config)
