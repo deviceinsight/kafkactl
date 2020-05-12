@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - add configuration option `sasl` for connection with SASL PLAIN username and password
+- show oldestOffset,lead values when describing consumer groups
 
 ## 1.7.0 - 2020-03-05
 
