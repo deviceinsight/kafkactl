@@ -3,6 +3,7 @@ package operations
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/viper"
@@ -166,6 +167,11 @@ func setupCerts(insecure bool, certPath, caPath, keyPath string) (*tls.Config, e
 		}
 	}
 
+	if certPath == "" || keyPath == "" {
+		err := fmt.Errorf("certificate, key path are required - got cert=%#v key=%#v", certPath, keyPath)
+		return nil, err
+	}
+
 	clientCert, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
 		return nil, err
@@ -175,7 +181,6 @@ func setupCerts(insecure bool, certPath, caPath, keyPath string) (*tls.Config, e
 		RootCAs:      caPool,
 		Certificates: []tls.Certificate{clientCert},
 	}
-	bundle.BuildNameToCertificate()
 	return bundle, nil
 }
 
