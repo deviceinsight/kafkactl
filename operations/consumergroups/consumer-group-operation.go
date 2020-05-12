@@ -30,7 +30,9 @@ type topicPartition struct {
 type partitionOffset struct {
 	Partition      int32
 	NewestOffset   int64 `json:"newestOffset" yaml:"newestOffset"`
+	OldestOffset   int64 `json:"oldestOffset" yaml:"oldestOffset"`
 	ConsumerOffset int64 `json:"consumerOffset" yaml:"consumerOffset"`
+	Lead           int64
 	Lag            int64
 }
 
@@ -111,11 +113,14 @@ func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeCon
 
 			memberAssignment, err := member.GetMemberAssignment()
 
-			if err != nil {
-				output.Failf("failed to get group member assignment: %v", err)
-			}
+			var assignedPartitions map[string][]int32
 
-			assignedPartitions := filterAssignedPartitions(memberAssignment.Topics, topicPartitions)
+			if err != nil {
+				output.Warnf("failed to get group member assignment (%s, %s): %v", member.ClientHost, member.ClientId, err)
+				assignedPartitions = make(map[string][]int32)
+			} else {
+				assignedPartitions = filterAssignedPartitions(memberAssignment.Topics, topicPartitions)
+			}
 
 			consumerGroupDescription.Members = addMember(consumerGroupDescription.Members, member.ClientHost, member.ClientId, assignedPartitions)
 		}
@@ -128,11 +133,12 @@ func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeCon
 			consumerGroupDescription.Topics = nil
 		} else if flags.OutputFormat == "wide" || flags.OutputFormat == "" {
 			tableWriter := output.CreateTableWriter()
-			tableWriter.WriteHeader("TOPIC", "PARTITION", "NEWEST_OFFSET", "CONSUMER_OFFSET", "LAG")
+			tableWriter.WriteHeader("TOPIC", "PARTITION", "NEWEST_OFFSET", "OLDEST_OFFSET", "CONSUMER_OFFSET", "LEAD", "LAG")
 
 			for _, topic := range consumerGroupDescription.Topics {
 				for _, partition := range topic.Partitions {
-					tableWriter.Write(topic.Name, strconv.Itoa(int(partition.Partition)), strconv.Itoa(int(partition.NewestOffset)), strconv.Itoa(int(partition.ConsumerOffset)), strconv.Itoa(int(partition.Lag)))
+					tableWriter.Write(topic.Name, strconv.Itoa(int(partition.Partition)), strconv.Itoa(int(partition.NewestOffset)), strconv.Itoa(int(partition.OldestOffset)),
+						strconv.Itoa(int(partition.ConsumerOffset)), strconv.Itoa(int(partition.Lead)), strconv.Itoa(int(partition.Lag)))
 				}
 			}
 
@@ -238,15 +244,22 @@ func createTopicPartitions(offsets *sarama.OffsetFetchResponse, client sarama.Cl
 
 				go func(partition int32) {
 
-					offset, err := client.GetOffset(topic, partition, sarama.OffsetNewest)
+					newestOffset, err := client.GetOffset(topic, partition, sarama.OffsetNewest)
 					if err != nil {
-						output.Failf("failed to get offset for topic %s partition %d: %v", topic, partition, err)
+						output.Failf("failed to get newest offset for topic %s partition %d: %v", topic, partition, err)
 					}
 
-					lag := offset - offsets.Blocks[topic][partition].Offset
+					oldestOffset, err := client.GetOffset(topic, partition, sarama.OffsetOldest)
+					if err != nil {
+						output.Failf("failed to get oldest offset for topic %s partition %d: %v", topic, partition, err)
+					}
+
+					lead := offsets.Blocks[topic][partition].Offset - oldestOffset
+					lag := newestOffset - offsets.Blocks[topic][partition].Offset
 
 					if !flags.OnlyPartitionsWithLag || lag > 0 {
-						partitionChannel <- partitionOffset{Partition: partition, NewestOffset: offset, ConsumerOffset: offsets.Blocks[topic][partition].Offset, Lag: lag}
+						partitionChannel <- partitionOffset{Partition: partition, NewestOffset: newestOffset, OldestOffset: oldestOffset,
+							ConsumerOffset: offsets.Blocks[topic][partition].Offset, Lead: lead, Lag: lag}
 					} else {
 						partitionChannel <- partitionOffset{Partition: -1}
 					}
