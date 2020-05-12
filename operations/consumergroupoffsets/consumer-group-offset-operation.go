@@ -44,18 +44,37 @@ func (operation *ConsumerGroupOffsetOperation) ResetConsumerGroupOffset(flags Re
 	config := operations.CreateClientConfig(&ctx)
 
 	var (
-		err    error
-		client sarama.Client
+		err          error
+		client       sarama.Client
+		admin        sarama.ClusterAdmin
+		descriptions []*sarama.GroupDescription
 	)
 
 	if client, err = operations.CreateClient(&ctx); err != nil {
 		output.Failf("failed to create client err=%v", err)
 	}
 
+	if admin, err = operations.CreateClusterAdmin(&ctx); err != nil {
+		output.Failf("failed to create cluster admin: %v", err)
+	}
+
 	if topics, err := client.Topics(); err != nil {
 		output.Failf("failed to list available topics: %v", err)
 	} else if !util.ContainsString(topics, flags.Topic) {
 		output.Failf("topic does not exist: %s", flags.Topic)
+	}
+
+	if flags.Execute {
+		if descriptions, err = admin.DescribeConsumerGroups([]string{groupName}); err != nil {
+			output.Failf("failed to describe consumer group: %v", err)
+		}
+
+		for _, description := range descriptions {
+			// https://stackoverflow.com/a/61745884/1115279
+			if description.State != "Empty" {
+				output.Failf("cannot reset offsets on consumer group %s. There are consumers assigned (state: %s)", groupName, description.State)
+			}
+		}
 	}
 
 	consumerGroup, err := sarama.NewConsumerGroup(ctx.Brokers, groupName, config)
@@ -154,7 +173,7 @@ func (consumer *Consumer) Cleanup(sarama.ConsumerGroupSession) error {
 	return nil
 }
 
-func (consumer *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+func (consumer *Consumer) ConsumeClaim(sarama.ConsumerGroupSession, sarama.ConsumerGroupClaim) error {
 	return nil
 }
 
