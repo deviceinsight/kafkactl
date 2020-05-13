@@ -73,11 +73,13 @@ contexts:
     - remote-cluster003:9092
 
     # optional: tls config
-    tlsCA: my-ca
-    tlsCert: my-cert
-    tlsCertKey: my-key
-    # set tlsInsecure to true to ignore all tls verification (defaults to false)
-    tlsInsecure: false
+    tls:
+      enabled: true
+      ca: my-ca
+      cert: my-cert
+      certKey: my-key
+      # set insecure to true to ignore all tls verification (defaults to false)
+      insecure: false
 
     # optional: sasl support
     sasl:
