@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - show oldestOffset,lead values when describing consumer groups
 - allow omitting the CA cert 
 - show error message when trying to reset offset of a non-empty group
+- allow enabling tls without specifying additional options
 
 ## 1.7.0 - 2020-03-05
 

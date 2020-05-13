@@ -3,7 +3,6 @@ package operations
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/viper"
@@ -23,13 +22,18 @@ type SaslConfig struct {
 	Password string
 }
 
+type TlsConfig struct {
+	Enabled  bool
+	CA       string
+	Cert     string
+	CertKey  string
+	Insecure bool
+}
+
 type ClientContext struct {
 	Name               string
 	Brokers            []string
-	TlsCA              string
-	TlsCert            string
-	TlsCertKey         string
-	TlsInsecure        bool
+	Tls                TlsConfig
 	Sasl               SaslConfig
 	ClientID           string
 	KafkaVersion       sarama.KafkaVersion
@@ -41,11 +45,20 @@ func CreateClientContext() ClientContext {
 	var context ClientContext
 
 	context.Name = viper.GetString("current-context")
+
+	if viper.GetString("contexts."+context.Name+".tlsCA") != "" ||
+		viper.GetString("contexts."+context.Name+".tlsCert") != "" ||
+		viper.GetString("contexts."+context.Name+".tlsCertKey") != "" ||
+		viper.GetString("contexts."+context.Name+".tlsInsecure") != "" {
+		output.Failf("Your tls config contains fields that are not longer supported. Please update your config")
+	}
+
 	context.Brokers = viper.GetStringSlice("contexts." + context.Name + ".brokers")
-	context.TlsCA = viper.GetString("contexts." + context.Name + ".tlsCA")
-	context.TlsCert = viper.GetString("contexts." + context.Name + ".tlsCert")
-	context.TlsCertKey = viper.GetString("contexts." + context.Name + ".tlsCertKey")
-	context.TlsInsecure = viper.GetBool("contexts." + context.Name + ".tlsInsecure")
+	context.Tls.Enabled = viper.GetBool("contexts." + context.Name + ".tls.enabled")
+	context.Tls.CA = viper.GetString("contexts." + context.Name + ".tls.ca")
+	context.Tls.Cert = viper.GetString("contexts." + context.Name + ".tls.cert")
+	context.Tls.CertKey = viper.GetString("contexts." + context.Name + ".tls.certKey")
+	context.Tls.Insecure = viper.GetBool("contexts." + context.Name + ".tls.insecure")
 	context.ClientID = viper.GetString("contexts." + context.Name + ".clientID")
 	context.KafkaVersion = kafkaVersion(viper.GetString("contexts." + context.Name + ".kafkaVersion"))
 	context.AvroSchemaRegistry = viper.GetString("contexts." + context.Name + ".avro.schemaRegistry")
@@ -62,20 +75,19 @@ func CreateClient(context *ClientContext) (sarama.Client, error) {
 }
 
 func CreateClientConfig(context *ClientContext) *sarama.Config {
-	var (
-		err    error
-		config = sarama.NewConfig()
-	)
 
+	var config = sarama.NewConfig()
 	config.Version = context.KafkaVersion
 	config.ClientID = getClientID(context)
 
-	tlsConfig, err := setupCerts(context.TlsInsecure, context.TlsCert, context.TlsCA, context.TlsCertKey)
-	if err != nil {
-		output.Failf("failed to setup certificates err=%v", err)
-	}
-	if tlsConfig != nil {
+	if context.Tls.Enabled {
+		output.Debugf("TLS is enabled.")
 		config.Net.TLS.Enable = true
+
+		tlsConfig, err := setupTlsConfig(context.Tls)
+		if err != nil {
+			output.Failf("failed to setup certificates err=%v", err)
+		}
 		config.Net.TLS.Config = tlsConfig
 	}
 
@@ -90,20 +102,19 @@ func CreateClientConfig(context *ClientContext) *sarama.Config {
 }
 
 func CreateClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
-	var (
-		err    error
-		config = sarama.NewConfig()
-	)
 
+	var config = sarama.NewConfig()
 	config.Version = context.KafkaVersion
 	config.ClientID = getClientID(context)
 
-	tlsConfig, err := setupCerts(context.TlsInsecure, context.TlsCert, context.TlsCA, context.TlsCertKey)
-	if err != nil {
-		output.Failf("failed to setup certificates err=%v", err)
-	}
-	if tlsConfig != nil {
+	if context.Tls.Enabled {
+		output.Debugf("TLS is enabled.")
 		config.Net.TLS.Enable = true
+
+		tlsConfig, err := setupTlsConfig(context.Tls)
+		if err != nil {
+			output.Failf("failed to setup certificates err=%v", err)
+		}
 		config.Net.TLS.Config = tlsConfig
 	}
 
@@ -143,19 +154,21 @@ func sanitizeUsername(u string) string {
 	return invalidClientIDCharactersRegExp.ReplaceAllString(u, "")
 }
 
-// setupCerts takes the paths to a tls certificate, CA, and certificate key in
+// setupTlsConfig takes the paths to a tls certificate, CA, and certificate key in
 // a PEM format and returns a constructed tls.Config object.
-func setupCerts(insecure bool, certPath, caPath, keyPath string) (*tls.Config, error) {
-	if insecure {
-		return &tls.Config{InsecureSkipVerify: true}, nil
+func setupTlsConfig(tlsConfig TlsConfig) (*tls.Config, error) {
+
+	if !tlsConfig.Enabled {
+		output.Failf("tls should be enabled at this point")
 	}
-	if certPath == "" && caPath == "" && keyPath == "" {
-		return nil, nil
+
+	if tlsConfig.Insecure {
+		return &tls.Config{InsecureSkipVerify: true}, nil
 	}
 
 	var caPool *x509.CertPool = nil
-	if caPath != "" {
-		caString, err := ioutil.ReadFile(caPath)
+	if tlsConfig.CA != "" {
+		caString, err := ioutil.ReadFile(tlsConfig.CA)
 		if err != nil {
 			return nil, err
 		}
@@ -163,18 +176,20 @@ func setupCerts(insecure bool, certPath, caPath, keyPath string) (*tls.Config, e
 		caPool := x509.NewCertPool()
 		ok := caPool.AppendCertsFromPEM(caString)
 		if !ok {
-			output.Failf("unable to add ca at %s to certificate pool", caPath)
+			output.Failf("unable to add ca at %s to certificate pool", tlsConfig.CA)
 		}
 	}
 
-	if certPath == "" || keyPath == "" {
-		err := fmt.Errorf("certificate, key path are required - got cert=%#v key=%#v", certPath, keyPath)
-		return nil, err
-	}
+	var (
+		clientCert tls.Certificate
+		err        error
+	)
 
-	clientCert, err := tls.LoadX509KeyPair(certPath, keyPath)
-	if err != nil {
-		return nil, err
+	if tlsConfig.Cert != "" && tlsConfig.CertKey != "" {
+		clientCert, err = tls.LoadX509KeyPair(tlsConfig.Cert, tlsConfig.CertKey)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	bundle := &tls.Config{
