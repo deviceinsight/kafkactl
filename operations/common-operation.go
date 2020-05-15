@@ -173,7 +173,7 @@ func setupTlsConfig(tlsConfig TlsConfig) (*tls.Config, error) {
 			return nil, err
 		}
 
-		caPool := x509.NewCertPool()
+		caPool = x509.NewCertPool()
 		ok := caPool.AppendCertsFromPEM(caString)
 		if !ok {
 			output.Failf("unable to add ca at %s to certificate pool", tlsConfig.CA)
