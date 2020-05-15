@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- loading custom CA cert failed in 1.8.0
+
 ## 1.8.0 - 2020-05-13
 
 ### Added
