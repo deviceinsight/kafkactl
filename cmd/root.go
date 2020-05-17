@@ -34,7 +34,9 @@ var rootCmd = &cobra.Command{
 var configPaths = []string{"$HOME/.config/kafkactl", "$HOME/.kafkactl", "$SNAP_DATA/kafkactl", "/etc/kafkactl"}
 
 func KafkactlCommand(streams output.IOStreams) *cobra.Command {
-	rootCmd.SetOutput(streams.Out)
+	output.IoStreams = streams
+	rootCmd.SetOut(streams.Out)
+	rootCmd.SetErr(streams.ErrOut)
 	return rootCmd
 }
 

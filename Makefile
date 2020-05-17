@@ -30,7 +30,19 @@ lint:
 
 .PHONY: test
 test:
-	go test ./...
+	go test -v -short ./...
+
+.PHONY: pre_integration_test
+pre_integration_test:
+	docker-compose -f docker/docker-compose.yml up -d
+
+.PHONY: integration_test
+integration_test:
+	go test -run Integration ./...
+
+.PHONY: post_integration_test
+post_integration_test:
+	docker-compose -f docker/docker-compose.yml down
 
 .PHONY: build
 build:

@@ -3,7 +3,6 @@ package output
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
 )
 
@@ -19,23 +18,17 @@ type IOStreams struct {
 	ErrOut io.Writer
 }
 
-func NewTestIOStreams() (IOStreams, *bytes.Buffer, *bytes.Buffer, *bytes.Buffer) {
-	in := &bytes.Buffer{}
-	out := &bytes.Buffer{}
-	errOut := &bytes.Buffer{}
-
-	return IOStreams{
-		In:     in,
-		Out:    out,
-		ErrOut: errOut,
-	}, in, out, errOut
+func NewTestIOStreams() (IOStreams, *bytes.Buffer) {
+	return NewTestIOStreamsWithStdIn(nil)
 }
 
-func NewTestIOStreamsDiscard() IOStreams {
-	in := &bytes.Buffer{}
+func NewTestIOStreamsWithStdIn(in *os.File) (IOStreams, *bytes.Buffer) {
+
+	buf := new(bytes.Buffer)
+
 	return IOStreams{
 		In:     in,
-		Out:    ioutil.Discard,
-		ErrOut: ioutil.Discard,
-	}
+		Out:    buf,
+		ErrOut: buf,
+	}, buf
 }
