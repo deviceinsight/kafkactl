@@ -3,6 +3,7 @@ package output
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
@@ -18,8 +19,9 @@ type StdLogger interface {
 	Println(v ...interface{})
 }
 
-func Failf(msg string, args ...interface{}) {
-	Exitf(1, msg, args...)
+var Fail = func(err error) {
+	_, _ = fmt.Fprintf(IoStreams.ErrOut, "%s", err.Error())
+	os.Exit(1)
 }
 
 func Warnf(msg string, args ...interface{}) {
@@ -38,31 +40,23 @@ func Debugf(msg string, args ...interface{}) {
 	DebugLogger.Printf(msg+"\n", args...)
 }
 
-func Exitf(code int, msg string, args ...interface{}) {
-	if code == 0 {
-		_, _ = fmt.Fprintf(IoStreams.Out, msg+"\n", args...)
-	} else {
-		_, _ = fmt.Fprintf(IoStreams.ErrOut, msg+"\n", args...)
-	}
-	os.Exit(code)
-}
-
-func PrintObject(object interface{}, format string) {
+func PrintObject(object interface{}, format string) error {
 	if format == "yaml" {
 		yamlString, err := yaml.Marshal(object)
 		if err != nil {
-			Failf("unable to format yaml: %v", err)
+			return errors.Wrap(err, "unable to format yaml")
 		}
 		_, _ = fmt.Fprintln(IoStreams.Out, string(yamlString))
 	} else if format == "json" {
 		jsonString, err := json.MarshalIndent(object, "", "\t")
 		if err != nil {
-			Failf("unable to format json: %v", err)
+			return errors.Wrap(err, "unable to format json")
 		}
 		_, _ = fmt.Fprintln(IoStreams.Out, string(jsonString))
 	} else {
-		Failf("unknown format: %v", format)
+		return errors.Errorf("unknown format: %v", format)
 	}
+	return nil
 }
 
 func PrintStrings(args ...string) {

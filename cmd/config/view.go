@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/ioutil"
@@ -15,7 +16,7 @@ var cmdView = &cobra.Command{
 
 		yamlFile, err := ioutil.ReadFile(viper.ConfigFileUsed())
 		if err != nil {
-			output.Failf("unable to read config: %v", err)
+			output.Fail(errors.Wrap(err, "unable to read config"))
 		}
 
 		output.Infof("%s", yamlFile)

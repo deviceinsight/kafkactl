@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/deviceinsight/kafkactl/operations"
+	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +21,9 @@ var cmdDocs = &cobra.Command{
 	Long:   docsDesc,
 	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		(&operations.DocsOperation{}).GenerateDocs(cmd.Root(), flags)
+		if err := (&operations.DocsOperation{}).GenerateDocs(cmd.Root(), flags); err != nil {
+			output.Fail(err)
+		}
 	},
 }
 

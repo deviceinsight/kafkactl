@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/pkg/errors"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -22,13 +23,13 @@ var cmdUseContext = &cobra.Command{
 
 		// check if it is an existing context
 		if _, ok := contexts[context]; !ok {
-			output.Failf("not a valid context:", context)
+			output.Fail(errors.Errorf("not a valid context: %s", context))
 		}
 
 		viper.Set("current-context", context)
 
 		if err := viper.WriteConfig(); err != nil {
-			output.Failf("Unable to write config:", err)
+			output.Fail(errors.Wrap(err, "unable to write config"))
 		}
 	},
 }

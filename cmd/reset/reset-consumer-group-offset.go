@@ -2,6 +2,7 @@ package reset
 
 import (
 	"github.com/deviceinsight/kafkactl/operations/consumergroupoffsets"
+	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +14,9 @@ var cmdResetOffset = &cobra.Command{
 	Short:   "reset a consumer group offset",
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		(&consumergroupoffsets.ConsumerGroupOffsetOperation{}).ResetConsumerGroupOffset(offsetFlags, args[0])
+		if err := (&consumergroupoffsets.ConsumerGroupOffsetOperation{}).ResetConsumerGroupOffset(offsetFlags, args[0]); err != nil {
+			output.Fail(err)
+		}
 	},
 }
 

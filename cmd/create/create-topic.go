@@ -2,6 +2,7 @@ package create
 
 import (
 	"github.com/deviceinsight/kafkactl/operations"
+	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
 
@@ -12,7 +13,9 @@ var cmdCreateTopic = &cobra.Command{
 	Short: "create a topic",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		(&operations.TopicOperation{}).CreateTopics(args, flags)
+		if err := (&operations.TopicOperation{}).CreateTopics(args, flags); err != nil {
+			output.Fail(err)
+		}
 	},
 }
 

@@ -2,6 +2,7 @@ package consume
 
 import (
 	"github.com/deviceinsight/kafkactl/operations/consumer"
+	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
 
@@ -12,7 +13,9 @@ var CmdConsume = &cobra.Command{
 	Short: "consume messages from a topic",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cobraCmd *cobra.Command, args []string) {
-		(&consumer.ConsumerOperation{}).Consume(args[0], flags)
+		if err := (&consumer.ConsumerOperation{}).Consume(args[0], flags); err != nil {
+			output.Fail(err)
+		}
 	},
 }
 

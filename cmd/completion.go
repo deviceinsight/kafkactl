@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/deviceinsight/kafkactl/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
@@ -132,10 +133,10 @@ var cmdCompletion = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if len(args) == 0 {
-			output.Failf("Shell not specified.")
+			output.Fail(errors.Errorf("shell not specified"))
 		}
 		if len(args) > 1 {
-			output.Failf("Too many arguments. Expected only the shell type.")
+			output.Fail(errors.Errorf("Too many arguments. Expected only the shell type"))
 		}
 
 		shell := args[0]
@@ -149,11 +150,11 @@ var cmdCompletion = &cobra.Command{
 		} else if shell == "fish" {
 			err = runCompletionFish(cmd.Root(), os.Stdout)
 		} else {
-			output.Failf("Unsupported shell type %q.", shell)
+			err = errors.Errorf("Unsupported shell type %q.", shell)
 		}
 
 		if err != nil {
-			output.Failf("failed to generate completion: %s", err)
+			output.Fail(errors.Wrap(err, "failed to generate completion"))
 		}
 	},
 }

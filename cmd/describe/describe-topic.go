@@ -2,6 +2,7 @@ package describe
 
 import (
 	"github.com/deviceinsight/kafkactl/operations"
+	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
 
@@ -12,7 +13,9 @@ var cmdDescribeTopic = &cobra.Command{
 	Short: "describe a topic",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		(&operations.TopicOperation{}).DescribeTopic(args[0], flags)
+		if err := (&operations.TopicOperation{}).DescribeTopic(args[0], flags); err != nil {
+			output.Fail(err)
+		}
 	},
 }
 

@@ -13,6 +13,7 @@ import (
 	"github.com/deviceinsight/kafkactl/cmd/produce"
 	"github.com/deviceinsight/kafkactl/cmd/reset"
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
@@ -80,30 +81,33 @@ func initConfig() {
 	viper.SetConfigType("yml")
 	viper.AutomaticEnv() // read in environment variables that match
 
-	readConfig()
+	if err := readConfig(); err != nil {
+		output.Fail(err)
+	}
 }
 
-func readConfig() {
+func readConfig() error {
 	var err error
 	if err = viper.ReadInConfig(); err == nil {
 		output.Debugf("Using config file: %s", viper.ConfigFileUsed())
-		return
+		return nil
 	}
 
 	if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-		output.Failf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err)
+		return errors.Errorf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err)
 	} else {
 		err = generateDefaultConfig()
 		if err != nil {
-			output.Failf("Error generating default config: %v", err)
+			return errors.Wrap(err, "Error generating default config: ")
 		}
 	}
 
 	// We read generated config now
 	if err = viper.ReadInConfig(); err == nil {
 		output.Debugf("Using config file: %s", viper.ConfigFileUsed())
+		return nil
 	} else {
-		output.Failf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err)
+		return errors.Errorf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err)
 	}
 }
 
@@ -118,10 +122,7 @@ func generateDefaultConfig() error {
 		return fmt.Errorf("failed to generate default config at %s", pathToConfig)
 	}
 	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-			output.Failf("unable to close file: %v", err)
-		}
+		_ = f.Close()
 	}(f)
 
 	defaultConfigContent := `

@@ -5,5 +5,5 @@ import (
 )
 
 type MessageSerializer interface {
-	Serialize(key, value []byte, flags ProducerFlags) *sarama.ProducerMessage
+	Serialize(key, value []byte, flags ProducerFlags) (*sarama.ProducerMessage, error)
 }

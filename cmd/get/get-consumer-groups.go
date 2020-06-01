@@ -2,6 +2,7 @@ package get
 
 import (
 	"github.com/deviceinsight/kafkactl/operations/consumergroups"
+	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +14,9 @@ var cmdGetConsumerGroups = &cobra.Command{
 	Short:   "list available consumerGroups",
 	Args:    cobra.MaximumNArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		(&consumergroups.ConsumerGroupOperation{}).GetConsumerGroups(consumerGroupFlags)
+		if err := (&consumergroups.ConsumerGroupOperation{}).GetConsumerGroups(consumerGroupFlags); err != nil {
+			output.Fail(err)
+		}
 	},
 }
 

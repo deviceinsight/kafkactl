@@ -14,7 +14,9 @@ var cmdAlterTopic = &cobra.Command{
 	Short: "alter a topic",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		(&operations.TopicOperation{}).AlterTopic(args[0], flags)
+		if err := (&operations.TopicOperation{}).AlterTopic(args[0], flags); err != nil {
+			output.Fail(err)
+		}
 	},
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		return validation.ValidateAtLeastOneRequiredFlag(cmd)
@@ -27,9 +29,9 @@ func init() {
 	cmdAlterTopic.Flags().BoolVarP(&flags.ValidateOnly, "validate-only", "v", false, "validate only")
 
 	if err := validation.MarkFlagAtLeastOneRequired(cmdAlterTopic.Flags(), "partitions"); err != nil {
-		output.Failf("internal error: %v", err)
+		panic(err)
 	}
 	if err := validation.MarkFlagAtLeastOneRequired(cmdAlterTopic.Flags(), "config"); err != nil {
-		output.Failf("internal error: %v", err)
+		panic(err)
 	}
 }

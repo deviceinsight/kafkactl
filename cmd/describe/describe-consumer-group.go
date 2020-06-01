@@ -2,6 +2,7 @@ package describe
 
 import (
 	"github.com/deviceinsight/kafkactl/operations/consumergroups"
+	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +14,9 @@ var cmdDescribeConsumerGroup = &cobra.Command{
 	Short:   "describe a consumerGroup",
 	Args:    cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		(&consumergroups.ConsumerGroupOperation{}).DescribeConsumerGroup(consumerGroupFlags, args[0])
+		if err := (&consumergroups.ConsumerGroupOperation{}).DescribeConsumerGroup(consumerGroupFlags, args[0]); err != nil {
+			output.Fail(err)
+		}
 	},
 }
 

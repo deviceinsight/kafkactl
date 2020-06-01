@@ -6,6 +6,7 @@ import (
 	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/deviceinsight/kafkactl/util"
+	"github.com/pkg/errors"
 	"sort"
 	"strconv"
 	"strings"
@@ -66,44 +67,50 @@ type GetConsumerGroupFlags struct {
 type ConsumerGroupOperation struct {
 }
 
-func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeConsumerGroupFlags, group string) {
-
-	ctx := operations.CreateClientContext()
+func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeConsumerGroupFlags, group string) error {
 
 	var (
 		err          error
+		ctx          operations.ClientContext
 		client       sarama.Client
 		admin        sarama.ClusterAdmin
 		descriptions []*sarama.GroupDescription
 	)
 
+	if ctx, err = operations.CreateClientContext(); err != nil {
+		return err
+	}
+
 	if client, err = operations.CreateClient(&ctx); err != nil {
-		output.Failf("failed to create client err=%v", err)
+		return errors.Wrap(err, "failed to create client")
 	}
 
 	if admin, err = operations.CreateClusterAdmin(&ctx); err != nil {
-		output.Failf("failed to create cluster admin: %v", err)
+		return errors.Wrap(err, "failed to create cluster admin")
 	}
 
 	if descriptions, err = admin.DescribeConsumerGroups([]string{group}); err != nil {
-		output.Failf("failed to describe consumer group: %v", err)
+		return errors.Wrap(err, "failed to describe consumer group")
 	}
 
 	if flags.FilterTopic != "" {
 		if topics, err := client.Topics(); err != nil {
-			output.Failf("failed to list available topics: %v", err)
+			return errors.Wrap(err, "failed to list available topics")
 		} else if !util.ContainsString(topics, flags.FilterTopic) {
-			output.Failf("topic does not exist: %s", flags.FilterTopic)
+			return errors.Errorf("topic does not exist: %s", flags.FilterTopic)
 		}
 	}
 
 	offsets, err := admin.ListConsumerGroupOffsets(group, nil)
 
 	if err != nil {
-		output.Failf("failed to list consumer-group offsets: %v", err)
+		return errors.Wrap(err, "failed to list consumer-group offsets")
 	}
 
-	topicPartitions := createTopicPartitions(offsets, client, flags)
+	topicPartitions, err := createTopicPartitions(offsets, client, flags)
+	if err != nil {
+		return err
+	}
 
 	for _, description := range descriptions {
 		cg := consumerGroup{Name: description.GroupId, ProtocolType: description.ProtocolType}
@@ -133,16 +140,23 @@ func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeCon
 			consumerGroupDescription.Topics = nil
 		} else if flags.OutputFormat == "wide" || flags.OutputFormat == "" {
 			tableWriter := output.CreateTableWriter()
-			tableWriter.WriteHeader("TOPIC", "PARTITION", "NEWEST_OFFSET", "OLDEST_OFFSET", "CONSUMER_OFFSET", "LEAD", "LAG")
+
+			if err := tableWriter.WriteHeader("TOPIC", "PARTITION", "NEWEST_OFFSET", "OLDEST_OFFSET", "CONSUMER_OFFSET", "LEAD", "LAG"); err != nil {
+				return err
+			}
 
 			for _, topic := range consumerGroupDescription.Topics {
 				for _, partition := range topic.Partitions {
-					tableWriter.Write(topic.Name, strconv.Itoa(int(partition.Partition)), strconv.Itoa(int(partition.NewestOffset)), strconv.Itoa(int(partition.OldestOffset)),
-						strconv.Itoa(int(partition.ConsumerOffset)), strconv.Itoa(int(partition.Lead)), strconv.Itoa(int(partition.Lag)))
+					if err := tableWriter.Write(topic.Name, strconv.Itoa(int(partition.Partition)), strconv.Itoa(int(partition.NewestOffset)), strconv.Itoa(int(partition.OldestOffset)),
+						strconv.Itoa(int(partition.ConsumerOffset)), strconv.Itoa(int(partition.Lead)), strconv.Itoa(int(partition.Lag))); err != nil {
+						return err
+					}
 				}
 			}
 
-			tableWriter.Flush()
+			if err := tableWriter.Flush(); err != nil {
+				return err
+			}
 			output.PrintStrings("")
 		}
 
@@ -150,31 +164,42 @@ func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeCon
 			consumerGroupDescription.Members = nil
 		} else if flags.OutputFormat == "wide" || flags.OutputFormat == "" {
 			tableWriter := output.CreateTableWriter()
-			tableWriter.WriteHeader("CLIENT_HOST", "CLIENT_ID", "TOPIC", "ASSIGNED_PARTITIONS")
+			if err := tableWriter.WriteHeader("CLIENT_HOST", "CLIENT_ID", "TOPIC", "ASSIGNED_PARTITIONS"); err != nil {
+				return err
+			}
 
 			for _, m := range consumerGroupDescription.Members {
 				for _, topic := range m.AssignedPartitions {
 					partitions := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(topic.Partitions)), ","), "[]")
-					tableWriter.Write(m.ClientHost, m.ClientId, topic.Name, partitions)
+					if err := tableWriter.Write(m.ClientHost, m.ClientId, topic.Name, partitions); err != nil {
+						return err
+					}
 				}
 			}
 
-			tableWriter.Flush()
+			if err := tableWriter.Flush(); err != nil {
+				return err
+			}
 			output.PrintStrings("")
 		}
 
 		tableWriter := output.CreateTableWriter()
 
 		if flags.OutputFormat == "" || flags.OutputFormat == "wide" {
-			tableWriter.WriteHeader("PARTITION", "OLDEST_OFFSET", "NEWEST_OFFSET", "LEADER", "REPLICAS", "IN_SYNC_REPLICAS")
+			if err := tableWriter.WriteHeader("PARTITION", "OLDEST_OFFSET", "NEWEST_OFFSET", "LEADER", "REPLICAS", "IN_SYNC_REPLICAS"); err != nil {
+				return err
+			}
 		} else if flags.OutputFormat != "json" && flags.OutputFormat != "yaml" {
-			output.Failf("unknown outputFormat: %s", flags.OutputFormat)
+			return errors.Errorf("unknown outputFormat: %s", flags.OutputFormat)
 		}
 
 		if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
-			output.PrintObject(consumerGroupDescription, flags.OutputFormat)
+			if err := output.PrintObject(consumerGroupDescription, flags.OutputFormat); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 func filterAssignedPartitions(assignedPartitions map[string][]int32, topicPartitions []topicPartitionOffsets) map[string][]int32 {
@@ -218,7 +243,7 @@ func addMember(members []consumerGroupMember, clientHost string, clientId string
 	}
 }
 
-func createTopicPartitions(offsets *sarama.OffsetFetchResponse, client sarama.Client, flags DescribeConsumerGroupFlags) []topicPartitionOffsets {
+func createTopicPartitions(offsets *sarama.OffsetFetchResponse, client sarama.Client, flags DescribeConsumerGroupFlags) ([]topicPartitionOffsets, error) {
 
 	topicPartitionList := make([]topicPartitionOffsets, 0)
 
@@ -239,6 +264,7 @@ func createTopicPartitions(offsets *sarama.OffsetFetchResponse, client sarama.Cl
 			var totalLag int64 = 0
 
 			partitionChannel := make(chan partitionOffset)
+			errChannel := make(chan error)
 
 			for partition := range offsets.Blocks[topic] {
 
@@ -246,12 +272,14 @@ func createTopicPartitions(offsets *sarama.OffsetFetchResponse, client sarama.Cl
 
 					newestOffset, err := client.GetOffset(topic, partition, sarama.OffsetNewest)
 					if err != nil {
-						output.Failf("failed to get newest offset for topic %s partition %d: %v", topic, partition, err)
+						errChannel <- errors.Errorf("failed to get newest offset for topic %s partition %d: %v", topic, partition, err)
+						return
 					}
 
 					oldestOffset, err := client.GetOffset(topic, partition, sarama.OffsetOldest)
 					if err != nil {
-						output.Failf("failed to get oldest offset for topic %s partition %d: %v", topic, partition, err)
+						errChannel <- errors.Errorf("failed to get oldest offset for topic %s partition %d: %v", topic, partition, err)
+						return
 					}
 
 					lead := offsets.Blocks[topic][partition].Offset - oldestOffset
@@ -267,10 +295,14 @@ func createTopicPartitions(offsets *sarama.OffsetFetchResponse, client sarama.Cl
 			}
 
 			for range offsets.Blocks[topic] {
-				partitionOffset := <-partitionChannel
-				if partitionOffset.Partition != -1 {
-					details = append(details, partitionOffset)
-					totalLag += partitionOffset.Lag
+				select {
+				case partitionOffset := <-partitionChannel:
+					if partitionOffset.Partition != -1 {
+						details = append(details, partitionOffset)
+						totalLag += partitionOffset.Lag
+					}
+				case err := <-errChannel:
+					return nil, err
 				}
 			}
 
@@ -283,26 +315,29 @@ func createTopicPartitions(offsets *sarama.OffsetFetchResponse, client sarama.Cl
 		}
 	}
 
-	return topicPartitionList
+	return topicPartitionList, nil
 }
 
-func (operation *ConsumerGroupOperation) GetConsumerGroups(flags GetConsumerGroupFlags) {
-
-	ctx := operations.CreateClientContext()
+func (operation *ConsumerGroupOperation) GetConsumerGroups(flags GetConsumerGroupFlags) error {
 
 	var (
+		ctx    operations.ClientContext
 		err    error
 		admin  sarama.ClusterAdmin
 		groups map[string]string
 	)
 
+	if ctx, err = operations.CreateClientContext(); err != nil {
+		return err
+	}
+
 	if admin, err = operations.CreateClusterAdmin(&ctx); err != nil {
-		output.Failf("failed to create cluster admin: %v", err)
+		return errors.Wrap(err, "failed to create cluster admin")
 	}
 
 	// groups is a map from groupName to protocolType
 	if groups, err = admin.ListConsumerGroups(); err != nil {
-		output.Failf("failed to list consumer groups: %v", err)
+		return errors.Wrap(err, "failed to list consumer groups")
 	}
 
 	groupNames := make([]string, 0, len(groups))
@@ -311,39 +346,55 @@ func (operation *ConsumerGroupOperation) GetConsumerGroups(flags GetConsumerGrou
 	}
 
 	if flags.FilterTopic != "" {
-		groupNames = filterGroups(admin, groupNames, flags.FilterTopic)
+		groupNames, err = filterGroups(admin, groupNames, flags.FilterTopic)
+		if err != nil {
+			return err
+		}
 	}
 
 	sort.Strings(groupNames)
 
 	tableWriter := output.CreateTableWriter()
 	if flags.OutputFormat == "" {
-		tableWriter.WriteHeader("CONSUMER_GROUP")
+		if err := tableWriter.WriteHeader("CONSUMER_GROUP"); err != nil {
+			return err
+		}
 	} else if flags.OutputFormat == "compact" {
 		output.PrintStrings(groupNames...)
-		return
+		return nil
 	} else if flags.OutputFormat == "wide" {
-		tableWriter.WriteHeader("CONSUMER_GROUP", "PROTOCOL_TYPE")
+		if err := tableWriter.WriteHeader("CONSUMER_GROUP", "PROTOCOL_TYPE"); err != nil {
+			return err
+		}
 	}
 
 	for _, groupName := range groupNames {
 		cg := consumerGroup{Name: groupName, ProtocolType: groups[groupName]}
 
 		if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
-			output.PrintObject(cg, flags.OutputFormat)
+			if err := output.PrintObject(cg, flags.OutputFormat); err != nil {
+				return err
+			}
 		} else if flags.OutputFormat == "wide" {
-			tableWriter.Write(cg.Name, cg.ProtocolType)
+			if err := tableWriter.Write(cg.Name, cg.ProtocolType); err != nil {
+				return err
+			}
 		} else {
-			tableWriter.Write(cg.Name)
+			if err := tableWriter.Write(cg.Name); err != nil {
+				return err
+			}
 		}
 	}
 
 	if flags.OutputFormat == "wide" || flags.OutputFormat == "" {
-		tableWriter.Flush()
+		if err := tableWriter.Flush(); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func filterGroups(admin sarama.ClusterAdmin, groupNames []string, topic string) []string {
+func filterGroups(admin sarama.ClusterAdmin, groupNames []string, topic string) ([]string, error) {
 
 	var (
 		err          error
@@ -351,7 +402,7 @@ func filterGroups(admin sarama.ClusterAdmin, groupNames []string, topic string) 
 	)
 
 	if descriptions, err = admin.DescribeConsumerGroups(groupNames); err != nil {
-		output.Failf("failed to describe consumer groups: %v", err)
+		return nil, errors.Wrap(err, "failed to describe consumer groups")
 	}
 
 	topicGroups := make([]string, 0)
@@ -368,7 +419,7 @@ func filterGroups(admin sarama.ClusterAdmin, groupNames []string, topic string) 
 			metaData, err := member.GetMemberMetadata()
 
 			if err != nil {
-				output.Failf("failed to get group member metadata: %v", err)
+				return nil, errors.Wrap(err, "failed to get group member metadata")
 			}
 
 			if util.ContainsString(metaData.Topics, topic) {
@@ -379,5 +430,5 @@ func filterGroups(admin sarama.ClusterAdmin, groupNames []string, topic string) 
 		}
 	}
 
-	return topicGroups
+	return topicGroups, nil
 }

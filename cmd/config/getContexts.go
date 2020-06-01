@@ -25,16 +25,24 @@ var cmdGetContexts = &cobra.Command{
 		} else {
 			writer := output.CreateTableWriter()
 
-			writer.WriteHeader("ACTIVE", "NAME")
+			if err := writer.WriteHeader("ACTIVE", "NAME"); err != nil {
+				output.Fail(err)
+			}
 			for context := range contexts {
 				if currentContext == context {
-					writer.Write("*", context)
+					if err := writer.Write("*", context); err != nil {
+						output.Fail(err)
+					}
 				} else {
-					writer.Write("", context)
+					if err := writer.Write("", context); err != nil {
+						output.Fail(err)
+					}
 				}
 			}
 
-			writer.Flush()
+			if err := writer.Flush(); err != nil {
+				output.Fail(err)
+			}
 		}
 	},
 }
