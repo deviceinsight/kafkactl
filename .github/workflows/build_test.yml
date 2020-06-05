@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - feature/tests
     tags: []
   pull_request:
   
@@ -24,8 +25,19 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: 1.14
-      - name: Run Unit tests.
+      - name: Run Unit tests
         run: make test
+
+  integration_test:
+    name: Integration Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.14
+      - name: Run integration tests
+        run: make integration_test
 
   build:
     name: Build

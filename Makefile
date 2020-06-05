@@ -2,14 +2,12 @@ BUILD_TS := $(shell date -Iseconds --utc)
 COMMIT_SHA := $(shell git rev-parse HEAD)
 VERSION := $(shell git describe --abbrev=0 --tags)
 
-.DEFAULT_GOAL := build
-
 export CGO_ENABLED=0
 export GOOS=linux
 export GO111MODULE=on
 
 project=github.com/deviceinsight/kafkactl
-ld_flags := "-X $(project)/cmd.version=$(VERSION) -X $(project)/cmd.gitCommit=$(COMMIT_SHA) -X $(project)/cmd.buildTime=$(BUILD_TS)"
+ld_flags := "-X $(project)/cmd.Version=$(VERSION) -X $(project)/cmd.GitCommit=$(COMMIT_SHA) -X $(project)/cmd.BuildTime=$(BUILD_TS)"
 
 FILES    := $(shell find . -name '*.go' -type f -not -name '*.pb.go' -not -name '*_generated.go' -not -name '*_test.go')
 TESTS    := $(shell find . -name '*.go' -type f -not -name '*.pb.go' -not -name '*_generated.go' -name '*_test.go')
@@ -32,17 +30,9 @@ lint:
 test:
 	go test -v -short ./...
 
-.PHONY: pre_integration_test
-pre_integration_test:
-	docker-compose -f docker/docker-compose.yml up -d
-
 .PHONY: integration_test
 integration_test:
-	go test -run Integration ./...
-
-.PHONY: post_integration_test
-post_integration_test:
-	docker-compose -f docker/docker-compose.yml down
+	./docker/run-integration-tests.sh
 
 .PHONY: build
 build:

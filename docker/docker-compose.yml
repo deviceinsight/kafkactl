@@ -1,4 +1,11 @@
 version: "3.7"
+
+# firewalld issues
+# https://github.com/firewalld/firewalld/issues/461
+# https://bugzilla.redhat.com/show_bug.cgi?id=1817022
+# manually doing this for the created bridge interface resolves connection issues:
+# sudo firewall-cmd --zone=trusted --add-interface=`ip -o addr | awk '{print $2}' | grep br- | uniq`
+
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:5.4.0
@@ -10,20 +17,56 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
-  broker:
+  kafka1:
     image: confluentinc/cp-server:5.4.0
-    hostname: broker
-    container_name: broker
+    hostname: kafka1
+    container_name: kafka1
     depends_on:
       - zookeeper
     ports:
-      - "9092:9092"
+      - "19092:19092"
     environment:
-      KAFKA_BROKER_ID: 1
+      KAFKA_BROKER_ID: 101
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092,PLAINTEXT_HOST://localhost:19092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+
+  kafka2:
+    image: confluentinc/cp-server:5.4.0
+    hostname: kafka2
+    container_name: kafka2
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 102
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+
+  kafka3:
+    image: confluentinc/cp-server:5.4.0
+    hostname: kafka3
+    container_name: kafka3
+    depends_on:
+      - zookeeper
+    ports:
+      - "39092:39092"
+    environment:
+      KAFKA_BROKER_ID: 103
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka3:9092,PLAINTEXT_HOST://localhost:39092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
@@ -34,25 +77,24 @@ services:
     container_name: schema-registry
     depends_on:
       - zookeeper
-      - broker
+      - kafka1
+      - kafka2
+      - kafka3
     ports:
       - "8081:8081"
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
 
-  create-topics:
+  wait-for-kafka:
     image: confluentinc/cp-kafka:5.4.0
-    hostname: create-topics
-    container_name: create-topics
+    hostname: wait-for-kafka
+    container_name: wait-for-kafka
     depends_on:
-      - broker
-    command: "
-      bash -c 'cub kafka-ready -b broker:29092 1 20 && \
-      kafka-topics --create --if-not-exists --zookeeper zookeeper:2181 --partitions 1 --replication-factor 1 --topic preferences-authorization && \
-      kafka-topics --create --if-not-exists --zookeeper zookeeper:2181 --partitions 1 --replication-factor 1 --topic preferences && \
-      kafka-topics --create --if-not-exists --zookeeper zookeeper:2181 --partitions 1 --replication-factor 1 --topic balance-authorization && \
-      kafka-topics --create --if-not-exists --zookeeper zookeeper:2181 --partitions 1 --replication-factor 1 --topic balance'"
+      - kafka1
+      - kafka2
+      - kafka3
+    command: bash -c 'cub kafka-ready -b kafka1:9092,kafka2:9092,kafka3:9092 3 60'
     environment:
       KAFKA_BROKER_ID: ignored
       KAFKA_ZOOKEEPER_CONNECT: ignored
