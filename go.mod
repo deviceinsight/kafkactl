@@ -13,7 +13,7 @@ require (
 	github.com/linkedin/goavro v0.0.0-20180427113916-2f3e1dff9761
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/pierrec/lz4 v2.4.1+incompatible // indirect
-	github.com/pkg/errors v0.8.0
+	github.com/pkg/errors v0.8.1
 	github.com/rcrowley/go-metrics v0.0.0-20190826022208-cac0b30c2563 // indirect
 	github.com/russross/blackfriday v2.0.0+incompatible // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
@@ -32,6 +32,7 @@ require (
 	gopkg.in/ini.v1 v1.51.1 // indirect
 	gopkg.in/jcmturner/gokrb5.v7 v7.4.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8
+	gotest.tools/gotestsum v0.4.2 // indirect
 )
 
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2

@@ -21,4 +21,5 @@ trap tearDown EXIT
 ${SCRIPT_DIR}/wait-for-kafka.sh
 
 # run integration tests
-go test -v -run Integration ./...
+go get gotest.tools/gotestsum
+gotestsum --format testname -- -run Integration ./...
