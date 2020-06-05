@@ -4,11 +4,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var CmdAlter = &cobra.Command{
-	Use:   "alter",
-	Short: "alter topics",
-}
+func NewAlterCmd() *cobra.Command {
 
-func init() {
-	CmdAlter.AddCommand(cmdAlterTopic)
+	var cmdAlter = &cobra.Command{
+		Use:   "alter",
+		Short: "alter topics",
+	}
+
+	cmdAlter.AddCommand(newAlterTopicCmd())
+
+	return cmdAlter
 }

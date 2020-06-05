@@ -8,20 +8,22 @@ import (
 	"io/ioutil"
 )
 
-var cmdView = &cobra.Command{
-	Use:   "view",
-	Short: "show contents of config file",
-	Long:  `Shows the contents of the config file that is currently used`,
-	Run: func(cmd *cobra.Command, args []string) {
+func newViewCmd() *cobra.Command {
 
-		yamlFile, err := ioutil.ReadFile(viper.ConfigFileUsed())
-		if err != nil {
-			output.Fail(errors.Wrap(err, "unable to read config"))
-		}
+	var cmdView = &cobra.Command{
+		Use:   "view",
+		Short: "show contents of config file",
+		Long:  `Shows the contents of the config file that is currently used`,
+		Run: func(cmd *cobra.Command, args []string) {
 
-		output.Infof("%s", yamlFile)
-	},
-}
+			yamlFile, err := ioutil.ReadFile(viper.ConfigFileUsed())
+			if err != nil {
+				output.Fail(errors.Wrap(err, "unable to read config"))
+			}
 
-func init() {
+			output.Infof("%s", yamlFile)
+		},
+	}
+
+	return cmdView
 }

@@ -24,7 +24,7 @@ func main() {
 
 	ioStreams := output.DefaultIOStreams()
 
-	if err := cmd.KafkactlCommand(ioStreams).Execute(); err != nil {
+	if err := cmd.NewKafkactlCommand(ioStreams).Execute(); err != nil {
 		output.Warnf("%v", err)
 		os.Exit(1)
 	}

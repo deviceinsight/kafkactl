@@ -2,6 +2,7 @@ module github.com/deviceinsight/kafkactl
 
 require (
 	github.com/DataDog/zstd v1.4.4 // indirect
+	github.com/Rican7/retry v0.1.0
 	github.com/Shopify/sarama v1.26.0
 	github.com/eapache/go-resiliency v1.2.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
@@ -12,6 +13,7 @@ require (
 	github.com/linkedin/goavro v0.0.0-20180427113916-2f3e1dff9761
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/pierrec/lz4 v2.4.1+incompatible // indirect
+	github.com/pkg/errors v0.8.0
 	github.com/rcrowley/go-metrics v0.0.0-20190826022208-cac0b30c2563 // indirect
 	github.com/russross/blackfriday v2.0.0+incompatible // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect

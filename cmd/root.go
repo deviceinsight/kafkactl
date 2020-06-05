@@ -25,38 +25,40 @@ import (
 var cfgFile string
 var Verbose bool
 
-var rootCmd = &cobra.Command{
-	Use:                    "kafkactl",
-	BashCompletionFunction: bashCompletionFunc,
-	Short:                  "command-line interface for Apache Kafka",
-	Long:                   `A command-line interface the simplifies interaction with Kafka.`,
-}
-
 var configPaths = []string{"$HOME/.config/kafkactl", "$HOME/.kafkactl", "$SNAP_DATA/kafkactl", "/etc/kafkactl"}
 
-func KafkactlCommand(streams output.IOStreams) *cobra.Command {
-	output.IoStreams = streams
-	rootCmd.SetOut(streams.Out)
-	rootCmd.SetErr(streams.ErrOut)
-	return rootCmd
-}
+func NewKafkactlCommand(streams output.IOStreams) *cobra.Command {
 
-func init() {
+	var rootCmd = &cobra.Command{
+		Use:                    "kafkactl",
+		BashCompletionFunction: bashCompletionFunc,
+		Short:                  "command-line interface for Apache Kafka",
+		Long:                   `A command-line interface the simplifies interaction with Kafka.`,
+	}
+
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.AddCommand(config.CmdConfig)
-	rootCmd.AddCommand(consume.CmdConsume)
-	rootCmd.AddCommand(create.CmdCreate)
-	rootCmd.AddCommand(alter.CmdAlter)
-	rootCmd.AddCommand(deletion.CmdDelete)
-	rootCmd.AddCommand(describe.CmdDescribe)
-	rootCmd.AddCommand(get.CmdGet)
-	rootCmd.AddCommand(produce.CmdProduce)
-	rootCmd.AddCommand(reset.CmdReset)
+	rootCmd.AddCommand(config.NewConfigCmd())
+	rootCmd.AddCommand(consume.NewConsumeCmd())
+	rootCmd.AddCommand(create.NewCreateCmd())
+	rootCmd.AddCommand(alter.NewAlterCmd())
+	rootCmd.AddCommand(deletion.NewDeleteCmd())
+	rootCmd.AddCommand(describe.NewDescribeCmd())
+	rootCmd.AddCommand(get.NewGetCmd())
+	rootCmd.AddCommand(produce.NewProduceCmd())
+	rootCmd.AddCommand(reset.NewResetCmd())
+	rootCmd.AddCommand(newCompletionCmd())
+	rootCmd.AddCommand(newVersionCmd())
+	rootCmd.AddCommand(newDocsCmd())
 
 	// use upper-case letters for shorthand params to avoid conflicts with local flags
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config-file", "C", "", fmt.Sprintf("config file. one of: %v", configPaths))
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "V", false, "verbose output")
+
+	output.IoStreams = streams
+	rootCmd.SetOut(streams.Out)
+	rootCmd.SetErr(streams.ErrOut)
+	return rootCmd
 }
 
 // initConfig reads in config file and ENV variables if set.

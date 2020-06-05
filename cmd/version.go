@@ -8,9 +8,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version string
-var buildTime string
-var gitCommit string
+var Version string
+var BuildTime string
+var GitCommit string
 
 type info struct {
 	version   string
@@ -21,21 +21,20 @@ type info struct {
 	platform  string
 }
 
-var cmdVersion = &cobra.Command{
-	Use:   "version",
-	Short: "print the version of kafkactl",
-	Run: func(cmd *cobra.Command, args []string) {
-		output.Infof("%#v", info{
-			version:   version,
-			buildTime: buildTime,
-			gitCommit: gitCommit,
-			goVersion: runtime.Version(),
-			compiler:  runtime.Compiler,
-			platform:  fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
-		})
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(cmdVersion)
+func newVersionCmd() *cobra.Command {
+	var cmdVersion = &cobra.Command{
+		Use:   "version",
+		Short: "print the version of kafkactl",
+		Run: func(cmd *cobra.Command, args []string) {
+			output.Infof("%#v", info{
+				version:   Version,
+				buildTime: BuildTime,
+				gitCommit: GitCommit,
+				goVersion: runtime.Version(),
+				compiler:  runtime.Compiler,
+				platform:  fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+			})
+		},
+	}
+	return cmdVersion
 }

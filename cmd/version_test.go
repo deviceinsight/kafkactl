@@ -1,8 +1,8 @@
-package cmd
+package cmd_test
 
 import (
-	"github.com/deviceinsight/kafkactl/output"
-	"github.com/spf13/cobra"
+	"github.com/deviceinsight/kafkactl/cmd"
+	"github.com/deviceinsight/kafkactl/test_util"
 	"strings"
 	"testing"
 )
@@ -10,30 +10,19 @@ import (
 func TestVersionCommand(t *testing.T) {
 	t.Parallel()
 
-	version = "1.8.0"
-	gitCommit = "ef6a0263c9623d44d198a0f39d712ddb76bb5c04"
-	buildTime = "2020-05-21T11:14:58+00:00"
+	cmd.Version = "1.8.0"
+	cmd.GitCommit = "ef6a0263c9623d44d198a0f39d712ddb76bb5c04"
+	cmd.BuildTime = "2020-05-21T11:14:58+00:00"
 
-	_, out, err := executeCommandC("version")
+	kafkactl := test_util.CreateKafkaCtlCommand()
 
-	if err != nil {
+	if _, err := kafkactl.Execute("version"); err != nil {
 		t.Fatalf("failed to execute version command: %v", err)
 	}
 
 	expected := "cmd.info{version:\"1.8.0\", buildTime:\"2020-05-21T11:14:58+00:00\", gitCommit:\"ef6a0263c9623d44d198a0f39d712ddb76bb5c04\""
 
-	if !strings.HasPrefix(out, expected) {
-		t.Fatalf("unexpected output: %s", out)
+	if !strings.HasPrefix(kafkactl.GetStdOut(), expected) {
+		t.Fatalf("unexpected output: %s", kafkactl.GetStdOut())
 	}
-}
-
-func executeCommandC(args ...string) (c *cobra.Command, out string, err error) {
-
-	streams, buf := output.NewTestIOStreams()
-
-	root := KafkactlCommand(streams)
-
-	root.SetArgs(args)
-	c, err = root.ExecuteC()
-	return c, buf.String(), err
 }

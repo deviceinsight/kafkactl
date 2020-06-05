@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io"
 	"os"
-	"testing"
 )
 
 var IoStreams = DefaultIOStreams()
@@ -13,11 +12,11 @@ func DefaultIOStreams() IOStreams {
 	return IOStreams{In: os.Stdin, Out: os.Stdout, ErrOut: os.Stderr}
 }
 
-func NewTestIOStreams(t *testing.T) IOStreams {
-	return NewTestIOStreamsWithStdIn(t, nil)
+func NewTestIOStreams() IOStreams {
+	return NewTestIOStreamsWithStdIn(nil)
 }
 
-func NewTestIOStreamsWithStdIn(t *testing.T, in *os.File) IOStreams {
+func NewTestIOStreamsWithStdIn(in *os.File) IOStreams {
 
 	streams := IOStreams{
 		In:     in,
@@ -26,9 +25,6 @@ func NewTestIOStreamsWithStdIn(t *testing.T, in *os.File) IOStreams {
 	}
 
 	IoStreams = streams
-	Fail = func(err error) {
-		t.Fatalf(err.Error())
-	}
 
 	return streams
 }

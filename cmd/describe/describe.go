@@ -4,12 +4,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var CmdDescribe = &cobra.Command{
-	Use:   "describe",
-	Short: "describe topics, consumerGroups",
-}
+func NewDescribeCmd() *cobra.Command {
 
-func init() {
-	CmdDescribe.AddCommand(cmdDescribeTopic)
-	CmdDescribe.AddCommand(cmdDescribeConsumerGroup)
+	var cmdDescribe = &cobra.Command{
+		Use:   "describe",
+		Short: "describe topics, consumerGroups",
+	}
+
+	cmdDescribe.AddCommand(newDescribeTopicCmd())
+	cmdDescribe.AddCommand(newDescribeConsumerGroupCmd())
+
+	return cmdDescribe
 }

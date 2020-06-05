@@ -1,14 +1,14 @@
 package create
 
-import (
-	"github.com/spf13/cobra"
-)
+import "github.com/spf13/cobra"
 
-var CmdCreate = &cobra.Command{
-	Use:   "create",
-	Short: "create topics",
-}
+func NewCreateCmd() *cobra.Command {
 
-func init() {
-	CmdCreate.AddCommand(cmdCreateTopic)
+	var cmdCreate = &cobra.Command{
+		Use:   "create",
+		Short: "create topics",
+	}
+
+	cmdCreate.AddCommand(newCreateTopicCmd())
+	return cmdCreate
 }

@@ -125,46 +125,46 @@ case $state in
 esac
 `
 
-var cmdCompletion = &cobra.Command{
-	Use:                   "completion SHELL",
-	DisableFlagsInUseLine: true,
-	ValidArgs:             []string{"bash", "zsh", "fish"},
-	Short:                 "Output shell completion code for the specified shell (bash,zsh,fish)",
-	Run: func(cmd *cobra.Command, args []string) {
+func newCompletionCmd() *cobra.Command {
+	var cmdCompletion = &cobra.Command{
+		Use:                   "completion SHELL",
+		DisableFlagsInUseLine: true,
+		ValidArgs:             []string{"bash", "zsh", "fish"},
+		Short:                 "Output shell completion code for the specified shell (bash,zsh,fish)",
+		Run: func(cmd *cobra.Command, args []string) {
 
-		if len(args) == 0 {
-			output.Fail(errors.Errorf("shell not specified"))
-		}
-		if len(args) > 1 {
-			output.Fail(errors.Errorf("Too many arguments. Expected only the shell type"))
-		}
+			if len(args) == 0 {
+				output.Fail(errors.Errorf("shell not specified"))
+			}
+			if len(args) > 1 {
+				output.Fail(errors.Errorf("Too many arguments. Expected only the shell type"))
+			}
 
-		shell := args[0]
+			shell := args[0]
 
-		var err error
+			var err error
 
-		if shell == "bash" {
-			err = runCompletionBash(os.Stdout)
-		} else if shell == "zsh" {
-			err = runCompletionZsh(os.Stdout)
-		} else if shell == "fish" {
-			err = runCompletionFish(cmd.Root(), os.Stdout)
-		} else {
-			err = errors.Errorf("Unsupported shell type %q.", shell)
-		}
+			if shell == "bash" {
+				err = runCompletionBash(cmd.Root(), os.Stdout)
+			} else if shell == "zsh" {
+				err = runCompletionZsh(os.Stdout)
+			} else if shell == "fish" {
+				err = runCompletionFish(cmd.Root(), os.Stdout)
+			} else {
+				err = errors.Errorf("Unsupported shell type %q.", shell)
+			}
 
-		if err != nil {
-			output.Fail(errors.Wrap(err, "failed to generate completion"))
-		}
-	},
+			if err != nil {
+				output.Fail(errors.Wrap(err, "failed to generate completion"))
+			}
+		},
+	}
+
+	return cmdCompletion
 }
 
-func init() {
-	rootCmd.AddCommand(cmdCompletion)
-}
-
-func runCompletionBash(out io.Writer) error {
-	return rootCmd.GenBashCompletion(out)
+func runCompletionBash(root *cobra.Command, out io.Writer) error {
+	return root.GenBashCompletion(out)
 }
 
 func runCompletionZsh(out io.Writer) error {
