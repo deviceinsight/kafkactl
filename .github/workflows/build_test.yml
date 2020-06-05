@@ -7,7 +7,7 @@ on:
       - feature/tests
     tags: []
   pull_request:
-  
+
 jobs:
   lint:
     name: Lint
@@ -31,6 +31,12 @@ jobs:
   integration_test:
     name: Integration Test
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # cp-version 5.5.x corresponds to kafka version 2.5.x
+        cp-version: [5.5.0, 5.4.2, 5.3.3]
+    env:
+      CP_VERSION: ${{ matrix.cp-version }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2

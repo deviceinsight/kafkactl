@@ -1,14 +1,7 @@
 version: "3.7"
-
-# firewalld issues
-# https://github.com/firewalld/firewalld/issues/461
-# https://bugzilla.redhat.com/show_bug.cgi?id=1817022
-# manually doing this for the created bridge interface resolves connection issues:
-# sudo firewall-cmd --zone=trusted --add-interface=`ip -o addr | awk '{print $2}' | grep br- | uniq`
-
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.4.0
+    image: confluentinc/cp-zookeeper:${CP_VERSION}
     hostname: zookeeper
     container_name: zookeeper
     ports:
@@ -18,7 +11,7 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka1:
-    image: confluentinc/cp-server:5.4.0
+    image: confluentinc/cp-server:${CP_VERSION}
     hostname: kafka1
     container_name: kafka1
     depends_on:
@@ -36,7 +29,7 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
 
   kafka2:
-    image: confluentinc/cp-server:5.4.0
+    image: confluentinc/cp-server:${CP_VERSION}
     hostname: kafka2
     container_name: kafka2
     depends_on:
@@ -54,7 +47,7 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
 
   kafka3:
-    image: confluentinc/cp-server:5.4.0
+    image: confluentinc/cp-server:${CP_VERSION}
     hostname: kafka3
     container_name: kafka3
     depends_on:
@@ -72,7 +65,7 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.4.0
+    image: confluentinc/cp-schema-registry:${CP_VERSION}
     hostname: schema-registry
     container_name: schema-registry
     depends_on:
@@ -87,7 +80,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
 
   wait-for-kafka:
-    image: confluentinc/cp-kafka:5.4.0
+    image: confluentinc/cp-kafka:${CP_VERSION}
     hostname: wait-for-kafka
     container_name: wait-for-kafka
     depends_on:
