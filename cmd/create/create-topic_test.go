@@ -10,14 +10,6 @@ import (
 	"time"
 )
 
-func TestServiceFunc(t *testing.T) {
-	t.Parallel()
-}
-
-func TestInvalidServiceFunc3(t *testing.T) {
-	t.Parallel()
-}
-
 func TestCreateTopicWithoutFlagsIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")

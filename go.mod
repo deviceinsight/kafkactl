@@ -1,7 +1,6 @@
 module github.com/deviceinsight/kafkactl
 
 require (
-	github.com/DataDog/zstd v1.4.4 // indirect
 	github.com/Rican7/retry v0.1.0
 	github.com/Shopify/sarama v1.26.0
 	github.com/eapache/go-resiliency v1.2.0 // indirect
@@ -16,7 +15,6 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/rcrowley/go-metrics v0.0.0-20190826022208-cac0b30c2563 // indirect
 	github.com/russross/blackfriday v2.0.0+incompatible // indirect
-	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v0.0.5
@@ -32,7 +30,6 @@ require (
 	gopkg.in/ini.v1 v1.51.1 // indirect
 	gopkg.in/jcmturner/gokrb5.v7 v7.4.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8
-	gotest.tools/gotestsum v0.4.2 // indirect
 )
 
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
