@@ -8,9 +8,17 @@ type DefaultMessageSerializer struct {
 	topic string
 }
 
+func (serializer DefaultMessageSerializer) CanSerialize(_ string) (bool, error) {
+	return true, nil
+}
+
 func (serializer DefaultMessageSerializer) Serialize(key, value []byte, flags ProducerFlags) (*sarama.ProducerMessage, error) {
 
-	message := &sarama.ProducerMessage{Topic: serializer.topic, Partition: flags.Partition}
+	recordHeaders, err := createRecordHeaders(flags)
+	if err != nil {
+		return nil, err
+	}
+	message := &sarama.ProducerMessage{Topic: serializer.topic, Partition: flags.Partition, Headers: recordHeaders}
 
 	if key != nil {
 		message.Key = sarama.ByteEncoder(key)

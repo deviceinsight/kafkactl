@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add parameter `--header` to produce command to include message headers when writing messages 
+
 ### Changed
 - generation of commands and error handling have been refactored in order to allow for better testability
 - dockerfile is build from UBUNTU:LATEST instead of SCRATCH

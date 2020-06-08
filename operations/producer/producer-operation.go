@@ -23,6 +23,7 @@ type ProducerFlags struct {
 	File               string
 	Key                string
 	Value              string
+	Headers            []string
 	KeySchemaVersion   int
 	ValueSchemaVersion int
 	Silent             bool
@@ -98,14 +99,25 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) e
 		return errors.New("separator is used to split input from stdin/file. it cannot be used together with key or value")
 	}
 
-	var serializer MessageSerializer
+	var serializer MessageSerializer = nil
 
 	if clientContext.AvroSchemaRegistry != "" {
 		serializer, err = CreateAvroMessageSerializer(topic, clientContext.AvroSchemaRegistry)
 		if err != nil {
 			return err
 		}
-	} else {
+		if canSerialize, err := serializer.CanSerialize(topic); err != nil {
+			return err
+		} else if !canSerialize {
+			output.Debugf("no avro topic")
+			serializer = nil
+		} else {
+			output.Debugf("using AvroMessageSerializer")
+		}
+	}
+
+	if serializer == nil {
+		output.Debugf("using DefaultMessageSerializer")
 		serializer = DefaultMessageSerializer{topic: topic}
 	}
 
