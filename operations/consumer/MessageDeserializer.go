@@ -7,7 +7,7 @@ import (
 )
 
 type MessageDeserializer interface {
-	Deserialize(msg *sarama.ConsumerMessage, flags ConsumerFlags)
+	Deserialize(msg *sarama.ConsumerMessage, flags ConsumerFlags) error
 }
 
 func encodeBytes(data []byte, encoding string) *string {

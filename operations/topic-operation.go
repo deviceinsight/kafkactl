@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/pkg/errors"
 	"sort"
 	"strconv"
 	"strings"
@@ -65,17 +66,20 @@ type DescribeTopicFlags struct {
 type TopicOperation struct {
 }
 
-func (operation *TopicOperation) CreateTopics(topics []string, flags CreateTopicFlags) {
-
-	context := CreateClientContext()
+func (operation *TopicOperation) CreateTopics(topics []string, flags CreateTopicFlags) error {
 
 	var (
-		err   error
-		admin sarama.ClusterAdmin
+		err     error
+		context ClientContext
+		admin   sarama.ClusterAdmin
 	)
 
+	if context, err = CreateClientContext(); err != nil {
+		return err
+	}
+
 	if admin, err = CreateClusterAdmin(&context); err != nil {
-		output.Failf("failed to create cluster admin: %v", err)
+		return errors.Wrap(err, "failed to create cluster admin")
 	}
 
 	topicDetails := sarama.TopicDetail{
@@ -91,60 +95,68 @@ func (operation *TopicOperation) CreateTopics(topics []string, flags CreateTopic
 
 	for _, topic := range topics {
 		if err = admin.CreateTopic(topic, &topicDetails, flags.ValidateOnly); err != nil {
-			output.Failf("failed to create topic: %v", err)
+			return errors.Wrap(err, "failed to create topic")
 		} else {
 			output.Infof("topic created: %s", topic)
 		}
 	}
+	return nil
 }
 
-func (operation *TopicOperation) DeleteTopics(topics []string) {
-
-	context := CreateClientContext()
+func (operation *TopicOperation) DeleteTopics(topics []string) error {
 
 	var (
-		err   error
-		admin sarama.ClusterAdmin
+		err     error
+		context ClientContext
+		admin   sarama.ClusterAdmin
 	)
 
+	if context, err = CreateClientContext(); err != nil {
+		return err
+	}
+
 	if admin, err = CreateClusterAdmin(&context); err != nil {
-		output.Failf("failed to create cluster admin: %v", err)
+		return errors.Wrap(err, "failed to create cluster admin")
 	}
 
 	for _, topic := range topics {
 		if err = admin.DeleteTopic(topic); err != nil {
-			output.Failf("failed to delete topic: %v", err)
+			return errors.Wrap(err, "failed to delete topic")
 		} else {
 			output.Infof("topic deleted: %s", topic)
 		}
 	}
+	return nil
 }
 
-func (operation *TopicOperation) DescribeTopic(topic string, flags DescribeTopicFlags) {
-
-	context := CreateClientContext()
+func (operation *TopicOperation) DescribeTopic(topic string, flags DescribeTopicFlags) error {
 
 	var (
-		client sarama.Client
-		admin  sarama.ClusterAdmin
-		err    error
-		exists bool
+		context ClientContext
+		client  sarama.Client
+		admin   sarama.ClusterAdmin
+		err     error
+		exists  bool
 	)
 
+	if context, err = CreateClientContext(); err != nil {
+		return err
+	}
+
 	if client, err = CreateClient(&context); err != nil {
-		output.Failf("failed to create client err=%v", err)
+		return errors.Wrap(err, "failed to create client")
 	}
 
 	if exists, err = TopicExists(&client, topic); err != nil {
-		output.Failf("failed to read topics err=%v", err)
+		return errors.Wrap(err, "failed to read topics")
 	}
 
 	if !exists {
-		output.Failf("topic '%s' does not exist", topic)
+		return errors.Errorf("topic '%s' does not exist", topic)
 	}
 
 	if admin, err = CreateClusterAdmin(&context); err != nil {
-		output.Failf("failed to create cluster admin: %v", err)
+		return errors.Wrap(err, "failed to create cluster admin")
 	}
 
 	var t, _ = readTopic(&client, &admin, topic, allFields)
@@ -154,13 +166,19 @@ func (operation *TopicOperation) DescribeTopic(topic string, flags DescribeTopic
 			t.Configs = nil
 		} else {
 			configTableWriter := output.CreateTableWriter()
-			configTableWriter.WriteHeader("CONFIG", "VALUE")
-
-			for _, c := range t.Configs {
-				configTableWriter.Write(c.Name, c.Value)
+			if err := configTableWriter.WriteHeader("CONFIG", "VALUE"); err != nil {
+				return err
 			}
 
-			configTableWriter.Flush()
+			for _, c := range t.Configs {
+				if err := configTableWriter.Write(c.Name, c.Value); err != nil {
+					return err
+				}
+			}
+
+			if err := configTableWriter.Flush(); err != nil {
+				return err
+			}
 			output.PrintStrings("")
 		}
 	}
@@ -168,71 +186,82 @@ func (operation *TopicOperation) DescribeTopic(topic string, flags DescribeTopic
 	partitionTableWriter := output.CreateTableWriter()
 
 	if flags.OutputFormat == "" || flags.OutputFormat == "wide" {
-		partitionTableWriter.WriteHeader("PARTITION", "OLDEST_OFFSET", "NEWEST_OFFSET", "LEADER", "REPLICAS", "IN_SYNC_REPLICAS")
+		if err := partitionTableWriter.WriteHeader("PARTITION", "OLDEST_OFFSET", "NEWEST_OFFSET",
+			"LEADER", "REPLICAS", "IN_SYNC_REPLICAS"); err != nil {
+			return err
+		}
 	} else if flags.OutputFormat != "json" && flags.OutputFormat != "yaml" {
-		output.Failf("unknown outputFormat: %s", flags.OutputFormat)
+		return errors.Errorf("unknown outputFormat: %s", flags.OutputFormat)
 	}
 
 	if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
-		output.PrintObject(t, flags.OutputFormat)
+		return output.PrintObject(t, flags.OutputFormat)
 	} else if flags.OutputFormat == "wide" || flags.OutputFormat == "" {
 		for _, p := range t.Partitions {
 			replicas := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(p.Replicas)), ","), "[]")
 			inSyncReplicas := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(p.ISRs)), ","), "[]")
-			partitionTableWriter.Write(strconv.Itoa(int(p.Id)), strconv.Itoa(int(p.OldestOffset)), strconv.Itoa(int(p.NewestOffset)), p.Leader, replicas, inSyncReplicas)
+			if err := partitionTableWriter.Write(strconv.Itoa(int(p.Id)), strconv.Itoa(int(p.OldestOffset)),
+				strconv.Itoa(int(p.NewestOffset)), p.Leader, replicas, inSyncReplicas); err != nil {
+				return err
+			}
 		}
 	}
 
 	if flags.OutputFormat == "" || flags.OutputFormat == "wide" {
-		partitionTableWriter.Flush()
+		if err := partitionTableWriter.Flush(); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags) {
-
-	context := CreateClientContext()
+func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags) error {
 
 	var (
-		client sarama.Client
-		admin  sarama.ClusterAdmin
-		err    error
-		exists bool
+		context ClientContext
+		client  sarama.Client
+		admin   sarama.ClusterAdmin
+		err     error
+		exists  bool
 	)
 
+	if context, err = CreateClientContext(); err != nil {
+		return err
+	}
+
 	if client, err = CreateClient(&context); err != nil {
-		output.Failf("failed to create client err=%v", err)
+		return errors.Wrap(err, "failed to create client")
 	}
 
 	if exists, err = TopicExists(&client, topic); err != nil {
-		output.Failf("failed to read topics err=%v", err)
+		return errors.Wrap(err, "failed to read topics")
 	}
 
 	if !exists {
-		output.Failf("topic '%s' does not exist", topic)
+		return errors.Errorf("topic '%s' does not exist", topic)
 	}
 
 	if admin, err = CreateClusterAdmin(&context); err != nil {
-		output.Failf("failed to create cluster admin: %v", err)
+		return errors.Wrap(err, "failed to create cluster admin")
 	}
 
 	var t, _ = readTopic(&client, &admin, topic, requestedTopicFields{partitionId: true, config: true})
 
 	if flags.Partitions != 0 {
 		if len(t.Partitions) > int(flags.Partitions) {
-			output.Failf("Decreasing the number of partitions is not supported")
+			return errors.New("Decreasing the number of partitions is not supported")
 		}
 
 		var emptyAssignment = make([][]int32, 0)
 
 		err = admin.CreatePartitions(topic, flags.Partitions, emptyAssignment, flags.ValidateOnly)
 		if err != nil {
-			output.Failf("Could not create partitions for topic '%s': %v", topic, err)
+			return errors.Errorf("Could not create partitions for topic '%s': %v", topic, err)
 		}
 	}
 
 	if len(flags.Configs) == 0 {
-		operation.DescribeTopic(topic, DescribeTopicFlags{})
-		return
+		return operation.DescribeTopic(topic, DescribeTopicFlags{})
 	}
 
 	mergedConfigEntries := make(map[string]*string)
@@ -254,33 +283,36 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 	}
 
 	if err = admin.AlterConfig(sarama.TopicResource, topic, mergedConfigEntries, flags.ValidateOnly); err != nil {
-		output.Failf("Could not alter topic config '%s': %v", topic, err)
+		return errors.Errorf("Could not alter topic config '%s': %v", topic, err)
 	}
 
-	operation.DescribeTopic(topic, DescribeTopicFlags{})
+	return operation.DescribeTopic(topic, DescribeTopicFlags{})
 }
 
-func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) {
-
-	context := CreateClientContext()
+func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) error {
 
 	var (
-		err    error
-		client sarama.Client
-		admin  sarama.ClusterAdmin
-		topics []string
+		err     error
+		context ClientContext
+		client  sarama.Client
+		admin   sarama.ClusterAdmin
+		topics  []string
 	)
 
+	if context, err = CreateClientContext(); err != nil {
+		return err
+	}
+
 	if admin, err = CreateClusterAdmin(&context); err != nil {
-		output.Failf("failed to create cluster admin: %v", err)
+		return errors.Wrap(err, "failed to create cluster admin")
 	}
 
 	if client, err = CreateClient(&context); err != nil {
-		output.Failf("failed to create client err=%v", err)
+		return errors.Wrap(err, "failed to create client")
 	}
 
 	if topics, err = client.Topics(); err != nil {
-		output.Failf("failed to read topics err=%v", err)
+		return errors.Wrap(err, "failed to read topics")
 	}
 
 	tableWriter := output.CreateTableWriter()
@@ -288,36 +320,47 @@ func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) {
 
 	if flags.OutputFormat == "" {
 		requestedFields = requestedTopicFields{partitionId: true}
-		tableWriter.WriteHeader("TOPIC", "PARTITIONS")
+		if err := tableWriter.WriteHeader("TOPIC", "PARTITIONS"); err != nil {
+			return err
+		}
 	} else if flags.OutputFormat == "compact" {
 		tableWriter.Initialize()
 	} else if flags.OutputFormat == "wide" {
 		requestedFields = requestedTopicFields{partitionId: true, config: true}
-		tableWriter.WriteHeader("TOPIC", "PARTITIONS", "CONFIGS")
+		if err := tableWriter.WriteHeader("TOPIC", "PARTITIONS", "CONFIGS"); err != nil {
+			return err
+		}
 	} else if flags.OutputFormat == "json" {
 		requestedFields = allFields
 	} else if flags.OutputFormat == "yaml" {
 		requestedFields = allFields
 	} else {
-		output.Failf("unknown outputFormat: %s", flags.OutputFormat)
+		return errors.Errorf("unknown outputFormat: %s", flags.OutputFormat)
 	}
 
 	topicChannel := make(chan topic)
+	errChannel := make(chan error)
 
 	// read topics in parallel
 	for _, topic := range topics {
 		go func(topic string) {
 			t, err := readTopic(&client, &admin, topic, requestedFields)
 			if err != nil {
-				output.Failf("unable to read topic %s: %v", topic, err)
+				errChannel <- errors.Errorf("unable to read topic %s: %v", topic, err)
+			} else {
+				topicChannel <- t
 			}
-			topicChannel <- t
 		}(topic)
 	}
 
 	topicList := make([]topic, 0, len(topics))
 	for range topics {
-		topicList = append(topicList, <-topicChannel)
+		select {
+		case topic := <-topicChannel:
+			topicList = append(topicList, topic)
+		case err := <-errChannel:
+			return err
+		}
 	}
 
 	sort.Slice(topicList, func(i, j int) bool {
@@ -325,24 +368,33 @@ func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) {
 	})
 
 	if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
-		output.PrintObject(topicList, flags.OutputFormat)
+		return output.PrintObject(topicList, flags.OutputFormat)
 	} else if flags.OutputFormat == "wide" {
 		for _, t := range topicList {
-			tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions)), getConfigString(t.Configs))
+			if err := tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions)), getConfigString(t.Configs)); err != nil {
+				return err
+			}
 		}
 	} else if flags.OutputFormat == "compact" {
 		for _, t := range topicList {
-			tableWriter.Write(t.Name)
+			if err := tableWriter.Write(t.Name); err != nil {
+				return err
+			}
 		}
 	} else {
 		for _, t := range topicList {
-			tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions)))
+			if err := tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions))); err != nil {
+				return err
+			}
 		}
 	}
 
 	if flags.OutputFormat == "wide" || flags.OutputFormat == "compact" || flags.OutputFormat == "" {
-		tableWriter.Flush()
+		if err := tableWriter.Flush(); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, requestedFields requestedTopicFields) (topic, error) {
@@ -363,6 +415,7 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 	}
 
 	partitionChannel := make(chan partition)
+	errChannel := make(chan error)
 
 	// read partitions in parallel
 	for _, p := range ps {
@@ -373,31 +426,36 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 
 			if requestedFields.partitionOffset {
 				if np.OldestOffset, err = (*client).GetOffset(name, partitionId, sarama.OffsetOldest); err != nil {
-					output.Failf("unable to read oldest offset for topic %s partition %d", name, partitionId)
+					errChannel <- errors.Errorf("unable to read oldest offset for topic %s partition %d", name, partitionId)
+					return
 				}
 
 				if np.NewestOffset, err = (*client).GetOffset(name, partitionId, sarama.OffsetNewest); err != nil {
-					output.Failf("unable to read newest offset for topic %s partition %d", name, partitionId)
+					errChannel <- errors.Errorf("unable to read newest offset for topic %s partition %d", name, partitionId)
+					return
 				}
 			}
 
 			if requestedFields.partitionLeader {
 				if led, err = (*client).Leader(name, partitionId); err != nil {
-					output.Failf("unable to read leader for topic %s partition %d", name, partitionId)
+					errChannel <- errors.Errorf("unable to read leader for topic %s partition %d", name, partitionId)
+					return
 				}
 				np.Leader = led.Addr()
 			}
 
 			if requestedFields.partitionReplicas {
 				if np.Replicas, err = (*client).Replicas(name, partitionId); err != nil {
-					output.Failf("unable to read replicas for topic %s partition %d", name, partitionId)
+					errChannel <- errors.Errorf("unable to read replicas for topic %s partition %d", name, partitionId)
+					return
 				}
 				sort.Slice(np.Replicas, func(i, j int) bool { return np.Replicas[i] < np.Replicas[j] })
 			}
 
 			if requestedFields.partitionISRs {
 				if np.ISRs, err = (*client).InSyncReplicas(name, partitionId); err != nil {
-					output.Failf("unable to read inSyncReplicas for topic %s partition %d", name, partitionId)
+					errChannel <- errors.Errorf("unable to read inSyncReplicas for topic %s partition %d", name, partitionId)
+					return
 				}
 				sort.Slice(np.ISRs, func(i, j int) bool { return np.ISRs[i] < np.ISRs[j] })
 			}
@@ -422,7 +480,7 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 		}
 
 		if configEntries, err = (*admin).DescribeConfig(configResource); err != nil {
-			output.Failf("failed to describe config: %v", err)
+			return top, errors.Wrap(err, "failed to describe config")
 		}
 
 		for _, configEntry := range configEntries {

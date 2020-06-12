@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- generation of commands and error handling have been refactored in order to allow for better testability
+
 ### Fixed
 - loading custom CA cert failed in 1.8.0
 
@@ -14,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - add configuration option `sasl` for connection with SASL PLAIN username and password
 - show oldestOffset,lead values when describing consumer groups
-- allow omitting the CA cert 
+- allow omitting the CA cert
 - show error message when trying to reset offset of a non-empty group
 - allow enabling tls without specifying additional options
 

@@ -2,7 +2,7 @@ package output
 
 import (
 	"fmt"
-	"os"
+	"github.com/pkg/errors"
 	"strings"
 	"text/tabwriter"
 )
@@ -22,34 +22,41 @@ func CreateTableWriter() TableWriter {
 	return writer
 }
 
-func (writer *TableWriter) WriteHeader(columns ...string) {
+func (writer *TableWriter) WriteHeader(columns ...string) error {
 	writer.Initialize()
 	_, err := fmt.Fprintln(writer.client, strings.Join(columns[:], "\t"))
+
 	if err != nil {
-		Failf("Failed to write table header: %s", err)
+		return errors.Wrap(err, "Failed to write table header")
+	} else {
+		return nil
 	}
 }
 
 func (writer *TableWriter) Initialize() {
-	writer.client.Init(os.Stdout, 0, 0, 5, ' ', 0)
+	writer.client.Init(IoStreams.Out, 0, 0, 5, ' ', 0)
 	writer.initialized = true
 }
 
-func (writer *TableWriter) Write(columns ...string) {
+func (writer *TableWriter) Write(columns ...string) error {
 
 	if !writer.initialized {
-		Failf("error: no table header written")
+		return errors.New("no table header written")
 	}
 
 	_, err := fmt.Fprintln(writer.client, strings.Join(columns[:], "\t"))
 	if err != nil {
-		Failf("Failed to write table header: %s", err)
+		return errors.Wrap(err, "Failed to write table header")
+	} else {
+		return nil
 	}
 }
 
-func (writer *TableWriter) Flush() {
+func (writer *TableWriter) Flush() error {
 	err := writer.client.Flush()
 	if err != nil {
-		Failf("Failed to flush table writer: %s", err)
+		return errors.Wrap(err, "Failed to flush table writer")
+	} else {
+		return nil
 	}
 }

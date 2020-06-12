@@ -4,11 +4,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var CmdReset = &cobra.Command{
-	Use:   "reset",
-	Short: "reset consumerGroupsOffset",
-}
+func NewResetCmd() *cobra.Command {
+	var cmdReset = &cobra.Command{
+		Use:   "reset",
+		Short: "reset consumerGroupsOffset",
+	}
 
-func init() {
-	CmdReset.AddCommand(cmdResetOffset)
+	cmdReset.AddCommand(newResetOffsetCmd())
+
+	return cmdReset
 }

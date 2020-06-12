@@ -7,6 +7,7 @@ import (
 	"github.com/deviceinsight/kafkactl/util"
 	"github.com/landoop/schema-registry"
 	"github.com/linkedin/goavro"
+	"github.com/pkg/errors"
 	"strconv"
 	"strings"
 	"time"
@@ -18,7 +19,7 @@ type AvroMessageDeserializer struct {
 	client             *schemaregistry.Client
 }
 
-func CreateAvroMessageDeserializer(topic string, avroSchemaRegistry string) AvroMessageDeserializer {
+func CreateAvroMessageDeserializer(topic string, avroSchemaRegistry string) (AvroMessageDeserializer, error) {
 
 	var err error
 
@@ -27,10 +28,10 @@ func CreateAvroMessageDeserializer(topic string, avroSchemaRegistry string) Avro
 	deserializer.client, err = schemaregistry.NewClient(deserializer.avroSchemaRegistry)
 
 	if err != nil {
-		output.Failf("failed to create schema registry client: %v", err)
+		return deserializer, errors.Wrap(err, "failed to create schema registry client: ")
 	}
 
-	return deserializer
+	return deserializer, nil
 }
 
 type avroMessage struct {
@@ -52,12 +53,15 @@ type decodedValue struct {
 	value    *string
 }
 
-func (deserializer AvroMessageDeserializer) newAvroMessage(msg *sarama.ConsumerMessage, flags ConsumerFlags) avroMessage {
+func (deserializer AvroMessageDeserializer) newAvroMessage(msg *sarama.ConsumerMessage, flags ConsumerFlags) (avroMessage, error) {
 
 	var decodedKey decodedValue
 	var timestamp *time.Time
 
-	var decodedValue = deserializer.decode(msg.Value, flags, "value")
+	decodedValue, err := deserializer.decode(msg.Value, flags, "value")
+	if err != nil {
+		return avroMessage{}, err
+	}
 
 	avroMessage := avroMessage{
 		Partition: msg.Partition,
@@ -67,7 +71,10 @@ func (deserializer AvroMessageDeserializer) newAvroMessage(msg *sarama.ConsumerM
 	}
 
 	if flags.PrintKeys {
-		decodedKey = deserializer.decode(msg.Key, flags, "key")
+		decodedKey, err = deserializer.decode(msg.Key, flags, "key")
+		if err != nil {
+			return avroMessage, err
+		}
 		avroMessage.Key = decodedKey.value
 	}
 
@@ -90,14 +97,14 @@ func (deserializer AvroMessageDeserializer) newAvroMessage(msg *sarama.ConsumerM
 		}
 	}
 
-	return avroMessage
+	return avroMessage, nil
 }
 
-func (deserializer AvroMessageDeserializer) decode(rawData []byte, flags ConsumerFlags, avroSchemaType string) decodedValue {
+func (deserializer AvroMessageDeserializer) decode(rawData []byte, flags ConsumerFlags, avroSchemaType string) (decodedValue, error) {
 
 	if len(rawData) < 5 {
 		output.Debugf("does not seem to be avro data")
-		return decodedValue{value: encodeBytes(rawData, flags.EncodeValue)}
+		return decodedValue{value: encodeBytes(rawData, flags.EncodeValue)}, nil
 	}
 
 	// https://docs.confluent.io/current/schema-registry/docs/serializer-formatter.html#wire-format
@@ -110,45 +117,49 @@ func (deserializer AvroMessageDeserializer) decode(rawData []byte, flags Consume
 	subjects, err := deserializer.client.Subjects()
 
 	if err != nil {
-		output.Failf("failed to list available avro schemas (%v)", err)
+		return decodedValue{}, errors.Wrap(err, "failed to list available avro schemas")
 	}
 
 	if !util.ContainsString(subjects, subject) {
 		// does not seem to be avro data
-		return decodedValue{value: encodeBytes(rawData, flags.EncodeValue)}
+		return decodedValue{value: encodeBytes(rawData, flags.EncodeValue)}, nil
 	}
 
 	schema, err := deserializer.client.GetSchemaByID(schemaId)
 
 	if err != nil {
-		output.Failf("failed to find avro schema for subject: %s id: %d (%v)", subject, schemaId, err)
+		return decodedValue{}, errors.Errorf("failed to find avro schema for subject: %s id: %d (%v)", subject, schemaId, err)
 	}
 
 	avroCodec, err := goavro.NewCodec(schema)
 
 	if err != nil {
-		output.Failf("failed to parse avro schema %v", err)
+		return decodedValue{}, errors.Wrap(err, "failed to parse avro schema")
 	}
 
 	native, _, err := avroCodec.NativeFromBinary(data)
 	if err != nil {
-		output.Failf("failed to parse avro data: %s", err)
+		return decodedValue{}, errors.Wrap(err, "failed to parse avro data")
 	}
 
 	textual, err := avroCodec.TextualFromNative(nil, native)
 	if err != nil {
-		output.Failf("failed to convert value to avro data: %s", err)
+		return decodedValue{}, errors.Wrap(err, "failed to convert value to avro data")
 	}
 
 	decoded := string(textual)
-	return decodedValue{schema: schema, schemaId: schemaId, value: &decoded}
+	return decodedValue{schema: schema, schemaId: schemaId, value: &decoded}, nil
 }
 
-func (deserializer AvroMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerMessage, flags ConsumerFlags) {
+func (deserializer AvroMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerMessage, flags ConsumerFlags) error {
 
 	output.Debugf("start to deserialize avro message...")
 
-	msg := deserializer.newAvroMessage(rawMsg, flags)
+	msg, err := deserializer.newAvroMessage(rawMsg, flags)
+
+	if err != nil {
+		return err
+	}
 
 	if flags.OutputFormat == "" {
 		var row []string
@@ -204,11 +215,12 @@ func (deserializer AvroMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerM
 			value = "null"
 		}
 
-		row = append(row, string(value))
+		row = append(row, value)
 
 		output.PrintStrings(strings.Join(row[:], flags.Separator))
+		return nil
 
 	} else {
-		output.PrintObject(msg, flags.OutputFormat)
+		return output.PrintObject(msg, flags.OutputFormat)
 	}
 }
