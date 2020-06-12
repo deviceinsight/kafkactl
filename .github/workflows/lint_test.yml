@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - feature/integration_tests
     tags:
       - '*'
   pull_request:
