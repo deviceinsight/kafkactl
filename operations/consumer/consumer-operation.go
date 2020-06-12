@@ -4,6 +4,7 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/pkg/errors"
 	"os"
 	"os/signal"
 	"sort"
@@ -42,38 +43,44 @@ type ConsumedMessage struct {
 type ConsumerOperation struct {
 }
 
-func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
-
-	clientContext := operations.CreateClientContext()
+func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) error {
 
 	var (
-		err       error
-		client    sarama.Client
-		topExists bool
+		clientContext operations.ClientContext
+		err           error
+		client        sarama.Client
+		topExists     bool
 	)
 
+	if clientContext, err = operations.CreateClientContext(); err != nil {
+		return err
+	}
+
 	if client, err = operations.CreateClient(&clientContext); err != nil {
-		output.Failf("failed to create client err=%v", err)
+		return errors.Wrap(err, "failed to create client")
 	}
 
 	if topExists, err = operations.TopicExists(&client, topic); err != nil {
-		output.Failf("failed to read topics err=%v", err)
+		return errors.Wrap(err, "failed to read topics")
 	}
 
 	if !topExists {
-		output.Failf("topic '%s' does not exist", topic)
+		return errors.Errorf("topic '%s' does not exist", topic)
 	}
 
 	c, err := sarama.NewConsumer(clientContext.Brokers, client.Config())
 	if err != nil {
-		output.Failf("Failed to start consumer: %s", err)
+		return errors.Wrap(err, "Failed to start consumer: ")
 	}
 
 	var deserializer MessageDeserializer
 
 	if clientContext.AvroSchemaRegistry != "" {
 		output.Debugf("using AvroMessageDeserializer")
-		deserializer = CreateAvroMessageDeserializer(topic, clientContext.AvroSchemaRegistry)
+		deserializer, err = CreateAvroMessageDeserializer(topic, clientContext.AvroSchemaRegistry)
+		if err != nil {
+			return err
+		}
 	} else {
 		output.Debugf("using DefaultMessageDeserializer")
 		deserializer = DefaultMessageDeserializer{}
@@ -85,7 +92,7 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 		partitions, err = c.Partitions(topic)
 
 		if err != nil {
-			output.Failf("Failed to get the list of partitions: %s", err)
+			return errors.Wrap(err, "Failed to get the list of partitions")
 		}
 	} else {
 		for _, partition := range flags.Partitions {
@@ -95,6 +102,7 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 
 	var (
 		messages          = make(chan *sarama.ConsumerMessage, flags.BufferSize)
+		errChannel        = make(chan error)
 		closing           = make(chan struct{})
 		wgPartition       sync.WaitGroup
 		wgConsumerActive  sync.WaitGroup
@@ -115,10 +123,15 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 		wgPartition.Add(1)
 		go func(partition int32) {
 			defer wgPartition.Done()
-			initialOffset, lastOffset := getOffsetBounds(&client, topic, flags, partition)
+			initialOffset, lastOffset, err := getOffsetBounds(&client, topic, flags, partition)
+			if err != nil {
+				errChannel <- err
+				return
+			}
 			pc, err := c.ConsumePartition(topic, partition, initialOffset)
 			if err != nil {
-				output.Failf("Failed to start consumer for partition %d: %s", partition, err)
+				errChannel <- errors.Errorf("Failed to start consumer for partition %d: %s", partition, err)
+				return
 			}
 
 			if lastOffset == -1 || initialOffset <= lastOffset {
@@ -164,7 +177,11 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 			}
 			lastIndex := len(sortedMessages) - 1
 			for i := range sortedMessages {
-				deserializer.Deserialize(sortedMessages[lastIndex-i], flags)
+				err := deserializer.Deserialize(sortedMessages[lastIndex-i], flags)
+				if err != nil {
+					errChannel <- err
+					return
+				}
 			}
 		}()
 
@@ -173,7 +190,11 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 		go func() {
 			defer wgPendingMessages.Done()
 			for msg := range messages {
-				deserializer.Deserialize(msg, flags)
+				err := deserializer.Deserialize(msg, flags)
+				if err != nil {
+					errChannel <- err
+					return
+				}
 			}
 		}()
 	}
@@ -186,34 +207,47 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) {
 	wgPendingMessages.Wait()
 	output.Debugf("Done waiting for messages")
 
-	if err := c.Close(); err != nil {
-		output.Failf("Failed to close consumer: ", err)
+	select {
+	case err := <-errChannel:
+		return err
+	default:
 	}
+
+	if err := c.Close(); err != nil {
+		return errors.Wrap(err, "Failed to close consumer")
+	}
+	return nil
 }
 
-func getOffsetBounds(client *sarama.Client, topic string, flags ConsumerFlags, currentPartition int32) (int64, int64) {
+func getOffsetBounds(client *sarama.Client, topic string, flags ConsumerFlags, currentPartition int32) (int64, int64, error) {
 
 	if flags.Exit && len(flags.Offsets) == 0 && !flags.FromBeginning {
-		output.Failf("parameter --exit has to be used in combination with --from-beginning or --offset")
+		return -1, -1, errors.Errorf("parameter --exit has to be used in combination with --from-beginning or --offset")
 	} else if flags.Tail > 0 && len(flags.Offsets) > 0 {
-		output.Failf("parameters --offset and --tail cannot be used together")
+		return -1, -1, errors.Errorf("parameters --offset and --tail cannot be used together")
 	} else if flags.Tail > 0 {
 
-		newestOffset, oldestOffset := getBoundaryOffsets(client, topic, currentPartition)
+		newestOffset, oldestOffset, err := getBoundaryOffsets(client, topic, currentPartition)
+		if err != nil {
+			return -1, -1, err
+		}
 
 		minOffset := newestOffset - int64(flags.Tail)
 		maxOffset := newestOffset - 1
 		if minOffset < oldestOffset {
 			minOffset = oldestOffset
 		}
-		return minOffset, maxOffset
+		return minOffset, maxOffset, nil
 	}
 
 	lastOffset := int64(-1)
 	oldestOffset := sarama.OffsetOldest
 
 	if flags.Exit {
-		newestOffset, oldestOff := getBoundaryOffsets(client, topic, currentPartition)
+		newestOffset, oldestOff, err := getBoundaryOffsets(client, topic, currentPartition)
+		if err != nil {
+			return -1, -1, err
+		}
 		lastOffset = newestOffset - 1
 		oldestOffset = oldestOff
 	}
@@ -225,7 +259,7 @@ func getOffsetBounds(client *sarama.Client, topic string, flags ConsumerFlags, c
 
 			partition, err := strconv.Atoi(offsetParts[0])
 			if err != nil {
-				output.Failf("unable to parse offset parameter: %s (%v)", offsetFlag, err)
+				return -1, -1, errors.Errorf("unable to parse offset parameter: %s (%v)", offsetFlag, err)
 			}
 
 			if int32(partition) != currentPartition {
@@ -234,31 +268,30 @@ func getOffsetBounds(client *sarama.Client, topic string, flags ConsumerFlags, c
 
 			offset, err := strconv.ParseInt(offsetParts[1], 10, 64)
 			if err != nil {
-				output.Failf("unable to parse offset parameter: %s (%v)", offsetFlag, err)
+				return -1, -1, errors.Errorf("unable to parse offset parameter: %s (%v)", offsetFlag, err)
 			}
 
-			return offset, lastOffset
+			return offset, lastOffset, nil
 		}
 	}
 
 	if flags.FromBeginning {
-		return oldestOffset, lastOffset
+		return oldestOffset, lastOffset, nil
 	} else {
-		return sarama.OffsetNewest, -1
+		return sarama.OffsetNewest, -1, nil
 	}
 }
 
-func getBoundaryOffsets(client *sarama.Client, topic string, partition int32) (newestOffset int64, oldestOffset int64) {
-	var err error
+func getBoundaryOffsets(client *sarama.Client, topic string, partition int32) (newestOffset int64, oldestOffset int64, err error) {
 
 	if newestOffset, err = (*client).GetOffset(topic, partition, sarama.OffsetNewest); err != nil {
-		output.Failf("failed to get offset for topic %s Partition %d: %v", topic, partition, err)
+		return -1, -1, errors.Errorf("failed to get offset for topic %s Partition %d: %v", topic, partition, err)
 	}
 
 	if oldestOffset, err = (*client).GetOffset(topic, partition, sarama.OffsetOldest); err != nil {
-		output.Failf("failed to get offset for topic %s Partition %d: %v", topic, partition, err)
+		return -1, -1, errors.Errorf("failed to get offset for topic %s Partition %d: %v", topic, partition, err)
 	}
-	return newestOffset, oldestOffset
+	return newestOffset, oldestOffset, nil
 }
 
 func insertSorted(messages []*sarama.ConsumerMessage, message *sarama.ConsumerMessage) []*sarama.ConsumerMessage {

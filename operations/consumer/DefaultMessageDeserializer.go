@@ -49,7 +49,7 @@ func (deserializer DefaultMessageDeserializer) newDefaultMessage(msg *sarama.Con
 	}
 }
 
-func (deserializer DefaultMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerMessage, flags ConsumerFlags) {
+func (deserializer DefaultMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerMessage, flags ConsumerFlags) error {
 
 	msg := deserializer.newDefaultMessage(rawMsg, flags)
 
@@ -96,8 +96,8 @@ func (deserializer DefaultMessageDeserializer) Deserialize(rawMsg *sarama.Consum
 		row = append(row, value)
 
 		output.PrintStrings(strings.Join(row[:], flags.Separator))
-
+		return nil
 	} else {
-		output.PrintObject(msg, flags.OutputFormat)
+		return output.PrintObject(msg, flags.OutputFormat)
 	}
 }

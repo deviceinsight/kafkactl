@@ -13,6 +13,7 @@ import (
 	"github.com/deviceinsight/kafkactl/cmd/produce"
 	"github.com/deviceinsight/kafkactl/cmd/reset"
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
@@ -24,36 +25,40 @@ import (
 var cfgFile string
 var Verbose bool
 
-var rootCmd = &cobra.Command{
-	Use:                    "kafkactl",
-	BashCompletionFunction: bashCompletionFunc,
-	Short:                  "command-line interface for Apache Kafka",
-	Long:                   `A command-line interface the simplifies interaction with Kafka.`,
-}
-
 var configPaths = []string{"$HOME/.config/kafkactl", "$HOME/.kafkactl", "$SNAP_DATA/kafkactl", "/etc/kafkactl"}
 
-func KafkactlCommand(streams output.IOStreams) *cobra.Command {
-	rootCmd.SetOutput(streams.Out)
-	return rootCmd
-}
+func NewKafkactlCommand(streams output.IOStreams) *cobra.Command {
 
-func init() {
+	var rootCmd = &cobra.Command{
+		Use:                    "kafkactl",
+		BashCompletionFunction: bashCompletionFunc,
+		Short:                  "command-line interface for Apache Kafka",
+		Long:                   `A command-line interface the simplifies interaction with Kafka.`,
+	}
+
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.AddCommand(config.CmdConfig)
-	rootCmd.AddCommand(consume.CmdConsume)
-	rootCmd.AddCommand(create.CmdCreate)
-	rootCmd.AddCommand(alter.CmdAlter)
-	rootCmd.AddCommand(deletion.CmdDelete)
-	rootCmd.AddCommand(describe.CmdDescribe)
-	rootCmd.AddCommand(get.CmdGet)
-	rootCmd.AddCommand(produce.CmdProduce)
-	rootCmd.AddCommand(reset.CmdReset)
+	rootCmd.AddCommand(config.NewConfigCmd())
+	rootCmd.AddCommand(consume.NewConsumeCmd())
+	rootCmd.AddCommand(create.NewCreateCmd())
+	rootCmd.AddCommand(alter.NewAlterCmd())
+	rootCmd.AddCommand(deletion.NewDeleteCmd())
+	rootCmd.AddCommand(describe.NewDescribeCmd())
+	rootCmd.AddCommand(get.NewGetCmd())
+	rootCmd.AddCommand(produce.NewProduceCmd())
+	rootCmd.AddCommand(reset.NewResetCmd())
+	rootCmd.AddCommand(newCompletionCmd())
+	rootCmd.AddCommand(newVersionCmd())
+	rootCmd.AddCommand(newDocsCmd())
 
 	// use upper-case letters for shorthand params to avoid conflicts with local flags
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config-file", "C", "", fmt.Sprintf("config file. one of: %v", configPaths))
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "V", false, "verbose output")
+
+	output.IoStreams = streams
+	rootCmd.SetOut(streams.Out)
+	rootCmd.SetErr(streams.ErrOut)
+	return rootCmd
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -78,30 +83,33 @@ func initConfig() {
 	viper.SetConfigType("yml")
 	viper.AutomaticEnv() // read in environment variables that match
 
-	readConfig()
+	if err := readConfig(); err != nil {
+		output.Fail(err)
+	}
 }
 
-func readConfig() {
+func readConfig() error {
 	var err error
 	if err = viper.ReadInConfig(); err == nil {
 		output.Debugf("Using config file: %s", viper.ConfigFileUsed())
-		return
+		return nil
 	}
 
 	if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-		output.Failf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err)
+		return errors.Errorf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err)
 	} else {
 		err = generateDefaultConfig()
 		if err != nil {
-			output.Failf("Error generating default config: %v", err)
+			return errors.Wrap(err, "Error generating default config: ")
 		}
 	}
 
 	// We read generated config now
 	if err = viper.ReadInConfig(); err == nil {
 		output.Debugf("Using config file: %s", viper.ConfigFileUsed())
+		return nil
 	} else {
-		output.Failf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err)
+		return errors.Errorf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err)
 	}
 }
 
@@ -116,10 +124,7 @@ func generateDefaultConfig() error {
 		return fmt.Errorf("failed to generate default config at %s", pathToConfig)
 	}
 	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-			output.Failf("unable to close file: %v", err)
-		}
+		_ = f.Close()
 	}(f)
 
 	defaultConfigContent := `

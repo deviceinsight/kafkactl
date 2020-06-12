@@ -8,7 +8,7 @@ type DefaultMessageSerializer struct {
 	topic string
 }
 
-func (serializer DefaultMessageSerializer) Serialize(key, value []byte, flags ProducerFlags) *sarama.ProducerMessage {
+func (serializer DefaultMessageSerializer) Serialize(key, value []byte, flags ProducerFlags) (*sarama.ProducerMessage, error) {
 
 	message := &sarama.ProducerMessage{Topic: serializer.topic, Partition: flags.Partition}
 
@@ -18,5 +18,5 @@ func (serializer DefaultMessageSerializer) Serialize(key, value []byte, flags Pr
 
 	message.Value = sarama.ByteEncoder(value)
 
-	return message
+	return message, nil
 }

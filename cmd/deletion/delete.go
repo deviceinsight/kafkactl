@@ -4,11 +4,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var CmdDelete = &cobra.Command{
-	Use:   "delete",
-	Short: "delete topics",
-}
+func NewDeleteCmd() *cobra.Command {
 
-func init() {
-	CmdDelete.AddCommand(cmdDeleteTopic)
+	var cmdDelete = &cobra.Command{
+		Use:   "delete",
+		Short: "delete topics",
+	}
+
+	cmdDelete.AddCommand(newDeleteTopicCmd())
+	return cmdDelete
 }

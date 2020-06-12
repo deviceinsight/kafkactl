@@ -1,4 +1,4 @@
-// Copyright © 2018 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2018 Dirk Wilden <dirk.wilden@device-insight.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ func main() {
 
 	ioStreams := output.DefaultIOStreams()
 
-	if err := cmd.KafkactlCommand(ioStreams).Execute(); err != nil {
+	if err := cmd.NewKafkactlCommand(ioStreams).Execute(); err != nil {
 		output.Warnf("%v", err)
 		os.Exit(1)
 	}

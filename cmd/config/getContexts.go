@@ -9,36 +9,47 @@ import (
 
 var outputFormat string
 
-var cmdGetContexts = &cobra.Command{
-	Use:     "get-contexts",
-	Aliases: []string{"getContexts"},
-	Short:   "list configured contexts",
-	Long:    `Output names of all configured contexts`,
-	Run: func(cmd *cobra.Command, args []string) {
-		contexts := viper.GetStringMap("contexts")
-		currentContext := viper.GetString("current-context")
+func newGetContextsCmd() *cobra.Command {
 
-		if outputFormat == "compact" {
-			for name := range contexts {
-				output.Infof("%s", name)
-			}
-		} else {
-			writer := output.CreateTableWriter()
+	var cmdGetContexts = &cobra.Command{
+		Use:     "get-contexts",
+		Aliases: []string{"getContexts"},
+		Short:   "list configured contexts",
+		Long:    `Output names of all configured contexts`,
+		Run: func(cmd *cobra.Command, args []string) {
+			contexts := viper.GetStringMap("contexts")
+			currentContext := viper.GetString("current-context")
 
-			writer.WriteHeader("ACTIVE", "NAME")
-			for context := range contexts {
-				if currentContext == context {
-					writer.Write("*", context)
-				} else {
-					writer.Write("", context)
+			if outputFormat == "compact" {
+				for name := range contexts {
+					output.Infof("%s", name)
+				}
+			} else {
+				writer := output.CreateTableWriter()
+
+				if err := writer.WriteHeader("ACTIVE", "NAME"); err != nil {
+					output.Fail(err)
+				}
+				for context := range contexts {
+					if currentContext == context {
+						if err := writer.Write("*", context); err != nil {
+							output.Fail(err)
+						}
+					} else {
+						if err := writer.Write("", context); err != nil {
+							output.Fail(err)
+						}
+					}
+				}
+
+				if err := writer.Flush(); err != nil {
+					output.Fail(err)
 				}
 			}
+		},
+	}
 
-			writer.Flush()
-		}
-	},
-}
-
-func init() {
 	cmdGetContexts.Flags().StringVarP(&outputFormat, "output", "o", outputFormat, "output format. One of: compact")
+
+	return cmdGetContexts
 }

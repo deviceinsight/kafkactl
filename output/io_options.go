@@ -3,7 +3,6 @@ package output
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
 )
 
@@ -13,29 +12,25 @@ func DefaultIOStreams() IOStreams {
 	return IOStreams{In: os.Stdin, Out: os.Stdout, ErrOut: os.Stderr}
 }
 
+func NewTestIOStreams() IOStreams {
+	return NewTestIOStreamsWithStdIn(nil)
+}
+
+func NewTestIOStreamsWithStdIn(in *os.File) IOStreams {
+
+	streams := IOStreams{
+		In:     in,
+		Out:    new(bytes.Buffer),
+		ErrOut: new(bytes.Buffer),
+	}
+
+	IoStreams = streams
+
+	return streams
+}
+
 type IOStreams struct {
 	In     io.Reader
 	Out    io.Writer
 	ErrOut io.Writer
-}
-
-func NewTestIOStreams() (IOStreams, *bytes.Buffer, *bytes.Buffer, *bytes.Buffer) {
-	in := &bytes.Buffer{}
-	out := &bytes.Buffer{}
-	errOut := &bytes.Buffer{}
-
-	return IOStreams{
-		In:     in,
-		Out:    out,
-		ErrOut: errOut,
-	}, in, out, errOut
-}
-
-func NewTestIOStreamsDiscard() IOStreams {
-	in := &bytes.Buffer{}
-	return IOStreams{
-		In:     in,
-		Out:    ioutil.Discard,
-		ErrOut: ioutil.Discard,
-	}
 }

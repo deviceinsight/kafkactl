@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"os/user"
@@ -41,7 +42,7 @@ type ClientContext struct {
 	DefaultPartitioner string
 }
 
-func CreateClientContext() ClientContext {
+func CreateClientContext() (ClientContext, error) {
 	var context ClientContext
 
 	context.Name = viper.GetString("current-context")
@@ -50,7 +51,7 @@ func CreateClientContext() ClientContext {
 		viper.GetString("contexts."+context.Name+".tlsCert") != "" ||
 		viper.GetString("contexts."+context.Name+".tlsCertKey") != "" ||
 		viper.GetString("contexts."+context.Name+".tlsInsecure") != "" {
-		output.Failf("Your tls config contains fields that are not longer supported. Please update your config")
+		return context, errors.Errorf("Your tls config contains fields that are not longer supported. Please update your config")
 	}
 
 	context.Brokers = viper.GetStringSlice("contexts." + context.Name + ".brokers")
@@ -60,21 +61,31 @@ func CreateClientContext() ClientContext {
 	context.Tls.CertKey = viper.GetString("contexts." + context.Name + ".tls.certKey")
 	context.Tls.Insecure = viper.GetBool("contexts." + context.Name + ".tls.insecure")
 	context.ClientID = viper.GetString("contexts." + context.Name + ".clientID")
-	context.KafkaVersion = kafkaVersion(viper.GetString("contexts." + context.Name + ".kafkaVersion"))
+
+	if version, err := kafkaVersion(viper.GetString("contexts." + context.Name + ".kafkaVersion")); err == nil {
+		context.KafkaVersion = version
+	} else {
+		return context, err
+	}
 	context.AvroSchemaRegistry = viper.GetString("contexts." + context.Name + ".avro.schemaRegistry")
 	context.DefaultPartitioner = viper.GetString("contexts." + context.Name + ".defaultPartitioner")
 	context.Sasl.Enabled = viper.GetBool("contexts." + context.Name + ".sasl.enabled")
 	context.Sasl.Username = viper.GetString("contexts." + context.Name + ".sasl.username")
 	context.Sasl.Password = viper.GetString("contexts." + context.Name + ".sasl.password")
 
-	return context
+	return context, nil
 }
 
 func CreateClient(context *ClientContext) (sarama.Client, error) {
-	return sarama.NewClient(context.Brokers, CreateClientConfig(context))
+	config, err := CreateClientConfig(context)
+	if err == nil {
+		return sarama.NewClient(context.Brokers, config)
+	} else {
+		return nil, err
+	}
 }
 
-func CreateClientConfig(context *ClientContext) *sarama.Config {
+func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 
 	var config = sarama.NewConfig()
 	config.Version = context.KafkaVersion
@@ -86,7 +97,7 @@ func CreateClientConfig(context *ClientContext) *sarama.Config {
 
 		tlsConfig, err := setupTlsConfig(context.Tls)
 		if err != nil {
-			output.Failf("failed to setup certificates err=%v", err)
+			return nil, errors.Wrap(err, "failed to setup tls config")
 		}
 		config.Net.TLS.Config = tlsConfig
 	}
@@ -98,7 +109,7 @@ func CreateClientConfig(context *ClientContext) *sarama.Config {
 		config.Net.SASL.Password = context.Sasl.Password
 	}
 
-	return config
+	return config, nil
 }
 
 func CreateClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
@@ -113,7 +124,7 @@ func CreateClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
 
 		tlsConfig, err := setupTlsConfig(context.Tls)
 		if err != nil {
-			output.Failf("failed to setup certificates err=%v", err)
+			return nil, errors.Wrap(err, "failed to setup tls config")
 		}
 		config.Net.TLS.Config = tlsConfig
 	}
@@ -159,7 +170,7 @@ func sanitizeUsername(u string) string {
 func setupTlsConfig(tlsConfig TlsConfig) (*tls.Config, error) {
 
 	if !tlsConfig.Enabled {
-		output.Failf("tls should be enabled at this point")
+		return nil, errors.Errorf("tls should be enabled at this point")
 	}
 
 	if tlsConfig.Insecure {
@@ -176,7 +187,7 @@ func setupTlsConfig(tlsConfig TlsConfig) (*tls.Config, error) {
 		caPool = x509.NewCertPool()
 		ok := caPool.AppendCertsFromPEM(caString)
 		if !ok {
-			output.Failf("unable to add ca at %s to certificate pool", tlsConfig.CA)
+			return nil, errors.Errorf("unable to add ca at %s to certificate pool", tlsConfig.CA)
 		}
 	}
 
@@ -199,20 +210,20 @@ func setupTlsConfig(tlsConfig TlsConfig) (*tls.Config, error) {
 	return bundle, nil
 }
 
-func kafkaVersion(s string) sarama.KafkaVersion {
+func kafkaVersion(s string) (sarama.KafkaVersion, error) {
 	if s == "" {
 		output.Debugf("Assuming kafkaVersion: %s", sarama.V2_0_0_0)
-		return sarama.V2_0_0_0
+		return sarama.V2_0_0_0, nil
 	}
 
 	v, err := sarama.ParseKafkaVersion(strings.TrimPrefix(s, "v"))
 	if err != nil {
-		output.Failf(err.Error())
+		return sarama.KafkaVersion{}, err
 	}
 
 	output.Debugf("Using kafkaVersion: %s", v)
 
-	return v
+	return v, nil
 }
 
 func TopicExists(client *sarama.Client, name string) (bool, error) {
@@ -223,8 +234,7 @@ func TopicExists(client *sarama.Client, name string) (bool, error) {
 	)
 
 	if topics, err = (*client).Topics(); err != nil {
-		output.Failf("failed to read topics err=%v", err)
-		return false, err
+		return false, errors.Wrap(err, "failed to read topics")
 	}
 
 	for _, topic := range topics {

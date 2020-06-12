@@ -4,14 +4,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var CmdConfig = &cobra.Command{
-	Use:   "config",
-	Short: "show and edit configurations",
-}
+func NewConfigCmd() *cobra.Command {
 
-func init() {
-	CmdConfig.AddCommand(cmdCurrentContext)
-	CmdConfig.AddCommand(cmdGetContexts)
-	CmdConfig.AddCommand(cmdUseContext)
-	CmdConfig.AddCommand(cmdView)
+	var cmdConfig = &cobra.Command{
+		Use:   "config",
+		Short: "show and edit configurations",
+	}
+
+	cmdConfig.AddCommand(newCurrentContextCmd())
+	cmdConfig.AddCommand(newGetContextsCmd())
+	cmdConfig.AddCommand(newUseContextCmd())
+	cmdConfig.AddCommand(newViewCmd())
+
+	return cmdConfig
 }

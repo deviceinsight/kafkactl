@@ -2,6 +2,7 @@ package operations
 
 import (
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 	"io/ioutil"
@@ -21,37 +22,40 @@ type DocsFlags struct {
 type DocsOperation struct {
 }
 
-func (operation *DocsOperation) GenerateDocs(rootCmd *cobra.Command, flags DocsFlags) {
+func (operation *DocsOperation) GenerateDocs(rootCmd *cobra.Command, flags DocsFlags) error {
 
 	if _, err := os.Stat(flags.Directory); os.IsNotExist(err) {
 		if err := os.Mkdir(flags.Directory, os.ModePerm); err != nil {
-			output.Failf("unable to create directory: %v", err)
+			return errors.Wrap(err, "unable to create directory")
 		}
 	}
 
 	switch flags.DocType {
 	case "markdown", "mdown", "md":
 		if err := doc.GenMarkdownTree(rootCmd, flags.Directory); err != nil {
-			output.Failf("unable to generate markdown: %v", err)
+			return errors.Wrap(err, "unable to generate markdown")
 		}
 		if flags.SinglePage {
-			generateSinglePage(flags)
+			if err := generateSinglePage(flags); err != nil {
+				return err
+			}
 		}
 	case "man":
 		manHdr := &doc.GenManHeader{Title: "KAFKACTL", Section: "1"}
 		if err := doc.GenManTree(rootCmd, manHdr, flags.Directory); err != nil {
-			output.Failf("unable to generate markdown: %v", err)
+			return errors.Wrap(err, "unable to generate markdown")
 		}
 	default:
-		output.Failf("unknown doc type %q. Try 'markdown' or 'man'", flags.DocType)
+		return errors.Errorf("unknown doc type %q. Try 'markdown' or 'man'", flags.DocType)
 	}
+	return nil
 }
 
-func generateSinglePage(flags DocsFlags) {
+func generateSinglePage(flags DocsFlags) error {
 
 	files, err := ioutil.ReadDir(flags.Directory)
 	if err != nil {
-		output.Failf("unable to read files in directory: %v", err)
+		return errors.Wrap(err, "unable to read files in directory")
 	}
 
 	sort.Slice(files, func(i, j int) bool {
@@ -63,7 +67,7 @@ func generateSinglePage(flags DocsFlags) {
 	// Open a new file for writing only
 	file, err := os.OpenFile(filepath.Join(flags.Directory, singlePageMd), os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
 	if err != nil {
-		output.Failf("unable to open file: %v", err)
+		return errors.Wrap(err, "unable to open file")
 	}
 	defer file.Close()
 
@@ -82,19 +86,20 @@ func generateSinglePage(flags DocsFlags) {
 		content = removeFooter(content)
 
 		if err != nil {
-			output.Failf("unable to open file: %v", err)
+			return errors.Wrap(err, "unable to open file")
 		}
 
 		if _, err = file.WriteString(content); err != nil {
-			output.Failf("unable to write bytes: %v", err)
+			return errors.Wrap(err, "unable to write bytes")
 		}
 
 		if err := os.Remove(filename); err != nil {
-			output.Failf("unable to remove file: %v", err)
+			return errors.Wrap(err, "unable to remove file")
 		}
 	}
 
 	output.Infof("File written: %s", filepath.Join(flags.Directory, singlePageMd))
+	return nil
 }
 
 func adjustChapters(filename string, content string) string {

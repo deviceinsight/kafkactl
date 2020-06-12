@@ -1,0 +1,7 @@
+contexts:
+  localhost:
+    brokers:
+      - localhost:19092
+      - localhost:29092
+      - localhost:39092
+current-context: localhost

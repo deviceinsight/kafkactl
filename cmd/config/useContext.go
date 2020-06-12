@@ -2,37 +2,39 @@ package config
 
 import (
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/pkg/errors"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"strings"
 )
 
-var cmdUseContext = &cobra.Command{
-	Use:     "use-context",
-	Aliases: []string{"useContext"},
-	Short:   "switch active context",
-	Long:    `command to switch active context`,
-	Args:    cobra.MinimumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+func newUseContextCmd() *cobra.Command {
 
-		context := strings.Join(args, " ")
+	var cmdUseContext = &cobra.Command{
+		Use:     "use-context",
+		Aliases: []string{"useContext"},
+		Short:   "switch active context",
+		Long:    `command to switch active context`,
+		Args:    cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
 
-		contexts := viper.GetStringMap("contexts")
+			context := strings.Join(args, " ")
 
-		// check if it is an existing context
-		if _, ok := contexts[context]; !ok {
-			output.Failf("not a valid context:", context)
-		}
+			contexts := viper.GetStringMap("contexts")
 
-		viper.Set("current-context", context)
+			// check if it is an existing context
+			if _, ok := contexts[context]; !ok {
+				output.Fail(errors.Errorf("not a valid context: %s", context))
+			}
 
-		if err := viper.WriteConfig(); err != nil {
-			output.Failf("Unable to write config:", err)
-		}
-	},
-}
+			viper.Set("current-context", context)
 
-func init() {
+			if err := viper.WriteConfig(); err != nil {
+				output.Fail(errors.Wrap(err, "unable to write config"))
+			}
+		},
+	}
 
+	return cmdUseContext
 }
