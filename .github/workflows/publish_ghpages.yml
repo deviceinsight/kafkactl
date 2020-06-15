@@ -1,0 +1,28 @@
+name: Publish github pages
+on:
+  push:
+    tags:
+      - '*'
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+      -
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.14
+      -
+        name: Build and generate docs
+        run: make docs
+      -
+        name: Deploy
+        uses: JamesIves/github-pages-deploy-action@releases/v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages
+          FOLDER: .
