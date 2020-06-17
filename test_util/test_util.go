@@ -59,17 +59,26 @@ func init() {
 	}
 }
 
+func StartUnitTest(t *testing.T) {
+	startTest(t, "test.log")
+}
+
 func StartIntegrationTest(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
+
+	startTest(t, "integration-test.log")
+}
+
+func startTest(t *testing.T, logFilename string) {
 
 	rootDir, err := getRootDir()
 	if err != nil {
 		panic(err)
 	}
 
-	logFilename := filepath.Join(rootDir, "integration-test.log")
+	logFilename = filepath.Join(rootDir, logFilename)
 	logFile, err := os.OpenFile(logFilename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		panic(err)
@@ -116,7 +125,7 @@ type KafkaCtlTestCommand struct {
 func CreateKafkaCtlCommand() (kafkactl KafkaCtlTestCommand) {
 
 	if testIoStreams.Out == nil {
-		panic("cannot create CreateKafkaCtlCommand(). Did you call StartIntegrationTest()?")
+		panic("cannot create CreateKafkaCtlCommand(). Did you call StartUnitTest() or StartIntegrationTest()?")
 	}
 
 	return KafkaCtlTestCommand{Streams: testIoStreams, Root: cmd.NewKafkactlCommand(testIoStreams)}
