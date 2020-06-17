@@ -7,9 +7,8 @@ import (
 )
 
 func TestProduceWithKeyAndValueIntegration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
+
+	test_util.StartIntegrationTest(t)
 
 	topicName := test_util.CreateTopic(t, "produce-topic")
 
@@ -29,9 +28,8 @@ func TestProduceWithKeyAndValueIntegration(t *testing.T) {
 }
 
 func TestProduceMessageWithHeadersIntegration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
+
+	test_util.StartIntegrationTest(t)
 
 	topicName := test_util.CreateTopic(t, "produce-topic")
 
@@ -51,9 +49,8 @@ func TestProduceMessageWithHeadersIntegration(t *testing.T) {
 }
 
 func TestProduceAvroMessageWithHeadersIntegration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
+
+	test_util.StartIntegrationTest(t)
 
 	valueSchema := `{
   "name": "person",

@@ -11,6 +11,7 @@ import (
 )
 
 var DebugLogger StdLogger = log.New(ioutil.Discard, "[kafkactl] ", log.LstdFlags)
+var TestLogger StdLogger = log.New(ioutil.Discard, "[test    ] ", log.LstdFlags)
 
 // StdLogger is used to log error messages.
 type StdLogger interface {
@@ -38,6 +39,10 @@ func Statusf(msg string, args ...interface{}) {
 
 func Debugf(msg string, args ...interface{}) {
 	DebugLogger.Printf(msg+"\n", args...)
+}
+
+func TestLogf(msg string, args ...interface{}) {
+	TestLogger.Printf(msg+"\n", args...)
 }
 
 func PrintObject(object interface{}, format string) error {

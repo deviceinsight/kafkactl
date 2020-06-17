@@ -11,9 +11,8 @@ import (
 )
 
 func TestCreateTopicWithoutFlagsIntegration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
+
+	test_util.StartIntegrationTest(t)
 
 	kafkaCtl := test_util.CreateKafkaCtlCommand()
 
@@ -43,9 +42,8 @@ partitions:
 }
 
 func TestCreateTopicWithTwoPartitionsIntegration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
+
+	test_util.StartIntegrationTest(t)
 
 	kafkaCtl := test_util.CreateKafkaCtlCommand()
 
@@ -81,9 +79,8 @@ partitions:
 }
 
 func TestCreateTopicWithReplicationFactorIntegration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
+
+	test_util.StartIntegrationTest(t)
 
 	kafkaCtl := test_util.CreateKafkaCtlCommand()
 

@@ -2,10 +2,12 @@ package test_util
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/deviceinsight/kafkactl/cmd"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
+	"log"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -17,32 +19,73 @@ import (
 
 var random = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-func init() {
+var configFile = "it-config.yml"
 
-	configFile := "it-config.yml"
+var testIoStreams output.IOStreams
+
+func getRootDir() (string, error) {
 
 	path, err := os.Getwd()
 	if err != nil {
-		panic("unable to get working dir")
+		return "", errors.New("unable to get working dir")
 	}
 
 	_, err = os.Stat(filepath.Join(path, configFile))
 
 	for os.IsNotExist(err) {
 		if strings.HasSuffix(path, "kafkactl") {
-			panic("unable to find it-config.yml in root folder")
+			return "", errors.New("unable to find it-config.yml in root folder")
 		}
 		oldPath := path
 
 		if path = filepath.Dir(oldPath); path == oldPath {
-			panic("unable to find it-config.yml")
+			return "", errors.New("unable to find it-config.yml")
 		}
 		_, err = os.Stat(filepath.Join(path, configFile))
 	}
 
-	if err := os.Setenv("KAFKA_CTL_CONFIG", filepath.Join(path, configFile)); err != nil {
+	return path, err
+}
+
+func init() {
+
+	rootDir, err := getRootDir()
+	if err != nil {
 		panic(err)
 	}
+
+	if err := os.Setenv("KAFKA_CTL_CONFIG", filepath.Join(rootDir, configFile)); err != nil {
+		panic(err)
+	}
+}
+
+func StartIntegrationTest(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	rootDir, err := getRootDir()
+	if err != nil {
+		panic(err)
+	}
+
+	logFilename := filepath.Join(rootDir, "integration-test.log")
+	logFile, err := os.OpenFile(logFilename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	testIoStreams = output.NewTestIOStreams(logFile)
+	output.TestLogger = log.New(testIoStreams.DebugOut, "[test    ] ", log.LstdFlags)
+
+	output.TestLogf("---")
+	output.TestLogf("--- Starting: %s", t.Name())
+
+	t.Cleanup(func() {
+		output.TestLogf("---")
+		output.TestLogf("--- Finished: %s", t.Name())
+		_ = logFile.Close()
+	})
 }
 
 func AssertEquals(t *testing.T, expected, actual string) {
@@ -71,8 +114,12 @@ type KafkaCtlTestCommand struct {
 }
 
 func CreateKafkaCtlCommand() (kafkactl KafkaCtlTestCommand) {
-	streams := output.NewTestIOStreams()
-	return KafkaCtlTestCommand{Streams: streams, Root: cmd.NewKafkactlCommand(streams)}
+
+	if testIoStreams.Out == nil {
+		panic("cannot create CreateKafkaCtlCommand(). Did you call StartIntegrationTest()?")
+	}
+
+	return KafkaCtlTestCommand{Streams: testIoStreams, Root: cmd.NewKafkactlCommand(testIoStreams)}
 }
 
 func (kafkactl *KafkaCtlTestCommand) Execute(args ...string) (cmd *cobra.Command, err error) {
@@ -80,7 +127,7 @@ func (kafkactl *KafkaCtlTestCommand) Execute(args ...string) (cmd *cobra.Command
 	kafkactl.Streams.Out.(*bytes.Buffer).Reset()
 	kafkactl.Streams.ErrOut.(*bytes.Buffer).Reset()
 
-	kafkactl.Root.SetArgs(args)
+	kafkactl.Root.SetArgs(append(args, "-V"))
 
 	var specificErr error
 
@@ -89,6 +136,9 @@ func (kafkactl *KafkaCtlTestCommand) Execute(args ...string) (cmd *cobra.Command
 	}
 
 	command, generalErr := kafkactl.Root.ExecuteC()
+
+	output.TestLogf("executed: kafkactl %s", strings.Join(args, " "))
+	output.TestLogf("response: %s %s", kafkactl.GetStdOut(), kafkactl.GetStdErr())
 
 	if generalErr != nil {
 		return command, generalErr
