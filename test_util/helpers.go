@@ -84,4 +84,8 @@ func VerifyTopicExists(t *testing.T, topic string) {
 	if err != nil {
 		t.Fatalf("could not find topic %s: %v", topic, err)
 	}
+
+	// add a sleep here, so that the new topic is known by all
+	// brokers hopefully
+	time.Sleep(50 * time.Millisecond)
 }
