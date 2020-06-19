@@ -151,6 +151,22 @@ func (deserializer AvroMessageDeserializer) decode(rawData []byte, flags Consume
 	return decodedValue{schema: schema, schemaId: schemaId, value: &decoded}, nil
 }
 
+func (deserializer AvroMessageDeserializer) CanDeserialize(topic string) (bool, error) {
+	subjects, err := deserializer.client.Subjects()
+
+	if err != nil {
+		return false, errors.Wrap(err, "failed to list available avro schemas")
+	}
+
+	if util.ContainsString(subjects, topic+"-key") {
+		return true, nil
+	} else if util.ContainsString(subjects, topic+"-value") {
+		return true, nil
+	} else {
+		return false, nil
+	}
+}
+
 func (deserializer AvroMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerMessage, flags ConsumerFlags) error {
 
 	output.Debugf("start to deserialize avro message...")
@@ -166,12 +182,7 @@ func (deserializer AvroMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerM
 
 		if flags.PrintHeaders {
 			if msg.Headers != nil {
-				var column []string
-
-				for key, value := range msg.Headers {
-					column = append(column, key+":"+value)
-				}
-
+				column := toSortedArray(msg.Headers)
 				row = append(row, strings.Join(column[:], ","))
 			} else {
 				row = append(row, "")

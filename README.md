@@ -264,6 +264,11 @@ kafkactl produce my-topic --key=my-key --value=my-value --partitioner=random
 kafkactl produce my-topic --key=my-key --value=my-value --partitioner=random
 ```
 
+Message headers can also be written:
+```bash
+kafkactl produce my-topic --key=my-key --value=my-value --header key1:value1 --header key2:value\:2
+```
+
 ### Avro support
 
 In order to enable avro support you just have to add the schema registry to your configuration:

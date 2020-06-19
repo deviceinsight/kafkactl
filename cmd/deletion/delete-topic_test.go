@@ -14,9 +14,8 @@ import (
 )
 
 func TestDeleteSingleTopicIntegration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
+
+	test_util.StartIntegrationTest(t)
 
 	topicName := test_util.CreateTopic(t, "topic-to-be-deleted")
 
@@ -32,9 +31,8 @@ func TestDeleteSingleTopicIntegration(t *testing.T) {
 }
 
 func TestDeleteMultipleTopicsIntegration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
+
+	test_util.StartIntegrationTest(t)
 
 	topicName1 := test_util.CreateTopic(t, "topic-to-be-deleted")
 	topicName2 := test_util.CreateTopic(t, "topic-to-be-deleted")

@@ -74,7 +74,7 @@ services:
       - kafka2
       - kafka3
     ports:
-      - "8081:8081"
+      - "18081:8081"
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
@@ -87,7 +87,9 @@ services:
       - kafka1
       - kafka2
       - kafka3
-    command: bash -c 'cub kafka-ready -b kafka1:9092,kafka2:9092,kafka3:9092 3 60'
+    command: >
+      bash -c 'cub kafka-ready -b kafka1:9092,kafka2:9092,kafka3:9092 3 60
+      && cub sr-ready schema-registry 8081 60'
     environment:
       KAFKA_BROKER_ID: ignored
       KAFKA_ZOOKEEPER_CONNECT: ignored

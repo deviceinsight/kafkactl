@@ -73,15 +73,24 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) e
 		return errors.Wrap(err, "Failed to start consumer: ")
 	}
 
-	var deserializer MessageDeserializer
+	var deserializer MessageDeserializer = nil
 
 	if clientContext.AvroSchemaRegistry != "" {
-		output.Debugf("using AvroMessageDeserializer")
 		deserializer, err = CreateAvroMessageDeserializer(topic, clientContext.AvroSchemaRegistry)
 		if err != nil {
 			return err
 		}
-	} else {
+		if canDeserialize, err := deserializer.CanDeserialize(topic); err != nil {
+			return err
+		} else if !canDeserialize {
+			output.Debugf("no avro topic")
+			deserializer = nil
+		} else {
+			output.Debugf("using AvroMessageDeserializer")
+		}
+	}
+
+	if deserializer == nil {
 		output.Debugf("using DefaultMessageDeserializer")
 		deserializer = DefaultMessageDeserializer{}
 	}

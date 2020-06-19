@@ -631,6 +631,7 @@ kafkactl produce [flags]
 
 ```
   -f, --file string                file to read input from
+  -H, --header key:value           headers in format key:value
   -h, --help                       help for produce
   -k, --key string                 key to use for all messages
   -K, --key-schema-version int     avro schema version that should be used for key serialization (default is latest) (default -1)
