@@ -26,6 +26,7 @@ func NewProduceCmd() *cobra.Command {
 	cmdProduce.Flags().StringVarP(&flags.Key, "key", "k", "", "key to use for all messages")
 	cmdProduce.Flags().StringVarP(&flags.Value, "value", "v", "", "value to produce")
 	cmdProduce.Flags().StringVarP(&flags.File, "file", "f", "", "file to read input from")
+	cmdProduce.Flags().StringArrayVarP(&flags.Headers, "header", "H", flags.Headers, "headers in format `key:value`")
 	cmdProduce.Flags().StringVarP(&flags.Separator, "separator", "S", "", "separator to split key and value from stdin or file")
 	cmdProduce.Flags().StringVarP(&flags.LineSeparator, "lineSeparator", "L", "\n", "separator to split multiple messages from stdin or file")
 	cmdProduce.Flags().IntVarP(&flags.KeySchemaVersion, "key-schema-version", "K", -1, "avro schema version that should be used for key serialization (default is latest)")

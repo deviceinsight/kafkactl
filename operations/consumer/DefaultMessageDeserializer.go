@@ -49,6 +49,10 @@ func (deserializer DefaultMessageDeserializer) newDefaultMessage(msg *sarama.Con
 	}
 }
 
+func (deserializer DefaultMessageDeserializer) CanDeserialize(_ string) (bool, error) {
+	return true, nil
+}
+
 func (deserializer DefaultMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerMessage, flags ConsumerFlags) error {
 
 	msg := deserializer.newDefaultMessage(rawMsg, flags)
@@ -58,12 +62,7 @@ func (deserializer DefaultMessageDeserializer) Deserialize(rawMsg *sarama.Consum
 
 		if flags.PrintHeaders {
 			if msg.Headers != nil {
-				var column []string
-
-				for key, value := range msg.Headers {
-					column = append(column, key+":"+value)
-				}
-
+				column := toSortedArray(msg.Headers)
 				row = append(row, strings.Join(column[:], ","))
 			} else {
 				row = append(row, "")

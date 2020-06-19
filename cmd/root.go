@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/cmd/alter"
 	"github.com/deviceinsight/kafkactl/cmd/config"
 	"github.com/deviceinsight/kafkactl/cmd/consume"
@@ -16,7 +15,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -76,8 +74,7 @@ func initConfig() {
 	}
 
 	if Verbose {
-		sarama.Logger = log.New(os.Stderr, "[sarama  ] ", log.LstdFlags)
-		output.DebugLogger = log.New(os.Stderr, "[kafkactl] ", log.LstdFlags)
+		output.IoStreams.EnableDebug()
 	}
 
 	viper.SetConfigType("yml")

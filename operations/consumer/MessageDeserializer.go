@@ -4,9 +4,11 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"github.com/Shopify/sarama"
+	"sort"
 )
 
 type MessageDeserializer interface {
+	CanDeserialize(topic string) (bool, error)
 	Deserialize(msg *sarama.ConsumerMessage, flags ConsumerFlags) error
 }
 
@@ -47,4 +49,20 @@ func encodeRecordHeaders(headers []*sarama.RecordHeader) map[string]string {
 	}
 
 	return data
+}
+
+func toSortedArray(headers map[string]string) []string {
+
+	var column []string
+
+	keys := make([]string, 0, len(headers))
+	for k := range headers {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		column = append(column, key+":"+headers[key])
+	}
+	return column
 }

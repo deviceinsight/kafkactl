@@ -27,6 +27,11 @@ jobs:
           go-version: 1.14
       - name: Run Unit tests
         run: make test
+      - name: Upload logs
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-logs
+          path: test.log
 
   integration_test:
     name: Integration Test
@@ -44,3 +49,8 @@ jobs:
           go-version: 1.14
       - name: Run integration tests
         run: make integration_test
+      - name: Upload logs
+        uses: actions/upload-artifact@v2
+        with:
+          name: it-logs
+          path: integration-test.log

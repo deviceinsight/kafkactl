@@ -84,9 +84,30 @@ func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int
 	return append(versionBytes, data...), nil
 }
 
+func (serializer AvroMessageSerializer) CanSerialize(topic string) (bool, error) {
+
+	subjects, err := serializer.client.Subjects()
+
+	if err != nil {
+		return false, errors.Wrap(err, "failed to list available avro schemas")
+	}
+
+	if util.ContainsString(subjects, topic+"-key") {
+		return true, nil
+	} else if util.ContainsString(subjects, topic+"-value") {
+		return true, nil
+	} else {
+		return false, nil
+	}
+}
+
 func (serializer AvroMessageSerializer) Serialize(key, value []byte, flags ProducerFlags) (*sarama.ProducerMessage, error) {
 
-	message := &sarama.ProducerMessage{Topic: serializer.topic, Partition: flags.Partition}
+	recordHeaders, err := createRecordHeaders(flags)
+	if err != nil {
+		return nil, err
+	}
+	message := &sarama.ProducerMessage{Topic: serializer.topic, Partition: flags.Partition, Headers: recordHeaders}
 
 	if key != nil {
 		bytes, err := serializer.encode(key, flags.KeySchemaVersion, "key")
