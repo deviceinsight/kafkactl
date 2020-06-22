@@ -40,6 +40,14 @@ brew upgrade deviceinsight/packages/kafkactl
 
 Download the .deb or .rpm from the [releases page](https://github.com/deviceinsight/kafkactl/releases) and install with dpkg -i and rpm -i respectively.
 
+**yay (AUR)**
+
+There's a kafkactl [AUR package](https://aur.archlinux.org/packages/kafkactl/) available for Arch. Install it with your AUR helper of choice (e.g. [yay](https://github.com/Jguer/yay)):
+
+```bash
+yay -S kafkactl
+```
+
 **manually**:
 
 Download the pre-compiled binaries from the [releases page](https://github.com/deviceinsight/kafkactl/releases) and copy to the desired location.
