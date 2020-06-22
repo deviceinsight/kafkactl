@@ -2,7 +2,7 @@ name: Publish github pages
 on:
   push:
     tags:
-      - '*'
+      - v*
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest

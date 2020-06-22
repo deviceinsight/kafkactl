@@ -3,7 +3,7 @@ name: goreleaser
 on:
   push:
     tags:
-      - '*'
+      - v*
 
 jobs:
   goreleaser:
@@ -38,3 +38,11 @@ jobs:
         env:
           # create personal access token: https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+      -
+        name: Publish AUR package
+        uses: guumaster/aur-publish-docker-action@v1
+        with:
+          package_name: kafkactl
+          commit_username: 'github-action-bot'
+          commit_email: github-action-bot@device-insight.com
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
