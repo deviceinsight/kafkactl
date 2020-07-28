@@ -2,6 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/deviceinsight/kafkactl/cmd/alter"
 	"github.com/deviceinsight/kafkactl/cmd/config"
 	"github.com/deviceinsight/kafkactl/cmd/consume"
@@ -15,9 +19,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 var cfgFile string
@@ -128,13 +129,24 @@ func generateDefaultConfig() error {
 contexts:
   localhost:
     brokers:
-    - localhost:9092
-current-context: localhost`
+    - localhost:9092`
 
 	if os.Getenv("BROKER") != "" {
 		// this is useful for running in docker
 		defaultConfigContent = strings.Replace(defaultConfigContent, "localhost:9092", os.Getenv("BROKER"), -1)
 	}
+
+	if os.Getenv("TLS") == "true" {
+		defaultConfigContent = defaultConfigContent + `
+    tls:
+      enabled: true`
+		if os.Getenv("TLS_ALLOW_INSECURE") == "true" {
+			defaultConfigContent = defaultConfigContent + `
+      insecure: true`
+		}
+	}
+
+	defaultConfigContent = defaultConfigContent + "\ncurrent-context: localhost"
 
 	_, err = f.WriteString(defaultConfigContent)
 
