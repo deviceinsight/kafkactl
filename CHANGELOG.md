@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- improved and documented overriding config keys via environment variables
+
 ## 1.9.0 - 2020-06-19
 
 ### Added
