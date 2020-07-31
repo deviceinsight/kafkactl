@@ -125,39 +125,42 @@ The config file location is resolved by
 
 #### bash
 
-In order to get auto completion add it in startup script of the shell:
+**NOTE:** if you installed via snap, bash completion should work automatically.
 
-- for `bash` add the following to `~/.bashrc`:
-```bash
-# kafkactl autocomplete
+```
 source <(kafkactl completion bash)
+```
+
+To load completions for each session, execute once:
+Linux:
+```
+kafkactl completion bash > /etc/bash_completion.d/kafkactl
+```
+ 
+MacOS:
+```
+kafkactl completion bash > /usr/local/etc/bash_completion.d/kafkactl
 ```
 
 #### zsh
 
-Create file with completions:
-
-```bash
-mkdir ~/.zsh-completions
-kafkactl completion zsh > ~/.zsh-completions/_kafkactl
+```
+source <(kafkactl completion zsh)
 ```
 
-To auto-load completion on zsh startup, edit `~/.zshrc`:
-```bash
-# folder of all of your autocomplete functions
-fpath=($HOME/.zsh-completions $fpath)
-
-# enable autocomplete function
-autoload -U compinit
-compinit
+To load completions for each session, execute once:
+```
+kafkactl completion zsh > "${fpath[1]}/_kafkactl"
 ```
 
-#### fish
+#### Fish
 
-Create file with completions:
+```
+kafkactl completion fish | source
+```
 
-```bash
-mkdir ~/.config/fish/completions
+To load completions for each session, execute once:
+```
 kafkactl completion fish > ~/.config/fish/completions/kafkactl.fish
 ```
 
