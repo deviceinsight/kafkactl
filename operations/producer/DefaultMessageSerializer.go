@@ -21,10 +21,10 @@ func (serializer DefaultMessageSerializer) Serialize(key, value []byte, flags Pr
 	message := &sarama.ProducerMessage{Topic: serializer.topic, Partition: flags.Partition, Headers: recordHeaders}
 
 	if key != nil {
-		message.Key = sarama.ByteEncoder(key)
+		message.Key = sarama.ByteEncoder(decodeBytes(key, flags.KeyEncoding))
 	}
 
-	message.Value = sarama.ByteEncoder(value)
+	message.Value = sarama.ByteEncoder(decodeBytes(value, flags.ValueEncoding))
 
 	return message, nil
 }
