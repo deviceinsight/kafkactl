@@ -231,6 +231,11 @@ The consumer can be stopped when the latest offset is reached using `--exit` par
 kafkactl consume my-topic --from-beginning --exit
 ```
 
+The following example prints keys in hex and values in base64:
+```bash
+kafkactl consume my-topic --print-keys --key-encoding=hex --value-encoding=base64
+```
+
 ### Producing messages
 
 Producing messages can be done in multiple ways. If we want to produce a message with `key='my-key'`,
@@ -290,6 +295,11 @@ kafkactl produce my-topic --key=my-key --value=my-value --partitioner=random
 Message headers can also be written:
 ```bash
 kafkactl produce my-topic --key=my-key --value=my-value --header key1:value1 --header key2:value\:2
+```
+
+The following example writes the key from base64 and value from hex:
+```bash
+kafkactl produce my-topic --key=dGVzdC1rZXk= --key-encoding=base64 --value=0000000000000000 --value-encoding=hex
 ```
 
 ### Avro support
