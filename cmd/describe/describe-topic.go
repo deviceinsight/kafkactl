@@ -6,9 +6,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var flags operations.DescribeTopicFlags
-
 func newDescribeTopicCmd() *cobra.Command {
+
+	var flags operations.DescribeTopicFlags
 
 	var cmdDescribeTopic = &cobra.Command{
 		Use:   "topic TOPIC",

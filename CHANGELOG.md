@@ -6,8 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add parameters `--key-encoding`, `--value-encoding` to produce command to write messages from hex/base64
+- Add parameters `--key-encoding`, `--value-encoding` to consume command to print messages as hex/base64
+
 ### Changed
 - improved and documented overriding config keys via environment variables
+- Binary (non-string) messages are auto-detected and printed as base64 by default
 
 ## 1.9.0 - 2020-06-19
 

@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"github.com/Shopify/sarama"
 	"sort"
+	"unicode/utf8"
 )
 
 type MessageDeserializer interface {
@@ -12,18 +13,33 @@ type MessageDeserializer interface {
 	Deserialize(msg *sarama.ConsumerMessage, flags ConsumerFlags) error
 }
 
+const (
+	HEX    = "hex"
+	BASE64 = "base64"
+	NONE   = "none"
+)
+
 func encodeBytes(data []byte, encoding string) *string {
 	if data == nil {
 		return nil
 	}
 
+	if encoding != HEX && encoding != BASE64 && encoding != NONE {
+		// Auto-detect encoding if no parameter is set
+		if !utf8.Valid(data) {
+			encoding = BASE64
+		} else {
+			encoding = NONE
+		}
+	}
+
 	var str string
 	switch encoding {
-	case "hex":
+	case HEX:
 		str = hex.EncodeToString(data)
-	case "base64":
+	case BASE64:
 		str = base64.StdEncoding.EncodeToString(data)
-	default:
+	case NONE:
 		str = string(data)
 	}
 

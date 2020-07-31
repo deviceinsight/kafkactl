@@ -6,9 +6,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var offsetFlags consumergroupoffsets.ResetConsumerGroupOffsetFlags
-
 func newResetOffsetCmd() *cobra.Command {
+
+	var offsetFlags consumergroupoffsets.ResetConsumerGroupOffsetFlags
 
 	var cmdResetOffset = &cobra.Command{
 		Use:     "consumer-group-offset GROUP",
