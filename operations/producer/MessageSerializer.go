@@ -53,26 +53,28 @@ func createRecordHeaders(flags ProducerFlags) ([]sarama.RecordHeader, error) {
 	return recordHeaders, nil
 }
 
-func decodeBytes(data []byte, encoding string) []byte {
+func decodeBytes(data []byte, encoding string) ([]byte, error) {
 	if data == nil {
-		return nil
+		return nil, nil
 	}
 
 	var out []byte
 	switch encoding {
 	case HEX:
 		out = make([]byte, hex.DecodedLen(len(data)))
-		hex.Decode(out, data)
-		return out
+		if _, err := hex.Decode(out, data); err != nil {
+			return nil, err
+		}
+		return out, nil
 	case BASE64:
 		out = make([]byte, base64.StdEncoding.DecodedLen(len(data)))
-		base64.StdEncoding.Decode(out, data)
-		return out[:clen(out)]
+		if _, err := base64.StdEncoding.Decode(out, data); err != nil {
+			return nil, err
+		}
+		return out[:clen(out)], nil
 	default:
-		return data
+		return data, nil
 	}
-
-	return nil
 }
 
 // https://stackoverflow.com/a/27834860/12143351
