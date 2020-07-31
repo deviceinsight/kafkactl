@@ -7,9 +7,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var flags operations.AlterTopicFlags
-
 func newAlterTopicCmd() *cobra.Command {
+
+	var flags operations.AlterTopicFlags
 
 	var cmdAlterTopic = &cobra.Command{
 		Use:   "topic",

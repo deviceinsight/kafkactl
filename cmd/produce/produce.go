@@ -6,9 +6,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var flags producer.ProducerFlags
-
 func NewProduceCmd() *cobra.Command {
+
+	var flags producer.ProducerFlags
 
 	var cmdProduce = &cobra.Command{
 		Use:   "produce",

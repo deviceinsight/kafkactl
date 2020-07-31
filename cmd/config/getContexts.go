@@ -7,9 +7,9 @@ import (
 	"github.com/spf13/viper"
 )
 
-var outputFormat string
-
 func newGetContextsCmd() *cobra.Command {
+
+	var outputFormat string
 
 	var cmdGetContexts = &cobra.Command{
 		Use:     "get-contexts",

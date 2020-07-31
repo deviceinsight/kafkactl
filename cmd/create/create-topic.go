@@ -6,9 +6,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var flags operations.CreateTopicFlags
-
 func newCreateTopicCmd() *cobra.Command {
+
+	var flags operations.CreateTopicFlags
+
 	var cmdCreateTopic = &cobra.Command{
 		Use:   "topic",
 		Short: "create a topic",

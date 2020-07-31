@@ -6,9 +6,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var flags consumer.ConsumerFlags
-
 func NewConsumeCmd() *cobra.Command {
+
+	var flags consumer.ConsumerFlags
 
 	var cmdConsume = &cobra.Command{
 		Use:   "consume TOPIC",
