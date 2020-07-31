@@ -1,6 +1,7 @@
 package describe
 
 import (
+	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/operations/consumergroups"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
@@ -14,11 +15,14 @@ func newDescribeConsumerGroupCmd() *cobra.Command {
 		Use:     "consumer-group GROUP",
 		Aliases: []string{"cg"},
 		Short:   "describe a consumerGroup",
-		Args:    cobra.MinimumNArgs(1),
+		Args:    cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := (&consumergroups.ConsumerGroupOperation{}).DescribeConsumerGroup(flags, args[0]); err != nil {
 				output.Fail(err)
 			}
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			return consumergroups.CompleteConsumerGroupsFiltered(consumerGroupFlags)
 		},
 	}
 
@@ -27,6 +31,12 @@ func newDescribeConsumerGroupCmd() *cobra.Command {
 	cmdDescribeConsumerGroup.Flags().StringVarP(&flags.OutputFormat, "output", "o", flags.OutputFormat, "output format. One of: json|yaml|wide")
 	cmdDescribeConsumerGroup.Flags().BoolVarP(&flags.PrintTopics, "print-topics", "T", true, "print topic details")
 	cmdDescribeConsumerGroup.Flags().BoolVarP(&flags.PrintMembers, "print-members", "m", true, "print group members")
+
+	if err := cmdDescribeConsumerGroup.RegisterFlagCompletionFunc("topic", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return operations.CompleteTopicNames(cmd, args, toComplete)
+	}); err != nil {
+		panic(err)
+	}
 
 	return cmdDescribeConsumerGroup
 }

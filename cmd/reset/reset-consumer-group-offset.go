@@ -2,6 +2,7 @@ package reset
 
 import (
 	"github.com/deviceinsight/kafkactl/operations/consumergroupoffsets"
+	"github.com/deviceinsight/kafkactl/operations/consumergroups"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
@@ -20,6 +21,7 @@ func newResetOffsetCmd() *cobra.Command {
 				output.Fail(err)
 			}
 		},
+		ValidArgsFunction: consumergroups.CompleteConsumerGroups,
 	}
 
 	cmdResetOffset.Flags().BoolVarP(&offsetFlags.OldestOffset, "oldest", "", false, "set the offset to oldest offset (for all partitions or the specified partition)")

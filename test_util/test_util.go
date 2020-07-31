@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/deviceinsight/kafkactl/cmd"
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/util"
 	"github.com/spf13/cobra"
 	"log"
 	"math/rand"
@@ -104,7 +105,19 @@ func AssertEquals(t *testing.T, expected, actual string) {
 	}
 }
 
-func GetTopicName(prefix string) string {
+func AssertContains(t *testing.T, expected string, array []string) {
+	if !util.ContainsString(array, expected) {
+		t.Fatalf("expected array to contain: %s\narray: %v", expected, array)
+	}
+}
+
+func AssertContainsNot(t *testing.T, unexpected string, array []string) {
+	if util.ContainsString(array, unexpected) {
+		t.Fatalf("expected array to NOT contain: %s\narray: %v", unexpected, array)
+	}
+}
+
+func GetPrefixedName(prefix string) string {
 	return fmt.Sprintf("%s-%d", prefix, random.Intn(100000))
 }
 
@@ -120,6 +133,7 @@ func WithoutBrokerReferences(output string) string {
 type KafkaCtlTestCommand struct {
 	Streams output.IOStreams
 	Root    *cobra.Command
+	Verbose bool
 }
 
 func CreateKafkaCtlCommand() (kafkactl KafkaCtlTestCommand) {
@@ -128,7 +142,7 @@ func CreateKafkaCtlCommand() (kafkactl KafkaCtlTestCommand) {
 		panic("cannot create CreateKafkaCtlCommand(). Did you call StartUnitTest() or StartIntegrationTest()?")
 	}
 
-	return KafkaCtlTestCommand{Streams: testIoStreams, Root: cmd.NewKafkactlCommand(testIoStreams)}
+	return KafkaCtlTestCommand{Streams: testIoStreams, Root: cmd.NewKafkactlCommand(testIoStreams), Verbose: false}
 }
 
 func (kafkactl *KafkaCtlTestCommand) Execute(args ...string) (cmd *cobra.Command, err error) {
@@ -136,7 +150,11 @@ func (kafkactl *KafkaCtlTestCommand) Execute(args ...string) (cmd *cobra.Command
 	kafkactl.Streams.Out.(*bytes.Buffer).Reset()
 	kafkactl.Streams.ErrOut.(*bytes.Buffer).Reset()
 
-	kafkactl.Root.SetArgs(append(args, "-V"))
+	if kafkactl.Verbose {
+		args = append(args, "-V")
+	}
+
+	kafkactl.Root.SetArgs(args)
 
 	var specificErr error
 

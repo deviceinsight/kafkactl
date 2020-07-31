@@ -1,6 +1,7 @@
 package consume
 
 import (
+	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/operations/consumer"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
@@ -19,6 +20,7 @@ func NewConsumeCmd() *cobra.Command {
 				output.Fail(err)
 			}
 		},
+		ValidArgsFunction: operations.CompleteTopicNames,
 	}
 
 	cmdConsume.Flags().BoolVarP(&flags.PrintKeys, "print-keys", "k", false, "print message keys")

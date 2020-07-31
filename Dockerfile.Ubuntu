@@ -1,0 +1,24 @@
+FROM ubuntu:latest
+ENV USER docker
+ENV BROKER localhost:9092
+COPY kafkactl /usr/local/bin
+RUN apt-get update && apt-get install -y bash-completion
+
+# install bash completion script
+RUN mkdir /etc/bash_completion.d
+RUN kafkactl completion bash > /etc/bash_completion.d/kafkactl
+
+# Create an app user so our program doesn't run as root.
+RUN mkdir -p /home/kafkactl
+RUN groupadd -r kafkactl
+RUN useradd -r -g kafkactl -d /home/kafkactl -s /sbin/nologin -c "Docker image user" kafkactl
+
+# make sure completion is loaded
+RUN echo "source /etc/bash_completion" > /home/kafkactl/.bashrc
+RUN echo "source /etc/bash_completion.d/kafkactl " >> /home/kafkactl/.bashrc
+
+WORKDIR /home/kafkactl
+RUN chown -R kafkactl:kafkactl /home/kafkactl
+
+USER kafkactl
+ENTRYPOINT ["kafkactl"]

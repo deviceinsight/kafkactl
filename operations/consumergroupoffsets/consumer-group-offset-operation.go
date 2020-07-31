@@ -11,13 +11,14 @@ import (
 )
 
 type ResetConsumerGroupOffsetFlags struct {
-	Topic        string
-	Partition    int32
-	Offset       int64
-	OldestOffset bool
-	NewestOffset bool
-	Execute      bool
-	OutputFormat string
+	Topic             string
+	Partition         int32
+	Offset            int64
+	OldestOffset      bool
+	NewestOffset      bool
+	Execute           bool
+	OutputFormat      string
+	allowedGroupState string
 }
 
 type partitionOffsets struct {
@@ -72,6 +73,12 @@ func (operation *ConsumerGroupOffsetOperation) ResetConsumerGroupOffset(flags Re
 		return errors.Errorf("topic does not exist: %s", flags.Topic)
 	}
 
+	if flags.allowedGroupState == "" {
+		// a reset is only allowed if group is empty (no one in the group)
+		// for creation of the group state "Dead" is allowed
+		flags.allowedGroupState = "Empty"
+	}
+
 	if flags.Execute {
 		if descriptions, err = admin.DescribeConsumerGroups([]string{groupName}); err != nil {
 			return errors.Wrap(err, "failed to describe consumer group")
@@ -79,7 +86,7 @@ func (operation *ConsumerGroupOffsetOperation) ResetConsumerGroupOffset(flags Re
 
 		for _, description := range descriptions {
 			// https://stackoverflow.com/a/61745884/1115279
-			if description.State != "Empty" {
+			if description.State != flags.allowedGroupState {
 				return errors.Errorf("cannot reset offsets on consumer group %s. There are consumers assigned (state: %s)", groupName, description.State)
 			}
 		}
@@ -113,6 +120,20 @@ func (operation *ConsumerGroupOffsetOperation) ResetConsumerGroupOffset(flags Re
 		return err
 	}
 	return nil
+}
+
+func (operation *ConsumerGroupOffsetOperation) CreateConsumerGroup(flags ResetConsumerGroupOffsetFlags, group string) error {
+
+	flags.allowedGroupState = "Dead"
+	flags.Execute = true
+	flags.OutputFormat = "none"
+
+	if err := operation.ResetConsumerGroupOffset(flags, group); err != nil {
+		return err
+	} else {
+		output.Infof("consumer-group created: %s", group)
+		return nil
+	}
 }
 
 type Consumer struct {
@@ -179,8 +200,8 @@ func (consumer *Consumer) Setup(session sarama.ConsumerGroupSession) error {
 		}
 		for _, o := range offsets {
 			if err := tableWriter.Write(strconv.FormatInt(int64(o.Partition), 10),
-				strconv.FormatInt(int64(o.OldestOffset), 10), strconv.FormatInt(int64(o.NewestOffset), 10),
-				strconv.FormatInt(int64(o.CurrentOffset), 10), strconv.FormatInt(int64(o.TargetOffset), 10)); err != nil {
+				strconv.FormatInt(o.OldestOffset, 10), strconv.FormatInt(o.NewestOffset, 10),
+				strconv.FormatInt(o.CurrentOffset, 10), strconv.FormatInt(o.TargetOffset, 10)); err != nil {
 				return err
 			}
 		}

@@ -16,7 +16,7 @@ import (
 func CreateTopic(t *testing.T, topicPrefix string, flags ...string) string {
 
 	kafkaCtl := CreateKafkaCtlCommand()
-	topicName := GetTopicName(topicPrefix)
+	topicName := GetPrefixedName(topicPrefix)
 
 	createTopicWithFlags := append([]string{"create", "topic", topicName}, flags...)
 
@@ -86,6 +86,58 @@ func VerifyTopicExists(t *testing.T, topic string) {
 	}
 
 	// add a sleep here, so that the new topic is known by all
+	// brokers hopefully
+	time.Sleep(50 * time.Millisecond)
+}
+
+func CreateConsumerGroup(t *testing.T, topic string, groupPrefix string) string {
+
+	kafkaCtl := CreateKafkaCtlCommand()
+	groupName := GetPrefixedName(groupPrefix)
+
+	createCgo := []string{"create", "consumer-group", groupName, "--topic", topic, "--newest"}
+
+	if _, err := kafkaCtl.Execute(createCgo...); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	AssertEquals(t, fmt.Sprintf("consumer-group created: %s", groupName), kafkaCtl.GetStdOut())
+
+	VerifyGroupExists(t, groupName)
+
+	return groupName
+}
+
+func VerifyGroupExists(t *testing.T, group string) {
+
+	kafkaCtl := CreateKafkaCtlCommand()
+
+	findTopic := func(attempt uint) error {
+		_, err := kafkaCtl.Execute("get", "cg", "-o", "compact")
+
+		if err != nil {
+			return err
+		} else {
+			groups := strings.SplitN(kafkaCtl.GetStdOut(), "\n", -1)
+			if util.ContainsString(groups, group) {
+				return nil
+			} else {
+				return errors.New("group not in list")
+			}
+		}
+	}
+
+	err := retry.Retry(
+		findTopic,
+		strategy.Limit(5),
+		strategy.Backoff(backoff.Linear(10*time.Millisecond)),
+	)
+
+	if err != nil {
+		t.Fatalf("could not find group %s: %v", group, err)
+	}
+
+	// add a sleep here, so that the new group is known by all
 	// brokers hopefully
 	time.Sleep(50 * time.Millisecond)
 }

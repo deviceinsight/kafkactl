@@ -6,9 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- auto-completion should now work consistent for all supported shells and provides dynamic completion for
+ e.g. names of topics or consumer-groups. 
+
 ### Added
 - Add parameters `--key-encoding`, `--value-encoding` to produce command to write messages from hex/base64
 - Add parameters `--key-encoding`, `--value-encoding` to consume command to print messages as hex/base64
+- auto-completion now also works inside ubuntu docker image
+- bash auto-completion should work out of the box, when kafkactl is installed via snap 
 
 ### Changed
 - improved and documented overriding config keys via environment variables

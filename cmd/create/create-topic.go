@@ -11,7 +11,7 @@ func newCreateTopicCmd() *cobra.Command {
 	var flags operations.CreateTopicFlags
 
 	var cmdCreateTopic = &cobra.Command{
-		Use:   "topic",
+		Use:   "topic TOPIC",
 		Short: "create a topic",
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
