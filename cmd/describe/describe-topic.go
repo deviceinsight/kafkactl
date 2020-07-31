@@ -19,6 +19,7 @@ func newDescribeTopicCmd() *cobra.Command {
 				output.Fail(err)
 			}
 		},
+		ValidArgsFunction: operations.CompleteTopicNames,
 	}
 
 	cmdDescribeTopic.Flags().StringVarP(&flags.OutputFormat, "output", "o", flags.OutputFormat, "output format. One of: json|yaml|wide")

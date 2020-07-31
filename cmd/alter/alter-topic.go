@@ -12,9 +12,9 @@ func newAlterTopicCmd() *cobra.Command {
 	var flags operations.AlterTopicFlags
 
 	var cmdAlterTopic = &cobra.Command{
-		Use:   "topic",
+		Use:   "topic TOPIC",
 		Short: "alter a topic",
-		Args:  cobra.MinimumNArgs(1),
+		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := (&operations.TopicOperation{}).AlterTopic(args[0], flags); err != nil {
 				output.Fail(err)
@@ -23,6 +23,7 @@ func newAlterTopicCmd() *cobra.Command {
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return validation.ValidateAtLeastOneRequiredFlag(cmd)
 		},
+		ValidArgsFunction: operations.CompleteTopicNames,
 	}
 
 	cmdAlterTopic.Flags().Int32VarP(&flags.Partitions, "partitions", "p", flags.Partitions, "number of partitions")

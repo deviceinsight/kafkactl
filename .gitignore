@@ -18,3 +18,4 @@ snap.login
 
 ### logs
 *.log
+/kafkactl-completion.bash

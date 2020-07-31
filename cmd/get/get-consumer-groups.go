@@ -1,6 +1,7 @@
 package get
 
 import (
+	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/operations/consumergroups"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
@@ -24,6 +25,12 @@ func newGetConsumerGroupsCmd() *cobra.Command {
 
 	cmdGetConsumerGroups.Flags().StringVarP(&flags.OutputFormat, "output", "o", flags.OutputFormat, "output format. One of: json|yaml|wide|compact")
 	cmdGetConsumerGroups.Flags().StringVarP(&flags.FilterTopic, "topic", "t", "", "show groups for given topic only")
+
+	if err := cmdGetConsumerGroups.RegisterFlagCompletionFunc("topic", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return operations.CompleteTopicNames(cmd, args, toComplete)
+	}); err != nil {
+		panic(err)
+	}
 
 	return cmdGetConsumerGroups
 }

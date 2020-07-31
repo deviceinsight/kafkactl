@@ -16,7 +16,7 @@ func TestCreateTopicWithoutFlagsIntegration(t *testing.T) {
 
 	kafkaCtl := test_util.CreateKafkaCtlCommand()
 
-	topicName := test_util.GetTopicName("new-topic")
+	topicName := test_util.GetPrefixedName("new-topic")
 
 	if _, err := kafkaCtl.Execute("create", "topic", topicName); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
@@ -47,7 +47,7 @@ func TestCreateTopicWithTwoPartitionsIntegration(t *testing.T) {
 
 	kafkaCtl := test_util.CreateKafkaCtlCommand()
 
-	topicName := test_util.GetTopicName("new-topic")
+	topicName := test_util.GetPrefixedName("new-topic")
 
 	if _, err := kafkaCtl.Execute("create", "topic", topicName, "--partitions", "2"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
@@ -84,7 +84,7 @@ func TestCreateTopicWithReplicationFactorIntegration(t *testing.T) {
 
 	kafkaCtl := test_util.CreateKafkaCtlCommand()
 
-	topicName := test_util.GetTopicName("new-topic")
+	topicName := test_util.GetPrefixedName("new-topic")
 
 	if _, err := kafkaCtl.Execute("create", "topic", topicName, "-r", "3"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)

@@ -44,10 +44,9 @@ var configPaths = []string{"$HOME/.config/kafkactl", "$HOME/.kafkactl", "$SNAP_D
 func NewKafkactlCommand(streams output.IOStreams) *cobra.Command {
 
 	var rootCmd = &cobra.Command{
-		Use:                    "kafkactl",
-		BashCompletionFunction: bashCompletionFunc,
-		Short:                  "command-line interface for Apache Kafka",
-		Long:                   `A command-line interface the simplifies interaction with Kafka.`,
+		Use:   "kafkactl",
+		Short: "command-line interface for Apache Kafka",
+		Long:  `A command-line interface the simplifies interaction with Kafka.`,
 	}
 
 	cobra.OnInitialize(initConfig)
