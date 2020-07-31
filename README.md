@@ -71,7 +71,7 @@ Create `$HOME/.config/kafkactl/config.yml` with a definition of contexts that sh
 
 ```yaml
 contexts:
-  localhost:
+  default:
     brokers:
     - localhost:9092
   remote-cluster:
@@ -109,7 +109,7 @@ contexts:
     defaultPartitioner: "hash"
 
 
-current-context: localhost
+current-context: default
 ```
 
 The config file location is resolved by
@@ -166,7 +166,7 @@ kafkactl completion fish > ~/.config/fish/completions/kafkactl.fish
 Assuming your Kafka broker is accessible as `kafka:9092`, you can list topics by running: 
 
 ```bash
-docker run --env BROKER=kafka:9092 deviceinsight/kafkactl:latest get topics
+docker run --env BROKERS=kafka:9092 deviceinsight/kafkactl:latest get topics
 ```
 
 If a more elaborate config is needed, you can mount it as a volume:
@@ -174,6 +174,21 @@ If a more elaborate config is needed, you can mount it as a volume:
 ```bash
 docker run -v /absolute/path/to/config.yml:/etc/kafkactl/config.yml deviceinsight/kafkactl get topics
 ``` 
+
+## Configuration via environment variables
+
+Every key in the `config.yml` can be overwritten via environment variables. The corresponding environment variable
+for a key can be found by applying the following rules:
+
+1. replace `.` by `_`
+1. replace `-` by `_`
+1. write the key name in ALL CAPS
+
+e.g. the key `contexts.default.tls.certKey` has the corresponding environment variable `CONTEXTS_DEFAULT_TLS_CERTKEY`.
+
+If environment variables for the `default` context should be set, the prefix `CONTEXTS_DEFAULT_` can be omitted.
+So, instead of `CONTEXTS_DEFAULT_TLS_CERTKEY` one can also set `TLS_CERTKEY`.
+See **root_test.go** for more examples.
 
 ## Command documentation
 

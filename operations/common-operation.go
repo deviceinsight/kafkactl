@@ -47,6 +47,10 @@ func CreateClientContext() (ClientContext, error) {
 
 	context.Name = viper.GetString("current-context")
 
+	if viper.Get("contexts."+context.Name) == nil {
+		return context, errors.Errorf("no context with name %s found", context.Name)
+	}
+
 	if viper.GetString("contexts."+context.Name+".tlsCA") != "" ||
 		viper.GetString("contexts."+context.Name+".tlsCert") != "" ||
 		viper.GetString("contexts."+context.Name+".tlsCertKey") != "" ||
