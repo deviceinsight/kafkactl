@@ -142,7 +142,7 @@ func CreateKafkaCtlCommand() (kafkactl KafkaCtlTestCommand) {
 		panic("cannot create CreateKafkaCtlCommand(). Did you call StartUnitTest() or StartIntegrationTest()?")
 	}
 
-	return KafkaCtlTestCommand{Streams: testIoStreams, Root: cmd.NewKafkactlCommand(testIoStreams), Verbose: false}
+	return KafkaCtlTestCommand{Streams: testIoStreams, Root: cmd.NewKafkactlCommand(testIoStreams), Verbose: true}
 }
 
 func (kafkactl *KafkaCtlTestCommand) Execute(args ...string) (cmd *cobra.Command, err error) {

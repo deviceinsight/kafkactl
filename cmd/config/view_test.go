@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"github.com/deviceinsight/kafkactl/output"
 	"github.com/deviceinsight/kafkactl/test_util"
 	"io/ioutil"
 	"os"
@@ -19,6 +20,11 @@ func TestViewConfigWithEnvVariablesInGeneratedConfigSet(t *testing.T) {
 	}
 
 	newConfigFile := path.Join(currentDir, "non-existing-config.yml")
+	defer func() {
+		if err = os.Remove(newConfigFile); err != nil {
+			output.TestLogf("unable to delete file %s: %v", newConfigFile, err)
+		}
+	}()
 
 	if err := os.Setenv("KAFKA_CTL_CONFIG", newConfigFile); err != nil {
 		t.Fatalf("unable to set env variable: %v", err)
@@ -47,6 +53,4 @@ current-context: default`
 
 	test_util.AssertEquals(t, defaultConfigContent, string(configContent))
 	test_util.AssertEquals(t, defaultConfigContent, kafkaCtl.GetStdOut())
-
-	_ = os.Remove(newConfigFile)
 }

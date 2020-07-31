@@ -76,6 +76,9 @@ func NewKafkactlCommand(streams output.IOStreams) *cobra.Command {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+
+	viper.Reset()
+
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)

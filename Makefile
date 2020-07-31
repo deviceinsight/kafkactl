@@ -28,10 +28,12 @@ lint:
 
 .PHONY: test
 test:
+	rm -f test.log
 	go test -v -short ./...
 
 .PHONY: integration_test
 integration_test:
+	rm -f integration-test.log
 	./docker/run-integration-tests.sh
 
 .PHONY: build

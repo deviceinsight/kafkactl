@@ -22,7 +22,7 @@ func newDescribeConsumerGroupCmd() *cobra.Command {
 			}
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			return consumergroups.CompleteConsumerGroupsFiltered(consumerGroupFlags)
+			return consumergroups.CompleteConsumerGroupsFiltered(flags)
 		},
 	}
 
