@@ -69,4 +69,4 @@ release:
 	git commit -m "releases $(version)"
 	git tag -a v$(version) -m "release v$(version)"
 	git push origin
-	git push origin $(version)
+	git push origin v$(version)
