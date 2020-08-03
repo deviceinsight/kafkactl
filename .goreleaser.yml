@@ -11,7 +11,7 @@ builds:
       - linux
       - windows
     hooks:
-      post: ./dist/kafkactl_linux_amd64/kafkactl completion bash > kafkactl-completion.bash --config-file=/tmp/empty.yaml
+      post: './generate_completion.sh {{ .Target }} {{ .Path }}'
 
 archives:
   - id: default
@@ -51,10 +51,6 @@ snapcrafts:
       A Commandline interface for Apache Kafka which provides useful features adapted from kubectl for Kubernetes.
       Multiple kafka brokers can be configured in a config file and the active broker is also persisted within the config.
       In addition kafkactl supports auto-completion for its commands as well as topic names.
-    extra_files:
-      - source: kafkactl-completion.bash
-        destination: kafkactl-completion.bash
-        mode: 0755
     apps:
       kafkactl:
         plugs: ["home", "network", "personal-files"]
@@ -67,7 +63,7 @@ snapcrafts:
           - $HOME/.config/kafkactl
 brews:
   -
-    github:
+    tap:
       owner: deviceinsight
       name: homebrew-packages
 

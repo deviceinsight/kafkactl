@@ -1,4 +1,4 @@
-FROM SCRATCH
+FROM scratch
 ENV USER docker
 ENV BROKERS localhost:9092
 COPY kafkactl /
