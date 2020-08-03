@@ -1,4 +1,4 @@
-name: lint_test_it
+name: Lint / Test / IT
 
 on:
   push:
