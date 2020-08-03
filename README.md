@@ -3,12 +3,12 @@
 
 A command-line interface for interaction with Apache Kafka
 
-[![Build Status](https://travis-ci.com/deviceinsight/kafkactl.svg?branch=master)](https://travis-ci.com/deviceinsight/kafkactl)
+[![Build Status](https://github.com/deviceinsight/kafkactl/workflows/lint_test_it/badge.svg)](https://github.com/deviceinsight/kafkactl/actions)
 | [![command docs](https://img.shields.io/badge/command-docs-blue.svg)](https://deviceinsight.github.io/kafkactl/)  
 
 ## Features
 
-- command auto-completion for bash, zsh, fish
+- command auto-completion for bash, zsh, fish shell including dynamic completion for e.g. topics or consumer groups.
 - support for avro schemas
 - Configuration of different contexts
 
