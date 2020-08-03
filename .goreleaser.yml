@@ -11,7 +11,7 @@ builds:
       - linux
       - windows
     hooks:
-      post: ./kafkactl completion bash > kafkactl-completion.bash --config-file=/tmp/empty.yaml
+      post: ./dist/kafkactl_linux_amd64/kafkactl completion bash > kafkactl-completion.bash --config-file=/tmp/empty.yaml
 
 archives:
   - id: default
