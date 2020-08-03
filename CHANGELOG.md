@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.10.0 - 2020-08-03
+
 ### Fixed
 - auto-completion should now work consistent for all supported shells and provides dynamic completion for
  e.g. names of topics or consumer-groups. 
