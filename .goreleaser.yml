@@ -84,18 +84,20 @@ brews:
 
 dockers:
   -
+    skip_push: false
     dockerfile: Dockerfile.Ubuntu
     binaries:
       - kafkactl
     image_templates:
       - "deviceinsight/kafkactl:latest"
       - "deviceinsight/kafkactl:{{ .Tag }}"
-      - "deviceinsight/kafkactl-ubuntu:latest"
-      - "deviceinsight/kafkactl-ubuntu:{{ .Tag }}"
+      - "deviceinsight/kafkactl:latest-ubuntu"
+      - "deviceinsight/kafkactl:{{ .Tag }}-ubuntu"
   -
+    skip_push: false
     dockerfile: Dockerfile.Scratch
     binaries:
       - kafkactl
     image_templates:
-      - "deviceinsight/kafkactl-scratch:latest"
-      - "deviceinsight/kafkactl-scratch:{{ .Tag }}"
+      - "deviceinsight/kafkactl:latest-scratch"
+      - "deviceinsight/kafkactl:{{ .Tag }}-scratch"

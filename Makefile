@@ -14,7 +14,7 @@ TESTS    := $(shell find . -name '*.go' -type f -not -name '*.pb.go' -not -name 
 
 .DEFAULT_GOAL := all
 .PHONY: all
-all: vet fmt lint test build docs completion
+all: vet fmt lint test build docs
 
 .PHONY: vet
 vet:
@@ -44,11 +44,6 @@ build:
 docs: build
 	touch /tmp/empty.yaml
 	./kafkactl docs --directory docs --single-page --config-file=/tmp/empty.yaml
-
-.PHONY: completion
-completion: build
-	touch /tmp/empty.yaml
-	./kafkactl completion bash > kafkactl-completion.bash --config-file=/tmp/empty.yaml
 
 .PHONY: clean
 clean:
