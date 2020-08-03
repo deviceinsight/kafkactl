@@ -34,6 +34,19 @@ func newUseContextCmd() *cobra.Command {
 				output.Fail(errors.Wrap(err, "unable to write config"))
 			}
 		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+
+			contextMap := viper.GetStringMap("contexts")
+			contexts := make([]string, 0, len(contextMap))
+			for k := range contextMap {
+				contexts = append(contexts, k)
+			}
+
+			return contexts, cobra.ShellCompDirectiveNoFileComp
+		},
 	}
 
 	return cmdUseContext

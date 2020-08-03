@@ -1,14 +1,15 @@
 package consume
 
 import (
+	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/operations/consumer"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
 
-var flags consumer.ConsumerFlags
-
 func NewConsumeCmd() *cobra.Command {
+
+	var flags consumer.ConsumerFlags
 
 	var cmdConsume = &cobra.Command{
 		Use:   "consume TOPIC",
@@ -19,6 +20,7 @@ func NewConsumeCmd() *cobra.Command {
 				output.Fail(err)
 			}
 		},
+		ValidArgsFunction: operations.CompleteTopicNames,
 	}
 
 	cmdConsume.Flags().BoolVarP(&flags.PrintKeys, "print-keys", "k", false, "print message keys")
@@ -32,6 +34,8 @@ func NewConsumeCmd() *cobra.Command {
 	cmdConsume.Flags().StringArrayVarP(&flags.Offsets, "offset", "", flags.Offsets, "offsets in format `partition=offset (for partitions not specified, other parameters apply)`")
 	cmdConsume.Flags().BoolVarP(&flags.FromBeginning, "from-beginning", "b", false, "set offset for consumer to the oldest offset")
 	cmdConsume.Flags().StringVarP(&flags.OutputFormat, "output", "o", flags.OutputFormat, "output format. One of: json|yaml")
+	cmdConsume.Flags().StringVarP(&flags.EncodeKey, "key-encoding", "", flags.EncodeKey, "key encoding (auto-detected by default). One of: none|hex|base64")
+	cmdConsume.Flags().StringVarP(&flags.EncodeValue, "value-encoding", "", flags.EncodeValue, "value encoding (auto-detected by default). One of: none|hex|base64")
 
 	return cmdConsume
 }

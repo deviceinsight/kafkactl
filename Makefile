@@ -14,7 +14,7 @@ TESTS    := $(shell find . -name '*.go' -type f -not -name '*.pb.go' -not -name 
 
 .DEFAULT_GOAL := all
 .PHONY: all
-all: vet fmt lint test build docs
+all: vet fmt lint test build docs completion
 
 .PHONY: vet
 vet:
@@ -28,10 +28,12 @@ lint:
 
 .PHONY: test
 test:
+	rm -f test.log
 	go test -v -short ./...
 
 .PHONY: integration_test
 integration_test:
+	rm -f integration-test.log
 	./docker/run-integration-tests.sh
 
 .PHONY: build
@@ -42,6 +44,11 @@ build:
 docs: build
 	touch /tmp/empty.yaml
 	./kafkactl docs --directory docs --single-page --config-file=/tmp/empty.yaml
+
+.PHONY: completion
+completion: build
+	touch /tmp/empty.yaml
+	./kafkactl completion bash > kafkactl-completion.bash --config-file=/tmp/empty.yaml
 
 .PHONY: clean
 clean:
@@ -60,6 +67,6 @@ release:
 	current_date=`date "+%Y-%m-%d"`; eval "sed -i 's/## \[Unreleased\].*/## [Unreleased]\n\n## $$version - $$current_date/g' CHANGELOG.md"
 	git add "CHANGELOG.md"
 	git commit -m "releases $(version)"
-	git tag -a $(version) -m "release $(version)"
+	git tag -a v$(version) -m "release v$(version)"
 	git push origin
 	git push origin $(version)

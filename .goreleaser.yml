@@ -49,10 +49,20 @@ snapcrafts:
       A Commandline interface for Apache Kafka which provides useful features adapted from kubectl for Kubernetes.
       Multiple kafka brokers can be configured in a config file and the active broker is also persisted within the config.
       In addition kafkactl supports auto-completion for its commands as well as topic names.
+    extra_files:
+      - source: kafkactl-completion.bash
+        destination: kafkactl-completion.bash
+        mode: 0755
     apps:
       kafkactl:
-        plugs: ["home", "network"]
-
+        plugs: ["home", "network", "personal-files"]
+        completer: kafkactl-completion.bash
+    plugs:
+      personal-files:
+        read:
+          - $HOME/.config/kafkactl
+        write:
+          - $HOME/.config/kafkactl
 brews:
   -
     github:
@@ -76,8 +86,18 @@ brews:
 
 dockers:
   -
+    dockerfile: Dockerfile.Ubuntu
     binaries:
       - kafkactl
     image_templates:
       - "deviceinsight/kafkactl:latest"
       - "deviceinsight/kafkactl:{{ .Tag }}"
+      - "deviceinsight/kafkactl-ubuntu:latest"
+      - "deviceinsight/kafkactl-ubuntu:{{ .Tag }}"
+  -
+    dockerfile: Dockerfile.Scratch
+    binaries:
+      - kafkactl
+    image_templates:
+      - "deviceinsight/kafkactl-scratch:latest"
+      - "deviceinsight/kafkactl-scratch:{{ .Tag }}"

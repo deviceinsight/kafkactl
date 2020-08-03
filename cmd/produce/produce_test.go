@@ -3,6 +3,7 @@ package produce_test
 import (
 	"fmt"
 	"github.com/deviceinsight/kafkactl/test_util"
+	"strings"
 	"testing"
 )
 
@@ -79,4 +80,95 @@ func TestProduceAvroMessageWithHeadersIntegration(t *testing.T) {
 	}
 
 	test_util.AssertEquals(t, fmt.Sprintf("key1:value1,key\\:2:value\\:2#test-key#%s", value), kafkaCtl.GetStdOut())
+}
+
+func TestProduceTombstoneFromFileIntegration(t *testing.T) {
+
+	test_util.StartIntegrationTest(t)
+
+	topicName := test_util.CreateTopic(t, "produce-topic")
+
+	kafkaCtl := test_util.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", topicName, "-f", "../../test_resources/test-produce-tombstone.txt", "-S", "#"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	test_util.AssertEquals(t, "1 messages produced", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-keys"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	test_util.AssertEquals(t, "ID123#", kafkaCtl.GetStdOut())
+}
+
+func TestProduceFromBase64Integration(t *testing.T) {
+
+	test_util.StartIntegrationTest(t)
+
+	topicName := test_util.CreateTopic(t, "produce-topic")
+
+	kafkaCtl := test_util.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", topicName,
+		"--key", "dGVzdC1rZXk=", "--key-encoding", "base64",
+		"--value", "dGVzdC12YWx1ZQ==", "--value-encoding", "base64"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	test_util.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-keys"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	test_util.AssertEquals(t, "test-key#test-value", kafkaCtl.GetStdOut())
+}
+
+func TestProduceFromHexIntegration(t *testing.T) {
+
+	test_util.StartIntegrationTest(t)
+
+	topicName := test_util.CreateTopic(t, "produce-topic")
+
+	kafkaCtl := test_util.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", topicName,
+		"--key", "test-key",
+		"--value", "0000000000000000", "--value-encoding", "hex"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	test_util.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-keys", "--value-encoding", "hex"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	test_util.AssertEquals(t, "test-key#0000000000000000", kafkaCtl.GetStdOut())
+}
+
+func TestProduceAutoCompletionIntegration(t *testing.T) {
+
+	test_util.StartIntegrationTest(t)
+
+	prefix := "produce-complete-"
+
+	topicName1 := test_util.CreateTopic(t, prefix+"a")
+	topicName2 := test_util.CreateTopic(t, prefix+"b")
+	topicName3 := test_util.CreateTopic(t, prefix+"c")
+
+	kafkaCtl := test_util.CreateKafkaCtlCommand()
+	kafkaCtl.Verbose = false
+
+	if _, err := kafkaCtl.Execute("__complete", "produce", ""); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	outputLines := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+
+	test_util.AssertContains(t, topicName1, outputLines)
+	test_util.AssertContains(t, topicName2, outputLines)
+	test_util.AssertContains(t, topicName3, outputLines)
 }

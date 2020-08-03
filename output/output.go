@@ -58,7 +58,7 @@ func PrintObject(object interface{}, format string) error {
 			return errors.Wrap(err, "unable to format json")
 		}
 		_, _ = fmt.Fprintln(IoStreams.Out, string(jsonString))
-	} else {
+	} else if format != "none" {
 		return errors.Errorf("unknown format: %v", format)
 	}
 	return nil

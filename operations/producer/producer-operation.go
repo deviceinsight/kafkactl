@@ -26,6 +26,8 @@ type ProducerFlags struct {
 	Headers            []string
 	KeySchemaVersion   int
 	ValueSchemaVersion int
+	KeyEncoding        string
+	ValueEncoding      string
 	Silent             bool
 	RateInSeconds      int
 }

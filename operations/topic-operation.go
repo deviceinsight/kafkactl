@@ -5,6 +5,7 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 	"sort"
 	"strconv"
 	"strings"
@@ -289,6 +290,30 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 	return operation.DescribeTopic(topic, DescribeTopicFlags{})
 }
 
+func (operation *TopicOperation) ListTopicsNames() ([]string, error) {
+
+	var (
+		err     error
+		context ClientContext
+		client  sarama.Client
+		topics  []string
+	)
+
+	if context, err = CreateClientContext(); err != nil {
+		return nil, err
+	}
+
+	if client, err = CreateClient(&context); err != nil {
+		return nil, errors.Wrap(err, "failed to create client")
+	}
+
+	if topics, err = client.Topics(); err != nil {
+		return nil, errors.Wrap(err, "failed to read topics")
+	} else {
+		return topics, nil
+	}
+}
+
 func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) error {
 
 	var (
@@ -504,4 +529,19 @@ func getConfigString(configs []config) string {
 	}
 
 	return strings.Trim(strings.Join(configStrings, ","), "[]")
+}
+
+func CompleteTopicNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+
+	if len(args) != 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	topics, err := (&TopicOperation{}).ListTopicsNames()
+
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	return topics, cobra.ShellCompDirectiveNoFileComp
 }

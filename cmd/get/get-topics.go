@@ -6,9 +6,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var flags operations.GetTopicsFlags
-
 func newGetTopicsCmd() *cobra.Command {
+
+	var flags operations.GetTopicsFlags
 
 	var cmdGetTopics = &cobra.Command{
 		Use:   "topics",

@@ -7,6 +7,7 @@ import (
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/deviceinsight/kafkactl/util"
 	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 	"sort"
 	"strconv"
 	"strings"
@@ -431,4 +432,45 @@ func filterGroups(admin sarama.ClusterAdmin, groupNames []string, topic string) 
 	}
 
 	return topicGroups, nil
+}
+
+func CompleteConsumerGroupsFiltered(flags DescribeConsumerGroupFlags) ([]string, cobra.ShellCompDirective) {
+
+	var (
+		ctx    operations.ClientContext
+		err    error
+		admin  sarama.ClusterAdmin
+		groups map[string]string
+	)
+
+	if ctx, err = operations.CreateClientContext(); err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	if admin, err = operations.CreateClusterAdmin(&ctx); err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	// groups is a map from groupName to protocolType
+	if groups, err = admin.ListConsumerGroups(); err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	groupNames := make([]string, 0, len(groups))
+	for k := range groups {
+		groupNames = append(groupNames, k)
+	}
+
+	if flags.FilterTopic != "" {
+		groupNames, err = filterGroups(admin, groupNames, flags.FilterTopic)
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+	}
+
+	return groupNames, cobra.ShellCompDirectiveNoFileComp
+}
+
+func CompleteConsumerGroups(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return CompleteConsumerGroupsFiltered(DescribeConsumerGroupFlags{FilterTopic: ""})
 }

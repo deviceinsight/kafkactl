@@ -23,15 +23,30 @@ import (
 var cfgFile string
 var Verbose bool
 
+var envMapping = map[string]string{
+	"BROKERS":             "CONTEXTS_DEFAULT_BROKERS",
+	"TLS_ENABLED":         "CONTEXTS_DEFAULT_TLS_ENABLED",
+	"TLS_CA":              "CONTEXTS_DEFAULT_TLS_CA",
+	"TLS_CERT":            "CONTEXTS_DEFAULT_TLS_CERT",
+	"TLS_CERTKEY":         "CONTEXTS_DEFAULT_TLS_CERTKEY",
+	"TLS_INSECURE":        "CONTEXTS_DEFAULT_TLS_INSECURE",
+	"SASL_ENABLED":        "CONTEXTS_DEFAULT_SASL_ENABLED",
+	"SASL_USERNAME":       "CONTEXTS_DEFAULT_SASL_USERNAME",
+	"SASL_PASSWORD":       "CONTEXTS_DEFAULT_SASL_PASSWORD",
+	"CLIENTID":            "CONTEXTS_DEFAULT_CLIENTID",
+	"KAFKAVERSION":        "CONTEXTS_DEFAULT_KAFKAVERSION",
+	"AVRO_SCHEMAREGISTRY": "CONTEXTS_DEFAULT_AVRO_SCHEMAREGISTRY",
+	"DEFAULTPARTITIONER":  "CONTEXTS_DEFAULT_DEFAULTPARTITIONER",
+}
+
 var configPaths = []string{"$HOME/.config/kafkactl", "$HOME/.kafkactl", "$SNAP_DATA/kafkactl", "/etc/kafkactl"}
 
 func NewKafkactlCommand(streams output.IOStreams) *cobra.Command {
 
 	var rootCmd = &cobra.Command{
-		Use:                    "kafkactl",
-		BashCompletionFunction: bashCompletionFunc,
-		Short:                  "command-line interface for Apache Kafka",
-		Long:                   `A command-line interface the simplifies interaction with Kafka.`,
+		Use:   "kafkactl",
+		Short: "command-line interface for Apache Kafka",
+		Long:  `A command-line interface the simplifies interaction with Kafka.`,
 	}
 
 	cobra.OnInitialize(initConfig)
@@ -61,6 +76,9 @@ func NewKafkactlCommand(streams output.IOStreams) *cobra.Command {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+
+	viper.Reset()
+
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
@@ -77,11 +95,27 @@ func initConfig() {
 		output.IoStreams.EnableDebug()
 	}
 
+	mapEnvVariables()
+
+	replacer := strings.NewReplacer("-", "_", ".", "_")
+	viper.SetEnvKeyReplacer(replacer)
+
+	viper.SetDefault("contexts.default.brokers", []string{"localhost:9092"})
+	viper.SetDefault("current-context", "default")
+
 	viper.SetConfigType("yml")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	if err := readConfig(); err != nil {
 		output.Fail(err)
+	}
+}
+
+func mapEnvVariables() {
+	for short, long := range envMapping {
+		if os.Getenv(short) != "" && os.Getenv(long) == "" {
+			_ = os.Setenv(long, os.Getenv(short))
+		}
 	}
 }
 
@@ -92,7 +126,10 @@ func readConfig() error {
 		return nil
 	}
 
-	if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+	_, isConfigFileNotFoundError := err.(viper.ConfigFileNotFoundError)
+	_, isOsPathError := err.(*os.PathError)
+
+	if !isConfigFileNotFoundError && !isOsPathError {
 		return errors.Errorf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err)
 	} else {
 		err = generateDefaultConfig()
@@ -112,35 +149,20 @@ func readConfig() error {
 
 // generateDefaultConfig generates default config in case there is no config
 func generateDefaultConfig() error {
-	if err := os.MkdirAll(os.ExpandEnv(configPaths[0]), os.FileMode(0700)); err != nil {
+	cfgFile := filepath.Join(os.ExpandEnv(configPaths[0]), "config.yml")
+
+	if os.Getenv("KAFKA_CTL_CONFIG") != "" {
+		cfgFile = os.Getenv("KAFKA_CTL_CONFIG")
+	}
+
+	if err := os.MkdirAll(filepath.Dir(cfgFile), os.FileMode(0700)); err != nil {
 		return err
 	}
-	pathToConfig := filepath.Join(os.ExpandEnv(configPaths[0]), "config.yml")
-	f, err := os.Create(pathToConfig)
-	if err != nil {
-		return fmt.Errorf("failed to generate default config at %s", pathToConfig)
-	}
-	defer func(f *os.File) {
-		_ = f.Close()
-	}(f)
 
-	defaultConfigContent := `
-contexts:
-  localhost:
-    brokers:
-    - localhost:9092
-current-context: localhost`
-
-	if os.Getenv("BROKER") != "" {
-		// this is useful for running in docker
-		defaultConfigContent = strings.Replace(defaultConfigContent, "localhost:9092", os.Getenv("BROKER"), -1)
+	if err := viper.WriteConfigAs(cfgFile); err != nil {
+		return err
 	}
 
-	_, err = f.WriteString(defaultConfigContent)
-
-	if err == nil {
-		output.Debugf("generated default config at %s", pathToConfig)
-	}
-
-	return err
+	output.Debugf("generated default config at %s", cfgFile)
+	return nil
 }

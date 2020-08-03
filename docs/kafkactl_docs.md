@@ -17,10 +17,10 @@ A command-line interface the simplifies interaction with Kafka.
 ### SEE ALSO
 
 * [kafkactl alter](kafkactl_alter.md)	 - alter topics
-* [kafkactl completion](kafkactl_completion.md)	 - Output shell completion code for the specified shell (bash,zsh,fish)
+* [kafkactl completion](kafkactl_completion.md)	 - 
 * [kafkactl config](kafkactl_config.md)	 - show and edit configurations
 * [kafkactl consume](kafkactl_consume.md)	 - consume messages from a topic
-* [kafkactl create](kafkactl_create.md)	 - create topics
+* [kafkactl create](kafkactl_create.md)	 - create topics, consumerGroups
 * [kafkactl delete](kafkactl_delete.md)	 - delete topics
 * [kafkactl describe](kafkactl_describe.md)	 - describe topics, consumerGroups
 * [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups
@@ -65,7 +65,7 @@ alter a topic
 alter a topic
 
 ```
-kafkactl alter topic [flags]
+kafkactl alter topic TOPIC [flags]
 ```
 
 ##### Options
@@ -91,14 +91,39 @@ kafkactl alter topic [flags]
 
 ### kafkactl completion
 
-Output shell completion code for the specified shell (bash,zsh,fish)
+
 
 #### Synopsis
 
-Output shell completion code for the specified shell (bash,zsh,fish)
+To load completions:
+
+Bash:
+
+$ source <(kafkactl completion bash)
+
+## To load completions for each session, execute once:
+Linux:
+  $ kafkactl completion bash > /etc/bash_completion.d/kafkactl
+MacOS:
+  $ kafkactl completion bash > /usr/local/etc/bash_completion.d/kafkactl
+
+Zsh:
+
+$ source <(kafkactl completion zsh)
+
+## To load completions for each session, execute once:
+$ kafkactl completion zsh > "${fpath[1]}/_kafkactl"
+
+Fish:
+
+$ kafkactl completion fish | source
+
+## To load completions for each session, execute once:
+$ kafkactl completion fish > ~/.config/fish/completions/kafkactl.fish
+
 
 ```
-kafkactl completion SHELL
+kafkactl completion [bash|zsh|fish|powershell]
 ```
 
 #### Options
@@ -288,6 +313,7 @@ kafkactl consume TOPIC [flags]
   -e, --exit                                                                             stop consuming when latest offset is reached
   -b, --from-beginning                                                                   set offset for consumer to the oldest offset
   -h, --help                                                                             help for consume
+      --key-encoding string                                                              key encoding (auto-detected by default). One of: none|hex|base64
       --offset partition=offset (for partitions not specified, other parameters apply)   offsets in format partition=offset (for partitions not specified, other parameters apply)
   -o, --output string                                                                    output format. One of: json|yaml
   -p, --partitions ints                                                                  partitions to consume. The default is to consume from all partitions.
@@ -297,6 +323,7 @@ kafkactl consume TOPIC [flags]
   -t, --print-timestamps                                                                 print message timestamps
   -s, --separator string                                                                 separator to split key and value (default "#")
       --tail int                                                                         show only the last n messages on the topic (default -1)
+      --value-encoding string                                                            value encoding (auto-detected by default). One of: none|hex|base64
 ```
 
 #### Options inherited from parent commands
@@ -313,11 +340,11 @@ kafkactl consume TOPIC [flags]
 
 ### kafkactl create
 
-create topics
+create topics, consumerGroups
 
 #### Synopsis
 
-create topics
+create topics, consumerGroups
 
 #### Options
 
@@ -335,7 +362,43 @@ create topics
 #### SEE ALSO
 
 * [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
+* [kafkactl create consumer-group](kafkactl_create_consumer-group.md)	 - create a consumerGroup
 * [kafkactl create topic](kafkactl_create_topic.md)	 - create a topic
+
+
+#### kafkactl create consumer-group
+
+create a consumerGroup
+
+##### Synopsis
+
+create a consumerGroup
+
+```
+kafkactl create consumer-group GROUP [flags]
+```
+
+##### Options
+
+```
+  -h, --help              help for consumer-group
+      --newest            set the offset to newest offset (for all partitions or the specified partition)
+      --offset int        set offset to this value. offset with value -1 is ignored (default -1)
+      --oldest            set the offset to oldest offset (for all partitions or the specified partition)
+  -p, --partition int32   partition to create group for. -1 stands for all partitions (default -1)
+  -t, --topic string      topic to change create group for
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl create](kafkactl_create.md)	 - create topics, consumerGroups
 
 
 #### kafkactl create topic
@@ -347,7 +410,7 @@ create a topic
 create a topic
 
 ```
-kafkactl create topic [flags]
+kafkactl create topic TOPIC [flags]
 ```
 
 ##### Options
@@ -369,7 +432,7 @@ kafkactl create topic [flags]
 
 ##### SEE ALSO
 
-* [kafkactl create](kafkactl_create.md)	 - create topics
+* [kafkactl create](kafkactl_create.md)	 - create topics, consumerGroups
 
 
 ### kafkactl delete
@@ -408,7 +471,7 @@ delete a topic
 delete a topic
 
 ```
-kafkactl delete topic [flags]
+kafkactl delete topic TOPIC [flags]
 ```
 
 ##### Options
@@ -624,7 +687,7 @@ produce messages to a topic
 produce messages to a topic
 
 ```
-kafkactl produce [flags]
+kafkactl produce TOPIC [flags]
 ```
 
 #### Options
@@ -634,6 +697,7 @@ kafkactl produce [flags]
   -H, --header key:value           headers in format key:value
   -h, --help                       help for produce
   -k, --key string                 key to use for all messages
+      --key-encoding string        key encoding (none by default). One of: none|hex|base64
   -K, --key-schema-version int     avro schema version that should be used for key serialization (default is latest) (default -1)
   -L, --lineSeparator string       separator to split multiple messages from stdin or file (default "\n")
   -p, --partition int32            partition to produce to (default -1)
@@ -642,6 +706,7 @@ kafkactl produce [flags]
   -S, --separator string           separator to split key and value from stdin or file
   -s, --silent                     do not write to standard output
   -v, --value string               value to produce
+      --value-encoding string      value encoding (none by default). One of: none|hex|base64
   -i, --value-schema-version int   avro schema version that should be used for value serialization (default is latest) (default -1)
 ```
 
