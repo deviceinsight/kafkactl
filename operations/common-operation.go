@@ -31,11 +31,20 @@ type TlsConfig struct {
 	Insecure bool
 }
 
+type K8sConfig struct {
+	Enabled     bool
+	Binary      string
+	KubeConfig  string
+	KubeContext string
+	Namespace   string
+}
+
 type ClientContext struct {
 	Name               string
 	Brokers            []string
 	Tls                TlsConfig
 	Sasl               SaslConfig
+	Kubernetes         K8sConfig
 	ClientID           string
 	KafkaVersion       sarama.KafkaVersion
 	AvroSchemaRegistry string
@@ -76,6 +85,13 @@ func CreateClientContext() (ClientContext, error) {
 	context.Sasl.Enabled = viper.GetBool("contexts." + context.Name + ".sasl.enabled")
 	context.Sasl.Username = viper.GetString("contexts." + context.Name + ".sasl.username")
 	context.Sasl.Password = viper.GetString("contexts." + context.Name + ".sasl.password")
+
+	viper.SetDefault("contexts."+context.Name+".kubernetes.binary", "kubectl")
+	context.Kubernetes.Enabled = viper.GetBool("contexts." + context.Name + ".kubernetes.enabled")
+	context.Kubernetes.Binary = viper.GetString("contexts." + context.Name + ".kubernetes.binary")
+	context.Kubernetes.KubeConfig = viper.GetString("contexts." + context.Name + ".kubernetes.kubeConfig")
+	context.Kubernetes.KubeContext = viper.GetString("contexts." + context.Name + ".kubernetes.kubeContext")
+	context.Kubernetes.Namespace = viper.GetString("contexts." + context.Name + ".kubernetes.namespace")
 
 	return context, nil
 }

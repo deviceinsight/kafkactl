@@ -3,6 +3,7 @@ package alter
 import (
 	"github.com/deviceinsight/kafkactl/cmd/validation"
 	"github.com/deviceinsight/kafkactl/operations"
+	"github.com/deviceinsight/kafkactl/operations/k8s"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
@@ -16,8 +17,10 @@ func newAlterTopicCmd() *cobra.Command {
 		Short: "alter a topic",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := (&operations.TopicOperation{}).AlterTopic(args[0], flags); err != nil {
-				output.Fail(err)
+			if !(&k8s.K8sOperation{}).TryRun(cmd, args) {
+				if err := (&operations.TopicOperation{}).AlterTopic(args[0], flags); err != nil {
+					output.Fail(err)
+				}
 			}
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {

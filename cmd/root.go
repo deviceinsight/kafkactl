@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/deviceinsight/kafkactl/cmd/alter"
+	"github.com/deviceinsight/kafkactl/cmd/attach"
 	"github.com/deviceinsight/kafkactl/cmd/config"
 	"github.com/deviceinsight/kafkactl/cmd/consume"
 	"github.com/deviceinsight/kafkactl/cmd/create"
@@ -11,6 +12,7 @@ import (
 	"github.com/deviceinsight/kafkactl/cmd/get"
 	"github.com/deviceinsight/kafkactl/cmd/produce"
 	"github.com/deviceinsight/kafkactl/cmd/reset"
+	"github.com/deviceinsight/kafkactl/operations/k8s"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -60,6 +62,7 @@ func NewKafkactlCommand(streams output.IOStreams) *cobra.Command {
 	rootCmd.AddCommand(get.NewGetCmd())
 	rootCmd.AddCommand(produce.NewProduceCmd())
 	rootCmd.AddCommand(reset.NewResetCmd())
+	rootCmd.AddCommand(attach.NewAttachCmd())
 	rootCmd.AddCommand(newCompletionCmd())
 	rootCmd.AddCommand(newVersionCmd())
 	rootCmd.AddCommand(newDocsCmd())
@@ -67,6 +70,8 @@ func NewKafkactlCommand(streams output.IOStreams) *cobra.Command {
 	// use upper-case letters for shorthand params to avoid conflicts with local flags
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config-file", "C", "", fmt.Sprintf("config file. one of: %v", configPaths))
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "V", false, "verbose output")
+
+	k8s.KafkaCtlVersion = Version
 
 	output.IoStreams = streams
 	rootCmd.SetOut(streams.Out)
