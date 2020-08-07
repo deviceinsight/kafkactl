@@ -53,14 +53,8 @@ snapcrafts:
       In addition kafkactl supports auto-completion for its commands as well as topic names.
     apps:
       kafkactl:
-        plugs: ["home", "network", "personal-files"]
+        plugs: ["home", "network"]
         completer: kafkactl-completion.bash
-    plugs:
-      personal-files:
-        read:
-          - $HOME/.config/kafkactl
-        write:
-          - $HOME/.config/kafkactl
 brews:
   -
     tap:
