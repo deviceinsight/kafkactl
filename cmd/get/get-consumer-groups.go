@@ -3,6 +3,7 @@ package get
 import (
 	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/operations/consumergroups"
+	"github.com/deviceinsight/kafkactl/operations/k8s"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
@@ -17,8 +18,10 @@ func newGetConsumerGroupsCmd() *cobra.Command {
 		Short:   "list available consumerGroups",
 		Args:    cobra.MaximumNArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := (&consumergroups.ConsumerGroupOperation{}).GetConsumerGroups(flags); err != nil {
-				output.Fail(err)
+			if !(&k8s.K8sOperation{}).TryRun(cmd, args) {
+				if err := (&consumergroups.ConsumerGroupOperation{}).GetConsumerGroups(flags); err != nil {
+					output.Fail(err)
+				}
 			}
 		},
 	}

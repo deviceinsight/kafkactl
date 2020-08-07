@@ -53,14 +53,8 @@ snapcrafts:
       In addition kafkactl supports auto-completion for its commands as well as topic names.
     apps:
       kafkactl:
-        plugs: ["home", "network", "personal-files"]
+        plugs: ["home", "network"]
         completer: kafkactl-completion.bash
-    plugs:
-      personal-files:
-        read:
-          - $HOME/.config/kafkactl
-        write:
-          - $HOME/.config/kafkactl
 brews:
   -
     tap:
@@ -84,18 +78,20 @@ brews:
 
 dockers:
   -
+    skip_push: false
     dockerfile: Dockerfile.Ubuntu
     binaries:
       - kafkactl
     image_templates:
+      - "deviceinsight/kafkactl:latest-ubuntu"
+      - "deviceinsight/kafkactl:{{ .Tag }}-ubuntu"
       - "deviceinsight/kafkactl:latest"
       - "deviceinsight/kafkactl:{{ .Tag }}"
-      - "deviceinsight/kafkactl-ubuntu:latest"
-      - "deviceinsight/kafkactl-ubuntu:{{ .Tag }}"
   -
+    skip_push: false
     dockerfile: Dockerfile.Scratch
     binaries:
       - kafkactl
     image_templates:
-      - "deviceinsight/kafkactl-scratch:latest"
-      - "deviceinsight/kafkactl-scratch:{{ .Tag }}"
+      - "deviceinsight/kafkactl:latest-scratch"
+      - "deviceinsight/kafkactl:{{ .Tag }}-scratch"

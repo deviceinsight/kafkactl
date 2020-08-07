@@ -2,6 +2,7 @@ package create
 
 import (
 	"github.com/deviceinsight/kafkactl/operations/consumergroupoffsets"
+	"github.com/deviceinsight/kafkactl/operations/k8s"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
@@ -15,8 +16,10 @@ func newCreateConsumerGroupCmd() *cobra.Command {
 		Short:   "create a consumerGroup",
 		Args:    cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := (&consumergroupoffsets.ConsumerGroupOffsetOperation{}).CreateConsumerGroup(cgFlags, args[0]); err != nil {
-				output.Fail(err)
+			if !(&k8s.K8sOperation{}).TryRun(cmd, args) {
+				if err := (&consumergroupoffsets.ConsumerGroupOffsetOperation{}).CreateConsumerGroup(cgFlags, args[0]); err != nil {
+					output.Fail(err)
+				}
 			}
 		},
 	}

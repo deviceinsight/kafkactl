@@ -11,6 +11,7 @@ A command-line interface for interaction with Apache Kafka
 - command auto-completion for bash, zsh, fish shell including dynamic completion for e.g. topics or consumer groups.
 - support for avro schemas
 - Configuration of different contexts
+- directly access kafka clusters inside your kubernetes cluster
 
 [![asciicast](https://asciinema.org/a/vmxrTA0h8CAXPnJnSFk5uHKzr.svg)](https://asciinema.org/a/vmxrTA0h8CAXPnJnSFk5uHKzr)
 
@@ -94,6 +95,14 @@ contexts:
       enabled: true
       username: admin
       password: admin
+  
+    # optional: access clusters running kubernetes
+    kubernetes:
+      enabled: false
+      binary: kubectl #optional
+      kubeConfig: ~/.kube/config #optional
+      kubeContext: my-cluster
+      namespace: my-namespace
 
     # optional: clientID config (defaults to kafkactl-{username})
     clientID: my-client-id
@@ -192,6 +201,36 @@ e.g. the key `contexts.default.tls.certKey` has the corresponding environment va
 If environment variables for the `default` context should be set, the prefix `CONTEXTS_DEFAULT_` can be omitted.
 So, instead of `CONTEXTS_DEFAULT_TLS_CERTKEY` one can also set `TLS_CERTKEY`.
 See **root_test.go** for more examples.
+
+## Running in Kubernetes
+
+If your kafka cluster is not directly accessible from your machine, but it is accessible from a kubernetes cluster
+which in turn is accessible via `kubectl` from your machine you can configure kubernetes support:
+
+```$yaml
+contexts:
+  kafka-cluster:
+    kubernetes:
+      enabled: true
+      kubeContext: k8s-cluster
+      namespace: k8s-namespace
+```
+
+Instead of directly talking to kafka brokers a kafkactl docker image is deployed as a pod into the kubernetes
+cluster, and the defined namespace. Standard-Input and Standard-Output are then wired between the pod and your shell
+running kafkactl. 
+
+There are two options:
+1. You can run `kafkactl attach` with your kubernetes cluster configured. This will use `kubectl run` to create a pod
+in the configured kubeContext/namespace which runs an image of kafkactl and gives you a `bash` into the container.
+Standard-in is piped to the pod and standard-out, standard-err directly to your shell. You even get auto-completion.
+
+2. You can run any other kafkactl command with your kubernetes cluster configured. Instead of directly
+querying the cluster a pod is deployed, and input/output are wired between pod and your shell.
+
+**NOTE:** The first option takes a bit longer to start up since an Ubuntu based docker image is used in order to have
+a bash available. The second option uses a docker image build from scratch and should therefore be quicker.
+Which option is more suitable, will depend on your use-case. 
 
 ## Command documentation
 

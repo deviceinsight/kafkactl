@@ -21,7 +21,7 @@ type StdLogger interface {
 }
 
 var Fail = func(err error) {
-	_, _ = fmt.Fprintf(IoStreams.ErrOut, "%s", err.Error())
+	_, _ = fmt.Fprintf(IoStreams.ErrOut, "%s\n", err.Error())
 	os.Exit(1)
 }
 

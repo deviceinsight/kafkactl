@@ -17,6 +17,7 @@ A command-line interface the simplifies interaction with Kafka.
 ### SEE ALSO
 
 * [kafkactl alter](kafkactl_alter.md)	 - alter topics
+* [kafkactl attach](kafkactl_attach.md)	 - run kafkactl pod in kubernetes and attach to it
 * [kafkactl completion](kafkactl_completion.md)	 - 
 * [kafkactl config](kafkactl_config.md)	 - show and edit configurations
 * [kafkactl consume](kafkactl_consume.md)	 - consume messages from a topic
@@ -87,6 +88,36 @@ kafkactl alter topic TOPIC [flags]
 ##### SEE ALSO
 
 * [kafkactl alter](kafkactl_alter.md)	 - alter topics
+
+
+### kafkactl attach
+
+run kafkactl pod in kubernetes and attach to it
+
+#### Synopsis
+
+run kafkactl pod in kubernetes and attach to it
+
+```
+kafkactl attach [flags]
+```
+
+#### Options
+
+```
+  -h, --help   help for attach
+```
+
+#### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -V, --verbose              verbose output
+```
+
+#### SEE ALSO
+
+* [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
 
 
 ### kafkactl completion

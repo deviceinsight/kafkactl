@@ -2,6 +2,7 @@ package produce
 
 import (
 	"github.com/deviceinsight/kafkactl/operations"
+	"github.com/deviceinsight/kafkactl/operations/k8s"
 	"github.com/deviceinsight/kafkactl/operations/producer"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
@@ -16,8 +17,10 @@ func NewProduceCmd() *cobra.Command {
 		Short: "produce messages to a topic",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := (&producer.ProducerOperation{}).Produce(args[0], flags); err != nil {
-				output.Fail(err)
+			if !(&k8s.K8sOperation{}).TryRun(cmd, args) {
+				if err := (&producer.ProducerOperation{}).Produce(args[0], flags); err != nil {
+					output.Fail(err)
+				}
 			}
 		},
 		ValidArgsFunction: operations.CompleteTopicNames,

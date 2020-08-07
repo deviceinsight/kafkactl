@@ -3,6 +3,7 @@ package consume
 import (
 	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/operations/consumer"
+	"github.com/deviceinsight/kafkactl/operations/k8s"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
@@ -15,9 +16,11 @@ func NewConsumeCmd() *cobra.Command {
 		Use:   "consume TOPIC",
 		Short: "consume messages from a topic",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cobraCmd *cobra.Command, args []string) {
-			if err := (&consumer.ConsumerOperation{}).Consume(args[0], flags); err != nil {
-				output.Fail(err)
+		Run: func(cmd *cobra.Command, args []string) {
+			if !(&k8s.K8sOperation{}).TryRun(cmd, args) {
+				if err := (&consumer.ConsumerOperation{}).Consume(args[0], flags); err != nil {
+					output.Fail(err)
+				}
 			}
 		},
 		ValidArgsFunction: operations.CompleteTopicNames,
