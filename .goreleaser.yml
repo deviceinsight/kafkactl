@@ -83,10 +83,10 @@ dockers:
     binaries:
       - kafkactl
     image_templates:
-      - "deviceinsight/kafkactl:latest"
-      - "deviceinsight/kafkactl:{{ .Tag }}"
       - "deviceinsight/kafkactl:latest-ubuntu"
       - "deviceinsight/kafkactl:{{ .Tag }}-ubuntu"
+      - "deviceinsight/kafkactl:latest"
+      - "deviceinsight/kafkactl:{{ .Tag }}"
   -
     skip_push: false
     dockerfile: Dockerfile.Scratch
