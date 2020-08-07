@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.11.0 - 2020-08-07
+
 ### Added
 - direct support for kafka clusters [running in kubernetes](https://github.com/deviceinsight/kafkactl/blob/master/README.md#running-in-kubernetes)
 - `attach` command to get a bash into kafkactl pod when running in kubernetes
