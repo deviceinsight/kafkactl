@@ -43,11 +43,11 @@ func getKubectlVersion(kubectlBinary string, runner Runner) Version {
 		output.Fail(err)
 	}
 
-	if bytes == nil || len(bytes) == 0 {
+	if len(bytes) == 0 {
 		return Version{}
 	}
 
-	re := regexp.MustCompile("v(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)")
+	re := regexp.MustCompile(`v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)`)
 	matches := re.FindStringSubmatch(string(bytes))
 
 	result := make(map[string]string)
