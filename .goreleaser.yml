@@ -11,7 +11,7 @@ builds:
       - linux
       - windows
     hooks:
-      post: './generate_completion.sh {{ .Target }}'
+      post: './generate_completion.sh {{ .Target }} {{ .Path }}'
 
 archives:
   - id: default
@@ -57,7 +57,7 @@ snapcrafts:
     apps:
       kafkactl:
         plugs: ["home", "network"]
-        completer: ./dist/kafkactl-completion.bash
+        completer: kafkactl-completion.bash
 
 brews:
   -
