@@ -5,13 +5,13 @@ builds:
   - env:
       - CGO_ENABLED=0
     ldflags:
-      - -s -w -X github.com/deviceinsight/kafkactl/cmd.version={{.Version}} -X github.com/deviceinsight/kafkactl/cmd.gitCommit={{.ShortCommit}} -X github.com/deviceinsight/kafkactl/cmd.buildTime={{.Date}}
+      - -s -w -X github.com/deviceinsight/kafkactl/cmd.Version={{.Tag}} -X github.com/deviceinsight/kafkactl/cmd.GitCommit={{.ShortCommit}} -X github.com/deviceinsight/kafkactl/cmd.BuildTime={{.Date}}
     goos:
       - darwin
       - linux
       - windows
     hooks:
-      post: './generate_completion.sh {{ .Target }} {{ .Path }}'
+      post: './generate_completion.sh {{ .Target }}'
 
 archives:
   - id: default
@@ -51,10 +51,14 @@ snapcrafts:
       A Commandline interface for Apache Kafka which provides useful features adapted from kubectl for Kubernetes.
       Multiple kafka brokers can be configured in a config file and the active broker is also persisted within the config.
       In addition kafkactl supports auto-completion for its commands as well as topic names.
+    grade: stable
+    confinement: classic
+    license: Apache-2.0
     apps:
       kafkactl:
         plugs: ["home", "network"]
-        completer: kafkactl-completion.bash
+        completer: ./dist/kafkactl-completion.bash
+
 brews:
   -
     tap:
