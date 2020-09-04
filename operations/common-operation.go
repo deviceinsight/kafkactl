@@ -197,24 +197,25 @@ func setupTlsConfig(tlsConfig TlsConfig) (*tls.Config, error) {
 		return &tls.Config{InsecureSkipVerify: true}, nil
 	}
 
-	var caPool *x509.CertPool = nil
+	caPool, err := x509.SystemCertPool()
+	if err != nil {
+		output.Warnf("error reading system cert pool: %v", err)
+		caPool = x509.NewCertPool()
+	}
+
 	if tlsConfig.CA != "" {
 		caString, err := ioutil.ReadFile(tlsConfig.CA)
 		if err != nil {
 			return nil, err
 		}
 
-		caPool = x509.NewCertPool()
 		ok := caPool.AppendCertsFromPEM(caString)
 		if !ok {
 			return nil, errors.Errorf("unable to add ca at %s to certificate pool", tlsConfig.CA)
 		}
 	}
 
-	var (
-		clientCert tls.Certificate
-		err        error
-	)
+	var clientCert tls.Certificate
 
 	if tlsConfig.Cert != "" && tlsConfig.CertKey != "" {
 		clientCert, err = tls.LoadX509KeyPair(tlsConfig.Cert, tlsConfig.CertKey)

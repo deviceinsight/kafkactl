@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- TLS configuration now starts off with the System's CA pool instead of a completely empty one. This improves support for AWS MSK with PCAs.
+
 ## 1.11.1 - 2020-08-11
 
 ## 1.11.0 - 2020-08-07
