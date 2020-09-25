@@ -1,12 +1,14 @@
 package k8s
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"strconv"
 	"strings"
 )
 
@@ -79,7 +81,10 @@ func (operation *K8sOperation) Run(cmd *cobra.Command, args []string) error {
 	exec := newExecutor(operation.context, &ShellRunner{})
 
 	kafkaCtlCommand := parseCompleteCommand(cmd, []string{})
-	kafkaCtlFlags := parseFlags(cmd)
+	kafkaCtlFlags, err := parseFlags(cmd)
+	if err != nil {
+		return err
+	}
 
 	podEnvironment := parsePodEnvironment(operation.context)
 
@@ -89,15 +94,32 @@ func (operation *K8sOperation) Run(cmd *cobra.Command, args []string) error {
 	return exec.Run("scratch", kafkaCtlCommand, podEnvironment)
 }
 
-func parseFlags(cmd *cobra.Command) []string {
+func parseFlags(cmd *cobra.Command) ([]string, error) {
 	var flags []string
+	var err error
 
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
-		if flag.Changed {
-			flags = append(flags, []string{fmt.Sprintf("--%s", flag.Name), flag.Value.String()}...)
+		if err == nil && flag.Changed {
+			if flag.Value.Type() == "intSlice" {
+				var intArray []int
+				intArray, err = parseIntArray(flag.Value.String())
+				if err == nil {
+					for _, value := range intArray {
+						flags = append(flags, fmt.Sprintf("--%s=%s", flag.Name, strconv.Itoa(value)))
+					}
+				}
+			} else {
+				flags = append(flags, fmt.Sprintf("--%s=%s", flag.Name, flag.Value.String()))
+			}
 		}
 	})
-	return flags
+	return flags, err
+}
+
+func parseIntArray(array string) ([]int, error) {
+	var ints []int
+	err := json.Unmarshal([]byte(array), &ints)
+	return ints, err
 }
 
 func parseCompleteCommand(cmd *cobra.Command, found []string) []string {
