@@ -56,8 +56,15 @@ snapcrafts:
     license: Apache-2.0
     apps:
       kafkactl:
-        plugs: ["home", "network"]
+        plugs: ["home", "network", "personal-files"]
         completer: kafkactl-completion.bash
+    plugs:
+      personal-files:
+        read:
+          - $HOME/.kube
+          - $HOME/.config/kafkactl/config.yml
+        write:
+          - $HOME/.config/kafkactl/config.yml
 
 brews:
   -
