@@ -52,12 +52,19 @@ snapcrafts:
       Multiple kafka brokers can be configured in a config file and the active broker is also persisted within the config.
       In addition kafkactl supports auto-completion for its commands as well as topic names.
     grade: stable
-    confinement: classic
+    confinement: strict
     license: Apache-2.0
     apps:
       kafkactl:
-        plugs: ["home", "network"]
+        plugs: ["home", "network", "personal-files"]
         completer: kafkactl-completion.bash
+    plugs:
+      personal-files:
+        read:
+          - $HOME/.kube
+          - $HOME/.config/kafkactl/config.yml
+        write:
+          - $HOME/.config/kafkactl/config.yml
 
 brews:
   -

@@ -100,6 +100,10 @@ func initConfig() {
 		output.IoStreams.EnableDebug()
 	}
 
+	if Verbose && os.Getenv("SNAP_NAME") != "" {
+		output.Debugf("Running snap version %s on %s", os.Getenv("SNAP_VERSION"), os.Getenv("SNAP_ARCH"))
+	}
+
 	mapEnvVariables()
 
 	replacer := strings.NewReplacer("-", "_", ".", "_")

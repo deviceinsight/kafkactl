@@ -1,12 +1,17 @@
 #!/bin/sh
 
-SCRIPT=$(readlink -f "$0")
-SCRIPT_PATH=$(dirname "$SCRIPT")
+SCRIPT_PATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 TARGET=$1
 BIN_PATH=$2
 
-if [ "linux_amd64" == "$TARGET" ]; then
+ARCH=linux_amd64
+
+if [ "$(uname)" == "Darwin" ]; then
+  ARCH=darwin_amd64
+fi
+
+if [ "$ARCH" == "$TARGET" ]; then
   echo "generating completions... ${BIN_PATH}"
 
   echo "" > /tmp/empty.yaml
