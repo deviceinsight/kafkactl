@@ -417,13 +417,18 @@ func filterGroups(admin sarama.ClusterAdmin, groupNames []string, topic string) 
 
 		for _, member := range description.Members {
 
-			metaData, err := member.GetMemberMetadata()
+			assignment, err := member.GetMemberAssignment()
 
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to get group member metadata")
+				return nil, errors.Wrap(err, "failed to get group member assignment")
 			}
 
-			if util.ContainsString(metaData.Topics, topic) {
+			topics := make([]string, 0, len(assignment.Topics))
+			for t := range assignment.Topics {
+				topics = append(topics, t)
+			}
+
+			if util.ContainsString(topics, topic) {
 				if !util.ContainsString(topicGroups, description.GroupId) {
 					topicGroups = append(topicGroups, description.GroupId)
 				}
