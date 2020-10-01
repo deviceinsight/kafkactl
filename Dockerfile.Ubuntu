@@ -17,6 +17,11 @@ RUN useradd -r -g kafkactl -d /home/kafkactl -s /sbin/nologin -c "Docker image u
 RUN echo "source /etc/bash_completion" > /home/kafkactl/.bashrc
 RUN echo "source /etc/bash_completion.d/kafkactl " >> /home/kafkactl/.bashrc
 
+# Install CA certificates
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+&& rm -rf /var/lib/apt/lists/*
+
 WORKDIR /home/kafkactl
 RUN chown -R kafkactl:kafkactl /home/kafkactl
 

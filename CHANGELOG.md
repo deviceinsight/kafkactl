@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Ubuntu Docker image has CA certificates installed.
+- Scratch Docker image has CA certificates installed.
+
 ### Changed
 - `get consumer-groups` now includes the assigned topics as long as output format is not `compact`.
 
