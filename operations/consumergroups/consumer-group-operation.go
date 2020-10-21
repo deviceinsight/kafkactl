@@ -16,6 +16,7 @@ import (
 type consumerGroup struct {
 	Name         string
 	ProtocolType string
+	Topics       []string
 }
 
 type topicPartitionOffsets struct {
@@ -326,6 +327,7 @@ func (operation *ConsumerGroupOperation) GetConsumerGroups(flags GetConsumerGrou
 		err    error
 		admin  sarama.ClusterAdmin
 		groups map[string]string
+		topics map[string][]string
 	)
 
 	if ctx, err = operations.CreateClientContext(); err != nil {
@@ -346,42 +348,56 @@ func (operation *ConsumerGroupOperation) GetConsumerGroups(flags GetConsumerGrou
 		groupNames = append(groupNames, k)
 	}
 
-	if flags.FilterTopic != "" {
-		groupNames, err = filterGroups(admin, groupNames, flags.FilterTopic)
+	if flags.FilterTopic != "" || flags.OutputFormat != "compact" {
+		topics, err = findAssignedTopics(admin, groupNames)
 		if err != nil {
 			return err
 		}
+	} else {
+		topics = make(map[string][]string)
+	}
+
+	consumerGroups := make([]consumerGroup, 0, len(groups))
+	for group, protocol := range groups {
+		cg := consumerGroup{Name: group, ProtocolType: protocol, Topics: topics[group]}
+
+		if flags.FilterTopic != "" {
+			if !util.ContainsString(cg.Topics, flags.FilterTopic) {
+				continue
+			}
+		}
+		consumerGroups = append(consumerGroups, cg)
 	}
 
 	sort.Strings(groupNames)
 
 	tableWriter := output.CreateTableWriter()
 	if flags.OutputFormat == "" {
-		if err := tableWriter.WriteHeader("CONSUMER_GROUP"); err != nil {
+		if err := tableWriter.WriteHeader("CONSUMER_GROUP", "TOPICS"); err != nil {
 			return err
 		}
 	} else if flags.OutputFormat == "compact" {
 		output.PrintStrings(groupNames...)
 		return nil
 	} else if flags.OutputFormat == "wide" {
-		if err := tableWriter.WriteHeader("CONSUMER_GROUP", "PROTOCOL_TYPE"); err != nil {
+		if err := tableWriter.WriteHeader("CONSUMER_GROUP", "PROTOCOL_TYPE", "TOPICS"); err != nil {
 			return err
 		}
+	} else if flags.OutputFormat != "json" && flags.OutputFormat != "yaml" {
+		return errors.Errorf("unknown output format: %s", flags.OutputFormat)
 	}
 
-	for _, groupName := range groupNames {
-		cg := consumerGroup{Name: groupName, ProtocolType: groups[groupName]}
-
+	for _, cg := range consumerGroups {
 		if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
 			if err := output.PrintObject(cg, flags.OutputFormat); err != nil {
 				return err
 			}
 		} else if flags.OutputFormat == "wide" {
-			if err := tableWriter.Write(cg.Name, cg.ProtocolType); err != nil {
+			if err := tableWriter.Write(cg.Name, cg.ProtocolType, strings.Join(cg.Topics, ",")); err != nil {
 				return err
 			}
 		} else {
-			if err := tableWriter.Write(cg.Name); err != nil {
+			if err := tableWriter.Write(cg.Name, strings.Join(cg.Topics, ",")); err != nil {
 				return err
 			}
 		}
@@ -393,6 +409,48 @@ func (operation *ConsumerGroupOperation) GetConsumerGroups(flags GetConsumerGrou
 		}
 	}
 	return nil
+}
+
+func findAssignedTopics(admin sarama.ClusterAdmin, groupNames []string) (map[string][]string, error) {
+
+	var (
+		err          error
+		descriptions []*sarama.GroupDescription
+	)
+
+	if descriptions, err = admin.DescribeConsumerGroups(groupNames); err != nil {
+		return nil, errors.Wrap(err, "failed to describe consumer groups")
+	}
+
+	groupTopics := make(map[string][]string, len(groupNames))
+
+	for _, description := range descriptions {
+
+		topics := make([]string, 0)
+
+		for _, member := range description.Members {
+
+			if description.ProtocolType != "consumer" {
+				output.Debugf("do not filter on group %s, because protocolType is: %s", description.GroupId, description.ProtocolType)
+				continue
+			}
+
+			assignment, err := member.GetMemberAssignment()
+
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get group member assignment")
+			}
+
+			for t := range assignment.Topics {
+				if !util.ContainsString(topics, t) {
+					topics = append(topics, t)
+				}
+			}
+		}
+		groupTopics[description.GroupId] = topics
+	}
+
+	return groupTopics, nil
 }
 
 func filterGroups(admin sarama.ClusterAdmin, groupNames []string, topic string) ([]string, error) {
@@ -417,13 +475,18 @@ func filterGroups(admin sarama.ClusterAdmin, groupNames []string, topic string) 
 
 		for _, member := range description.Members {
 
-			metaData, err := member.GetMemberMetadata()
+			assignment, err := member.GetMemberAssignment()
 
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to get group member metadata")
+				return nil, errors.Wrap(err, "failed to get group member assignment")
 			}
 
-			if util.ContainsString(metaData.Topics, topic) {
+			topics := make([]string, 0, len(assignment.Topics))
+			for t := range assignment.Topics {
+				topics = append(topics, t)
+			}
+
+			if util.ContainsString(topics, topic) {
 				if !util.ContainsString(topicGroups, description.GroupId) {
 					topicGroups = append(topicGroups, description.GroupId)
 				}
