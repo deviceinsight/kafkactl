@@ -21,7 +21,7 @@ You can install the pre-compiled binary or compile from source.
 
 ### Install the pre-compiled binary
 
-**snapcraft**:
+**snap**:
 
 ```bash
 snap install kafkactl
@@ -127,6 +127,7 @@ The config file location is resolved by
  * or as default the config file is looked up from one of the following locations:
    * `$HOME/.config/kafkactl/config.yml`
    * `$HOME/.kafkactl/config.yml`
+   * `$SNAP_REAL_HOME/.kafkactl/config.yml`
    * `$SNAP_DATA/kafkactl/config.yml`
    * `/etc/kafkactl/config.yml`
 
@@ -204,14 +205,20 @@ See **root_test.go** for more examples.
 
 ## Running in Kubernetes
 
+> :construction: This feature is still experimental.
+
 If your kafka cluster is not directly accessible from your machine, but it is accessible from a kubernetes cluster
 which in turn is accessible via `kubectl` from your machine you can configure kubernetes support:
 
 ```$yaml
 contexts:
   kafka-cluster:
+    brokers:
+      - broker1:9092
+      - broker2:9092
     kubernetes:
       enabled: true
+      binary: kubectl #optional
       kubeContext: k8s-cluster
       namespace: k8s-namespace
 ```
@@ -228,9 +235,18 @@ Standard-in is piped to the pod and standard-out, standard-err directly to your 
 2. You can run any other kafkactl command with your kubernetes cluster configured. Instead of directly
 querying the cluster a pod is deployed, and input/output are wired between pod and your shell.
 
-**NOTE:** The first option takes a bit longer to start up since an Ubuntu based docker image is used in order to have
+The names of the brokers have to match the service names used to access kafka in your cluster. A command like this should
+ give you this information:
+```bash
+kubectl get svc | grep kafka
+```
+
+> :bulb: The first option takes a bit longer to start up since an Ubuntu based docker image is used in order to have
 a bash available. The second option uses a docker image build from scratch and should therefore be quicker.
 Which option is more suitable, will depend on your use-case. 
+
+> :warning: when _kafkactl_ was installed via _snap_ make sure to configure the absolute path to your `kubectl` binary. 
+Snaps run with a different $PATH and therefore are unable to access binaries on $PATH. 
 
 ## Command documentation
 

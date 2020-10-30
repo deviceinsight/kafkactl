@@ -9,7 +9,7 @@ A command-line interface the simplifies interaction with Kafka.
 ### Options
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -h, --help                 help for kafkactl
   -V, --verbose              verbose output
 ```
@@ -47,7 +47,7 @@ alter topics
 #### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -81,7 +81,7 @@ kafkactl alter topic TOPIC [flags]
 ##### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -111,7 +111,7 @@ kafkactl attach [flags]
 #### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -166,7 +166,7 @@ kafkactl completion [bash|zsh|fish|powershell]
 #### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -192,7 +192,7 @@ show and edit configurations
 #### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -226,7 +226,7 @@ kafkactl config current-context [flags]
 ##### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -257,7 +257,7 @@ kafkactl config get-contexts [flags]
 ##### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -287,7 +287,7 @@ kafkactl config use-context [flags]
 ##### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -317,7 +317,7 @@ kafkactl config view [flags]
 ##### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -360,7 +360,7 @@ kafkactl consume TOPIC [flags]
 #### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -386,7 +386,7 @@ create topics, consumerGroups
 #### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -423,7 +423,7 @@ kafkactl create consumer-group GROUP [flags]
 ##### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -457,7 +457,7 @@ kafkactl create topic TOPIC [flags]
 ##### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -483,7 +483,7 @@ delete topics
 #### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -514,7 +514,7 @@ kafkactl delete topic TOPIC [flags]
 ##### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -540,7 +540,7 @@ describe topics, consumerGroups
 #### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -577,7 +577,7 @@ kafkactl describe consumer-group GROUP [flags]
 ##### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -609,7 +609,7 @@ kafkactl describe topic TOPIC [flags]
 ##### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -635,7 +635,7 @@ get info about topics, consumerGroups
 #### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -669,7 +669,7 @@ kafkactl get consumer-groups [flags]
 ##### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -700,7 +700,7 @@ kafkactl get topics [flags]
 ##### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -744,7 +744,7 @@ kafkactl produce TOPIC [flags]
 #### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -770,7 +770,7 @@ reset consumerGroupsOffset
 #### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -808,7 +808,7 @@ kafkactl reset consumer-group-offset GROUP [flags]
 ##### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 
@@ -838,7 +838,7 @@ kafkactl version [flags]
 #### Options inherited from parent commands
 
 ```
-  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
   -V, --verbose              verbose output
 ```
 

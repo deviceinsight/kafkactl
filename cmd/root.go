@@ -41,7 +41,7 @@ var envMapping = map[string]string{
 	"DEFAULTPARTITIONER":  "CONTEXTS_DEFAULT_DEFAULTPARTITIONER",
 }
 
-var configPaths = []string{"$HOME/.config/kafkactl", "$HOME/.kafkactl", "$SNAP_DATA/kafkactl", "/etc/kafkactl"}
+var configPaths = []string{"$HOME/.config/kafkactl", "$HOME/.kafkactl", "$SNAP_REAL_HOME/.config/kafkactl", "$SNAP_DATA/kafkactl", "/etc/kafkactl"}
 
 func NewKafkactlCommand(streams output.IOStreams) *cobra.Command {
 
@@ -158,10 +158,20 @@ func readConfig() error {
 
 // generateDefaultConfig generates default config in case there is no config
 func generateDefaultConfig() error {
+
 	cfgFile := filepath.Join(os.ExpandEnv(configPaths[0]), "config.yml")
 
 	if os.Getenv("KAFKA_CTL_CONFIG") != "" {
+		// use config file provided via env
 		cfgFile = os.Getenv("KAFKA_CTL_CONFIG")
+	} else if os.Getenv("SNAP_REAL_HOME") != "" {
+		// use different configFile when running in snap
+		for _, configPath := range configPaths {
+			if strings.Contains(configPath, "$SNAP_REAL_HOME") {
+				cfgFile = filepath.Join(os.ExpandEnv(configPath), "config.yml")
+				break
+			}
+		}
 	}
 
 	if err := os.MkdirAll(filepath.Dir(cfgFile), os.FileMode(0700)); err != nil {
