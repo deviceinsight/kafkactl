@@ -1,4 +1,4 @@
-name: goreleaser
+name: release
 
 on:
   push:
@@ -38,6 +38,11 @@ jobs:
         env:
           # create personal access token: https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+  aur-publish:
+    needs: goreleaser
+    runs-on: ubuntu-latest
+    steps:
       -
         name: Publish AUR package
         uses: guumaster/aur-publish-docker-action@v1
