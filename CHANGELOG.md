@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `get consumer-groups -o compact --topic=xyz` no longer ignores the topic parameter
+
 ## 1.13.1 - 2020-10-30
 
 ## 1.13.0 - 2020-10-21

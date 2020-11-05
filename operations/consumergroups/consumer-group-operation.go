@@ -348,13 +348,9 @@ func (operation *ConsumerGroupOperation) GetConsumerGroups(flags GetConsumerGrou
 		groupNames = append(groupNames, k)
 	}
 
-	if flags.FilterTopic != "" || flags.OutputFormat != "compact" {
-		topics, err = findAssignedTopics(admin, groupNames)
-		if err != nil {
-			return err
-		}
-	} else {
-		topics = make(map[string][]string)
+	topics, err = findAssignedTopics(admin, groupNames)
+	if err != nil {
+		return err
 	}
 
 	consumerGroups := make([]consumerGroup, 0, len(groups))
@@ -377,7 +373,9 @@ func (operation *ConsumerGroupOperation) GetConsumerGroups(flags GetConsumerGrou
 			return err
 		}
 	} else if flags.OutputFormat == "compact" {
-		output.PrintStrings(groupNames...)
+		for _, cg := range consumerGroups {
+			output.Infof(cg.Name)
+		}
 		return nil
 	} else if flags.OutputFormat == "wide" {
 		if err := tableWriter.WriteHeader("CONSUMER_GROUP", "PROTOCOL_TYPE", "TOPICS"); err != nil {
