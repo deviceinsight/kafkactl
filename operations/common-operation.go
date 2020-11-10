@@ -193,10 +193,6 @@ func setupTlsConfig(tlsConfig TlsConfig) (*tls.Config, error) {
 		return nil, errors.Errorf("tls should be enabled at this point")
 	}
 
-	if tlsConfig.Insecure {
-		return &tls.Config{InsecureSkipVerify: true}, nil
-	}
-
 	caPool, err := x509.SystemCertPool()
 	if err != nil {
 		output.Warnf("error reading system cert pool: %v", err)
@@ -228,6 +224,11 @@ func setupTlsConfig(tlsConfig TlsConfig) (*tls.Config, error) {
 		RootCAs:      caPool,
 		Certificates: []tls.Certificate{clientCert},
 	}
+
+	if tlsConfig.Insecure {
+		bundle.InsecureSkipVerify = true
+	}
+
 	return bundle, nil
 }
 
