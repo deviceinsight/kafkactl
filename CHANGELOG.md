@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Add certificates to TlsConfig when tls.insecure = true
+
 ## 1.13.2 - 2020-11-05
 
 ### Fixed
