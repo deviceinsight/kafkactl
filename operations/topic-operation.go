@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"math/rand"
-	"github.com/deviceinsight/kafkactl/util"
 	"sort"
 	"strconv"
 	"strings"
@@ -269,7 +268,7 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 		var brokers = client.Brokers()
 
 		if int(flags.ReplicationFactor) > len(brokers) {
-			output.Failf("Replication factor for topic '%s' must not exceed the number of available brokers", topic)
+			return errors.Errorf("Replication factor for topic '%s' must not exceed the number of available brokers", topic)
 		}
 
 		t, _ = readTopic(&client, &admin, topic, requestedTopicFields{partitionId: true, partitionReplicas: true})
@@ -289,13 +288,16 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 
 		for _, partition := range t.Partitions {
 
-			var replicas = getTargetReplicas(partition.Replicas, brokerReplicaCount, flags.ReplicationFactor)
+			var replicas, err = getTargetReplicas(partition.Replicas, brokerReplicaCount, flags.ReplicationFactor)
+			if err != nil {
+				return errors.Wrap(err, "unable to determine target replicas")
+			}
 			replicaAssignment = append(replicaAssignment, replicas)
 		}
 
 		err = admin.AlterPartitionReassignments(topic, replicaAssignment)
 		if err != nil {
-			output.Failf("Could not create partitions for topic '%s': %v", topic, err)
+			return errors.Errorf("Could not create partitions for topic '%s': %v", topic, err)
 		}
 	}
 
@@ -352,7 +354,7 @@ func (operation *TopicOperation) ListTopicsNames() ([]string, error) {
 	}
 }
 
-func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int, targetReplicationFactor int16) []int32 {
+func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int, targetReplicationFactor int16) ([]int32, error) {
 
 	replicas := currentReplicas
 
@@ -378,7 +380,7 @@ func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int
 			}
 		}
 		if len(unusedBrokerIds) < (int(targetReplicationFactor) - len(replicas)) {
-			output.Failf("not enough brokers")
+			return nil, errors.New("not enough brokers")
 		}
 	}
 
@@ -394,7 +396,7 @@ func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int
 		brokerReplicaCount[unusedBrokerIds[0]] += 1
 	}
 
-	return replicas
+	return replicas, nil
 }
 
 func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) error {

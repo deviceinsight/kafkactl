@@ -2,39 +2,47 @@ package alter
 
 import (
 	"github.com/deviceinsight/kafkactl/cmd/validation"
+	"github.com/deviceinsight/kafkactl/operations/k8s"
 	"github.com/deviceinsight/kafkactl/operations/partitions"
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"strconv"
 )
 
-var partitionFlags partitions.AlterPartitionFlags
+func newAlterPartitionCmd() *cobra.Command {
 
-var cmdAlterPartition = &cobra.Command{
-	Use:   "partition TOPIC PARTITION",
-	Short: "alter a topic",
-	Args:  cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
+	var flags partitions.AlterPartitionFlags
 
-		var partition int32
+	var cmdAlterPartition = &cobra.Command{
+		Use:   "partition TOPIC PARTITION",
+		Short: "alter a topic",
+		Args:  cobra.ExactArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+			if !(&k8s.K8sOperation{}).TryRun(cmd, args) {
 
-		if i, err := strconv.ParseInt(args[1], 10, 64); err != nil {
-			output.Failf("argument 2 needs to be a partition %s", args[1])
-		} else {
-			partition = int32(i)
-		}
+				var partition int32
 
-		(&partitions.PartitionOperation{}).AlterPartition(args[0], partition, partitionFlags)
-	},
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		return validation.ValidateAtLeastOneRequiredFlag(cmd)
-	},
-}
+				if i, err := strconv.ParseInt(args[1], 10, 64); err != nil {
+					output.Fail(errors.Errorf("argument 2 needs to be a partition %s", args[1]))
+				} else {
+					partition = int32(i)
+				}
 
-func init() {
-	cmdAlterPartition.Flags().Int32SliceVarP(&partitionFlags.Replicas, "replicas", "r", nil, "set replicas for a partition")
+				if err := (&partitions.PartitionOperation{}).AlterPartition(args[0], partition, flags); err != nil {
+					output.Fail(err)
+				}
+			}
+		},
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return validation.ValidateAtLeastOneRequiredFlag(cmd)
+		},
+	}
+
+	cmdAlterPartition.Flags().Int32SliceVarP(&flags.Replicas, "replicas", "r", nil, "set replicas for a partition")
 
 	if err := validation.MarkFlagAtLeastOneRequired(cmdAlterPartition.Flags(), "replicas"); err != nil {
-		output.Failf("internal error: %v", err)
+		panic(err)
 	}
+	return cmdAlterPartition
 }

@@ -7,7 +7,7 @@ import (
 func NewAlterCmd() *cobra.Command {
 
 	var cmdAlter = &cobra.Command{
-		Use:   "alter",
+		Use:     "alter",
 		Aliases: []string{"edit"},
 		Short:   "alter topics, partitions",
 	}
