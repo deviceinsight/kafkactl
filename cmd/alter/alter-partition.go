@@ -2,6 +2,7 @@ package alter
 
 import (
 	"github.com/deviceinsight/kafkactl/cmd/validation"
+	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/operations/k8s"
 	"github.com/deviceinsight/kafkactl/operations/partitions"
 	"github.com/deviceinsight/kafkactl/output"
@@ -36,6 +37,15 @@ func newAlterPartitionCmd() *cobra.Command {
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return validation.ValidateAtLeastOneRequiredFlag(cmd)
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) == 0 {
+				return operations.CompleteTopicNames(cmd, args, toComplete)
+			} else if len(args) == 1 {
+				return partitions.CompletePartitionIds(cmd, args, toComplete)
+			} else {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
 		},
 	}
 

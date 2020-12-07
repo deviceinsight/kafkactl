@@ -7,19 +7,20 @@ import (
 	"github.com/deviceinsight/kafkactl/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 )
 
-type topic struct {
+type Topic struct {
 	Name       string
-	Partitions []partition `json:",omitempty" yaml:",omitempty"`
-	Configs    []config    `json:",omitempty" yaml:",omitempty"`
+	Partitions []Partition `json:",omitempty" yaml:",omitempty"`
+	Configs    []Config    `json:",omitempty" yaml:",omitempty"`
 }
 
-type partition struct {
+type Partition struct {
 	Id           int32
 	OldestOffset int64   `json:"oldestOffset" yaml:"oldestOffset"`
 	NewestOffset int64   `json:"newestOffset" yaml:"newestOffset"`
@@ -39,7 +40,7 @@ type requestedTopicFields struct {
 
 var allFields = requestedTopicFields{partitionId: true, partitionOffset: true, partitionLeader: true, partitionReplicas: true, partitionISRs: true, config: true}
 
-type config struct {
+type Config struct {
 	Name  string
 	Value string
 }
@@ -168,7 +169,7 @@ func (operation *TopicOperation) DescribeTopic(topic string, flags DescribeTopic
 	return operation.printTopic(t, flags)
 }
 
-func (operation *TopicOperation) printTopic(topic topic, flags DescribeTopicFlags) error {
+func (operation *TopicOperation) printTopic(topic Topic, flags DescribeTopicFlags) error {
 
 	if flags.PrintConfigs {
 		if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
@@ -263,7 +264,7 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 
 		if flags.ValidateOnly {
 			for len(t.Partitions) < int(flags.Partitions) {
-				t.Partitions = append(t.Partitions, partition{Id: int32(len(t.Partitions)), NewestOffset: 0, OldestOffset: 0})
+				t.Partitions = append(t.Partitions, Partition{Id: int32(len(t.Partitions)), NewestOffset: 0, OldestOffset: 0})
 			}
 		} else {
 			var emptyAssignment = make([][]int32, 0)
@@ -370,9 +371,9 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 
 		if flags.ValidateOnly {
 			// validate only - directly alter the response object
-			t.Configs = make([]config, 0, len(mergedConfigEntries))
+			t.Configs = make([]Config, 0, len(mergedConfigEntries))
 			for key, value := range mergedConfigEntries {
-				t.Configs = append(t.Configs, config{Name: key, Value: *value})
+				t.Configs = append(t.Configs, Config{Name: key, Value: *value})
 			}
 		} else {
 			if err = admin.AlterConfig(sarama.TopicResource, topic, mergedConfigEntries, flags.ValidateOnly); err != nil {
@@ -508,7 +509,7 @@ func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) error {
 		return errors.Errorf("unknown outputFormat: %s", flags.OutputFormat)
 	}
 
-	topicChannel := make(chan topic)
+	topicChannel := make(chan Topic)
 	errChannel := make(chan error)
 
 	// read topics in parallel
@@ -523,7 +524,7 @@ func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) error {
 		}(topic)
 	}
 
-	topicList := make([]topic, 0, len(topics))
+	topicList := make([]Topic, 0, len(topics))
 	for range topics {
 		select {
 		case topic := <-topicChannel:
@@ -567,13 +568,13 @@ func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) error {
 	return nil
 }
 
-func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, requestedFields requestedTopicFields) (topic, error) {
+func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, requestedFields requestedTopicFields) (Topic, error) {
 	var (
 		err           error
 		ps            []int32
 		led           *sarama.Broker
 		configEntries []sarama.ConfigEntry
-		top           = topic{Name: name}
+		top           = Topic{Name: name}
 	)
 
 	if !requestedFields.partitionId {
@@ -584,7 +585,7 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 		return top, err
 	}
 
-	partitionChannel := make(chan partition)
+	partitionChannel := make(chan Partition)
 	errChannel := make(chan error)
 
 	// read partitions in parallel
@@ -592,7 +593,7 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 
 		go func(partitionId int32) {
 
-			np := partition{Id: partitionId}
+			np := Partition{Id: partitionId}
 
 			if requestedFields.partitionOffset {
 				if np.OldestOffset, err = (*client).GetOffset(name, partitionId, sarama.OffsetOldest); err != nil {
@@ -662,7 +663,7 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 		for _, configEntry := range configEntries {
 
 			if !configEntry.Default && configEntry.Source != sarama.SourceDefault {
-				entry := config{Name: configEntry.Name, Value: configEntry.Value}
+				entry := Config{Name: configEntry.Name, Value: configEntry.Value}
 				top.Configs = append(top.Configs, entry)
 			}
 		}
@@ -671,7 +672,7 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 	return top, nil
 }
 
-func getConfigString(configs []config) string {
+func getConfigString(configs []Config) string {
 
 	var configStrings []string
 
@@ -695,4 +696,10 @@ func CompleteTopicNames(_ *cobra.Command, args []string, _ string) ([]string, co
 	}
 
 	return topics, cobra.ShellCompDirectiveNoFileComp
+}
+
+func TopicFromYaml(yamlString string) (Topic, error) {
+	var t Topic
+	err := yaml.Unmarshal([]byte(yamlString), &t)
+	return t, err
 }

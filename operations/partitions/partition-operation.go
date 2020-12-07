@@ -6,6 +6,7 @@ import (
 	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 	"sort"
 	"strconv"
 	"strings"
@@ -238,4 +239,40 @@ func readCurrentReplicas(client *sarama.Client, topic string) ([][]int32, error)
 	}
 
 	return replicaAssignment, nil
+}
+
+func CompletePartitionIds(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+
+	if len(args) != 1 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	var (
+		context operations.ClientContext
+		client  sarama.Client
+		err     error
+	)
+
+	if context, err = operations.CreateClientContext(); err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	if client, err = operations.CreateClient(&context); err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	topicName := args[0]
+	var partitions []int32
+
+	if partitions, err = client.Partitions(topicName); err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	partitionsString := make([]string, len(partitions))
+
+	for i, p := range partitions {
+		partitionsString[i] = strconv.Itoa(int(p))
+	}
+
+	return partitionsString, cobra.ShellCompDirectiveNoFileComp
 }
