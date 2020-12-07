@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type topic struct {
@@ -164,16 +165,21 @@ func (operation *TopicOperation) DescribeTopic(topic string, flags DescribeTopic
 
 	var t, _ = readTopic(&client, &admin, topic, allFields)
 
+	return operation.printTopic(t, flags)
+}
+
+func (operation *TopicOperation) printTopic(topic topic, flags DescribeTopicFlags) error {
+
 	if flags.PrintConfigs {
 		if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
-			t.Configs = nil
+			topic.Configs = nil
 		} else {
 			configTableWriter := output.CreateTableWriter()
 			if err := configTableWriter.WriteHeader("CONFIG", "VALUE"); err != nil {
 				return err
 			}
 
-			for _, c := range t.Configs {
+			for _, c := range topic.Configs {
 				if err := configTableWriter.Write(c.Name, c.Value); err != nil {
 					return err
 				}
@@ -198,9 +204,9 @@ func (operation *TopicOperation) DescribeTopic(topic string, flags DescribeTopic
 	}
 
 	if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
-		return output.PrintObject(t, flags.OutputFormat)
+		return output.PrintObject(topic, flags.OutputFormat)
 	} else if flags.OutputFormat == "wide" || flags.OutputFormat == "" {
-		for _, p := range t.Partitions {
+		for _, p := range topic.Partitions {
 			replicas := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(p.Replicas)), ","), "[]")
 			inSyncReplicas := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(p.ISRs)), ","), "[]")
 			if err := partitionTableWriter.Write(strconv.Itoa(int(p.Id)), strconv.Itoa(int(p.OldestOffset)),
@@ -248,18 +254,24 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 		return errors.Wrap(err, "failed to create cluster admin")
 	}
 
-	var t, _ = readTopic(&client, &admin, topic, requestedTopicFields{partitionId: true, config: true})
+	var t, _ = readTopic(&client, &admin, topic, allFields)
 
 	if flags.Partitions != 0 {
 		if len(t.Partitions) > int(flags.Partitions) {
 			return errors.New("Decreasing the number of partitions is not supported")
 		}
 
-		var emptyAssignment = make([][]int32, 0)
+		if flags.ValidateOnly {
+			for len(t.Partitions) < int(flags.Partitions) {
+				t.Partitions = append(t.Partitions, partition{Id: int32(len(t.Partitions)), NewestOffset: 0, OldestOffset: 0})
+			}
+		} else {
+			var emptyAssignment = make([][]int32, 0)
 
-		err = admin.CreatePartitions(topic, flags.Partitions, emptyAssignment, flags.ValidateOnly)
-		if err != nil {
-			return errors.Errorf("Could not create partitions for topic '%s': %v", topic, err)
+			err = admin.CreatePartitions(topic, flags.Partitions, emptyAssignment, flags.ValidateOnly)
+			if err != nil {
+				return errors.Errorf("Could not create partitions for topic '%s': %v", topic, err)
+			}
 		}
 	}
 
@@ -270,8 +282,6 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 		if int(flags.ReplicationFactor) > len(brokers) {
 			return errors.Errorf("Replication factor for topic '%s' must not exceed the number of available brokers", topic)
 		}
-
-		t, _ = readTopic(&client, &admin, topic, requestedTopicFields{partitionId: true, partitionReplicas: true})
 
 		brokerReplicaCount := make(map[int32]int)
 		for _, broker := range brokers {
@@ -295,39 +305,88 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 			replicaAssignment = append(replicaAssignment, replicas)
 		}
 
-		err = admin.AlterPartitionReassignments(topic, replicaAssignment)
-		if err != nil {
-			return errors.Errorf("Could not create partitions for topic '%s': %v", topic, err)
+		for brokerId, replicaCount := range brokerReplicaCount {
+			output.Debugf("broker %d now has %d replicas", brokerId, replicaCount)
 		}
-	}
 
-	if len(flags.Configs) == 0 {
-		return operation.DescribeTopic(topic, DescribeTopicFlags{})
-	}
+		if flags.ValidateOnly {
+			for i := range t.Partitions {
+				t.Partitions[i].Replicas = replicaAssignment[i]
+			}
+		} else {
+			err = admin.AlterPartitionReassignments(topic, replicaAssignment)
+			if err != nil {
+				return errors.Errorf("Could not reassign partition replicas for topic '%s': %v", topic, err)
+			}
 
-	mergedConfigEntries := make(map[string]*string)
+			partitions := make([]int32, len(t.Partitions))
 
-	for i, config := range t.Configs {
-		mergedConfigEntries[config.Name] = &(t.Configs[i].Value)
-	}
+			for _, p := range t.Partitions {
+				partitions[0] = p.Id
+			}
 
-	for _, config := range flags.Configs {
-		configParts := strings.Split(config, "=")
+			assignmentRunning := true
 
-		if len(configParts) == 2 {
-			if len(configParts[1]) == 0 {
-				delete(mergedConfigEntries, configParts[0])
-			} else {
-				mergedConfigEntries[configParts[0]] = &configParts[1]
+			for assignmentRunning {
+				status, err := admin.ListPartitionReassignments(topic, partitions)
+				if err != nil {
+					return errors.Errorf("Could query reassignment status for topic '%s': %v", topic, err)
+				}
+
+				assignmentRunning = false
+
+				if statusTopic, ok := status[topic]; ok {
+					for partitionId, statusPartition := range statusTopic {
+						output.Debugf("Reassignment running: %s:%d replicas: %v addingReplicas: %v removingReplicas: %v",
+							topic, partitionId, statusPartition.Replicas, statusPartition.AddingReplicas, statusPartition.RemovingReplicas)
+						time.Sleep(2 * time.Second)
+						assignmentRunning = true
+					}
+				} else {
+					output.Debugf("Emtpy list partition reassignment result returned (len status: %d)", len(status))
+				}
 			}
 		}
 	}
 
-	if err = admin.AlterConfig(sarama.TopicResource, topic, mergedConfigEntries, flags.ValidateOnly); err != nil {
-		return errors.Errorf("Could not alter topic config '%s': %v", topic, err)
+	if len(flags.Configs) > 0 {
+		mergedConfigEntries := make(map[string]*string)
+
+		for i, config := range t.Configs {
+			mergedConfigEntries[config.Name] = &(t.Configs[i].Value)
+		}
+
+		for _, config := range flags.Configs {
+			configParts := strings.Split(config, "=")
+
+			if len(configParts) == 2 {
+				if len(configParts[1]) == 0 {
+					delete(mergedConfigEntries, configParts[0])
+				} else {
+					mergedConfigEntries[configParts[0]] = &configParts[1]
+				}
+			}
+		}
+
+		if flags.ValidateOnly {
+			// validate only - directly alter the response object
+			t.Configs = make([]config, 0, len(mergedConfigEntries))
+			for key, value := range mergedConfigEntries {
+				t.Configs = append(t.Configs, config{Name: key, Value: *value})
+			}
+		} else {
+			if err = admin.AlterConfig(sarama.TopicResource, topic, mergedConfigEntries, flags.ValidateOnly); err != nil {
+				return errors.Errorf("Could not alter topic config '%s': %v", topic, err)
+			}
+		}
 	}
 
-	return operation.DescribeTopic(topic, DescribeTopicFlags{})
+	if !flags.ValidateOnly {
+		t, _ = readTopic(&client, &admin, topic, allFields)
+	}
+
+	describeFlags := DescribeTopicFlags{PrintConfigs: len(flags.Configs) > 0}
+	return operation.printTopic(t, describeFlags)
 }
 
 func (operation *TopicOperation) ListTopicsNames() ([]string, error) {
@@ -387,13 +446,14 @@ func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int
 	for len(replicas) < int(targetReplicationFactor) {
 
 		sort.Slice(unusedBrokerIds, func(i, j int) bool {
-			brokerI := replicas[i]
-			brokerJ := replicas[j]
-			return brokerReplicaCount[brokerI] > brokerReplicaCount[brokerJ] || (brokerReplicaCount[brokerI] == brokerReplicaCount[brokerJ] && brokerI > brokerJ)
+			brokerI := unusedBrokerIds[i]
+			brokerJ := unusedBrokerIds[j]
+			return brokerReplicaCount[brokerI] < brokerReplicaCount[brokerJ] || (brokerReplicaCount[brokerI] == brokerReplicaCount[brokerJ] && brokerI > brokerJ)
 		})
 
 		replicas = append(replicas, unusedBrokerIds[0])
 		brokerReplicaCount[unusedBrokerIds[0]] += 1
+		unusedBrokerIds = unusedBrokerIds[1:]
 	}
 
 	return replicas, nil
@@ -550,8 +610,9 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 				if led, err = (*client).Leader(name, partitionId); err != nil {
 					errChannel <- errors.Errorf("unable to read leader for topic %s partition %d", name, partitionId)
 					return
+				} else {
+					np.Leader = led.Addr()
 				}
-				np.Leader = led.Addr()
 			}
 
 			if requestedFields.partitionReplicas {
@@ -575,7 +636,12 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 	}
 
 	for range ps {
-		top.Partitions = append(top.Partitions, <-partitionChannel)
+		select {
+		case partition := <-partitionChannel:
+			top.Partitions = append(top.Partitions, partition)
+		case err := <-errChannel:
+			return top, err
+		}
 	}
 
 	sort.Slice(top.Partitions, func(i, j int) bool {
@@ -616,7 +682,7 @@ func getConfigString(configs []config) string {
 	return strings.Trim(strings.Join(configStrings, ","), "[]")
 }
 
-func CompleteTopicNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func CompleteTopicNames(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
 
 	if len(args) != 0 {
 		return nil, cobra.ShellCompDirectiveNoFileComp

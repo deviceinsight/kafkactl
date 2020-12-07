@@ -16,7 +16,7 @@ func newAlterPartitionCmd() *cobra.Command {
 
 	var cmdAlterPartition = &cobra.Command{
 		Use:   "partition TOPIC PARTITION",
-		Short: "alter a topic",
+		Short: "alter a partition",
 		Args:  cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 			if !(&k8s.K8sOperation{}).TryRun(cmd, args) {
@@ -40,6 +40,7 @@ func newAlterPartitionCmd() *cobra.Command {
 	}
 
 	cmdAlterPartition.Flags().Int32SliceVarP(&flags.Replicas, "replicas", "r", nil, "set replicas for a partition")
+	cmdAlterPartition.Flags().BoolVarP(&flags.ValidateOnly, "validate-only", "v", false, "validate only")
 
 	if err := validation.MarkFlagAtLeastOneRequired(cmdAlterPartition.Flags(), "replicas"); err != nil {
 		panic(err)

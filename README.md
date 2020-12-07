@@ -404,16 +404,35 @@ An additional parameter `print-schema` can be provided to display the schema use
 
 ### Altering topics
 
-Using the `alter topic` command allows you to change the partition count and topic-level configurations of an existing topic.
+Using the `alter topic` command allows you to change the partition count, replication factor and topic-level
+configurations of an existing topic.
 
 The partition count can be increased with:
 ```bash
 kafkactl alter topic my-topic --partitions 32
 ```
 
+The replication factor can be altered with:
+```bash
+kafkactl alter topic my-topic --replication-factor 2
+```
+
+> :information_source: when altering replication factor, kafkactl tries to keep the number of replicas assigned to each
+> broker balanced. If you need more control over the assigned replicas use `alter partition` directly.
+
 The topic configs can be edited by supplying key value pairs as follows:
 ```bash
 kafkactl alter topic my-topic --config retention.ms=3600 --config cleanup.policy=compact
+```
+
+> :bulb: use the flag `--validate-only` to perform a dry-run without actually modifying the topic 
+
+### Altering partitions
+
+The assigned replicas of a partition can directly be altered with:
+```bash
+# set brokers 102,103 as replicas for partition 3 of topic my-topic
+kafkactl alter topic my-topic 3 -r 102,103
 ```
 
 ### Consumer groups
