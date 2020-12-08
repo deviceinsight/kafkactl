@@ -15,8 +15,8 @@ docker-compose -f ${SCRIPT_DIR}/docker-compose.yml --env-file=${SCRIPT_DIR}/.env
 
 # docker compose down
 function tearDown {
-  popd
-  docker-compose -f ${SCRIPT_DIR}/docker-compose.yml down
+  popd >/dev/null 2>&1
+  docker-compose -f ${SCRIPT_DIR}/docker-compose.yml --env-file=${SCRIPT_DIR}/.env down
 }
 trap tearDown EXIT
 
