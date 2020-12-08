@@ -16,7 +16,7 @@ A command-line interface the simplifies interaction with Kafka.
 
 ### SEE ALSO
 
-* [kafkactl alter](kafkactl_alter.md)	 - alter topics
+* [kafkactl alter](kafkactl_alter.md)	 - alter topics, partitions
 * [kafkactl attach](kafkactl_attach.md)	 - run kafkactl pod in kubernetes and attach to it
 * [kafkactl completion](kafkactl_completion.md)	 - 
 * [kafkactl config](kafkactl_config.md)	 - show and edit configurations
@@ -32,11 +32,11 @@ A command-line interface the simplifies interaction with Kafka.
 
 ### kafkactl alter
 
-alter topics
+alter topics, partitions
 
 #### Synopsis
 
-alter topics
+alter topics, partitions
 
 #### Options
 
@@ -54,7 +54,40 @@ alter topics
 #### SEE ALSO
 
 * [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
+* [kafkactl alter partition](kafkactl_alter_partition.md)	 - alter a partition
 * [kafkactl alter topic](kafkactl_alter_topic.md)	 - alter a topic
+
+
+#### kafkactl alter partition
+
+alter a partition
+
+##### Synopsis
+
+alter a partition
+
+```
+kafkactl alter partition TOPIC PARTITION [flags]
+```
+
+##### Options
+
+```
+  -h, --help                  help for partition
+  -r, --replicas int32Slice   set replicas for a partition (default [])
+  -v, --validate-only         validate only
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl alter](kafkactl_alter.md)	 - alter topics, partitions
 
 
 #### kafkactl alter topic
@@ -72,10 +105,11 @@ kafkactl alter topic TOPIC [flags]
 ##### Options
 
 ```
-  -c, --config key=value   configs in format key=value
-  -h, --help               help for topic
-  -p, --partitions int32   number of partitions
-  -v, --validate-only      validate only
+  -c, --config key=value           configs in format key=value
+  -h, --help                       help for topic
+  -p, --partitions int32           number of partitions
+  -r, --replication-factor int16   replication factor
+  -v, --validate-only              validate only
 ```
 
 ##### Options inherited from parent commands
@@ -87,7 +121,7 @@ kafkactl alter topic TOPIC [flags]
 
 ##### SEE ALSO
 
-* [kafkactl alter](kafkactl_alter.md)	 - alter topics
+* [kafkactl alter](kafkactl_alter.md)	 - alter topics, partitions
 
 
 ### kafkactl attach

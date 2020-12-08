@@ -6,4 +6,5 @@ contexts:
       - localhost:39092
     avro:
       schemaRegistry: localhost:18081
+    kafkaversion: 2.6.0
 current-context: default

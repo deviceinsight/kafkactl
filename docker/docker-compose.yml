@@ -88,8 +88,8 @@ services:
       - kafka2
       - kafka3
     command: >
-      bash -c 'cub kafka-ready -b kafka1:9092,kafka2:9092,kafka3:9092 3 60
-      && cub sr-ready schema-registry 8081 60'
+      bash -c "cub kafka-ready -b kafka1:9092,kafka2:9092,kafka3:9092 3 ${WAIT_FOR_KAFKA_TIMEOUT}
+      && cub sr-ready schema-registry 8081 ${WAIT_FOR_KAFKA_TIMEOUT}"
     environment:
       KAFKA_BROKER_ID: ignored
       KAFKA_ZOOKEEPER_CONNECT: ignored

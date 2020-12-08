@@ -11,6 +11,7 @@ import (
 	"os/user"
 	"regexp"
 	"strings"
+	"time"
 )
 
 var (
@@ -45,6 +46,7 @@ type ClientContext struct {
 	Tls                TlsConfig
 	Sasl               SaslConfig
 	Kubernetes         K8sConfig
+	RequestTimeout     time.Duration
 	ClientID           string
 	KafkaVersion       sarama.KafkaVersion
 	AvroSchemaRegistry string
@@ -74,6 +76,8 @@ func CreateClientContext() (ClientContext, error) {
 	context.Tls.CertKey = viper.GetString("contexts." + context.Name + ".tls.certKey")
 	context.Tls.Insecure = viper.GetBool("contexts." + context.Name + ".tls.insecure")
 	context.ClientID = viper.GetString("contexts." + context.Name + ".clientID")
+
+	context.RequestTimeout = viper.GetDuration("contexts." + context.Name + ".requestTimeout")
 
 	if version, err := kafkaVersion(viper.GetString("contexts." + context.Name + ".kafkaVersion")); err == nil {
 		context.KafkaVersion = version
@@ -137,6 +141,13 @@ func CreateClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
 	var config = sarama.NewConfig()
 	config.Version = context.KafkaVersion
 	config.ClientID = getClientID(context)
+
+	if context.RequestTimeout > 0 {
+		output.Debugf("using admin request timeout: %s", context.RequestTimeout.String())
+		config.Admin.Timeout = context.RequestTimeout
+	} else {
+		output.Debugf("using default admin request timeout: 3s")
+	}
 
 	if context.Tls.Enabled {
 		output.Debugf("TLS is enabled.")

@@ -39,6 +39,7 @@ func TestEnvironmentVariableLoadingAliases(t *testing.T) {
 
 	test_util.StartUnitTest(t)
 
+	_ = os.Setenv("REQUESTTIMEOUT", "30")
 	_ = os.Setenv("BROKERS", "broker1:9092 broker2:9092")
 	_ = os.Setenv("TLS_ENABLED", "true")
 	_ = os.Setenv("TLS_CA", "my-ca")
@@ -65,6 +66,7 @@ func TestEnvironmentVariableLoadingAliases(t *testing.T) {
 
 	test_util.AssertEquals(t, "broker1:9092", viper.GetStringSlice("contexts.default.brokers")[0])
 	test_util.AssertEquals(t, "broker2:9092", viper.GetStringSlice("contexts.default.brokers")[1])
+	test_util.AssertEquals(t, "30", viper.GetString("contexts.default.requestTimeout"))
 	test_util.AssertEquals(t, "true", viper.GetString("contexts.default.tls.enabled"))
 	test_util.AssertEquals(t, "my-ca", viper.GetString("contexts.default.tls.ca"))
 	test_util.AssertEquals(t, "my-cert", viper.GetString("contexts.default.tls.cert"))
