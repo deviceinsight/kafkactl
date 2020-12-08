@@ -272,6 +272,8 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 			err = admin.CreatePartitions(topic, flags.Partitions, emptyAssignment, flags.ValidateOnly)
 			if err != nil {
 				return errors.Errorf("Could not create partitions for topic '%s': %v", topic, err)
+			} else {
+				output.Infof("partitions have been created")
 			}
 		}
 	}
@@ -338,15 +340,17 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 
 				if statusTopic, ok := status[topic]; ok {
 					for partitionId, statusPartition := range statusTopic {
-						output.Debugf("Reassignment running: %s:%d replicas: %v addingReplicas: %v removingReplicas: %v",
+						output.Infof("reassignment running for topic=%s partition=%d: replicas:%v addingReplicas:%v removingReplicas:%v",
 							topic, partitionId, statusPartition.Replicas, statusPartition.AddingReplicas, statusPartition.RemovingReplicas)
-						time.Sleep(2 * time.Second)
+						time.Sleep(5 * time.Second)
 						assignmentRunning = true
 					}
 				} else {
 					output.Debugf("Emtpy list partition reassignment result returned (len status: %d)", len(status))
 				}
 			}
+
+			output.Infof("partition replicas have been reassigned")
 		}
 	}
 
@@ -378,16 +382,18 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 		} else {
 			if err = admin.AlterConfig(sarama.TopicResource, topic, mergedConfigEntries, flags.ValidateOnly); err != nil {
 				return errors.Errorf("Could not alter topic config '%s': %v", topic, err)
+			} else {
+				output.Infof("config has been altered")
 			}
 		}
 	}
 
-	if !flags.ValidateOnly {
-		t, _ = readTopic(&client, &admin, topic, allFields)
+	if flags.ValidateOnly {
+		describeFlags := DescribeTopicFlags{PrintConfigs: len(flags.Configs) > 0}
+		return operation.printTopic(t, describeFlags)
+	} else {
+		return nil
 	}
-
-	describeFlags := DescribeTopicFlags{PrintConfigs: len(flags.Configs) > 0}
-	return operation.printTopic(t, describeFlags)
 }
 
 func (operation *TopicOperation) ListTopicsNames() ([]string, error) {

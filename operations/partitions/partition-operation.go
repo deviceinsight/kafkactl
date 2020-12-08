@@ -111,22 +111,22 @@ func (operation *PartitionOperation) AlterPartition(topic string, partitionId in
 
 				if statusTopic, ok := status[topic]; ok {
 					if statusPartition, ok := statusTopic[partitionId]; ok {
-						output.Debugf("Reassignment running: %s:%d replicas: %v addingReplicas: %v removingReplicas: %v",
+						output.Infof("reassignment running for topic=%s partition=%d: replicas:%v addingReplicas:%v removingReplicas:%v",
 							topic, partitionId, statusPartition.Replicas, statusPartition.AddingReplicas, statusPartition.RemovingReplicas)
-						time.Sleep(2 * time.Second)
+						time.Sleep(5 * time.Second)
 						assignmentRunning = true
 					}
 				}
 			}
+			output.Infof("partition replicas have been reassigned")
 		}
 	}
 
-	if !flags.ValidateOnly {
-		if partition, err = readPartition(&client, topic, partitionId); err != nil {
-			return err
-		}
+	if flags.ValidateOnly {
+		return printPartition(partition)
+	} else {
+		return nil
 	}
-	return printPartition(partition)
 }
 
 func printPartition(p partition) error {
