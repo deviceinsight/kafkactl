@@ -48,7 +48,7 @@ jobs:
           - kafka_version: 2.4.0
             cp_version: 5.4.3
           - kafka_version: 2.3.0
-            cp_version: 5.3.4
+            cp_version: 5.3.3
     env:
       CP_VERSION: ${{ matrix.cp_version }}
       KAFKAVERSION: ${{ matrix.kafka_version }}
