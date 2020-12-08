@@ -91,7 +91,8 @@ func TestAlterTopicIncreaseReplicationFactorIntegration(t *testing.T) {
 	kafkaCtl := test_util.CreateKafkaCtlCommand()
 
 	if _, err := kafkaCtl.Execute("alter", "topic", topicName, "--replication-factor", "3"); err != nil {
-		t.Fatalf("failed to execute command: %v", err)
+		test_util.AssertErrorContains(t, "version of API is not supported", err)
+		return
 	}
 
 	checkReplicas := func(attempt uint) error {
@@ -137,7 +138,8 @@ func TestAlterTopicDecreaseReplicationFactorIntegration(t *testing.T) {
 	kafkaCtl := test_util.CreateKafkaCtlCommand()
 
 	if _, err := kafkaCtl.Execute("alter", "topic", topicName, "--replication-factor", "1"); err != nil {
-		t.Fatalf("failed to execute command: %v", err)
+		test_util.AssertErrorContains(t, "version of API is not supported", err)
+		return
 	}
 
 	checkReplicas := func(attempt uint) error {

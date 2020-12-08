@@ -7,6 +7,7 @@ SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 ROOT_DIR="$(dirname "${SCRIPT_DIR}")"
 
 echo "using confluent platform version: ${CP_VERSION}"
+echo "using kafka version: ${KAFKAVERSION}"
 
 # docker compose up
 pushd ${ROOT_DIR}

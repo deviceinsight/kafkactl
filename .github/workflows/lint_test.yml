@@ -38,10 +38,20 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # cp-version 5.5.x corresponds to kafka version 2.5.x
-        cp-version: [5.5.0, 5.4.2, 5.3.3]
+        # https://docs.confluent.io/platform/current/installation/versions-interoperability.html
+        kafka_version: [2.6.0, 2.5.0, 2.4.0, 2.3.0]
+        include:
+          - kafka_version: 2.6.0
+            cp_version: 6.0.1
+          - kafka_version: 2.5.0
+            cp_version: 5.5.2
+          - kafka_version: 2.4.0
+            cp_version: 5.4.3
+          - kafka_version: 2.3.0
+            cp_version: 5.3.4
     env:
-      CP_VERSION: ${{ matrix.cp-version }}
+      CP_VERSION: ${{ matrix.cp_version }}
+      KAFKAVERSION: ${{ matrix.kafka_version }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2

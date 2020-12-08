@@ -56,7 +56,8 @@ func TestAlterPartitionReplicationFactorIntegration(t *testing.T) {
 	kafkaCtl := test_util.CreateKafkaCtlCommand()
 
 	if _, err := kafkaCtl.Execute("alter", "partition", topicName, "0", "--replicas", "101,102"); err != nil {
-		t.Fatalf("failed to execute command: %v", err)
+		test_util.AssertErrorContains(t, "version of API is not supported", err)
+		return
 	}
 
 	checkReplicas := func(attempt uint) error {

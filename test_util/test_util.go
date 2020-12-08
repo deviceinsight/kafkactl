@@ -105,6 +105,12 @@ func AssertEquals(t *testing.T, expected, actual string) {
 	}
 }
 
+func AssertErrorContains(t *testing.T, expected string, err error) {
+	if !strings.Contains(err.Error(), expected) {
+		t.Fatalf("expected error to contain: %s\n: %v", expected, err)
+	}
+}
+
 func AssertContains(t *testing.T, expected string, array []string) {
 	if !util.ContainsString(array, expected) {
 		t.Fatalf("expected array to contain: %s\narray: %v", expected, array)
