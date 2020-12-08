@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.14.0 - 2020-12-08
+
 ### Added
 - Add parameter `--replication-factor` to `alter topic` command which allows changing the replication factor of a topic.
   Note that kafka >= 2.4.0.0 is required, otherwise the relevant api calls are not available.
