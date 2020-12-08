@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Note that kafka >= 2.4.0.0 is required, otherwise the relevant api calls are not available.
 - Added command `alter partition` which currently only enables to manually assign broker replicas to a partition.
   Note that kafka >= 2.4.0.0 is required, otherwise the relevant api calls are not available.
+- Added `requestTimeout` config to control timeout of admin requests.
 
 ## 1.13.3 - 2020-11-11
 

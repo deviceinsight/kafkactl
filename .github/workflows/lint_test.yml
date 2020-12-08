@@ -52,6 +52,7 @@ jobs:
     env:
       CP_VERSION: ${{ matrix.cp_version }}
       KAFKAVERSION: ${{ matrix.kafka_version }}
+      REQUESTTIMEOUT: 15s
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2

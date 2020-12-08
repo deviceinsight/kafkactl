@@ -110,6 +110,9 @@ contexts:
     # optional: kafkaVersion (defaults to 2.0.0)
     kafkaVersion: 1.1.1
 
+    # optional: timeout for admin requests (defaults to 3s)
+    requestTimeout: 10s
+
     # optional: avro schema registry
     avro:
       schemaRegistry: localhost:8081
