@@ -4,20 +4,23 @@ import (
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
-type topic struct {
+type Topic struct {
 	Name       string
-	Partitions []partition `json:",omitempty" yaml:",omitempty"`
-	Configs    []config    `json:",omitempty" yaml:",omitempty"`
+	Partitions []Partition `json:",omitempty" yaml:",omitempty"`
+	Configs    []Config    `json:",omitempty" yaml:",omitempty"`
 }
 
-type partition struct {
+type Partition struct {
 	Id           int32
 	OldestOffset int64   `json:"oldestOffset" yaml:"oldestOffset"`
 	NewestOffset int64   `json:"newestOffset" yaml:"newestOffset"`
@@ -37,7 +40,7 @@ type requestedTopicFields struct {
 
 var allFields = requestedTopicFields{partitionId: true, partitionOffset: true, partitionLeader: true, partitionReplicas: true, partitionISRs: true, config: true}
 
-type config struct {
+type Config struct {
 	Name  string
 	Value string
 }
@@ -54,9 +57,10 @@ type CreateTopicFlags struct {
 }
 
 type AlterTopicFlags struct {
-	Partitions   int32
-	ValidateOnly bool
-	Configs      []string
+	Partitions        int32
+	ReplicationFactor int16
+	ValidateOnly      bool
+	Configs           []string
 }
 
 type DescribeTopicFlags struct {
@@ -162,16 +166,21 @@ func (operation *TopicOperation) DescribeTopic(topic string, flags DescribeTopic
 
 	var t, _ = readTopic(&client, &admin, topic, allFields)
 
+	return operation.printTopic(t, flags)
+}
+
+func (operation *TopicOperation) printTopic(topic Topic, flags DescribeTopicFlags) error {
+
 	if flags.PrintConfigs {
 		if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
-			t.Configs = nil
+			topic.Configs = nil
 		} else {
 			configTableWriter := output.CreateTableWriter()
 			if err := configTableWriter.WriteHeader("CONFIG", "VALUE"); err != nil {
 				return err
 			}
 
-			for _, c := range t.Configs {
+			for _, c := range topic.Configs {
 				if err := configTableWriter.Write(c.Name, c.Value); err != nil {
 					return err
 				}
@@ -196,9 +205,9 @@ func (operation *TopicOperation) DescribeTopic(topic string, flags DescribeTopic
 	}
 
 	if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
-		return output.PrintObject(t, flags.OutputFormat)
+		return output.PrintObject(topic, flags.OutputFormat)
 	} else if flags.OutputFormat == "wide" || flags.OutputFormat == "" {
-		for _, p := range t.Partitions {
+		for _, p := range topic.Partitions {
 			replicas := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(p.Replicas)), ","), "[]")
 			inSyncReplicas := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(p.ISRs)), ","), "[]")
 			if err := partitionTableWriter.Write(strconv.Itoa(int(p.Id)), strconv.Itoa(int(p.OldestOffset)),
@@ -246,48 +255,145 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 		return errors.Wrap(err, "failed to create cluster admin")
 	}
 
-	var t, _ = readTopic(&client, &admin, topic, requestedTopicFields{partitionId: true, config: true})
+	var t, _ = readTopic(&client, &admin, topic, allFields)
 
 	if flags.Partitions != 0 {
 		if len(t.Partitions) > int(flags.Partitions) {
 			return errors.New("Decreasing the number of partitions is not supported")
 		}
 
-		var emptyAssignment = make([][]int32, 0)
+		if flags.ValidateOnly {
+			for len(t.Partitions) < int(flags.Partitions) {
+				t.Partitions = append(t.Partitions, Partition{Id: int32(len(t.Partitions)), NewestOffset: 0, OldestOffset: 0})
+			}
+		} else {
+			var emptyAssignment = make([][]int32, 0)
 
-		err = admin.CreatePartitions(topic, flags.Partitions, emptyAssignment, flags.ValidateOnly)
-		if err != nil {
-			return errors.Errorf("Could not create partitions for topic '%s': %v", topic, err)
-		}
-	}
-
-	if len(flags.Configs) == 0 {
-		return operation.DescribeTopic(topic, DescribeTopicFlags{})
-	}
-
-	mergedConfigEntries := make(map[string]*string)
-
-	for i, config := range t.Configs {
-		mergedConfigEntries[config.Name] = &(t.Configs[i].Value)
-	}
-
-	for _, config := range flags.Configs {
-		configParts := strings.Split(config, "=")
-
-		if len(configParts) == 2 {
-			if len(configParts[1]) == 0 {
-				delete(mergedConfigEntries, configParts[0])
+			err = admin.CreatePartitions(topic, flags.Partitions, emptyAssignment, flags.ValidateOnly)
+			if err != nil {
+				return errors.Errorf("Could not create partitions for topic '%s': %v", topic, err)
 			} else {
-				mergedConfigEntries[configParts[0]] = &configParts[1]
+				output.Infof("partitions have been created")
 			}
 		}
 	}
 
-	if err = admin.AlterConfig(sarama.TopicResource, topic, mergedConfigEntries, flags.ValidateOnly); err != nil {
-		return errors.Errorf("Could not alter topic config '%s': %v", topic, err)
+	if flags.ReplicationFactor > 0 {
+
+		var brokers = client.Brokers()
+
+		if int(flags.ReplicationFactor) > len(brokers) {
+			return errors.Errorf("Replication factor for topic '%s' must not exceed the number of available brokers", topic)
+		}
+
+		brokerReplicaCount := make(map[int32]int)
+		for _, broker := range brokers {
+			brokerReplicaCount[broker.ID()] = 0
+		}
+
+		for _, partition := range t.Partitions {
+			for _, brokerId := range partition.Replicas {
+				brokerReplicaCount[brokerId] += 1
+			}
+		}
+
+		var replicaAssignment = make([][]int32, 0, int16(len(t.Partitions)))
+
+		for _, partition := range t.Partitions {
+
+			var replicas, err = getTargetReplicas(partition.Replicas, brokerReplicaCount, flags.ReplicationFactor)
+			if err != nil {
+				return errors.Wrap(err, "unable to determine target replicas")
+			}
+			replicaAssignment = append(replicaAssignment, replicas)
+		}
+
+		for brokerId, replicaCount := range brokerReplicaCount {
+			output.Debugf("broker %d now has %d replicas", brokerId, replicaCount)
+		}
+
+		if flags.ValidateOnly {
+			for i := range t.Partitions {
+				t.Partitions[i].Replicas = replicaAssignment[i]
+			}
+		} else {
+			err = admin.AlterPartitionReassignments(topic, replicaAssignment)
+			if err != nil {
+				return errors.Errorf("Could not reassign partition replicas for topic '%s': %v", topic, err)
+			}
+
+			partitions := make([]int32, len(t.Partitions))
+
+			for _, p := range t.Partitions {
+				partitions[0] = p.Id
+			}
+
+			assignmentRunning := true
+
+			for assignmentRunning {
+				status, err := admin.ListPartitionReassignments(topic, partitions)
+				if err != nil {
+					return errors.Errorf("Could query reassignment status for topic '%s': %v", topic, err)
+				}
+
+				assignmentRunning = false
+
+				if statusTopic, ok := status[topic]; ok {
+					for partitionId, statusPartition := range statusTopic {
+						output.Infof("reassignment running for topic=%s partition=%d: replicas:%v addingReplicas:%v removingReplicas:%v",
+							topic, partitionId, statusPartition.Replicas, statusPartition.AddingReplicas, statusPartition.RemovingReplicas)
+						time.Sleep(5 * time.Second)
+						assignmentRunning = true
+					}
+				} else {
+					output.Debugf("Emtpy list partition reassignment result returned (len status: %d)", len(status))
+				}
+			}
+
+			output.Infof("partition replicas have been reassigned")
+		}
 	}
 
-	return operation.DescribeTopic(topic, DescribeTopicFlags{})
+	if len(flags.Configs) > 0 {
+		mergedConfigEntries := make(map[string]*string)
+
+		for i, config := range t.Configs {
+			mergedConfigEntries[config.Name] = &(t.Configs[i].Value)
+		}
+
+		for _, config := range flags.Configs {
+			configParts := strings.Split(config, "=")
+
+			if len(configParts) == 2 {
+				if len(configParts[1]) == 0 {
+					delete(mergedConfigEntries, configParts[0])
+				} else {
+					mergedConfigEntries[configParts[0]] = &configParts[1]
+				}
+			}
+		}
+
+		if flags.ValidateOnly {
+			// validate only - directly alter the response object
+			t.Configs = make([]Config, 0, len(mergedConfigEntries))
+			for key, value := range mergedConfigEntries {
+				t.Configs = append(t.Configs, Config{Name: key, Value: *value})
+			}
+		} else {
+			if err = admin.AlterConfig(sarama.TopicResource, topic, mergedConfigEntries, flags.ValidateOnly); err != nil {
+				return errors.Errorf("Could not alter topic config '%s': %v", topic, err)
+			} else {
+				output.Infof("config has been altered")
+			}
+		}
+	}
+
+	if flags.ValidateOnly {
+		describeFlags := DescribeTopicFlags{PrintConfigs: len(flags.Configs) > 0}
+		return operation.printTopic(t, describeFlags)
+	} else {
+		return nil
+	}
 }
 
 func (operation *TopicOperation) ListTopicsNames() ([]string, error) {
@@ -312,6 +418,52 @@ func (operation *TopicOperation) ListTopicsNames() ([]string, error) {
 	} else {
 		return topics, nil
 	}
+}
+
+func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int, targetReplicationFactor int16) ([]int32, error) {
+
+	replicas := currentReplicas
+
+	for len(replicas) > int(targetReplicationFactor) {
+
+		sort.Slice(replicas, func(i, j int) bool {
+			brokerI := replicas[i]
+			brokerJ := replicas[j]
+			return brokerReplicaCount[brokerI] < brokerReplicaCount[brokerJ] || (brokerReplicaCount[brokerI] == brokerReplicaCount[brokerJ] && brokerI < brokerJ)
+		})
+
+		lastReplica := replicas[len(replicas)-1]
+		replicas = replicas[:len(replicas)-1]
+		brokerReplicaCount[lastReplica] -= 1
+	}
+
+	var unusedBrokerIds []int32
+
+	if len(replicas) < int(targetReplicationFactor) {
+		for brokerId := range brokerReplicaCount {
+			if !util.ContainsInt32(replicas, brokerId) {
+				unusedBrokerIds = append(unusedBrokerIds, brokerId)
+			}
+		}
+		if len(unusedBrokerIds) < (int(targetReplicationFactor) - len(replicas)) {
+			return nil, errors.New("not enough brokers")
+		}
+	}
+
+	for len(replicas) < int(targetReplicationFactor) {
+
+		sort.Slice(unusedBrokerIds, func(i, j int) bool {
+			brokerI := unusedBrokerIds[i]
+			brokerJ := unusedBrokerIds[j]
+			return brokerReplicaCount[brokerI] < brokerReplicaCount[brokerJ] || (brokerReplicaCount[brokerI] == brokerReplicaCount[brokerJ] && brokerI > brokerJ)
+		})
+
+		replicas = append(replicas, unusedBrokerIds[0])
+		brokerReplicaCount[unusedBrokerIds[0]] += 1
+		unusedBrokerIds = unusedBrokerIds[1:]
+	}
+
+	return replicas, nil
 }
 
 func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) error {
@@ -363,7 +515,7 @@ func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) error {
 		return errors.Errorf("unknown outputFormat: %s", flags.OutputFormat)
 	}
 
-	topicChannel := make(chan topic)
+	topicChannel := make(chan Topic)
 	errChannel := make(chan error)
 
 	// read topics in parallel
@@ -378,7 +530,7 @@ func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) error {
 		}(topic)
 	}
 
-	topicList := make([]topic, 0, len(topics))
+	topicList := make([]Topic, 0, len(topics))
 	for range topics {
 		select {
 		case topic := <-topicChannel:
@@ -422,13 +574,13 @@ func (operation *TopicOperation) GetTopics(flags GetTopicsFlags) error {
 	return nil
 }
 
-func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, requestedFields requestedTopicFields) (topic, error) {
+func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, requestedFields requestedTopicFields) (Topic, error) {
 	var (
 		err           error
 		ps            []int32
 		led           *sarama.Broker
 		configEntries []sarama.ConfigEntry
-		top           = topic{Name: name}
+		top           = Topic{Name: name}
 	)
 
 	if !requestedFields.partitionId {
@@ -439,7 +591,7 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 		return top, err
 	}
 
-	partitionChannel := make(chan partition)
+	partitionChannel := make(chan Partition)
 	errChannel := make(chan error)
 
 	// read partitions in parallel
@@ -447,7 +599,7 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 
 		go func(partitionId int32) {
 
-			np := partition{Id: partitionId}
+			np := Partition{Id: partitionId}
 
 			if requestedFields.partitionOffset {
 				if np.OldestOffset, err = (*client).GetOffset(name, partitionId, sarama.OffsetOldest); err != nil {
@@ -465,8 +617,9 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 				if led, err = (*client).Leader(name, partitionId); err != nil {
 					errChannel <- errors.Errorf("unable to read leader for topic %s partition %d", name, partitionId)
 					return
+				} else {
+					np.Leader = led.Addr()
 				}
-				np.Leader = led.Addr()
 			}
 
 			if requestedFields.partitionReplicas {
@@ -490,7 +643,12 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 	}
 
 	for range ps {
-		top.Partitions = append(top.Partitions, <-partitionChannel)
+		select {
+		case partition := <-partitionChannel:
+			top.Partitions = append(top.Partitions, partition)
+		case err := <-errChannel:
+			return top, err
+		}
 	}
 
 	sort.Slice(top.Partitions, func(i, j int) bool {
@@ -511,7 +669,7 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 		for _, configEntry := range configEntries {
 
 			if !configEntry.Default && configEntry.Source != sarama.SourceDefault {
-				entry := config{Name: configEntry.Name, Value: configEntry.Value}
+				entry := Config{Name: configEntry.Name, Value: configEntry.Value}
 				top.Configs = append(top.Configs, entry)
 			}
 		}
@@ -520,7 +678,7 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 	return top, nil
 }
 
-func getConfigString(configs []config) string {
+func getConfigString(configs []Config) string {
 
 	var configStrings []string
 
@@ -531,7 +689,7 @@ func getConfigString(configs []config) string {
 	return strings.Trim(strings.Join(configStrings, ","), "[]")
 }
 
-func CompleteTopicNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func CompleteTopicNames(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
 
 	if len(args) != 0 {
 		return nil, cobra.ShellCompDirectiveNoFileComp
@@ -544,4 +702,10 @@ func CompleteTopicNames(cmd *cobra.Command, args []string, toComplete string) ([
 	}
 
 	return topics, cobra.ShellCompDirectiveNoFileComp
+}
+
+func TopicFromYaml(yamlString string) (Topic, error) {
+	var t Topic
+	err := yaml.Unmarshal([]byte(yamlString), &t)
+	return t, err
 }

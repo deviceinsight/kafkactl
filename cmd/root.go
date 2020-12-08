@@ -26,6 +26,7 @@ var cfgFile string
 var Verbose bool
 
 var envMapping = map[string]string{
+	"REQUESTTIMEOUT":      "CONTEXTS_DEFAULT_REQUESTTIMEOUT",
 	"BROKERS":             "CONTEXTS_DEFAULT_BROKERS",
 	"TLS_ENABLED":         "CONTEXTS_DEFAULT_TLS_ENABLED",
 	"TLS_CA":              "CONTEXTS_DEFAULT_TLS_CA",

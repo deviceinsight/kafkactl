@@ -1,6 +1,10 @@
 #!/bin/bash
 
-timeout=60
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+
+source ${SCRIPT_DIR}/.env
+
+timeout=${WAIT_FOR_KAFKA_TIMEOUT}
 time=0
 
 docker inspect wait-for-kafka 2>/dev/null | jq -c -e '.[0].State | select (.Status == "exited" and .ExitCode == 0)' > /dev/null

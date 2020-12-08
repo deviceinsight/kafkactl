@@ -353,6 +353,39 @@ __kafkactl_handle_word()
     __kafkactl_handle_word
 }
 
+_kafkactl_alter_partition()
+{
+    last_command="kafkactl_alter_partition"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--replicas=")
+    two_word_flags+=("--replicas")
+    two_word_flags+=("-r")
+    local_nonpersistent_flags+=("--replicas=")
+    flags+=("--validate-only")
+    flags+=("-v")
+    local_nonpersistent_flags+=("--validate-only")
+    flags+=("--config-file=")
+    two_word_flags+=("--config-file")
+    two_word_flags+=("-C")
+    flags+=("--verbose")
+    flags+=("-V")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    has_completion_function=1
+    noun_aliases=()
+}
+
 _kafkactl_alter_topic()
 {
     last_command="kafkactl_alter_topic"
@@ -375,6 +408,10 @@ _kafkactl_alter_topic()
     two_word_flags+=("--partitions")
     two_word_flags+=("-p")
     local_nonpersistent_flags+=("--partitions=")
+    flags+=("--replication-factor=")
+    two_word_flags+=("--replication-factor")
+    two_word_flags+=("-r")
+    local_nonpersistent_flags+=("--replication-factor=")
     flags+=("--validate-only")
     flags+=("-v")
     local_nonpersistent_flags+=("--validate-only")
@@ -397,6 +434,7 @@ _kafkactl_alter()
     command_aliases=()
 
     commands=()
+    commands+=("partition")
     commands+=("topic")
 
     flags=()
@@ -1275,6 +1313,10 @@ _kafkactl_root_command()
 
     commands=()
     commands+=("alter")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("edit")
+        aliashash["edit"]="alter"
+    fi
     commands+=("attach")
     commands+=("completion")
     commands+=("config")
