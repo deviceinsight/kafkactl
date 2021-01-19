@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.15.0 - 2021-01-19
+
+### Added
+- Add parameter `--skip-empty` to `describe topic` command which allows skipping/hiding empty partitions.
+
+### Changed
+- `describe topic` now includes `EMPTY` field, which directly shows if a partition contains messages.
+
 ## 1.14.0 - 2020-12-08
 
 ### Added

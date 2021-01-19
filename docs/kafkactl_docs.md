@@ -638,6 +638,7 @@ kafkactl describe topic TOPIC [flags]
   -h, --help            help for topic
   -o, --output string   output format. One of: json|yaml|wide
   -c, --print-configs   print configs (default true)
+  -s, --skip-empty      show only partitions that have a messages
 ```
 
 ##### Options inherited from parent commands

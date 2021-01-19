@@ -64,8 +64,9 @@ type AlterTopicFlags struct {
 }
 
 type DescribeTopicFlags struct {
-	PrintConfigs bool
-	OutputFormat string
+	PrintConfigs        bool
+	SkipEmptyPartitions bool
+	OutputFormat        string
 }
 
 type TopicOperation struct {
@@ -193,10 +194,20 @@ func (operation *TopicOperation) printTopic(topic Topic, flags DescribeTopicFlag
 		}
 	}
 
+	if flags.SkipEmptyPartitions {
+		partitionsWithMessages := make([]Partition, 0)
+		for _, p := range topic.Partitions {
+			if p.OldestOffset < p.NewestOffset {
+				partitionsWithMessages = append(partitionsWithMessages, p)
+			}
+		}
+		topic.Partitions = partitionsWithMessages
+	}
+
 	partitionTableWriter := output.CreateTableWriter()
 
 	if flags.OutputFormat == "" || flags.OutputFormat == "wide" {
-		if err := partitionTableWriter.WriteHeader("PARTITION", "OLDEST_OFFSET", "NEWEST_OFFSET",
+		if err := partitionTableWriter.WriteHeader("PARTITION", "OLDEST_OFFSET", "NEWEST_OFFSET", "EMPTY",
 			"LEADER", "REPLICAS", "IN_SYNC_REPLICAS"); err != nil {
 			return err
 		}
@@ -211,7 +222,7 @@ func (operation *TopicOperation) printTopic(topic Topic, flags DescribeTopicFlag
 			replicas := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(p.Replicas)), ","), "[]")
 			inSyncReplicas := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(p.ISRs)), ","), "[]")
 			if err := partitionTableWriter.Write(strconv.Itoa(int(p.Id)), strconv.Itoa(int(p.OldestOffset)),
-				strconv.Itoa(int(p.NewestOffset)), p.Leader, replicas, inSyncReplicas); err != nil {
+				strconv.Itoa(int(p.NewestOffset)), strconv.FormatBool((p.NewestOffset-p.OldestOffset) <= 0), p.Leader, replicas, inSyncReplicas); err != nil {
 				return err
 			}
 		}
