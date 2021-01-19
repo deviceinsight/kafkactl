@@ -158,12 +158,27 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) e
 			wgConsumerActive.Add(1)
 			go func(pc sarama.PartitionConsumer) {
 				defer wgConsumerActive.Done()
-				for message := range pc.Messages() {
-					messages <- message
-					if lastOffset >= 0 && message.Offset >= lastOffset {
-						output.Debugf("stop consuming partition %d limit reached: %d", partition, lastOffset)
-						pc.AsyncClose()
-						break
+
+				messageChannel := pc.Messages()
+
+			messageChannelRead:
+				for {
+					select {
+					case message := <-messageChannel:
+						if message != nil {
+							messages <- message
+							if lastOffset >= 0 && message.Offset >= lastOffset {
+								output.Debugf("stop consuming partition %d limit reached: %d", partition, lastOffset)
+								pc.AsyncClose()
+								break messageChannelRead
+							}
+						}
+					case <-time.After(3 * time.Second):
+						if flags.Exit || flags.Tail > 0 {
+							output.Warnf("timed-out while waiting for messages (https://github.com/deviceinsight/kafkactl/issues/67)")
+							pc.AsyncClose()
+							break messageChannelRead
+						}
 					}
 				}
 			}(pc)
