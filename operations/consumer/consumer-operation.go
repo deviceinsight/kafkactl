@@ -150,11 +150,6 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) e
 				return
 			}
 
-			go func(pc sarama.PartitionConsumer) {
-				<-closing
-				pc.AsyncClose()
-			}(pc)
-
 			wgConsumerActive.Add(1)
 			go func(pc sarama.PartitionConsumer) {
 				defer wgConsumerActive.Done()
@@ -173,12 +168,16 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) e
 								break messageChannelRead
 							}
 						}
-					case <-time.After(3 * time.Second):
+					case <-time.After(5 * time.Second):
 						if flags.Exit || flags.Tail > 0 {
 							output.Warnf("timed-out while waiting for messages (https://github.com/deviceinsight/kafkactl/issues/67)")
 							pc.AsyncClose()
 							break messageChannelRead
 						}
+					case <-closing:
+						output.Debugf("stop consumer on partition %d", partition)
+						pc.AsyncClose()
+						break messageChannelRead
 					}
 				}
 			}(pc)
