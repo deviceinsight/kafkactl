@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.15.1 - 2021-01-20
+
 ### Fixed
 - Fixed Ctrl+C not working to stop kafkactl
 
