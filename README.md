@@ -95,6 +95,8 @@ contexts:
       enabled: true
       username: admin
       password: admin
+      # optional configure sasl mechanism as plaintext, scram-sha256, scram-sha512 (defaults to plaintext)
+      mechanism: scram-sha512
   
     # optional: access clusters running kubernetes
     kubernetes:
