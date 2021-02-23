@@ -425,7 +425,7 @@ kafkactl alter topic my-topic --replication-factor 2
 
 The topic configs can be edited by supplying key value pairs as follows:
 ```bash
-kafkactl alter topic my-topic --config retention.ms=3600 --config cleanup.policy=compact
+kafkactl alter topic my-topic --config retention.ms=3600000 --config cleanup.policy=compact
 ```
 
 > :bulb: use the flag `--validate-only` to perform a dry-run without actually modifying the topic 
