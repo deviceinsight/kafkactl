@@ -1,5 +1,7 @@
 #!/bin/bash
-
+# use:
+# export NO_DOCKER_COMPOSE=true
+# to skip docker-compose when it is already running locally
 set -e
 set -o pipefail
 
@@ -11,12 +13,17 @@ echo "using kafka version: ${KAFKAVERSION}"
 
 # docker compose up
 pushd ${ROOT_DIR}
-docker-compose -f ${SCRIPT_DIR}/docker-compose.yml --env-file=${SCRIPT_DIR}/.env up -d
+if [[ -z "${NO_DOCKER_COMPOSE}" ]]; then
+  docker-compose -f ${SCRIPT_DIR}/docker-compose.yml --env-file=${SCRIPT_DIR}/.env up -d
+fi
+
 
 # docker compose down
 function tearDown {
   popd >/dev/null 2>&1
-  docker-compose -f ${SCRIPT_DIR}/docker-compose.yml --env-file=${SCRIPT_DIR}/.env down
+  if [[ -z "${NO_DOCKER_COMPOSE}" ]]; then
+    docker-compose -f ${SCRIPT_DIR}/docker-compose.yml --env-file=${SCRIPT_DIR}/.env down
+  fi
 }
 trap tearDown EXIT
 

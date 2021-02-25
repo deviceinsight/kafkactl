@@ -6,10 +6,11 @@ func NewCreateCmd() *cobra.Command {
 
 	var cmdCreate = &cobra.Command{
 		Use:   "create",
-		Short: "create topics, consumerGroups",
+		Short: "create topics, consumerGroups, acls",
 	}
 
 	cmdCreate.AddCommand(newCreateTopicCmd())
 	cmdCreate.AddCommand(newCreateConsumerGroupCmd())
+	cmdCreate.AddCommand(newCreateAclCmd())
 	return cmdCreate
 }

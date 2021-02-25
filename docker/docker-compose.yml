@@ -6,9 +6,12 @@ services:
     container_name: zookeeper
     ports:
       - "2181:2181"
+    volumes:
+      - ./security:/opt/security
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      KAFKA_OPTS: "-Dzookeeper.authProvider.1=org.apache.zookeeper.server.auth.SASLAuthenticationProvider -Djava.security.auth.login.config=/opt/security/zookeeper-server.jaas"
 
   kafka1:
     image: confluentinc/cp-server:${CP_VERSION}
@@ -18,15 +21,30 @@ services:
       - zookeeper
     ports:
       - "19092:19092"
+      - "19093:19093"
+    volumes:
+      - ./security:/opt/security
     environment:
       KAFKA_BROKER_ID: 101
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092,PLAINTEXT_HOST://localhost:19092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE: 'false'
+      KAFKA_CONFLUENT_BALANCER_ENABLE: 'false'
+      KAFKA_INTER_BROKER_LISTENER_NAME: IN_DOCKER_SASL
+      KAFKA_ADVERTISED_LISTENERS: "IN_DOCKER_SASL://kafka1:9092,HOST_SASL://localhost:19092,HOST_PLAIN://localhost:19093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "IN_DOCKER_SASL:SASL_PLAINTEXT,HOST_SASL:SASL_PLAINTEXT,HOST_PLAIN:PLAINTEXT"
+      KAFKA_LISTENER_NAME_IN_DOCKER_SASL_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_LISTENER_NAME_HOST_SASL_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.auth.SimpleAclAuthorizer
+      KAFKA_SUPER_USERS: "User:admin"
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      KAFKA_ZOOKEEPER_SET_ACL: "true"
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/opt/security/kafka-server.jaas"
 
   kafka2:
     image: confluentinc/cp-server:${CP_VERSION}
@@ -36,15 +54,30 @@ services:
       - zookeeper
     ports:
       - "29092:29092"
+      - "29093:29093"
+    volumes:
+      - ./security:/opt/security
     environment:
       KAFKA_BROKER_ID: 102
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092,PLAINTEXT_HOST://localhost:29092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE: 'false'
+      KAFKA_CONFLUENT_BALANCER_ENABLE: 'false'
+      KAFKA_INTER_BROKER_LISTENER_NAME: IN_DOCKER_SASL
+      KAFKA_ADVERTISED_LISTENERS: "IN_DOCKER_SASL://kafka2:9092,HOST_SASL://localhost:29092,HOST_PLAIN://localhost:29093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "IN_DOCKER_SASL:SASL_PLAINTEXT,HOST_SASL:SASL_PLAINTEXT,HOST_PLAIN:PLAINTEXT"
+      KAFKA_LISTENER_NAME_IN_DOCKER_SASL_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_LISTENER_NAME_HOST_SASL_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.auth.SimpleAclAuthorizer
+      KAFKA_SUPER_USERS: "User:admin"
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      KAFKA_ZOOKEEPER_SET_ACL: "true"
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/opt/security/kafka-server.jaas"
 
   kafka3:
     image: confluentinc/cp-server:${CP_VERSION}
@@ -54,15 +87,30 @@ services:
       - zookeeper
     ports:
       - "39092:39092"
+      - "39093:39093"
+    volumes:
+      - ./security:/opt/security
     environment:
       KAFKA_BROKER_ID: 103
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka3:9092,PLAINTEXT_HOST://localhost:39092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE: 'false'
+      KAFKA_CONFLUENT_BALANCER_ENABLE: 'false'
+      KAFKA_INTER_BROKER_LISTENER_NAME: IN_DOCKER_SASL
+      KAFKA_ADVERTISED_LISTENERS: "IN_DOCKER_SASL://kafka3:9092,HOST_SASL://localhost:39092,HOST_PLAIN://localhost:39093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "IN_DOCKER_SASL:SASL_PLAINTEXT,HOST_SASL:SASL_PLAINTEXT,HOST_PLAIN:PLAINTEXT"
+      KAFKA_LISTENER_NAME_IN_DOCKER_SASL_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_LISTENER_NAME_HOST_SASL_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.auth.SimpleAclAuthorizer
+      KAFKA_SUPER_USERS: "User:admin"
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      KAFKA_ZOOKEEPER_SET_ACL: "true"
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/opt/security/kafka-server.jaas"
 
   schema-registry:
     image: confluentinc/cp-schema-registry:${CP_VERSION}
@@ -75,9 +123,16 @@ services:
       - kafka3
     ports:
       - "18081:8081"
+    volumes:
+      - ./security:/opt/security
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
+      SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      SCHEMA_REGISTRY_KAFKASTORE_SASL_MECHANISM: PLAIN
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'kafka1:9092,kafka2:9092,kafka3:9092'
+      SCHEMA_REGISTRY_OPTS: "-Djava.security.auth.login.config=/opt/security/schema-registry-kafka-client.jaas"
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/opt/security/schema-registry-kafka-client.jaas"
 
   wait-for-kafka:
     image: confluentinc/cp-kafka:${CP_VERSION}
@@ -87,8 +142,10 @@ services:
       - kafka1
       - kafka2
       - kafka3
+    volumes:
+      - ./security:/opt/security
     command: >
-      bash -c "cub kafka-ready -b kafka1:9092,kafka2:9092,kafka3:9092 3 ${WAIT_FOR_KAFKA_TIMEOUT}
+      bash -c "cub kafka-ready --config /opt/security/admin-client.properties -b kafka1:9092,kafka2:9092,kafka3:9092 3 ${WAIT_FOR_KAFKA_TIMEOUT}
       && cub sr-ready schema-registry 8081 ${WAIT_FOR_KAFKA_TIMEOUT}"
     environment:
       KAFKA_BROKER_ID: ignored

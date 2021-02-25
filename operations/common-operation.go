@@ -130,7 +130,7 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 	}
 
 	if context.Sasl.Enabled {
-		output.Debugf("SASL is enabled.")
+		output.Debugf("SASL is enabled (username = %s).", context.Sasl.Username)
 		config.Net.SASL.Enable = true
 		config.Net.SASL.User = context.Sasl.Username
 		config.Net.SASL.Password = context.Sasl.Password
@@ -182,7 +182,7 @@ func CreateClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
 	}
 
 	if context.Sasl.Enabled {
-		output.Debugf("SASL is enabled.")
+		output.Debugf("SASL is enabled (username = %s).", context.Sasl.Username)
 		config.Net.SASL.Enable = true
 		config.Net.SASL.User = context.Sasl.Username
 		config.Net.SASL.Password = context.Sasl.Password

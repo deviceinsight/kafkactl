@@ -26,7 +26,7 @@ require (
 	gopkg.in/errgo.v2 v2.1.0
 	gopkg.in/ini.v1 v1.61.0 // indirect
 	gopkg.in/yaml.v2 v2.3.0
-	gotest.tools/gotestsum v0.6.0 // indirect
+	gotest.tools/gotestsum v1.6.2 // indirect
 )
 
 go 1.14
