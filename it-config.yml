@@ -1,10 +1,43 @@
 contexts:
+  # default context without SASL
   default:
+    brokers:
+      - localhost:19093
+      - localhost:29093
+      - localhost:39093
+    requestTimeout: 15s
+    avro:
+      schemaRegistry: localhost:18081
+    kafkaversion: 2.6.0
+
+  # sasl context as admin
+  sasl-admin:
     brokers:
       - localhost:19092
       - localhost:29092
       - localhost:39092
+    requestTimeout: 15s
+    sasl:
+      enabled: true
+      username: admin
+      password: admin-secret
     avro:
       schemaRegistry: localhost:18081
     kafkaversion: 2.6.0
+
+  # sasl context as user
+  sasl-user:
+    brokers:
+      - localhost:19092
+      - localhost:29092
+      - localhost:39092
+    requestTimeout: 15s
+    sasl:
+      enabled: true
+      username: user
+      password: secret
+    avro:
+      schemaRegistry: localhost:18081
+    kafkaversion: 2.6.0
+
 current-context: default

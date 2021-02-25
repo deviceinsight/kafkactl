@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"
+	"sort"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -44,6 +45,8 @@ func newUseContextCmd() *cobra.Command {
 			for k := range contextMap {
 				contexts = append(contexts, k)
 			}
+
+			sort.Strings(contexts)
 
 			return contexts, cobra.ShellCompDirectiveNoFileComp
 		},

@@ -65,8 +65,16 @@ func StartUnitTest(t *testing.T) {
 }
 
 func StartIntegrationTest(t *testing.T) {
+	StartIntegrationTestWithContext(t, "default")
+}
+
+func StartIntegrationTestWithContext(t *testing.T, context string) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
+	}
+
+	if err := os.Setenv("CURRENT_CONTEXT", context); err != nil {
+		panic(err)
 	}
 
 	startTest(t, "integration-test.log")
@@ -129,7 +137,7 @@ func GetPrefixedName(prefix string) string {
 
 func WithoutBrokerReferences(output string) string {
 
-	brokerAddressRegex := regexp.MustCompile(`localhost:\d9092`)
+	brokerAddressRegex := regexp.MustCompile(`localhost:\d909[2|3]`)
 	withoutBrokerAddresses := brokerAddressRegex.ReplaceAllString(output, "any-broker")
 
 	brokerIdRegex := regexp.MustCompile(`([^\d\w])(101|102|103)([^\d\w])`)
