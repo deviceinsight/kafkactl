@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Introduce configuration options to configure `sasl.mechanism` in order to use `scram-sha512` or `scram-sha256` instead
+of `plaintext`.
+
 ## 1.15.1 - 2021-01-20
 
 ### Fixed

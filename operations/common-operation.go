@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"github.com/Shopify/sarama"
+	"github.com/deviceinsight/kafkactl/operations/helpers"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -19,9 +20,10 @@ var (
 )
 
 type SaslConfig struct {
-	Enabled  bool
-	Username string
-	Password string
+	Enabled   bool
+	Username  string
+	Password  string
+	Mechanism string
 }
 
 type TlsConfig struct {
@@ -89,6 +91,7 @@ func CreateClientContext() (ClientContext, error) {
 	context.Sasl.Enabled = viper.GetBool("contexts." + context.Name + ".sasl.enabled")
 	context.Sasl.Username = viper.GetString("contexts." + context.Name + ".sasl.username")
 	context.Sasl.Password = viper.GetString("contexts." + context.Name + ".sasl.password")
+	context.Sasl.Mechanism = viper.GetString("contexts." + context.Name + ".sasl.mechanism")
 
 	viper.SetDefault("contexts."+context.Name+".kubernetes.binary", "kubectl")
 	context.Kubernetes.Enabled = viper.GetBool("contexts." + context.Name + ".kubernetes.enabled")
@@ -131,6 +134,24 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 		config.Net.SASL.Enable = true
 		config.Net.SASL.User = context.Sasl.Username
 		config.Net.SASL.Password = context.Sasl.Password
+		switch context.Sasl.Mechanism {
+		case "scram-sha512":
+			config.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA512
+			config.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
+				return &helpers.XDGSCRAMClient{HashGeneratorFcn: helpers.SHA512}
+			}
+		case "scram-sha256":
+			config.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA256
+			config.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
+				return &helpers.XDGSCRAMClient{HashGeneratorFcn: helpers.SHA256}
+			}
+		case "plaintext":
+			fallthrough
+		case "":
+			break
+		default:
+			return nil, errors.Errorf("Unknown sasl mechanism: %s", context.Sasl.Mechanism)
+		}
 	}
 
 	return config, nil
