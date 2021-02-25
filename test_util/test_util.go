@@ -73,11 +73,15 @@ func StartIntegrationTestWithContext(t *testing.T, context string) {
 		t.Skip("skipping integration test")
 	}
 
+	SwitchContext(context)
+
+	startTest(t, "integration-test.log")
+}
+
+func SwitchContext(context string) {
 	if err := os.Setenv("CURRENT_CONTEXT", context); err != nil {
 		panic(err)
 	}
-
-	startTest(t, "integration-test.log")
 }
 
 func startTest(t *testing.T, logFilename string) {
@@ -114,6 +118,11 @@ func AssertEquals(t *testing.T, expected, actual string) {
 }
 
 func AssertErrorContains(t *testing.T, expected string, err error) {
+
+	if err == nil {
+		t.Fatalf("expected error to contain: %s\n: %v", expected, "nil")
+	}
+
 	if !strings.Contains(err.Error(), expected) {
 		t.Fatalf("expected error to contain: %s\n: %v", expected, err)
 	}

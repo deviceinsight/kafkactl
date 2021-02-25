@@ -35,7 +35,7 @@ contexts:
     sasl:
       enabled: true
       username: user
-      password: secret
+      password: user-secret
     avro:
       schemaRegistry: localhost:18081
     kafkaversion: 2.6.0
