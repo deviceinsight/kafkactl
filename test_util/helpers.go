@@ -87,7 +87,7 @@ func VerifyTopicExists(t *testing.T, topic string) {
 
 	// add a sleep here, so that the new topic is known by all
 	// brokers hopefully
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 }
 
 func CreateConsumerGroup(t *testing.T, topic string, groupPrefix string) string {

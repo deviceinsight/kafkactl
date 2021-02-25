@@ -95,6 +95,8 @@ contexts:
       enabled: true
       username: admin
       password: admin
+      # optional configure sasl mechanism as plaintext, scram-sha256, scram-sha512 (defaults to plaintext)
+      mechanism: scram-sha512
   
     # optional: access clusters running kubernetes
     kubernetes:
@@ -425,7 +427,7 @@ kafkactl alter topic my-topic --replication-factor 2
 
 The topic configs can be edited by supplying key value pairs as follows:
 ```bash
-kafkactl alter topic my-topic --config retention.ms=3600 --config cleanup.policy=compact
+kafkactl alter topic my-topic --config retention.ms=3600000 --config cleanup.policy=compact
 ```
 
 > :bulb: use the flag `--validate-only` to perform a dry-run without actually modifying the topic 
@@ -476,4 +478,47 @@ kafkactl reset offset my-group --topic my-topic --oldest
 kafkactl reset offset my-group --topic my-topic --newest
 # reset offset for a single partition to specific offset
 kafkactl reset offset my-group --topic my-topic --partition 5 --offset 100
+```
+
+### ACL Management
+
+Available ACL operations are documented [here](https://docs.confluent.io/platform/current/kafka/authorization.html#operations).
+
+#### Create a new ACL
+
+```bash
+# create an acl that allows topic read for a user 'consumer'
+kafkactl create acl --topic my-topic --operation read --principal User:consumer --allow
+# create an acl that denies topic write for a user 'consumer' coming from a specific host
+kafkactl create acl --topic my-topic --operation write --host 1.2.3.4 --principal User:consumer --deny
+# allow multiple operations
+kafkactl create acl --topic my-topic --operation read --operation describe --principal User:consumer --allow
+# allow on all topics with prefix common prefix
+kafkactl create acl --topic my-prefix --pattern prefixed --operation read --principal User:consumer --allow
+```
+
+#### List ACLs
+
+```bash
+# list all acl
+kafkactl get acl
+# list all acl (alias command)
+kafkactl get access-control-list
+# filter only topic resources
+kafkactl get acl --topics
+# filter only consumer group resources with operation read
+kafkactl get acl --groups --operation read
+```
+
+#### Delete ACLs
+
+```bash
+# delete all topic read acls
+kafkactl delete acl --topics --operation read --pattern any
+# delete all topic acls for any operation
+kafkactl delete acl --topics --operation any --pattern any
+# delete all cluster acls for any operation
+kafkactl delete acl --cluster --operation any --pattern any
+# delete all consumer-group acls with operation describe, patternType prefixed and permissionType allow
+kafkactl delete acl --groups --operation describe --pattern prefixed --allow
 ```

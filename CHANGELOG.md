@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.16.0 - 2021-02-25
+
+### Added
+- Introduce configuration options to configure `sasl.mechanism` in order to use `scram-sha512` or `scram-sha256` instead
+of `plaintext`.
+- Added new commands `get acl`, `create acl`, `delete acl` to manage Kafka ACLs with kafkactl
+
 ## 1.15.1 - 2021-01-20
 
 ### Fixed

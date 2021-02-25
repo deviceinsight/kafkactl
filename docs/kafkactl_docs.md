@@ -21,10 +21,10 @@ A command-line interface the simplifies interaction with Kafka.
 * [kafkactl completion](kafkactl_completion.md)	 - 
 * [kafkactl config](kafkactl_config.md)	 - show and edit configurations
 * [kafkactl consume](kafkactl_consume.md)	 - consume messages from a topic
-* [kafkactl create](kafkactl_create.md)	 - create topics, consumerGroups
-* [kafkactl delete](kafkactl_delete.md)	 - delete topics
+* [kafkactl create](kafkactl_create.md)	 - create topics, consumerGroups, acls
+* [kafkactl delete](kafkactl_delete.md)	 - delete topics, acls
 * [kafkactl describe](kafkactl_describe.md)	 - describe topics, consumerGroups
-* [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups
+* [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups, acls
 * [kafkactl produce](kafkactl_produce.md)	 - produce messages to a topic
 * [kafkactl reset](kafkactl_reset.md)	 - reset consumerGroupsOffset
 * [kafkactl version](kafkactl_version.md)	 - print the version of kafkactl
@@ -405,11 +405,11 @@ kafkactl consume TOPIC [flags]
 
 ### kafkactl create
 
-create topics, consumerGroups
+create topics, consumerGroups, acls
 
 #### Synopsis
 
-create topics, consumerGroups
+create topics, consumerGroups, acls
 
 #### Options
 
@@ -427,8 +427,49 @@ create topics, consumerGroups
 #### SEE ALSO
 
 * [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
+* [kafkactl create access-control-list](kafkactl_create_access-control-list.md)	 - create an acl
 * [kafkactl create consumer-group](kafkactl_create_consumer-group.md)	 - create a consumerGroup
 * [kafkactl create topic](kafkactl_create_topic.md)	 - create a topic
+
+
+#### kafkactl create access-control-list
+
+create an acl
+
+##### Synopsis
+
+create an acl
+
+```
+kafkactl create access-control-list [flags]
+```
+
+##### Options
+
+```
+  -a, --allow                   acl of permissionType 'allow' (choose this or 'deny')
+  -c, --cluster                 create acl for the cluster
+  -d, --deny                    acl of permissionType 'deny' (choose this or 'allow')
+  -g, --group string            create acl for a consumer group
+  -h, --help                    help for access-control-list
+      --host stringArray        hosts to allow
+  -o, --operation stringArray   operations of acl
+      --pattern string          pattern type. one of (match, prefixed, literal) (default "literal")
+  -p, --principal string        principal to be authenticated
+  -t, --topic string            create acl for a topic
+  -v, --validate-only           validate only
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl create](kafkactl_create.md)	 - create topics, consumerGroups, acls
 
 
 #### kafkactl create consumer-group
@@ -463,7 +504,7 @@ kafkactl create consumer-group GROUP [flags]
 
 ##### SEE ALSO
 
-* [kafkactl create](kafkactl_create.md)	 - create topics, consumerGroups
+* [kafkactl create](kafkactl_create.md)	 - create topics, consumerGroups, acls
 
 
 #### kafkactl create topic
@@ -497,16 +538,16 @@ kafkactl create topic TOPIC [flags]
 
 ##### SEE ALSO
 
-* [kafkactl create](kafkactl_create.md)	 - create topics, consumerGroups
+* [kafkactl create](kafkactl_create.md)	 - create topics, consumerGroups, acls
 
 
 ### kafkactl delete
 
-delete topics
+delete topics, acls
 
 #### Synopsis
 
-delete topics
+delete topics, acls
 
 #### Options
 
@@ -524,7 +565,46 @@ delete topics
 #### SEE ALSO
 
 * [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
+* [kafkactl delete access-control-list](kafkactl_delete_access-control-list.md)	 - delete an acl
 * [kafkactl delete topic](kafkactl_delete_topic.md)	 - delete a topic
+
+
+#### kafkactl delete access-control-list
+
+delete an acl
+
+##### Synopsis
+
+delete an acl
+
+```
+kafkactl delete access-control-list [flags]
+```
+
+##### Options
+
+```
+  -a, --allow              acl of permissionType 'allow'
+  -c, --cluster            delete acl for the cluster
+  -d, --deny               acl of permissionType 'deny'
+  -g, --groups             delete acl for a consumer group
+  -h, --help               help for access-control-list
+  -o, --operation string   operation of acl
+      --pattern string     pattern type. one of (any, match, prefixed, literal)
+  -t, --topics             delete acl for a topic
+  -v, --validate-only      validate only
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl delete](kafkactl_delete.md)	 - delete topics, acls
 
 
 #### kafkactl delete topic
@@ -554,7 +634,7 @@ kafkactl delete topic TOPIC [flags]
 
 ##### SEE ALSO
 
-* [kafkactl delete](kafkactl_delete.md)	 - delete topics
+* [kafkactl delete](kafkactl_delete.md)	 - delete topics, acls
 
 
 ### kafkactl describe
@@ -655,11 +735,11 @@ kafkactl describe topic TOPIC [flags]
 
 ### kafkactl get
 
-get info about topics, consumerGroups
+get info about topics, consumerGroups, acls
 
 #### Synopsis
 
-get info about topics, consumerGroups
+get info about topics, consumerGroups, acls
 
 #### Options
 
@@ -677,8 +757,47 @@ get info about topics, consumerGroups
 #### SEE ALSO
 
 * [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
+* [kafkactl get access-control-list](kafkactl_get_access-control-list.md)	 - list available acls
 * [kafkactl get consumer-groups](kafkactl_get_consumer-groups.md)	 - list available consumerGroups
 * [kafkactl get topics](kafkactl_get_topics.md)	 - list available topics
+
+
+#### kafkactl get access-control-list
+
+list available acls
+
+##### Synopsis
+
+list available acls
+
+```
+kafkactl get access-control-list [flags]
+```
+
+##### Options
+
+```
+  -a, --allow              acl of permissionType 'allow'
+  -c, --cluster            list acl for the cluster
+  -d, --deny               acl of permissionType 'deny'
+  -g, --groups             list acl for consumer groups
+  -h, --help               help for access-control-list
+      --operation string   operation of acl (default "any")
+  -o, --output string      output format. One of: json|yaml
+      --pattern string     pattern type. one of (any, match, prefixed, literal) (default "any")
+  -t, --topics             list acl for topics
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups, acls
 
 
 #### kafkactl get consumer-groups
@@ -710,7 +829,7 @@ kafkactl get consumer-groups [flags]
 
 ##### SEE ALSO
 
-* [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups
+* [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups, acls
 
 
 #### kafkactl get topics
@@ -741,7 +860,7 @@ kafkactl get topics [flags]
 
 ##### SEE ALSO
 
-* [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups
+* [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups, acls
 
 
 ### kafkactl produce
