@@ -172,8 +172,8 @@ func TestAvroDeserializationErrorHandlingIntegration(t *testing.T) {
 	test_util.AssertEquals(t, "message produced (partition=0\toffset=2)", kafkaCtl.GetStdOut())
 
 	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit"); err != nil {
-		test_util.AssertEquals(t, fmt.Sprintf("%s\n%s", value, value), kafkaCtl.GetStdOut())
 		test_util.AssertErrorContains(t, "failed to find avro schema", err)
+		test_util.AssertEquals(t, fmt.Sprintf("%s\n%s", value, value), kafkaCtl.GetStdOut())
 	} else {
 		t.Fatalf("expected consumer to fail")
 	}
