@@ -112,11 +112,27 @@ func CreateClient(context *ClientContext) (sarama.Client, error) {
 	}
 }
 
+func CreateClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
+	config, err := CreateClientConfig(context)
+	if err == nil {
+		return sarama.NewClusterAdmin(context.Brokers, config)
+	} else {
+		return nil, err
+	}
+}
+
 func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 
 	var config = sarama.NewConfig()
 	config.Version = context.KafkaVersion
 	config.ClientID = getClientID(context)
+
+	if context.RequestTimeout > 0 {
+		output.Debugf("using admin request timeout: %s", context.RequestTimeout.String())
+		config.Admin.Timeout = context.RequestTimeout
+	} else {
+		output.Debugf("using default admin request timeout: 3s")
+	}
 
 	if context.Tls.Enabled {
 		output.Debugf("TLS is enabled.")
@@ -155,40 +171,6 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 	}
 
 	return config, nil
-}
-
-func CreateClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
-
-	var config = sarama.NewConfig()
-	config.Version = context.KafkaVersion
-	config.ClientID = getClientID(context)
-
-	if context.RequestTimeout > 0 {
-		output.Debugf("using admin request timeout: %s", context.RequestTimeout.String())
-		config.Admin.Timeout = context.RequestTimeout
-	} else {
-		output.Debugf("using default admin request timeout: 3s")
-	}
-
-	if context.Tls.Enabled {
-		output.Debugf("TLS is enabled.")
-		config.Net.TLS.Enable = true
-
-		tlsConfig, err := setupTlsConfig(context.Tls)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to setup tls config")
-		}
-		config.Net.TLS.Config = tlsConfig
-	}
-
-	if context.Sasl.Enabled {
-		output.Debugf("SASL is enabled (username = %s).", context.Sasl.Username)
-		config.Net.SASL.Enable = true
-		config.Net.SASL.User = context.Sasl.Username
-		config.Net.SASL.Password = context.Sasl.Password
-	}
-
-	return sarama.NewClusterAdmin(context.Brokers, config)
 }
 
 func getClientID(context *ClientContext) string {
