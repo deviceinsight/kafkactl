@@ -246,6 +246,8 @@ github.com/landoop/schema-registry v0.0.0-20190327143759-50a5701c1891/go.mod h1:
 github.com/linkedin/goavro v0.0.0-20180427113916-2f3e1dff9761 h1:2J8vvdoKw+MZLtcDGhpLDbir1EbWvbnN5TYFjYscRZo=
 github.com/linkedin/goavro v0.0.0-20180427113916-2f3e1dff9761/go.mod h1:lQ/FVrZrTVz2+ndl1cU7XZhOx3uZewreLn3S55fE4pQ=
 github.com/linkedin/goavro v1.0.5 h1:6ds0AI8upkEoafDk0a5r9q1p/xRtMq47jCilZYEqbmg=
+github.com/linkedin/goavro/v2 v2.10.0 h1:eTBIRoInBM88gITGXYtUSqqxLTFXfOsJBiX8ZMW0o4U=
+github.com/linkedin/goavro/v2 v2.10.0/go.mod h1:UgQUb2N/pmueQYH9bfqFioWxzYCZXSfF8Jw03O5sjqA=
 github.com/magiconair/properties v1.8.0 h1:LLgXmsheXeRoUOBOjtwPQCWIYqM/LU1ayDtDePerRcY=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/magiconair/properties v1.8.1 h1:ZC2Vc7/ZFkGmsVC9KvOjumD+G5lXy2RtTKyzRKO2BQ4=
