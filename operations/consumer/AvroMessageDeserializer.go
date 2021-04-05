@@ -6,7 +6,7 @@ import (
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/deviceinsight/kafkactl/util"
 	"github.com/landoop/schema-registry"
-	"github.com/linkedin/goavro"
+	"github.com/linkedin/goavro/v2"
 	"github.com/pkg/errors"
 	"strconv"
 	"strings"
