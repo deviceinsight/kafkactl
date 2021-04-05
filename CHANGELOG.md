@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 of `plaintext`.
 - Added new commands `get acl`, `create acl`, `delete acl` to manage Kafka ACLs with kafkactl
 
+### Changed
+- Updated avro library to latest version (v2.10.0)
+
 ## 1.15.1 - 2021-01-20
 
 ### Fixed
