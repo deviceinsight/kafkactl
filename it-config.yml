@@ -10,6 +10,15 @@ contexts:
       schemaRegistry: localhost:18081
     kafkaversion: 2.6.0
 
+  # context without avro
+  no-avro:
+    brokers:
+      - localhost:19093
+      - localhost:29093
+      - localhost:39093
+    requestTimeout: 15s
+    kafkaversion: 2.6.0
+
   # sasl context as admin
   sasl-admin:
     brokers:

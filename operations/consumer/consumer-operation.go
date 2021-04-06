@@ -25,7 +25,6 @@ type ConsumerFlags struct {
 	Partitions      []int
 	Offsets         []string
 	FromBeginning   bool
-	BufferSize      int
 	Tail            int
 	Exit            bool
 	EncodeValue     string
@@ -110,8 +109,8 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) e
 	}
 
 	var (
-		messages          = make(chan *sarama.ConsumerMessage, flags.BufferSize)
-		errChannel        = make(chan error)
+		messages          = make(chan *sarama.ConsumerMessage)
+		errChannel        = make(chan error, 1)
 		closing           = make(chan struct{})
 		wgPartition       sync.WaitGroup
 		wgConsumerActive  sync.WaitGroup
@@ -134,12 +133,12 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) e
 			defer wgPartition.Done()
 			initialOffset, lastOffset, err := getOffsetBounds(&client, topic, flags, partition)
 			if err != nil {
-				errChannel <- err
+				recordFirstError(errChannel, err)
 				return
 			}
 			pc, err := c.ConsumePartition(topic, partition, initialOffset)
 			if err != nil {
-				errChannel <- errors.Errorf("Failed to start consumer for partition %d: %s", partition, err)
+				recordFirstError(errChannel, errors.Errorf("Failed to start consumer for partition %d: %s", partition, err))
 				return
 			}
 
@@ -202,7 +201,7 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) e
 			for i := range sortedMessages {
 				err := deserializer.Deserialize(sortedMessages[lastIndex-i], flags)
 				if err != nil {
-					errChannel <- err
+					recordFirstError(errChannel, err)
 					return
 				}
 			}
@@ -215,8 +214,9 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) e
 			for msg := range messages {
 				err := deserializer.Deserialize(msg, flags)
 				if err != nil {
-					errChannel <- err
-					return
+					if recordFirstError(errChannel, err) {
+						close(closing)
+					}
 				}
 			}
 		}()
@@ -240,6 +240,16 @@ func (operation *ConsumerOperation) Consume(topic string, flags ConsumerFlags) e
 		return errors.Wrap(err, "Failed to close consumer")
 	}
 	return nil
+}
+
+func recordFirstError(errChannel chan error, err error) bool {
+	select {
+	case errChannel <- err:
+		return true
+	default:
+		output.Warnf("%v", err)
+		return false
+	}
 }
 
 func getOffsetBounds(client *sarama.Client, topic string, flags ConsumerFlags, currentPartition int32) (int64, int64, error) {
