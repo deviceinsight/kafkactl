@@ -5,8 +5,7 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/deviceinsight/kafkactl/util"
-	"github.com/landoop/schema-registry"
-	"github.com/linkedin/goavro"
+	"github.com/linkedin/goavro/v2"
 	"github.com/pkg/errors"
 	"strconv"
 	"strings"
@@ -16,7 +15,7 @@ import (
 type AvroMessageDeserializer struct {
 	topic              string
 	avroSchemaRegistry string
-	client             *schemaregistry.Client
+	registry           *CachingSchemaRegistry
 }
 
 func CreateAvroMessageDeserializer(topic string, avroSchemaRegistry string) (AvroMessageDeserializer, error) {
@@ -25,7 +24,7 @@ func CreateAvroMessageDeserializer(topic string, avroSchemaRegistry string) (Avr
 
 	deserializer := AvroMessageDeserializer{topic: topic, avroSchemaRegistry: avroSchemaRegistry}
 
-	deserializer.client, err = schemaregistry.NewClient(deserializer.avroSchemaRegistry)
+	deserializer.registry, err = CreateCachingSchemaRegistry(deserializer.avroSchemaRegistry)
 
 	if err != nil {
 		return deserializer, errors.Wrap(err, "failed to create schema registry client: ")
@@ -114,7 +113,7 @@ func (deserializer AvroMessageDeserializer) decode(rawData []byte, flags Consume
 
 	output.Debugf("decode %s and id %d", subject, schemaId)
 
-	subjects, err := deserializer.client.Subjects()
+	subjects, err := deserializer.registry.Subjects()
 
 	if err != nil {
 		return decodedValue{}, errors.Wrap(err, "failed to list available avro schemas")
@@ -125,7 +124,7 @@ func (deserializer AvroMessageDeserializer) decode(rawData []byte, flags Consume
 		return decodedValue{value: encodeBytes(rawData, flags.EncodeValue)}, nil
 	}
 
-	schema, err := deserializer.client.GetSchemaByID(schemaId)
+	schema, err := deserializer.registry.GetSchemaByID(schemaId)
 
 	if err != nil {
 		return decodedValue{}, errors.Errorf("failed to find avro schema for subject: %s id: %d (%v)", subject, schemaId, err)
@@ -152,7 +151,7 @@ func (deserializer AvroMessageDeserializer) decode(rawData []byte, flags Consume
 }
 
 func (deserializer AvroMessageDeserializer) CanDeserialize(topic string) (bool, error) {
-	subjects, err := deserializer.client.Subjects()
+	subjects, err := deserializer.registry.Subjects()
 
 	if err != nil {
 		return false, errors.Wrap(err, "failed to list available avro schemas")

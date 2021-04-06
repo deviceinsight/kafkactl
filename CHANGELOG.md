@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.17.0 - 2021-04-06
+
+### Fixed
+- SASL mechanism support now also implemented for cluster admin
+- process no longer gets stuck when deserialization error occurs 
+
+### Added
+- calls to avro schema registry are now cached in memory to improve performance
+
+### Changed
+- Updated avro library to latest version (v2.10.0)
+
 ## 1.16.0 - 2021-02-25
 
 ### Added

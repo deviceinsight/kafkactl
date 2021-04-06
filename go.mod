@@ -7,7 +7,7 @@ require (
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/klauspost/compress v1.11.0 // indirect
 	github.com/landoop/schema-registry v0.0.0-20190327143759-50a5701c1891
-	github.com/linkedin/goavro v0.0.0-20180427113916-2f3e1dff9761
+	github.com/linkedin/goavro/v2 v2.10.0
 	github.com/magiconair/properties v1.8.4 // indirect
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/pelletier/go-toml v1.8.1 // indirect
@@ -22,11 +22,10 @@ require (
 	go.uber.org/atomic v1.5.1 // indirect
 	go.uber.org/ratelimit v0.1.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect
-	golang.org/x/net v0.0.0-20200923182212-328152dc79b1 // indirect
 	gopkg.in/errgo.v2 v2.1.0
 	gopkg.in/ini.v1 v1.61.0 // indirect
 	gopkg.in/yaml.v2 v2.3.0
-	gotest.tools/gotestsum v1.6.2 // indirect
+	gotest.tools/gotestsum v1.6.3 // indirect
 )
 
-go 1.14
+go 1.16
