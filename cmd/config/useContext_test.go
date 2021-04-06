@@ -19,11 +19,13 @@ func TestUseContextAutoCompletionIntegration(t *testing.T) {
 
 	outputLines := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
 
-	if len(outputLines) != 4 {
-		t.Fatalf("unexpected output. expected two lines got %d: %s", len(outputLines), kafkaCtl.GetStdOut())
+	expectedContexts := []string{"default", "no-avro", "sasl-admin", "sasl-user"}
+
+	if len(outputLines) != len(expectedContexts)+1 {
+		t.Fatalf("unexpected output. expected %d lines got %d: %s", len(expectedContexts)+1, len(outputLines), kafkaCtl.GetStdOut())
 	}
 
-	test_util.AssertEquals(t, "default", outputLines[0])
-	test_util.AssertEquals(t, "sasl-admin", outputLines[1])
-	test_util.AssertEquals(t, "sasl-user", outputLines[2])
+	for _, context := range expectedContexts {
+		test_util.AssertContains(t, context, outputLines)
+	}
 }
