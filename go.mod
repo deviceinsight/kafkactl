@@ -28,4 +28,4 @@ require (
 	gotest.tools/gotestsum v1.6.3 // indirect
 )
 
-go 1.14
+go 1.16

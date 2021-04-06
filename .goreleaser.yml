@@ -15,12 +15,6 @@ builds:
 
 archives:
   - id: default
-    replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      386: i386
-      amd64: x86_64
     files:
       - LICENSE.md
       - CHANGELOG.md
@@ -92,8 +86,6 @@ dockers:
   -
     skip_push: false
     dockerfile: Dockerfile.Ubuntu
-    binaries:
-      - kafkactl
     image_templates:
       - "deviceinsight/kafkactl:latest-ubuntu"
       - "deviceinsight/kafkactl:{{ .Tag }}-ubuntu"
@@ -102,8 +94,6 @@ dockers:
   -
     skip_push: false
     dockerfile: Dockerfile.Scratch
-    binaries:
-      - kafkactl
     image_templates:
       - "deviceinsight/kafkactl:latest-scratch"
       - "deviceinsight/kafkactl:{{ .Tag }}-scratch"
