@@ -97,3 +97,10 @@ dockers:
     image_templates:
       - "deviceinsight/kafkactl:latest-scratch"
       - "deviceinsight/kafkactl:{{ .Tag }}-scratch"
+
+publishers:
+  - name: aur-kafkactl
+    env:
+      - AUR_SSH_PRIVATE_KEY={{ .Env.AUR_SSH_PRIVATE_KEY }}
+    cmd: |
+      .github/aur/kafkactl/publish.sh {{ .Version }}
