@@ -551,3 +551,12 @@ kafkactl delete acl --cluster --operation any --pattern any
 # delete all consumer-group acls with operation describe, patternType prefixed and permissionType allow
 kafkactl delete acl --groups --operation describe --pattern prefixed --allow
 ```
+
+### Getting Brokers
+
+To get the list of brokers of a kafka cluster use `get brokers`
+
+```bash
+# get the list of brokers
+kafkactl get brokers
+```
