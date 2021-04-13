@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add new command `get brokers` to get the list of brokers advertised by Kafka
+
 ## 1.17.0 - 2021-04-06
 
 ### Fixed
