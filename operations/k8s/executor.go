@@ -2,12 +2,13 @@ package k8s
 
 import (
 	"fmt"
-	"github.com/deviceinsight/kafkactl/operations"
-	"github.com/deviceinsight/kafkactl/output"
 	"math/rand"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/deviceinsight/kafkactl/operations"
+	"github.com/deviceinsight/kafkactl/output"
 )
 
 type Version struct {
@@ -37,7 +38,6 @@ func randomString(n int) string {
 }
 
 func getKubectlVersion(kubectlBinary string, runner Runner) Version {
-
 	bytes, err := runner.ExecuteAndReturn(kubectlBinary, []string{"version", "--client", "--short"})
 	if err != nil {
 		output.Fail(err)
@@ -97,7 +97,6 @@ func (kubectl *executor) SetKubectlBinary(bin string) {
 }
 
 func (kubectl *executor) Run(dockerImageType string, kafkactlArgs []string, podEnvironment []string) error {
-
 	if KafkaCtlVersion == "" {
 		KafkaCtlVersion = "latest"
 	}
@@ -105,8 +104,10 @@ func (kubectl *executor) Run(dockerImageType string, kafkactlArgs []string, podE
 
 	podName := "kafkactl-" + randomString(10)
 
-	kubectlArgs := []string{"run", "--generator=run-pod/v1", "--rm", "-i", "--tty", "--restart=Never", podName,
-		"--image", dockerImage}
+	kubectlArgs := []string{
+		"run", "--rm", "-i", "--tty", "--restart=Never", podName,
+		"--image", dockerImage,
+	}
 
 	if kubectl.kubeConfig != "" {
 		kubectlArgs = append(kubectlArgs, "--kubeconfig", kubectl.kubeConfig)
@@ -130,7 +131,6 @@ func (kubectl *executor) Run(dockerImageType string, kafkactlArgs []string, podE
 }
 
 func (kubectl *executor) exec(args []string) error {
-
 	cmd := fmt.Sprintf("exec: %s %s", kubectl.kubectlBinary, join(args))
 	output.Debugf("kubectl version: %d.%d.%d", kubectl.version.Major, kubectl.version.Minor, kubectl.version.Patch)
 	output.Debugf(cmd)

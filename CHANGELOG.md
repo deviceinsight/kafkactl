@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 1.17.0 - 2021-04-06
 
 ### Fixed
+- Compatibility with new versions of `kubectl` by removing deprecated parameter from the command
+
+### Fixed
 - SASL mechanism support now also implemented for cluster admin
 - process no longer gets stuck when deserialization error occurs 
 
