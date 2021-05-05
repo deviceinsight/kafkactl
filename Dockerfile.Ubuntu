@@ -26,4 +26,4 @@ WORKDIR /home/kafkactl
 RUN chown -R kafkactl:kafkactl /home/kafkactl
 
 USER kafkactl
-CMD ["kafkactl"]
+ENTRYPOINT ["kafkactl"]
