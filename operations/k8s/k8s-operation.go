@@ -51,7 +51,7 @@ func (operation *K8sOperation) Attach() error {
 
 	podEnvironment := parsePodEnvironment(operation.context)
 
-	return exec.Run("ubuntu", []string{"bash"}, podEnvironment)
+	return exec.Run("ubuntu", "bash", nil, podEnvironment)
 }
 
 func (operation *K8sOperation) TryRun(cmd *cobra.Command, args []string) bool {
@@ -91,7 +91,7 @@ func (operation *K8sOperation) Run(cmd *cobra.Command, args []string) error {
 	kafkaCtlCommand = append(kafkaCtlCommand, args...)
 	kafkaCtlCommand = append(kafkaCtlCommand, kafkaCtlFlags...)
 
-	return exec.Run("scratch", kafkaCtlCommand, podEnvironment)
+	return exec.Run("scratch", "/kafkactl", kafkaCtlCommand, podEnvironment)
 }
 
 func parseFlags(cmd *cobra.Command) ([]string, error) {
