@@ -96,7 +96,7 @@ func (kubectl *executor) SetKubectlBinary(bin string) {
 	kubectl.kubectlBinary = bin
 }
 
-func (kubectl *executor) Run(dockerImageType string, kafkactlArgs []string, podEnvironment []string) error {
+func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []string, podEnvironment []string) error {
 	if KafkaCtlVersion == "" {
 		KafkaCtlVersion = "latest"
 	}
@@ -124,7 +124,7 @@ func (kubectl *executor) Run(dockerImageType string, kafkactlArgs []string, podE
 		kubectlArgs = append(kubectlArgs, kubectl.extra...)
 	}
 
-	kubectlArgs = append(kubectlArgs, "--")
+	kubectlArgs = append(kubectlArgs, "--command", "--", entryPoint)
 	kubectlArgs = append(kubectlArgs, kafkactlArgs...)
 
 	return kubectl.exec(kubectlArgs)
