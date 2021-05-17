@@ -1,4 +1,4 @@
-  
+
 FROM alpine:latest as certs
 RUN apk --update --no-cache add ca-certificates && update-ca-certificates
 
