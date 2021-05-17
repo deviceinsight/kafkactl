@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Compatibility with new versions of `kubectl` by removing deprecated parameter from the command
+
 ## 1.17.0 - 2021-04-06
 
 ### Fixed
