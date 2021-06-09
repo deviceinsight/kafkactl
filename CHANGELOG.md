@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.17.2 - 2021-06-09
+
+### Fixed
+- fix version prefix in aur package. kubernetes support not working without the prefix.
+
 ## 1.17.1 - 2021-05-17
 
 ### Fixed
