@@ -17,6 +17,7 @@ import (
 
 type ProducerFlags struct {
 	Partitioner        string
+	RequiredAcks       string
 	Partition          int32
 	Separator          string
 	LineSeparator      string
@@ -64,7 +65,10 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) e
 	if err != nil {
 		return err
 	}
-	config.Producer.RequiredAcks = sarama.WaitForAll
+
+	// For implementation reasons, the SyncProducer requires `Producer.Return.Errors` and `Producer.Return.Successes` to
+	// be set to true in its configuration.
+	config.Producer.Return.Errors = true
 	config.Producer.Return.Successes = true
 
 	partitioner := clientContext.DefaultPartitioner
@@ -72,29 +76,19 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) e
 		partitioner = flags.Partitioner
 	}
 
-	switch partitioner {
-	case "":
-		if flags.Partition >= 0 {
-			config.Producer.Partitioner = sarama.NewManualPartitioner
-		} else {
-			config.Producer.Partitioner = NewJVMCompatiblePartitioner
-		}
-	case "murmur2":
-		// https://github.com/Shopify/sarama/issues/1424
-		config.Producer.Partitioner = NewJVMCompatiblePartitioner
-	case "hash":
-		config.Producer.Partitioner = sarama.NewHashPartitioner
-	case "hash-ref":
-		config.Producer.Partitioner = sarama.NewReferenceHashPartitioner
-	case "random":
-		config.Producer.Partitioner = sarama.NewRandomPartitioner
-	case "manual":
-		config.Producer.Partitioner = sarama.NewManualPartitioner
-		if flags.Partition == -1 {
-			return errors.New("partition is required when partitioning manually")
-		}
-	default:
-		return errors.Errorf("Partitioner %s not supported.", flags.Partitioner)
+	config.Producer.Partitioner, err = parsePartitioner(partitioner, flags)
+	if err != nil {
+		return err
+	}
+
+	requiredAcks := clientContext.RequiredAcks
+	if flags.RequiredAcks != "" {
+		requiredAcks = flags.RequiredAcks
+	}
+
+	config.Producer.RequiredAcks, err = parseRequiredAcks(requiredAcks)
+	if err != nil {
+		return err
 	}
 
 	if flags.Separator != "" && (flags.Key != "" || flags.Value != "") {
@@ -123,6 +117,7 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) e
 		serializer = DefaultMessageSerializer{topic: topic}
 	}
 
+	output.Debugf("producer config: %+v", config.Producer)
 	producer, err := sarama.NewSyncProducer(clientContext.Brokers, config)
 	if err != nil {
 		return errors.Wrap(err, "Failed to open Kafka producer")
@@ -254,6 +249,49 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) e
 		return errors.New("value is required, or you have to provide the value on stdin")
 	}
 	return nil
+}
+
+func parseRequiredAcks(requiredAcks string) (sarama.RequiredAcks, error) {
+	switch requiredAcks {
+	case "NoResponse":
+		return sarama.NoResponse, nil
+	case "WaitForAll":
+		return sarama.WaitForAll, nil
+	case "WaitForLocal":
+		fallthrough
+	case "":
+		return sarama.WaitForLocal, nil
+	default:
+		return sarama.WaitForLocal, errors.Errorf("unknown required-acks setting: %s", requiredAcks)
+	}
+}
+
+func parsePartitioner(partitioner string, flags ProducerFlags) (sarama.PartitionerConstructor, error) {
+	switch partitioner {
+	case "":
+		if flags.Partition >= 0 {
+			return sarama.NewManualPartitioner, nil
+		} else {
+			return NewJVMCompatiblePartitioner, nil
+		}
+	case "murmur2":
+		// https://github.com/Shopify/sarama/issues/1424
+		return NewJVMCompatiblePartitioner, nil
+	case "hash":
+		return sarama.NewHashPartitioner, nil
+	case "hash-ref":
+		return sarama.NewReferenceHashPartitioner, nil
+	case "random":
+		return sarama.NewRandomPartitioner, nil
+	case "manual":
+		if flags.Partition == -1 {
+			return nil, errors.New("partition is required when partitioning manually")
+		} else {
+			return sarama.NewManualPartitioner, nil
+		}
+	default:
+		return nil, errors.Errorf("Partitioner %s not supported.", flags.Partitioner)
+	}
 }
 
 func convertControlChars(value string) string {

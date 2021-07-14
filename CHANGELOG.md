@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- the default for required-acks in the producer has been changed to WaitForLocal in order to align with the JVM Producer.
+  In addition, this setting is now also configurable.
+
 ## 1.17.2 - 2021-06-09
 
 ### Fixed

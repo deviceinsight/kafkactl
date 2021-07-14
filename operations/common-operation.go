@@ -53,6 +53,7 @@ type ClientContext struct {
 	KafkaVersion       sarama.KafkaVersion
 	AvroSchemaRegistry string
 	DefaultPartitioner string
+	RequiredAcks       string
 }
 
 func CreateClientContext() (ClientContext, error) {
@@ -88,6 +89,7 @@ func CreateClientContext() (ClientContext, error) {
 	}
 	context.AvroSchemaRegistry = viper.GetString("contexts." + context.Name + ".avro.schemaRegistry")
 	context.DefaultPartitioner = viper.GetString("contexts." + context.Name + ".defaultPartitioner")
+	context.RequiredAcks = viper.GetString("contexts." + context.Name + ".requiredAcks")
 	context.Sasl.Enabled = viper.GetBool("contexts." + context.Name + ".sasl.enabled")
 	context.Sasl.Username = viper.GetString("contexts." + context.Name + ".sasl.username")
 	context.Sasl.Password = viper.GetString("contexts." + context.Name + ".sasl.password")

@@ -122,6 +122,10 @@ contexts:
     # optional: changes the default partitioner
     defaultPartitioner: "hash"
 
+    # optional: changes default required acks in produce request
+    # see: https://pkg.go.dev/github.com/Shopify/sarama?utm_source=godoc#RequiredAcks
+    requiredAcks: "WaitForAll"
+
 
 current-context: default
 ```
@@ -363,6 +367,11 @@ kafkactl produce my-topic --key=my-key --value=my-value --header key1:value1 --h
 The following example writes the key from base64 and value from hex:
 ```bash
 kafkactl produce my-topic --key=dGVzdC1rZXk= --key-encoding=base64 --value=0000000000000000 --value-encoding=hex
+```
+
+You can control how many replica acknowledgements are needed for a response:
+```bash
+kafkactl produce my-topic --key=my-key --value=my-value --required-acks=WaitForAll
 ```
 
 ### Avro support
