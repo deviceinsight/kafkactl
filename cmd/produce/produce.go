@@ -28,6 +28,7 @@ func NewProduceCmd() *cobra.Command {
 
 	cmdProduce.Flags().Int32VarP(&flags.Partition, "partition", "p", -1, "partition to produce to")
 	cmdProduce.Flags().StringVarP(&flags.Partitioner, "partitioner", "P", "", "the partitioning scheme to use. Can be `murmur2`, `hash`, `hash-ref` `manual`, or `random`. (default is murmur2)")
+	cmdProduce.Flags().StringVarP(&flags.RequiredAcks, "required-acks", "", "", "required acks. One of `NoResponse`, `WaitForLocal`, `WaitForAll`. (default is WaitForLocal)")
 	cmdProduce.Flags().StringVarP(&flags.Key, "key", "k", "", "key to use for all messages")
 	cmdProduce.Flags().StringVarP(&flags.Value, "value", "v", "", "value to produce")
 	cmdProduce.Flags().StringVarP(&flags.File, "file", "f", "", "file to read input from")
