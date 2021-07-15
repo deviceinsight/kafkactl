@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.18.1 - 2021-07-15
+
 ### Fixed
 - alter topic should fail, when trying to set number of partitions to the current number of partitions
 
