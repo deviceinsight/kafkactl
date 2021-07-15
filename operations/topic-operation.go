@@ -271,6 +271,8 @@ func (operation *TopicOperation) AlterTopic(topic string, flags AlterTopicFlags)
 	if flags.Partitions != 0 {
 		if len(t.Partitions) > int(flags.Partitions) {
 			return errors.New("Decreasing the number of partitions is not supported")
+		} else if len(t.Partitions) == int(flags.Partitions) {
+			return errors.Errorf("Topic already has %d partitions", flags.Partitions)
 		}
 
 		if flags.ValidateOnly {
