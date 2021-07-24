@@ -489,6 +489,15 @@ kafkactl reset offset my-group --topic my-topic --newest
 kafkactl reset offset my-group --topic my-topic --partition 5 --offset 100
 ```
 
+### Delete consumer groups
+
+In order to delete a consumer group or a list of consumer groups use `delete consumer-group`
+
+```bash
+# delete consumer group my-group
+kafkactl delete consumer-group my-group
+```
+
 ### ACL Management
 
 Available ACL operations are documented [here](https://docs.confluent.io/platform/current/kafka/authorization.html#operations).
