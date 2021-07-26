@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.19.0 - 2021-07-26
+
 ### Added
 - Added new commands `delete consumer-group` to delete a consumer-group
 
