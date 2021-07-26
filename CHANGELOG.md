@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added new commands `delete consumer-group` to delete a consumer-group
 
+### Fixed
+- Calls to the AVRO schema registry are now cached correctly
+
+
 ## 1.18.1 - 2021-07-15
 
 ### Fixed
