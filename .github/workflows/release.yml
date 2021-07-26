@@ -24,7 +24,7 @@ jobs:
         name: Snapcraft login
         uses: samuelmeuli/action-snapcraft@v1
         with:
-          # snapcraft export-login --snaps kafkactl --channels stable -
+          # snapcraft export-login --snaps kafkactl --channels edge,beta,candidate,stable -
           snapcraft_token: ${{ secrets.snapcraft_token }}
       -
         name: Docker login
