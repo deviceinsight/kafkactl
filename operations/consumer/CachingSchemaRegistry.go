@@ -1,7 +1,7 @@
 package consumer
 
 import (
-	"github.com/landoop/schema-registry"
+	schemaregistry "github.com/landoop/schema-registry"
 	"github.com/pkg/errors"
 )
 
@@ -27,7 +27,7 @@ func CreateCachingSchemaRegistry(avroSchemaRegistry string) (*CachingSchemaRegis
 	return registry, nil
 }
 
-func (registry CachingSchemaRegistry) Subjects() ([]string, error) {
+func (registry *CachingSchemaRegistry) Subjects() ([]string, error) {
 	var err error = nil
 
 	if len(registry.subjects) == 0 {
@@ -37,7 +37,7 @@ func (registry CachingSchemaRegistry) Subjects() ([]string, error) {
 	return registry.subjects, err
 }
 
-func (registry CachingSchemaRegistry) GetSchemaByID(id int) (string, error) {
+func (registry *CachingSchemaRegistry) GetSchemaByID(id int) (string, error) {
 	var err error = nil
 
 	if _, ok := registry.schemas[id]; !ok {
