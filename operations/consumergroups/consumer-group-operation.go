@@ -535,3 +535,29 @@ func CompleteConsumerGroupsFiltered(flags DescribeConsumerGroupFlags) ([]string,
 func CompleteConsumerGroups(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	return CompleteConsumerGroupsFiltered(DescribeConsumerGroupFlags{FilterTopic: ""})
 }
+
+func (operation *ConsumerGroupOperation) DeleteConsumerGroups(consumerGroups []string) error {
+
+	var (
+			err     error
+			context operations.ClientContext
+			admin   sarama.ClusterAdmin
+	)
+
+	if context, err = operations.CreateClientContext(); err != nil {
+			return err
+	}
+
+	if admin, err = operations.CreateClusterAdmin(&context); err != nil {
+			return errors.Wrap(err, "failed to create cluster admin")
+	}
+
+	for _, consumerGroup := range consumerGroups {
+			if err = admin.DeleteConsumerGroup(consumerGroup); err != nil {
+					return errors.Wrap(err, "failed to delete consumerGroup")
+			} else {
+					output.Infof("consumer-group deleted: %s", consumerGroup)
+			}
+	}
+	return nil
+}
