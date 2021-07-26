@@ -12,6 +12,7 @@ func NewDeleteCmd() *cobra.Command {
 	}
 
 	cmdDelete.AddCommand(newDeleteTopicCmd())
+	cmdDelete.AddCommand(newDeleteConsumerGroupCmd())
 	cmdDelete.AddCommand(newDeleteAclCmd())
 	return cmdDelete
 }

@@ -566,6 +566,7 @@ delete topics, acls
 
 * [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
 * [kafkactl delete access-control-list](kafkactl_delete_access-control-list.md)	 - delete an acl
+* [kafkactl delete consumer-group](kafkactl_delete_consumer-group.md)	 - delete a consumer-group
 * [kafkactl delete topic](kafkactl_delete_topic.md)	 - delete a topic
 
 
@@ -593,6 +594,36 @@ kafkactl delete access-control-list [flags]
       --pattern string     pattern type. one of (any, match, prefixed, literal)
   -t, --topics             delete acl for a topic
   -v, --validate-only      validate only
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl delete](kafkactl_delete.md)	 - delete topics, acls
+
+
+#### kafkactl delete consumer-group
+
+delete a consumer-group
+
+##### Synopsis
+
+delete a consumer-group
+
+```
+kafkactl delete consumer-group CONSUMER-GROUP [flags]
+```
+
+##### Options
+
+```
+  -h, --help   help for consumer-group
 ```
 
 ##### Options inherited from parent commands
