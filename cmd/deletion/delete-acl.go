@@ -2,6 +2,7 @@ package deletion
 
 import (
 	"github.com/deviceinsight/kafkactl/operations/acl"
+	"github.com/deviceinsight/kafkactl/operations/k8s"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
@@ -16,8 +17,10 @@ func newDeleteAclCmd() *cobra.Command {
 		Short:   "delete an acl",
 		Args:    cobra.MaximumNArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := (&acl.AclOperation{}).DeleteAcl(flags); err != nil {
-				output.Fail(err)
+			if !(&k8s.K8sOperation{}).TryRun(cmd, args) {
+				if err := (&acl.AclOperation{}).DeleteAcl(flags); err != nil {
+					output.Fail(err)
+				}
 			}
 		},
 	}
