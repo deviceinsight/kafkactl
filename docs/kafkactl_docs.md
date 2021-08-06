@@ -22,7 +22,7 @@ A command-line interface the simplifies interaction with Kafka.
 * [kafkactl config](kafkactl_config.md)	 - show and edit configurations
 * [kafkactl consume](kafkactl_consume.md)	 - consume messages from a topic
 * [kafkactl create](kafkactl_create.md)	 - create topics, consumerGroups, acls
-* [kafkactl delete](kafkactl_delete.md)	 - delete topics, acls
+* [kafkactl delete](kafkactl_delete.md)	 - delete topics, consumerGroups, acls
 * [kafkactl describe](kafkactl_describe.md)	 - describe topics, consumerGroups
 * [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups, acls
 * [kafkactl produce](kafkactl_produce.md)	 - produce messages to a topic
@@ -543,11 +543,11 @@ kafkactl create topic TOPIC [flags]
 
 ### kafkactl delete
 
-delete topics, acls
+delete topics, consumerGroups, acls
 
 #### Synopsis
 
-delete topics, acls
+delete topics, consumerGroups, acls
 
 #### Options
 
@@ -605,7 +605,7 @@ kafkactl delete access-control-list [flags]
 
 ##### SEE ALSO
 
-* [kafkactl delete](kafkactl_delete.md)	 - delete topics, acls
+* [kafkactl delete](kafkactl_delete.md)	 - delete topics, consumerGroups, acls
 
 
 #### kafkactl delete consumer-group
@@ -635,7 +635,7 @@ kafkactl delete consumer-group CONSUMER-GROUP [flags]
 
 ##### SEE ALSO
 
-* [kafkactl delete](kafkactl_delete.md)	 - delete topics, acls
+* [kafkactl delete](kafkactl_delete.md)	 - delete topics, consumerGroups, acls
 
 
 #### kafkactl delete topic
@@ -665,7 +665,7 @@ kafkactl delete topic TOPIC [flags]
 
 ##### SEE ALSO
 
-* [kafkactl delete](kafkactl_delete.md)	 - delete topics, acls
+* [kafkactl delete](kafkactl_delete.md)	 - delete topics, consumerGroups, acls
 
 
 ### kafkactl describe

@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.20.0 - 2021-08-06
+
+### Fixed
+- Filter -C and --config-file option in kubernetes context
+
+### Added
+- Support `delete` command when accessing a remote cluster deployed on kubernetes
+
 ## 1.19.0 - 2021-07-26
 
 ### Added
@@ -13,7 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Calls to the AVRO schema registry are now cached correctly
-
 
 ## 1.18.1 - 2021-07-15
 

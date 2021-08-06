@@ -8,7 +8,7 @@ func NewDeleteCmd() *cobra.Command {
 
 	var cmdDelete = &cobra.Command{
 		Use:   "delete",
-		Short: "delete topics, acls",
+		Short: "delete topics, consumerGroups, acls",
 	}
 
 	cmdDelete.AddCommand(newDeleteTopicCmd())
