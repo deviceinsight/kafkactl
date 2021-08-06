@@ -125,9 +125,23 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 	}
 
 	kubectlArgs = append(kubectlArgs, "--command", "--", entryPoint)
-	kubectlArgs = append(kubectlArgs, kafkactlArgs...)
+
+	// Keep only kafkactl arguments that are relevant in k8s context
+	allExceptConfigFileFilter := func(s string) bool {
+		return !strings.HasPrefix(s, "-C=") && !strings.HasPrefix(s, "--config-file=")
+	}
+	kubectlArgs = append(kubectlArgs, filter(kafkactlArgs, allExceptConfigFileFilter)...)
 
 	return kubectl.exec(kubectlArgs)
+}
+
+func filter(slice []string, predicate func(string) bool) (ret []string) {
+	for _, s := range slice {
+		if predicate(s) {
+			ret = append(ret, s)
+		}
+	}
+	return
 }
 
 func (kubectl *executor) exec(args []string) error {
