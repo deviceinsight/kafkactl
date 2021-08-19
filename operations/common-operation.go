@@ -250,8 +250,8 @@ func setupTlsConfig(tlsConfig TlsConfig) (*tls.Config, error) {
 
 func kafkaVersion(s string) (sarama.KafkaVersion, error) {
 	if s == "" {
-		output.Debugf("Assuming kafkaVersion: %s", sarama.V2_0_0_0)
-		return sarama.V2_0_0_0, nil
+		output.Debugf("Assuming kafkaVersion: %s", sarama.V2_5_0_0)
+		return sarama.V2_5_0_0, nil
 	}
 
 	v, err := sarama.ParseKafkaVersion(strings.TrimPrefix(s, "v"))

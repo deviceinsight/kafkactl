@@ -109,7 +109,7 @@ contexts:
     # optional: clientID config (defaults to kafkactl-{username})
     clientID: my-client-id
     
-    # optional: kafkaVersion (defaults to 2.0.0)
+    # optional: kafkaVersion (defaults to 2.5.0)
     kafkaVersion: 1.1.1
 
     # optional: timeout for admin requests (defaults to 3s)
