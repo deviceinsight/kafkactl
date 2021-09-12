@@ -489,6 +489,17 @@ kafkactl reset offset my-group --topic my-topic --newest
 kafkactl reset offset my-group --topic my-topic --partition 5 --offset 100
 ```
 
+### Delete consumer group offsets
+
+In order to delete a consumer group offset use `delete offset`
+
+```bash
+# delete offset for all partitions of topic my-topic
+kafkactl delete offset my-group --topic my-topic
+# delete offset for partition 1 of topic my-topic
+kafkactl delete offset my-group --topic my-topic --partition 1
+```
+
 ### Delete consumer groups
 
 In order to delete a consumer group or a list of consumer groups use `delete consumer-group`
