@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/cmd"
+	"github.com/deviceinsight/kafkactl/operations"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/deviceinsight/kafkactl/util"
 	"github.com/spf13/cobra"
@@ -76,6 +78,35 @@ func StartIntegrationTestWithContext(t *testing.T, context string) {
 	SwitchContext(context)
 
 	startTest(t, "integration-test.log")
+}
+
+func CreateClient(t *testing.T) sarama.Client{
+	var (
+		err     error
+		context operations.ClientContext
+		client  sarama.Client
+	)
+
+	if context, err = operations.CreateClientContext(); err != nil {
+		t.Fatalf("failed to create context : %s", err)
+	}
+
+	if client, err = operations.CreateClient(&context); err != nil {
+		t.Fatalf("failed to create cluster admin : %s", err)
+	}
+	return client
+}
+
+func MarkOffset(t *testing.T, client sarama.Client, groupName string, topic string, partition int32, offset int64) {
+	offsetMgr, _ := sarama.NewOffsetManagerFromClient(groupName, client)
+	defer offsetMgr.Close()
+	partitionOffsetManager, err := offsetMgr.ManagePartition(topic, partition)
+	defer partitionOffsetManager.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	partitionOffsetManager.MarkOffset(offset, "")
+	offsetMgr.Commit()
 }
 
 func SwitchContext(context string) {
