@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- SASL mechanism setting is now supported in `kafkactl attach`
+
 ## 1.20.0 - 2021-08-06
 
 ### Fixed
