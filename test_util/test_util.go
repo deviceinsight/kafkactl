@@ -117,6 +117,21 @@ func AssertEquals(t *testing.T, expected, actual string) {
 	}
 }
 
+func AssertErrorContainsOneOf(t *testing.T, expected []string, err error) {
+
+	if err == nil {
+		t.Fatalf("expected error to contain: %s\n: %v", expected, "nil")
+	}
+
+	for _, expect := range expected {
+		if strings.Contains(err.Error(), expect) {
+			return
+		}
+	}
+
+	t.Fatalf("expected error to contain one of: %s\n: %v", expected, err)
+}
+
 func AssertErrorContains(t *testing.T, expected string, err error) {
 
 	if err == nil {

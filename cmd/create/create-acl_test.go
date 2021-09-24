@@ -66,7 +66,11 @@ func TestCreateTopicWriteAclIntegration(t *testing.T) {
 
 	// should not be able to consume
 	_, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-keys")
-	test_util.AssertErrorContains(t, fmt.Sprintf("topic '%s' does not exist", topicName), err)
+
+	pre28ErrorMessage := fmt.Sprintf("topic '%s' does not exist", topicName)
+	errorMessage := "The client is not authorized to access this topic"
+
+	test_util.AssertErrorContainsOneOf(t, []string{pre28ErrorMessage, errorMessage}, err)
 }
 
 func TestCreateTopicAlterConfigsDenyAclIntegration(t *testing.T) {
