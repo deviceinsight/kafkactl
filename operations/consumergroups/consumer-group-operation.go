@@ -118,6 +118,10 @@ func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeCon
 		cg := consumerGroup{Name: description.GroupId, ProtocolType: description.ProtocolType}
 		consumerGroupDescription := consumerGroupDescription{Group: cg, Protocol: description.Protocol, State: description.State, Topics: topicPartitions, Members: make([]consumerGroupMember, 0)}
 
+		if description.Err != sarama.ErrNoError {
+			output.Warnf("error describing group %s: %s", description.GroupId, description.Err.Error())
+		}
+
 		for _, member := range description.Members {
 
 			memberAssignment, err := member.GetMemberAssignment()
@@ -424,6 +428,10 @@ func findAssignedTopics(admin sarama.ClusterAdmin, groupNames []string) (map[str
 
 	for _, description := range descriptions {
 
+		if description.Err != sarama.ErrNoError {
+			output.Warnf("error describing group %s: %s", description.GroupId, description.Err.Error())
+		}
+
 		topics := make([]string, 0)
 
 		for _, member := range description.Members {
@@ -436,6 +444,7 @@ func findAssignedTopics(admin sarama.ClusterAdmin, groupNames []string) (map[str
 			assignment, err := member.GetMemberAssignment()
 
 			if err != nil {
+				output.Debugf("group=%s, protocolType=%s, state=%s", description.GroupId, description.ProtocolType, description.State)
 				return nil, errors.Wrap(err, "failed to get group member assignment")
 			}
 
@@ -471,11 +480,16 @@ func filterGroups(admin sarama.ClusterAdmin, groupNames []string, topic string) 
 			continue
 		}
 
+		if description.Err != sarama.ErrNoError {
+			output.Warnf("error describing group %s: %s", description.GroupId, description.Err.Error())
+		}
+
 		for _, member := range description.Members {
 
 			assignment, err := member.GetMemberAssignment()
 
 			if err != nil {
+				output.Debugf("group=%s, protocolType=%s, state=%s", description.GroupId, description.ProtocolType, description.State)
 				return nil, errors.Wrap(err, "failed to get group member assignment")
 			}
 
@@ -539,25 +553,25 @@ func CompleteConsumerGroups(cmd *cobra.Command, args []string, toComplete string
 func (operation *ConsumerGroupOperation) DeleteConsumerGroups(consumerGroups []string) error {
 
 	var (
-			err     error
-			context operations.ClientContext
-			admin   sarama.ClusterAdmin
+		err     error
+		context operations.ClientContext
+		admin   sarama.ClusterAdmin
 	)
 
 	if context, err = operations.CreateClientContext(); err != nil {
-			return err
+		return err
 	}
 
 	if admin, err = operations.CreateClusterAdmin(&context); err != nil {
-			return errors.Wrap(err, "failed to create cluster admin")
+		return errors.Wrap(err, "failed to create cluster admin")
 	}
 
 	for _, consumerGroup := range consumerGroups {
-			if err = admin.DeleteConsumerGroup(consumerGroup); err != nil {
-					return errors.Wrap(err, "failed to delete consumerGroup")
-			} else {
-					output.Infof("consumer-group deleted: %s", consumerGroup)
-			}
+		if err = admin.DeleteConsumerGroup(consumerGroup); err != nil {
+			return errors.Wrap(err, "failed to delete consumerGroup")
+		} else {
+			output.Infof("consumer-group deleted: %s", consumerGroup)
+		}
 	}
 	return nil
 }

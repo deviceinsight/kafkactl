@@ -489,6 +489,17 @@ kafkactl reset offset my-group --topic my-topic --newest
 kafkactl reset offset my-group --topic my-topic --partition 5 --offset 100
 ```
 
+### Delete consumer group offsets
+
+In order to delete a consumer group offset use `delete offset`
+
+```bash
+# delete offset for all partitions of topic my-topic
+kafkactl delete offset my-group --topic my-topic
+# delete offset for partition 1 of topic my-topic
+kafkactl delete offset my-group --topic my-topic --partition 1
+```
+
 ### Delete consumer groups
 
 In order to delete a consumer group or a list of consumer groups use `delete consumer-group`
@@ -539,4 +550,13 @@ kafkactl delete acl --topics --operation any --pattern any
 kafkactl delete acl --cluster --operation any --pattern any
 # delete all consumer-group acls with operation describe, patternType prefixed and permissionType allow
 kafkactl delete acl --groups --operation describe --pattern prefixed --allow
+```
+
+### Getting Brokers
+
+To get the list of brokers of a kafka cluster use `get brokers`
+
+```bash
+# get the list of brokers
+kafkactl get brokers
 ```

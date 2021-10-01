@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.21.0 - 2021-10-01
+
+### Added
+- Added new command `delete consumer-group-offset` to delete a consumer-group-offset
+- Add new command `get brokers` to get the list of brokers advertised by Kafka
+
 ## 1.20.1 - 2021-09-24
 
 ### Fixed

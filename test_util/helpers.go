@@ -112,7 +112,7 @@ func VerifyGroupExists(t *testing.T, group string) {
 
 	kafkaCtl := CreateKafkaCtlCommand()
 
-	findTopic := func(attempt uint) error {
+	findConsumerGroup := func(attempt uint) error {
 		_, err := kafkaCtl.Execute("get", "cg", "-o", "compact")
 
 		if err != nil {
@@ -128,7 +128,7 @@ func VerifyGroupExists(t *testing.T, group string) {
 	}
 
 	err := retry.Retry(
-		findTopic,
+		findConsumerGroup,
 		strategy.Limit(5),
 		strategy.Backoff(backoff.Linear(10*time.Millisecond)),
 	)
