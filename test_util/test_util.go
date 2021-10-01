@@ -80,7 +80,7 @@ func StartIntegrationTestWithContext(t *testing.T, context string) {
 	startTest(t, "integration-test.log")
 }
 
-func CreateClient(t *testing.T) sarama.Client{
+func CreateClient(t *testing.T) sarama.Client {
 	var (
 		err     error
 		context operations.ClientContext
@@ -99,12 +99,25 @@ func CreateClient(t *testing.T) sarama.Client{
 
 func MarkOffset(t *testing.T, client sarama.Client, groupName string, topic string, partition int32, offset int64) {
 	offsetMgr, _ := sarama.NewOffsetManagerFromClient(groupName, client)
-	defer offsetMgr.Close()
+	defer func(offsetMgr sarama.OffsetManager) {
+		err := offsetMgr.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}(offsetMgr)
+
 	partitionOffsetManager, err := offsetMgr.ManagePartition(topic, partition)
-	defer partitionOffsetManager.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	defer func(partitionOffsetManager sarama.PartitionOffsetManager) {
+		err := partitionOffsetManager.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}(partitionOffsetManager)
+
 	partitionOffsetManager.MarkOffset(offset, "")
 	offsetMgr.Commit()
 }
