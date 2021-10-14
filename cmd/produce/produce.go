@@ -31,6 +31,7 @@ func NewProduceCmd() *cobra.Command {
 	cmdProduce.Flags().StringVarP(&flags.RequiredAcks, "required-acks", "", "", "required acks. One of `NoResponse`, `WaitForLocal`, `WaitForAll`. (default is WaitForLocal)")
 	cmdProduce.Flags().StringVarP(&flags.Key, "key", "k", "", "key to use for all messages")
 	cmdProduce.Flags().StringVarP(&flags.Value, "value", "v", "", "value to produce")
+	cmdProduce.Flags().BoolVarP(&flags.NullValue, "null-value", "", false, "produce a null value (can be used instead of providing a value with --value)")
 	cmdProduce.Flags().StringVarP(&flags.File, "file", "f", "", "file to read input from")
 	cmdProduce.Flags().StringArrayVarP(&flags.Headers, "header", "H", flags.Headers, "headers in format `key:value`")
 	cmdProduce.Flags().StringVarP(&flags.Separator, "separator", "S", "", "separator to split key and value from stdin or file")

@@ -24,6 +24,7 @@ type ProducerFlags struct {
 	File               string
 	Key                string
 	Value              string
+	NullValue          bool
 	Headers            []string
 	KeySchemaVersion   int
 	ValueSchemaVersion int
@@ -137,9 +138,20 @@ func (operation *ProducerOperation) Produce(topic string, flags ProducerFlags) e
 		key = flags.Key
 	}
 
-	if flags.Value != "" {
+	if flags.NullValue && flags.Value != "" {
+		return errors.New("parameters --null-value and --value cannot be used together")
+	}
+
+	if flags.NullValue || flags.Value != "" {
 		// produce a single message
-		message, err := serializer.Serialize([]byte(key), []byte(flags.Value), flags)
+		var message *sarama.ProducerMessage
+
+		if flags.NullValue {
+			message, err = serializer.Serialize([]byte(key), nil, flags)
+		} else {
+			message, err = serializer.Serialize([]byte(key), []byte(flags.Value), flags)
+		}
+
 		if err != nil {
 			return errors.Wrap(err, "Failed to produce message")
 		}
