@@ -23,14 +23,14 @@ func TestDeleteConsumerGroupOffsetIntegration(t *testing.T) {
 	defer client.Close()
 	groupName := test_util.GetPrefixedName("cg-delete-offset-test")
 	_, err := sarama.NewConsumerGroupFromClient(groupName, client)
-	if err != nil{
+	if err != nil {
 		t.Fatalf("Fail to create consumer group %s", groupName)
 	}
 
 	// Create offset on the three partitions
-	test_util.MarkOffset(t, client, groupName, topicName, 0,0)
-	test_util.MarkOffset(t, client, groupName, topicName, 1,0)
-	test_util.MarkOffset(t, client, groupName, topicName, 2,0)
+	test_util.MarkOffset(t, client, groupName, topicName, 0, 0)
+	test_util.MarkOffset(t, client, groupName, topicName, 1, 0)
+	test_util.MarkOffset(t, client, groupName, topicName, 2, 0)
 
 	kafkaCtl := test_util.CreateKafkaCtlCommand()
 
@@ -105,12 +105,12 @@ func TestDeleteConsumerGroupOffsetOnActiveTopicIntegration(t *testing.T) {
 	defer client.Close()
 	groupName := test_util.GetPrefixedName("cg-delete-offset-test")
 	consumerGroup, err := sarama.NewConsumerGroupFromClient(groupName, client)
-	if err != nil{
+	if err != nil {
 		t.Fatalf("Fail to create consumer group %s", groupName)
 	}
 
 	// Create offset on the three partitions
-	test_util.MarkOffset(t, client, groupName, topicName, 0,0)
+	test_util.MarkOffset(t, client, groupName, topicName, 0, 0)
 
 	kafkaCtl := test_util.CreateKafkaCtlCommand()
 
@@ -177,16 +177,16 @@ func TestDeleteConsumerGroupOffsetAutoCompletionIntegration(t *testing.T) {
 
 }
 
-func offsetDeletedMessage(groupName string, topic string, partition int32) string{
+func offsetDeletedMessage(groupName string, topic string, partition int32) string {
 	return fmt.Sprintf("consumer-group-offset deleted: [group: %s, topic: %s, partition: %d]",
 		groupName, topic, partition)
 }
-func failedToDeleteMessage(groupName string, topic string, partition int32) string{
+func failedToDeleteMessage(groupName string, topic string, partition int32) string {
 	return fmt.Sprintf("failed to delete consumer-group-offset [group: %s, topic: %s, partition: %d]",
 		groupName, topic, partition)
 }
 
-func checkOffsetDeleted( kafkaCtl test_util.KafkaCtlTestCommand, groupName string, topic string, partition int32) error {
+func checkOffsetDeleted(kafkaCtl test_util.KafkaCtlTestCommand, groupName string, topic string, partition int32) error {
 	checkOffsetDeleted := func(attempt uint) error {
 		_, err := kafkaCtl.Execute("describe", "consumer-group", groupName, "-o", "yaml")
 
@@ -215,11 +215,11 @@ func checkOffsetDeleted( kafkaCtl test_util.KafkaCtlTestCommand, groupName strin
 	}
 }
 
-type consumerGrpHandler struct{
+type consumerGrpHandler struct {
 	ready chan bool
 }
 
-func (h consumerGrpHandler) Setup(_ sarama.ConsumerGroupSession) error   {
+func (h consumerGrpHandler) Setup(_ sarama.ConsumerGroupSession) error {
 	// Mark the consumer as ready
 	close(h.ready)
 	return nil

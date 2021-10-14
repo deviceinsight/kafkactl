@@ -981,6 +981,7 @@ kafkactl produce TOPIC [flags]
       --key-encoding string        key encoding (none by default). One of: none|hex|base64
   -K, --key-schema-version int     avro schema version that should be used for key serialization (default is latest) (default -1)
   -L, --lineSeparator string       separator to split multiple messages from stdin or file (default "\n")
+      --null-value                 produce a null value (can be used instead of providing a value with --value)
   -p, --partition int32            partition to produce to (default -1)
   -P, --partitioner murmur2        the partitioning scheme to use. Can be murmur2, `hash`, `hash-ref` `manual`, or `random`. (default is murmur2)
   -r, --rate int                   amount of messages per second to produce on the topic (default -1)

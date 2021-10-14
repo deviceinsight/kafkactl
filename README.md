@@ -374,6 +374,11 @@ You can control how many replica acknowledgements are needed for a response:
 kafkactl produce my-topic --key=my-key --value=my-value --required-acks=WaitForAll
 ```
 
+Producing null values (tombstone record) is also possible: 
+```bash
+ kafkactl produce my-topic --null-value
+ ```
+
 ### Avro support
 
 In order to enable avro support you just have to add the schema registry to your configuration:

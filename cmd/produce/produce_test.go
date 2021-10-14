@@ -82,7 +82,7 @@ func TestProduceAvroMessageWithHeadersIntegration(t *testing.T) {
 	test_util.AssertEquals(t, fmt.Sprintf("key1:value1,key\\:2:value\\:2#test-key#%s", value), kafkaCtl.GetStdOut())
 }
 
-func TestProduceTombstoneFromFileIntegration(t *testing.T) {
+func TestProduceTombstoneIntegration(t *testing.T) {
 
 	test_util.StartIntegrationTest(t)
 
@@ -90,17 +90,18 @@ func TestProduceTombstoneFromFileIntegration(t *testing.T) {
 
 	kafkaCtl := test_util.CreateKafkaCtlCommand()
 
-	if _, err := kafkaCtl.Execute("produce", topicName, "-f", "../../test_resources/test-produce-tombstone.txt", "-S", "#"); err != nil {
+	if _, err := kafkaCtl.Execute("produce", topicName, "--null-value"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	test_util.AssertEquals(t, "1 messages produced", kafkaCtl.GetStdOut())
+	test_util.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
 
-	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-keys"); err != nil {
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "-o", "yaml", "--exit"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	test_util.AssertEquals(t, "ID123#", kafkaCtl.GetStdOut())
+	record := strings.ReplaceAll(kafkaCtl.GetStdOut(), "\n", " ")
+	test_util.AssertEquals(t, "partition: 0 offset: 0 value: null", record)
 }
 
 func TestProduceFromBase64Integration(t *testing.T) {
