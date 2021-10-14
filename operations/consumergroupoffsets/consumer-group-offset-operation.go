@@ -284,16 +284,16 @@ func getGroupOffset(offsetFetchResponse *sarama.OffsetFetchResponse, topic strin
 }
 
 type DeleteConsumerGroupOffsetFlags struct {
-	Topic             string
-	Partition         int32
+	Topic     string
+	Partition int32
 }
 
 func (operation *ConsumerGroupOffsetOperation) DeleteConsumerGroupOffset(groupName string, flags DeleteConsumerGroupOffsetFlags) error {
 
 	var (
-		err     error
-		context operations.ClientContext
-		admin   sarama.ClusterAdmin
+		err        error
+		context    operations.ClientContext
+		admin      sarama.ClusterAdmin
 		partitions []int32
 	)
 
@@ -309,7 +309,7 @@ func (operation *ConsumerGroupOffsetOperation) DeleteConsumerGroupOffset(groupNa
 	if offsets, err := admin.ListConsumerGroupOffsets(groupName, nil); err != nil {
 		return errors.Wrapf(err, "failed to list group offsets: %s", groupName)
 	} else {
-		if _, ok := offsets.Blocks[flags.Topic]; !ok{
+		if _, ok := offsets.Blocks[flags.Topic]; !ok {
 			return errors.Errorf("no offsets for topic: %s", flags.Topic)
 		}
 		if flags.Partition == -1 {
@@ -324,7 +324,7 @@ func (operation *ConsumerGroupOffsetOperation) DeleteConsumerGroupOffset(groupNa
 			if _, ok := offsets.Blocks[flags.Topic][flags.Partition]; !ok {
 				return errors.Errorf("No offset for partition: %d", flags.Partition)
 			}
-			partitions = []int32 {flags.Partition}
+			partitions = []int32{flags.Partition}
 		}
 	}
 
