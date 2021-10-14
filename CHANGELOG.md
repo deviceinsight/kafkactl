@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.22.0 - 2021-10-14
+
 ### Added
 - Added parameter `--null-value` to produce command in order to produce a null value (tombstone)
 
