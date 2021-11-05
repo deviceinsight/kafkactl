@@ -566,6 +566,15 @@ To get the list of brokers of a kafka cluster use `get brokers`
 kafkactl get brokers
 ```
 
+### Describe Broker
+
+To view configs for a single broker use `describe broker`
+
+```bash
+# describe broker
+kafkactl describe broker 1
+```
+
 ## Development
 
 In order to see linter errors before commit, add the following pre-commit hook:
