@@ -43,24 +43,10 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 	var (
 		clientContext internal.ClientContext
 		err           error
-		client        sarama.Client
-		topExists     bool
 	)
 
 	if clientContext, err = internal.CreateClientContext(); err != nil {
 		return err
-	}
-
-	if client, err = internal.CreateClient(&clientContext); err != nil {
-		return errors.Wrap(err, "failed to create client")
-	}
-
-	if topExists, err = internal.TopicExists(&client, topic); err != nil {
-		return errors.Wrap(err, "failed to read topics")
-	}
-
-	if !topExists {
-		return errors.Errorf("topic '%s' does not exist", topic)
 	}
 
 	config, err := internal.CreateClientConfig(&clientContext)
