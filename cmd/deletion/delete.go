@@ -14,6 +14,6 @@ func NewDeleteCmd() *cobra.Command {
 	cmdDelete.AddCommand(newDeleteTopicCmd())
 	cmdDelete.AddCommand(newDeleteConsumerGroupCmd())
 	cmdDelete.AddCommand(newDeleteConsumerGroupOffsetCmd())
-	cmdDelete.AddCommand(newDeleteAclCmd())
+	cmdDelete.AddCommand(newDeleteACLCmd())
 	return cmdDelete
 }

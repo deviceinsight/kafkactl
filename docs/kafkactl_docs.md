@@ -23,7 +23,7 @@ A command-line interface the simplifies interaction with Kafka.
 * [kafkactl consume](kafkactl_consume.md)	 - consume messages from a topic
 * [kafkactl create](kafkactl_create.md)	 - create topics, consumerGroups, acls
 * [kafkactl delete](kafkactl_delete.md)	 - delete topics, consumerGroups, consumer-group-offset, acls
-* [kafkactl describe](kafkactl_describe.md)	 - describe topics, consumerGroups
+* [kafkactl describe](kafkactl_describe.md)	 - describe topics, consumerGroups, brokers
 * [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups, acls, brokers
 * [kafkactl produce](kafkactl_produce.md)	 - produce messages to a topic
 * [kafkactl reset](kafkactl_reset.md)	 - reset consumerGroupsOffset
@@ -703,11 +703,11 @@ kafkactl delete topic TOPIC [flags]
 
 ### kafkactl describe
 
-describe topics, consumerGroups
+describe topics, consumerGroups, brokers
 
 #### Synopsis
 
-describe topics, consumerGroups
+describe topics, consumerGroups, brokers
 
 #### Options
 
@@ -725,8 +725,40 @@ describe topics, consumerGroups
 #### SEE ALSO
 
 * [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
+* [kafkactl describe broker](kafkactl_describe_broker.md)	 - describe a broker
 * [kafkactl describe consumer-group](kafkactl_describe_consumer-group.md)	 - describe a consumerGroup
 * [kafkactl describe topic](kafkactl_describe_topic.md)	 - describe a topic
+
+
+#### kafkactl describe broker
+
+describe a broker
+
+##### Synopsis
+
+describe a broker
+
+```
+kafkactl describe broker ID [flags]
+```
+
+##### Options
+
+```
+  -h, --help            help for broker
+  -o, --output string   output format. One of: json|yaml|wide
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl describe](kafkactl_describe.md)	 - describe topics, consumerGroups, brokers
 
 
 #### kafkactl describe consumer-group
@@ -761,7 +793,7 @@ kafkactl describe consumer-group GROUP [flags]
 
 ##### SEE ALSO
 
-* [kafkactl describe](kafkactl_describe.md)	 - describe topics, consumerGroups
+* [kafkactl describe](kafkactl_describe.md)	 - describe topics, consumerGroups, brokers
 
 
 #### kafkactl describe topic
@@ -794,7 +826,7 @@ kafkactl describe topic TOPIC [flags]
 
 ##### SEE ALSO
 
-* [kafkactl describe](kafkactl_describe.md)	 - describe topics, consumerGroups
+* [kafkactl describe](kafkactl_describe.md)	 - describe topics, consumerGroups, brokers
 
 
 ### kafkactl get

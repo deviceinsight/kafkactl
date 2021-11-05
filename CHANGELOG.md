@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.23.0 - 2021-11-05
+
+### Added
+- Add new command `describe broker` to view broker configurations
+
+### Fixed
+- [#106](https://github.com/deviceinsight/kafkactl/issues/106) Do not check if topic is available before produce, because otherwise autoTopicCreation does not work
+
 ## 1.22.1 - 2021-10-27
 
 - fix brew warning (https://github.com/goreleaser/goreleaser/pull/2591)

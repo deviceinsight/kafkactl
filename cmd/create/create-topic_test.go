@@ -2,30 +2,31 @@ package create_test
 
 import (
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/Rican7/retry"
 	"github.com/Rican7/retry/backoff"
 	"github.com/Rican7/retry/strategy"
-	"github.com/deviceinsight/kafkactl/test_util"
-	"testing"
-	"time"
+	"github.com/deviceinsight/kafkactl/testutil"
 )
 
 func TestCreateTopicWithoutFlagsIntegration(t *testing.T) {
 
-	test_util.StartIntegrationTest(t)
+	testutil.StartIntegrationTest(t)
 
-	kafkaCtl := test_util.CreateKafkaCtlCommand()
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	topicName := test_util.GetPrefixedName("new-topic")
+	topicName := testutil.GetPrefixedName("new-topic")
 
 	if _, err := kafkaCtl.Execute("create", "topic", topicName); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	test_util.AssertEquals(t, fmt.Sprintf("topic created: %s", topicName), kafkaCtl.GetStdOut())
+	testutil.AssertEquals(t, fmt.Sprintf("topic created: %s", topicName), kafkaCtl.GetStdOut())
 
 	describeTopic(t, kafkaCtl, topicName)
-	stdOut := test_util.WithoutBrokerReferences(kafkaCtl.GetStdOut())
+	stdOut := testutil.WithoutBrokerReferences(kafkaCtl.GetStdOut())
 
 	expected := `
 name: %s
@@ -37,26 +38,26 @@ partitions:
   replicas: [any-broker-id]
   inSyncReplicas: [any-broker-id]`
 
-	test_util.AssertEquals(t, fmt.Sprintf(expected, topicName), stdOut)
+	testutil.AssertEquals(t, fmt.Sprintf(expected, topicName), stdOut)
 
 }
 
 func TestCreateTopicWithTwoPartitionsIntegration(t *testing.T) {
 
-	test_util.StartIntegrationTest(t)
+	testutil.StartIntegrationTest(t)
 
-	kafkaCtl := test_util.CreateKafkaCtlCommand()
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	topicName := test_util.GetPrefixedName("new-topic")
+	topicName := testutil.GetPrefixedName("new-topic")
 
 	if _, err := kafkaCtl.Execute("create", "topic", topicName, "--partitions", "2"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	test_util.AssertEquals(t, fmt.Sprintf("topic created: %s", topicName), kafkaCtl.GetStdOut())
+	testutil.AssertEquals(t, fmt.Sprintf("topic created: %s", topicName), kafkaCtl.GetStdOut())
 
 	describeTopic(t, kafkaCtl, topicName)
-	stdOut := test_util.WithoutBrokerReferences(kafkaCtl.GetStdOut())
+	stdOut := testutil.WithoutBrokerReferences(kafkaCtl.GetStdOut())
 
 	expected := `
 name: %s
@@ -74,26 +75,26 @@ partitions:
   replicas: [any-broker-id]
   inSyncReplicas: [any-broker-id]`
 
-	test_util.AssertEquals(t, fmt.Sprintf(expected, topicName), stdOut)
+	testutil.AssertEquals(t, fmt.Sprintf(expected, topicName), stdOut)
 
 }
 
 func TestCreateTopicWithReplicationFactorIntegration(t *testing.T) {
 
-	test_util.StartIntegrationTest(t)
+	testutil.StartIntegrationTest(t)
 
-	kafkaCtl := test_util.CreateKafkaCtlCommand()
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	topicName := test_util.GetPrefixedName("new-topic")
+	topicName := testutil.GetPrefixedName("new-topic")
 
 	if _, err := kafkaCtl.Execute("create", "topic", topicName, "-r", "3"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	test_util.AssertEquals(t, fmt.Sprintf("topic created: %s", topicName), kafkaCtl.GetStdOut())
+	testutil.AssertEquals(t, fmt.Sprintf("topic created: %s", topicName), kafkaCtl.GetStdOut())
 
 	describeTopic(t, kafkaCtl, topicName)
-	stdOut := test_util.WithoutBrokerReferences(kafkaCtl.GetStdOut())
+	stdOut := testutil.WithoutBrokerReferences(kafkaCtl.GetStdOut())
 
 	expected := `
 name: %s
@@ -105,10 +106,10 @@ partitions:
   replicas: [any-broker-id, any-broker-id, any-broker-id]
   inSyncReplicas: [any-broker-id, any-broker-id, any-broker-id]`
 
-	test_util.AssertEquals(t, fmt.Sprintf(expected, topicName), stdOut)
+	testutil.AssertEquals(t, fmt.Sprintf(expected, topicName), stdOut)
 }
 
-func describeTopic(t *testing.T, kafkaCtl test_util.KafkaCtlTestCommand, topicName string) {
+func describeTopic(t *testing.T, kafkaCtl testutil.KafkaCtlTestCommand, topicName string) {
 	describeTopic := func(attempt uint) error {
 		_, err := kafkaCtl.Execute("describe", "topic", topicName, "-o", "yaml")
 		return err

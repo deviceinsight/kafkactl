@@ -1,8 +1,8 @@
 package deletion
 
 import (
-	"github.com/deviceinsight/kafkactl/operations/consumergroups"
-	"github.com/deviceinsight/kafkactl/operations/k8s"
+	"github.com/deviceinsight/kafkactl/internal/consumergroups"
+	"github.com/deviceinsight/kafkactl/internal/k8s"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
@@ -15,7 +15,7 @@ func newDeleteConsumerGroupCmd() *cobra.Command {
 		Short:   "delete a consumer-group",
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			if !(&k8s.K8sOperation{}).TryRun(cmd, args) {
+			if !(&k8s.Operation{}).TryRun(cmd, args) {
 				if err := (&consumergroups.ConsumerGroupOperation{}).DeleteConsumerGroups(args); err != nil {
 					output.Fail(err)
 				}

@@ -1,23 +1,23 @@
 package create
 
 import (
-	"github.com/deviceinsight/kafkactl/operations"
-	"github.com/deviceinsight/kafkactl/operations/k8s"
+	"github.com/deviceinsight/kafkactl/internal/k8s"
+	"github.com/deviceinsight/kafkactl/internal/topic"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
 
 func newCreateTopicCmd() *cobra.Command {
 
-	var flags operations.CreateTopicFlags
+	var flags topic.CreateTopicFlags
 
 	var cmdCreateTopic = &cobra.Command{
 		Use:   "topic TOPIC",
 		Short: "create a topic",
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			if !(&k8s.K8sOperation{}).TryRun(cmd, args) {
-				if err := (&operations.TopicOperation{}).CreateTopics(args, flags); err != nil {
+			if !(&k8s.Operation{}).TryRun(cmd, args) {
+				if err := (&topic.Operation{}).CreateTopics(args, flags); err != nil {
 					output.Fail(err)
 				}
 			}

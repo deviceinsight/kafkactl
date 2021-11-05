@@ -2,9 +2,10 @@ package output
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/pkg/errors"
 )
 
 type TableWriter struct {
@@ -28,9 +29,8 @@ func (writer *TableWriter) WriteHeader(columns ...string) error {
 
 	if err != nil {
 		return errors.Wrap(err, "Failed to write table header")
-	} else {
-		return nil
 	}
+	return nil
 }
 
 func (writer *TableWriter) Initialize() {
@@ -47,16 +47,14 @@ func (writer *TableWriter) Write(columns ...string) error {
 	_, err := fmt.Fprintln(writer.client, strings.Join(columns[:], "\t"))
 	if err != nil {
 		return errors.Wrap(err, "Failed to write table header")
-	} else {
-		return nil
 	}
+	return nil
 }
 
 func (writer *TableWriter) Flush() error {
 	err := writer.client.Flush()
 	if err != nil {
 		return errors.Wrap(err, "Failed to flush table writer")
-	} else {
-		return nil
 	}
+	return nil
 }

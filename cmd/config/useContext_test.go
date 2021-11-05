@@ -1,16 +1,17 @@
 package config_test
 
 import (
-	"github.com/deviceinsight/kafkactl/test_util"
 	"strings"
 	"testing"
+
+	"github.com/deviceinsight/kafkactl/testutil"
 )
 
 func TestUseContextAutoCompletionIntegration(t *testing.T) {
 
-	test_util.StartUnitTest(t)
+	testutil.StartUnitTest(t)
 
-	kafkaCtl := test_util.CreateKafkaCtlCommand()
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
 	kafkaCtl.Verbose = false
 
 	if _, err := kafkaCtl.Execute("__complete", "config", "use-context", ""); err != nil {
@@ -26,6 +27,6 @@ func TestUseContextAutoCompletionIntegration(t *testing.T) {
 	}
 
 	for _, context := range expectedContexts {
-		test_util.AssertContains(t, context, outputLines)
+		testutil.AssertContains(t, context, outputLines)
 	}
 }

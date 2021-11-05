@@ -3,36 +3,37 @@ package deletion_test
 import (
 	"context"
 	"fmt"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/Rican7/retry"
 	"github.com/Rican7/retry/backoff"
 	"github.com/Rican7/retry/strategy"
 	"github.com/Shopify/sarama"
-	"github.com/deviceinsight/kafkactl/test_util"
+	"github.com/deviceinsight/kafkactl/testutil"
 	"github.com/deviceinsight/kafkactl/util"
 	"github.com/pkg/errors"
-	"strings"
-	"testing"
-	"time"
 )
 
 func TestDeleteConsumerGroupOffsetIntegration(t *testing.T) {
-	test_util.StartIntegrationTest(t)
-	topicName := test_util.CreateTopic(t, "delete-consumer-group-offset", "--partitions", "3")
+	testutil.StartIntegrationTest(t)
+	topicName := testutil.CreateTopic(t, "delete-consumer-group-offset", "--partitions", "3")
 
-	client := test_util.CreateClient(t)
+	client := testutil.CreateClient(t)
 	defer client.Close()
-	groupName := test_util.GetPrefixedName("cg-delete-offset-test")
+	groupName := testutil.GetPrefixedName("cg-delete-offset-test")
 	_, err := sarama.NewConsumerGroupFromClient(groupName, client)
 	if err != nil {
 		t.Fatalf("Fail to create consumer group %s", groupName)
 	}
 
 	// Create offset on the three partitions
-	test_util.MarkOffset(t, client, groupName, topicName, 0, 0)
-	test_util.MarkOffset(t, client, groupName, topicName, 1, 0)
-	test_util.MarkOffset(t, client, groupName, topicName, 2, 0)
+	testutil.MarkOffset(t, client, groupName, topicName, 0, 0)
+	testutil.MarkOffset(t, client, groupName, topicName, 1, 0)
+	testutil.MarkOffset(t, client, groupName, topicName, 2, 0)
 
-	kafkaCtl := test_util.CreateKafkaCtlCommand()
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	// Deleting an offset for a topic that does not exist shall fail
 	if _, err := kafkaCtl.Execute("delete", "consumer-group-offset", groupName,
@@ -40,7 +41,7 @@ func TestDeleteConsumerGroupOffsetIntegration(t *testing.T) {
 		"--partition", "0"); err == nil {
 		t.Fatalf("Deleting an offset for a topic that does not exist shall fail")
 	} else {
-		test_util.AssertEquals(t, fmt.Sprintf("no offsets for topic: %s", "this-topic-does-not-exist"), err.Error())
+		testutil.AssertEquals(t, fmt.Sprintf("no offsets for topic: %s", "this-topic-does-not-exist"), err.Error())
 	}
 
 	// Deleting existing offset of a partition shall succeed
@@ -51,7 +52,7 @@ func TestDeleteConsumerGroupOffsetIntegration(t *testing.T) {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	test_util.AssertEquals(t, offsetDeletedMessage(groupName, topicName, 1), kafkaCtl.GetStdOut())
+	testutil.AssertEquals(t, offsetDeletedMessage(groupName, topicName, 1), kafkaCtl.GetStdOut())
 
 	//verify that offset has been deleted for partition 1
 	if err := checkOffsetDeleted(kafkaCtl, groupName, topicName, 1); err != nil {
@@ -71,7 +72,7 @@ func TestDeleteConsumerGroupOffsetIntegration(t *testing.T) {
 		"--partition", "1"); err == nil {
 		t.Fatalf("Deleting an offset that does not exist shall fail")
 	} else {
-		test_util.AssertEquals(t, fmt.Sprintf("No offset for partition: %d", 1), err.Error())
+		testutil.AssertEquals(t, fmt.Sprintf("No offset for partition: %d", 1), err.Error())
 	}
 
 	// --partition=-1 shall delete all offsets on topic (here partitions 0 and 2)
@@ -98,21 +99,21 @@ func TestDeleteConsumerGroupOffsetIntegration(t *testing.T) {
 }
 
 func TestDeleteConsumerGroupOffsetOnActiveTopicIntegration(t *testing.T) {
-	test_util.StartIntegrationTest(t)
-	topicName := test_util.CreateTopic(t, "delete-consumer-group-offset-active", "--partitions", "1")
+	testutil.StartIntegrationTest(t)
+	topicName := testutil.CreateTopic(t, "delete-consumer-group-offset-active", "--partitions", "1")
 
-	client := test_util.CreateClient(t)
+	client := testutil.CreateClient(t)
 	defer client.Close()
-	groupName := test_util.GetPrefixedName("cg-delete-offset-test")
+	groupName := testutil.GetPrefixedName("cg-delete-offset-test")
 	consumerGroup, err := sarama.NewConsumerGroupFromClient(groupName, client)
 	if err != nil {
 		t.Fatalf("Fail to create consumer group %s", groupName)
 	}
 
 	// Create offset on the three partitions
-	test_util.MarkOffset(t, client, groupName, topicName, 0, 0)
+	testutil.MarkOffset(t, client, groupName, topicName, 0, 0)
 
-	kafkaCtl := test_util.CreateKafkaCtlCommand()
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	backgroundCtx := context.Background()
 
@@ -154,15 +155,15 @@ func TestDeleteConsumerGroupOffsetOnActiveTopicIntegration(t *testing.T) {
 
 func TestDeleteConsumerGroupOffsetAutoCompletionIntegration(t *testing.T) {
 
-	test_util.StartIntegrationTest(t)
-	topicName := test_util.CreateTopic(t, "delete-consumer-group-completion")
+	testutil.StartIntegrationTest(t)
+	topicName := testutil.CreateTopic(t, "delete-consumer-group-completion")
 	prefix := "delete-complete-"
 
-	groupName1 := test_util.CreateConsumerGroup(t, topicName, prefix+"a")
-	groupName2 := test_util.CreateConsumerGroup(t, topicName, prefix+"b")
-	groupName3 := test_util.CreateConsumerGroup(t, topicName, prefix+"c")
+	groupName1 := testutil.CreateConsumerGroup(t, topicName, prefix+"a")
+	groupName2 := testutil.CreateConsumerGroup(t, topicName, prefix+"b")
+	groupName3 := testutil.CreateConsumerGroup(t, topicName, prefix+"c")
 
-	kafkaCtl := test_util.CreateKafkaCtlCommand()
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
 	kafkaCtl.Verbose = false
 
 	if _, err := kafkaCtl.Execute("__complete", "delete", "consumer-group-offset", ""); err != nil {
@@ -171,9 +172,9 @@ func TestDeleteConsumerGroupOffsetAutoCompletionIntegration(t *testing.T) {
 
 	outputLines := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
 
-	test_util.AssertContains(t, groupName1, outputLines)
-	test_util.AssertContains(t, groupName2, outputLines)
-	test_util.AssertContains(t, groupName3, outputLines)
+	testutil.AssertContains(t, groupName1, outputLines)
+	testutil.AssertContains(t, groupName2, outputLines)
+	testutil.AssertContains(t, groupName3, outputLines)
 
 }
 
@@ -186,20 +187,18 @@ func failedToDeleteMessage(groupName string, topic string, partition int32) stri
 		groupName, topic, partition)
 }
 
-func checkOffsetDeleted(kafkaCtl test_util.KafkaCtlTestCommand, groupName string, topic string, partition int32) error {
+func checkOffsetDeleted(kafkaCtl testutil.KafkaCtlTestCommand, groupName string, topic string, partition int32) error {
 	checkOffsetDeleted := func(attempt uint) error {
 		_, err := kafkaCtl.Execute("describe", "consumer-group", groupName, "-o", "yaml")
 
 		if err != nil {
 			return err
-		} else {
-			consumerGroupDescStr := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
-			if util.ContainsString(consumerGroupDescStr, fmt.Sprintf("  - partition: %d", partition)) {
-				return errors.New("consumer-group-offset not exists")
-			} else {
-				return nil
-			}
 		}
+		consumerGroupDescStr := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+		if util.ContainsString(consumerGroupDescStr, fmt.Sprintf("  - partition: %d", partition)) {
+			return errors.New("consumer-group-offset not exists")
+		}
+		return nil
 	}
 
 	err := retry.Retry(
@@ -210,9 +209,8 @@ func checkOffsetDeleted(kafkaCtl test_util.KafkaCtlTestCommand, groupName string
 
 	if err != nil {
 		return errors.Wrapf(err, "consumer-group-offset [%s, %s, %d] exists: %v", groupName, topic, partition, err)
-	} else {
-		return nil
 	}
+	return nil
 }
 
 type consumerGrpHandler struct {

@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/deviceinsight/kafkactl/operations"
+	"github.com/deviceinsight/kafkactl/internal"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
@@ -13,7 +13,7 @@ This command can generate documentation for Helm in the following formats:
 - Man pages
 `
 
-var flags operations.DocsFlags
+var flags internal.DocsFlags
 
 func newDocsCmd() *cobra.Command {
 
@@ -23,7 +23,7 @@ func newDocsCmd() *cobra.Command {
 		Long:   docsDesc,
 		Hidden: true,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := (&operations.DocsOperation{}).GenerateDocs(cmd.Root(), flags); err != nil {
+			if err := (&internal.DocsOperation{}).GenerateDocs(cmd.Root(), flags); err != nil {
 				output.Fail(err)
 			}
 		},

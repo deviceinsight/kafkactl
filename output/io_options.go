@@ -2,10 +2,11 @@ package output
 
 import (
 	"bytes"
-	"github.com/Shopify/sarama"
 	"io"
 	"log"
 	"os"
+
+	"github.com/Shopify/sarama"
 )
 
 var IoStreams = DefaultIOStreams()

@@ -1,22 +1,23 @@
 package describe_test
 
 import (
-	"github.com/deviceinsight/kafkactl/test_util"
 	"strings"
 	"testing"
+
+	"github.com/deviceinsight/kafkactl/testutil"
 )
 
 func TestDescribeConsumerGroupTopicAutoCompletionIntegration(t *testing.T) {
 
-	test_util.StartIntegrationTest(t)
+	testutil.StartIntegrationTest(t)
 
 	prefix := "describe-cg-complete-"
 
-	topicName1 := test_util.CreateTopic(t, prefix+"a")
-	topicName2 := test_util.CreateTopic(t, prefix+"b")
-	topicName3 := test_util.CreateTopic(t, prefix+"c")
+	topicName1 := testutil.CreateTopic(t, prefix+"a")
+	topicName2 := testutil.CreateTopic(t, prefix+"b")
+	topicName3 := testutil.CreateTopic(t, prefix+"c")
 
-	kafkaCtl := test_util.CreateKafkaCtlCommand()
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
 	kafkaCtl.Verbose = false
 
 	if _, err := kafkaCtl.Execute("__complete", "describe", "consumer-group", "--topic", ""); err != nil {
@@ -25,24 +26,24 @@ func TestDescribeConsumerGroupTopicAutoCompletionIntegration(t *testing.T) {
 
 	outputLines := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
 
-	test_util.AssertContains(t, topicName1, outputLines)
-	test_util.AssertContains(t, topicName2, outputLines)
-	test_util.AssertContains(t, topicName3, outputLines)
+	testutil.AssertContains(t, topicName1, outputLines)
+	testutil.AssertContains(t, topicName2, outputLines)
+	testutil.AssertContains(t, topicName3, outputLines)
 }
 
 func TestDescribeConsumerGroupCompletionIntegration(t *testing.T) {
 
-	test_util.StartIntegrationTest(t)
+	testutil.StartIntegrationTest(t)
 
 	prefix := "describe-cg-complete-"
 
-	topicName := test_util.CreateTopic(t, prefix+"topic")
+	topicName := testutil.CreateTopic(t, prefix+"topic")
 
-	group1 := test_util.CreateConsumerGroup(t, topicName, prefix+"a")
-	group2 := test_util.CreateConsumerGroup(t, topicName, prefix+"b")
-	group3 := test_util.CreateConsumerGroup(t, topicName, prefix+"c")
+	group1 := testutil.CreateConsumerGroup(t, topicName, prefix+"a")
+	group2 := testutil.CreateConsumerGroup(t, topicName, prefix+"b")
+	group3 := testutil.CreateConsumerGroup(t, topicName, prefix+"c")
 
-	kafkaCtl := test_util.CreateKafkaCtlCommand()
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
 	kafkaCtl.Verbose = false
 
 	if _, err := kafkaCtl.Execute("__complete", "describe", "consumer-group", ""); err != nil {
@@ -51,7 +52,7 @@ func TestDescribeConsumerGroupCompletionIntegration(t *testing.T) {
 
 	outputLines := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
 
-	test_util.AssertContains(t, group1, outputLines)
-	test_util.AssertContains(t, group2, outputLines)
-	test_util.AssertContains(t, group3, outputLines)
+	testutil.AssertContains(t, group1, outputLines)
+	testutil.AssertContains(t, group2, outputLines)
+	testutil.AssertContains(t, group3, outputLines)
 }
