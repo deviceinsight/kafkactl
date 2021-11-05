@@ -22,6 +22,7 @@ vet:
 
 fmt:
 	gofmt -s -l -w $(FILES) $(TESTS)
+	goimports -l -w $(FILES) $(TESTS)
 
 lint:
 	golangci-lint run

@@ -1,29 +1,29 @@
 package produce
 
 import (
-	"github.com/deviceinsight/kafkactl/operations"
-	"github.com/deviceinsight/kafkactl/operations/k8s"
-	"github.com/deviceinsight/kafkactl/operations/producer"
+	"github.com/deviceinsight/kafkactl/internal/k8s"
+	"github.com/deviceinsight/kafkactl/internal/producer"
+	"github.com/deviceinsight/kafkactl/internal/topic"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
 
 func NewProduceCmd() *cobra.Command {
 
-	var flags producer.ProducerFlags
+	var flags producer.Flags
 
 	var cmdProduce = &cobra.Command{
 		Use:   "produce TOPIC",
 		Short: "produce messages to a topic",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			if !(&k8s.K8sOperation{}).TryRun(cmd, args) {
-				if err := (&producer.ProducerOperation{}).Produce(args[0], flags); err != nil {
+			if !(&k8s.Operation{}).TryRun(cmd, args) {
+				if err := (&producer.Operation{}).Produce(args[0], flags); err != nil {
 					output.Fail(err)
 				}
 			}
 		},
-		ValidArgsFunction: operations.CompleteTopicNames,
+		ValidArgsFunction: topic.CompleteTopicNames,
 	}
 
 	cmdProduce.Flags().Int32VarP(&flags.Partition, "partition", "p", -1, "partition to produce to")

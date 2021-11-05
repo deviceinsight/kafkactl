@@ -2,6 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/deviceinsight/kafkactl/cmd/alter"
 	"github.com/deviceinsight/kafkactl/cmd/attach"
 	"github.com/deviceinsight/kafkactl/cmd/config"
@@ -12,14 +16,11 @@ import (
 	"github.com/deviceinsight/kafkactl/cmd/get"
 	"github.com/deviceinsight/kafkactl/cmd/produce"
 	"github.com/deviceinsight/kafkactl/cmd/reset"
-	"github.com/deviceinsight/kafkactl/operations/k8s"
+	"github.com/deviceinsight/kafkactl/internal/k8s"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 var cfgFile string
@@ -142,20 +143,18 @@ func readConfig() error {
 
 	if !isConfigFileNotFoundError && !isOsPathError {
 		return errors.Errorf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err)
-	} else {
-		err = generateDefaultConfig()
-		if err != nil {
-			return errors.Wrap(err, "Error generating default config: ")
-		}
+	}
+	err = generateDefaultConfig()
+	if err != nil {
+		return errors.Wrap(err, "Error generating default config: ")
 	}
 
 	// We read generated config now
 	if err = viper.ReadInConfig(); err == nil {
 		output.Debugf("Using config file: %s", viper.ConfigFileUsed())
 		return nil
-	} else {
-		return errors.Errorf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err)
 	}
+	return errors.Errorf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err)
 }
 
 // generateDefaultConfig generates default config in case there is no config

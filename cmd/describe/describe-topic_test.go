@@ -1,22 +1,23 @@
 package describe_test
 
 import (
-	"github.com/deviceinsight/kafkactl/test_util"
 	"strings"
 	"testing"
+
+	"github.com/deviceinsight/kafkactl/testutil"
 )
 
 func TestDescribeTopicAutoCompletionIntegration(t *testing.T) {
 
-	test_util.StartIntegrationTest(t)
+	testutil.StartIntegrationTest(t)
 
 	prefix := "describe-t-complete-"
 
-	topicName1 := test_util.CreateTopic(t, prefix+"a")
-	topicName2 := test_util.CreateTopic(t, prefix+"b")
-	topicName3 := test_util.CreateTopic(t, prefix+"c")
+	topicName1 := testutil.CreateTopic(t, prefix+"a")
+	topicName2 := testutil.CreateTopic(t, prefix+"b")
+	topicName3 := testutil.CreateTopic(t, prefix+"c")
 
-	kafkaCtl := test_util.CreateKafkaCtlCommand()
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
 	kafkaCtl.Verbose = false
 
 	if _, err := kafkaCtl.Execute("__complete", "describe", "topic", ""); err != nil {
@@ -25,7 +26,7 @@ func TestDescribeTopicAutoCompletionIntegration(t *testing.T) {
 
 	outputLines := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
 
-	test_util.AssertContains(t, topicName1, outputLines)
-	test_util.AssertContains(t, topicName2, outputLines)
-	test_util.AssertContains(t, topicName3, outputLines)
+	testutil.AssertContains(t, topicName1, outputLines)
+	testutil.AssertContains(t, topicName2, outputLines)
+	testutil.AssertContains(t, topicName3, outputLines)
 }

@@ -565,3 +565,12 @@ To get the list of brokers of a kafka cluster use `get brokers`
 # get the list of brokers
 kafkactl get brokers
 ```
+
+## Development
+
+In order to see linter errors before commit, add the following pre-commit hook:
+
+```bash
+pip install --user pre-commit
+pre-commit install
+```

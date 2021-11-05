@@ -1,15 +1,15 @@
 package get
 
 import (
-	"github.com/deviceinsight/kafkactl/operations/acl"
-	"github.com/deviceinsight/kafkactl/operations/k8s"
+	"github.com/deviceinsight/kafkactl/internal/acl"
+	"github.com/deviceinsight/kafkactl/internal/k8s"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
 
-func newGetAclCmd() *cobra.Command {
+func newGetACLCmd() *cobra.Command {
 
-	var flags acl.GetAclFlags
+	var flags acl.GetACLFlags
 
 	var cmdGetAcls = &cobra.Command{
 		Use:     "access-control-list",
@@ -17,8 +17,8 @@ func newGetAclCmd() *cobra.Command {
 		Short:   "list available acls",
 		Args:    cobra.MaximumNArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
-			if !(&k8s.K8sOperation{}).TryRun(cmd, args) {
-				if err := (&acl.AclOperation{}).GetAcl(flags); err != nil {
+			if !(&k8s.Operation{}).TryRun(cmd, args) {
+				if err := (&acl.Operation{}).GetACL(flags); err != nil {
 					output.Fail(err)
 				}
 			}

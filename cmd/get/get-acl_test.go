@@ -2,19 +2,20 @@ package get_test
 
 import (
 	"fmt"
-	"github.com/deviceinsight/kafkactl/test_util"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/deviceinsight/kafkactl/testutil"
 )
 
 func TestGetTopicReadAclIntegration(t *testing.T) {
 
-	test_util.StartIntegrationTestWithContext(t, "sasl-admin")
+	testutil.StartIntegrationTestWithContext(t, "sasl-admin")
 
-	kafkaCtl := test_util.CreateKafkaCtlCommand()
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	topicName := test_util.CreateTopic(t, "acl-topic")
+	topicName := testutil.CreateTopic(t, "acl-topic")
 
 	// add read acl
 	if _, err := kafkaCtl.Execute("create", "acl", "--topic", topicName, "--operation", "read", "--allow", "--principal", "User:user"); err != nil {
@@ -34,5 +35,5 @@ func TestGetTopicReadAclIntegration(t *testing.T) {
 		outputLines = append(outputLines, re.ReplaceAllString(line, " "))
 	}
 
-	test_util.AssertContains(t, fmt.Sprintf("Topic %s Literal User:user * Read Allow", topicName), outputLines)
+	testutil.AssertContains(t, fmt.Sprintf("Topic %s Literal User:user * Read Allow", topicName), outputLines)
 }

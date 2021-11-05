@@ -1,0 +1,7 @@
+# .golangci.yml
+linters:
+  enable:
+    - gofmt
+    - goimports
+    - revive
+    - govet

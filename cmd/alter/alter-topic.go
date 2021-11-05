@@ -2,23 +2,23 @@ package alter
 
 import (
 	"github.com/deviceinsight/kafkactl/cmd/validation"
-	"github.com/deviceinsight/kafkactl/operations"
-	"github.com/deviceinsight/kafkactl/operations/k8s"
+	"github.com/deviceinsight/kafkactl/internal/k8s"
+	"github.com/deviceinsight/kafkactl/internal/topic"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
 
 func newAlterTopicCmd() *cobra.Command {
 
-	var flags operations.AlterTopicFlags
+	var flags topic.AlterTopicFlags
 
 	var cmdAlterTopic = &cobra.Command{
 		Use:   "topic TOPIC",
 		Short: "alter a topic",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			if !(&k8s.K8sOperation{}).TryRun(cmd, args) {
-				if err := (&operations.TopicOperation{}).AlterTopic(args[0], flags); err != nil {
+			if !(&k8s.Operation{}).TryRun(cmd, args) {
+				if err := (&topic.Operation{}).AlterTopic(args[0], flags); err != nil {
 					output.Fail(err)
 				}
 			}
@@ -26,7 +26,7 @@ func newAlterTopicCmd() *cobra.Command {
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return validation.ValidateAtLeastOneRequiredFlag(cmd)
 		},
-		ValidArgsFunction: operations.CompleteTopicNames,
+		ValidArgsFunction: topic.CompleteTopicNames,
 	}
 
 	cmdAlterTopic.Flags().Int32VarP(&flags.Partitions, "partitions", "p", flags.Partitions, "number of partitions")

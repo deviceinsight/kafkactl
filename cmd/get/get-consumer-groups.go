@@ -1,9 +1,9 @@
 package get
 
 import (
-	"github.com/deviceinsight/kafkactl/operations"
-	"github.com/deviceinsight/kafkactl/operations/consumergroups"
-	"github.com/deviceinsight/kafkactl/operations/k8s"
+	"github.com/deviceinsight/kafkactl/internal/consumergroups"
+	"github.com/deviceinsight/kafkactl/internal/k8s"
+	"github.com/deviceinsight/kafkactl/internal/topic"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
@@ -18,7 +18,7 @@ func newGetConsumerGroupsCmd() *cobra.Command {
 		Short:   "list available consumerGroups",
 		Args:    cobra.MaximumNArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
-			if !(&k8s.K8sOperation{}).TryRun(cmd, args) {
+			if !(&k8s.Operation{}).TryRun(cmd, args) {
 				if err := (&consumergroups.ConsumerGroupOperation{}).GetConsumerGroups(flags); err != nil {
 					output.Fail(err)
 				}
@@ -30,7 +30,7 @@ func newGetConsumerGroupsCmd() *cobra.Command {
 	cmdGetConsumerGroups.Flags().StringVarP(&flags.FilterTopic, "topic", "t", "", "show groups for given topic only")
 
 	if err := cmdGetConsumerGroups.RegisterFlagCompletionFunc("topic", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return operations.CompleteTopicNames(cmd, args, toComplete)
+		return topic.CompleteTopicNames(cmd, args, toComplete)
 	}); err != nil {
 		panic(err)
 	}

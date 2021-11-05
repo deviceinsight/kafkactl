@@ -14,7 +14,7 @@ func NewGetCmd() *cobra.Command {
 
 	cmdGet.AddCommand(newGetTopicsCmd())
 	cmdGet.AddCommand(newGetConsumerGroupsCmd())
-	cmdGet.AddCommand(newGetAclCmd())
+	cmdGet.AddCommand(newGetACLCmd())
 	cmdGet.AddCommand(newGetBrokersCmd())
 
 	return cmdGet

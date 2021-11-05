@@ -1,11 +1,12 @@
 package config
 
 import (
+	"io/ioutil"
+
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io/ioutil"
 )
 
 func newViewCmd() *cobra.Command {

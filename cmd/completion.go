@@ -1,10 +1,11 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 func newCompletionCmd() *cobra.Command {

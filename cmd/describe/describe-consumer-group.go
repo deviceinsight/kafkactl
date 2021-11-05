@@ -1,9 +1,9 @@
 package describe
 
 import (
-	"github.com/deviceinsight/kafkactl/operations"
-	"github.com/deviceinsight/kafkactl/operations/consumergroups"
-	"github.com/deviceinsight/kafkactl/operations/k8s"
+	"github.com/deviceinsight/kafkactl/internal/consumergroups"
+	"github.com/deviceinsight/kafkactl/internal/k8s"
+	"github.com/deviceinsight/kafkactl/internal/topic"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
 )
@@ -18,7 +18,7 @@ func newDescribeConsumerGroupCmd() *cobra.Command {
 		Short:   "describe a consumerGroup",
 		Args:    cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			if !(&k8s.K8sOperation{}).TryRun(cmd, args) {
+			if !(&k8s.Operation{}).TryRun(cmd, args) {
 				if err := (&consumergroups.ConsumerGroupOperation{}).DescribeConsumerGroup(flags, args[0]); err != nil {
 					output.Fail(err)
 				}
@@ -36,7 +36,7 @@ func newDescribeConsumerGroupCmd() *cobra.Command {
 	cmdDescribeConsumerGroup.Flags().BoolVarP(&flags.PrintMembers, "print-members", "m", true, "print group members")
 
 	if err := cmdDescribeConsumerGroup.RegisterFlagCompletionFunc("topic", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return operations.CompleteTopicNames(cmd, args, toComplete)
+		return topic.CompleteTopicNames(cmd, args, toComplete)
 	}); err != nil {
 		panic(err)
 	}

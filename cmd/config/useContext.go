@@ -1,13 +1,15 @@
 package config
 
 import (
+	"sort"
+
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"
-	"sort"
+
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"strings"
 )
 
 func newUseContextCmd() *cobra.Command {

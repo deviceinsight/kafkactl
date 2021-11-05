@@ -1,17 +1,18 @@
 package config_test
 
 import (
-	"github.com/deviceinsight/kafkactl/output"
-	"github.com/deviceinsight/kafkactl/test_util"
 	"io/ioutil"
 	"os"
 	"path"
 	"testing"
+
+	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/testutil"
 )
 
 func TestViewConfigWithEnvVariablesInGeneratedConfigSet(t *testing.T) {
 
-	test_util.StartUnitTest(t)
+	testutil.StartUnitTest(t)
 
 	currentDir, err := os.Getwd()
 
@@ -34,7 +35,7 @@ func TestViewConfigWithEnvVariablesInGeneratedConfigSet(t *testing.T) {
 		t.Fatalf("unable to set env variable: %v", err)
 	}
 
-	kafkaCtl := test_util.CreateKafkaCtlCommand()
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	defaultConfigContent := `
 contexts:
@@ -51,6 +52,6 @@ current-context: default`
 		t.Fatalf("error reading generated config %s %v", newConfigFile, err)
 	}
 
-	test_util.AssertEquals(t, defaultConfigContent, string(configContent))
-	test_util.AssertEquals(t, defaultConfigContent, kafkaCtl.GetStdOut())
+	testutil.AssertEquals(t, defaultConfigContent, string(configContent))
+	testutil.AssertEquals(t, defaultConfigContent, kafkaCtl.GetStdOut())
 }
