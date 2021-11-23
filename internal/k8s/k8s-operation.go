@@ -101,7 +101,7 @@ func parseFlags(cmd *cobra.Command) ([]string, error) {
 
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		if err == nil && flag.Changed {
-			if flag.Value.Type() == "intSlice" {
+			if flag.Value.Type() == "intSlice" || flag.Value.Type() == "int32Slice" {
 				var intArray []int
 				intArray, err = parseIntArray(flag.Value.String())
 				if err == nil {
