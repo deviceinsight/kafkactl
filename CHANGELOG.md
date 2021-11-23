@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.23.1 - 2021-11-23
+
 ### Fixed
  - fixed parsing of `--replicas` flag for `alter partition` when running against kubernetes cluster
 
