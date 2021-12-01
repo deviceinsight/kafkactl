@@ -1,9 +1,15 @@
 package produce_test
 
 import (
+	"encoding/hex"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/deviceinsight/kafkactl/internal/helpers/protobuf"
+
+	"github.com/jhump/protoreflect/dynamic"
 
 	"github.com/deviceinsight/kafkactl/testutil"
 )
@@ -173,4 +179,176 @@ func TestProduceAutoCompletionIntegration(t *testing.T) {
 	testutil.AssertContains(t, topicName1, outputLines)
 	testutil.AssertContains(t, topicName2, outputLines)
 	testutil.AssertContains(t, topicName3, outputLines)
+}
+
+func TestProduceProtoFileIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	pbTopic := testutil.CreateTopic(t, "produce-topic-pb")
+
+	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	key := `{"fvalue":1.2}`
+	value := `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`
+
+	if _, err := kafkaCtl.Execute("produce", pbTopic,
+		"--key", key, "--key-proto-type", "TopicKey",
+		"--value", value, "--value-proto-type", "TopicMessage",
+		"--proto-import-path", protoPath, "--proto-file", "msg.proto"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "--print-keys", "--key-encoding", "hex", "--value-encoding", "hex"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	kv := strings.Split(kafkaCtl.GetStdOut(), "#")
+
+	rawKey, err := hex.DecodeString(strings.TrimSpace(kv[0]))
+	if err != nil {
+		t.Fatalf("Failed to decode key: %s", err)
+	}
+
+	rawValue, err := hex.DecodeString(strings.TrimSpace(kv[1]))
+	if err != nil {
+		t.Fatalf("Failed to decode value: %s", err)
+	}
+
+	keyMessage := dynamic.NewMessage(protobuf.ResolveMessageType(protobuf.SearchContext{
+		ProtoImportPaths: []string{protoPath},
+		ProtoFiles:       []string{"msg.proto"},
+	}, "TopicKey"))
+	valueMessage := dynamic.NewMessage(protobuf.ResolveMessageType(protobuf.SearchContext{
+		ProtoImportPaths: []string{protoPath},
+		ProtoFiles:       []string{"msg.proto"},
+	}, "TopicMessage"))
+
+	if err = keyMessage.Unmarshal(rawKey); err != nil {
+		t.Fatalf("Unmarshal key failed: %s", err)
+	}
+	if err = valueMessage.Unmarshal(rawValue); err != nil {
+		t.Fatalf("Unmarshal value failed: %s", err)
+	}
+
+	actualKey, err := keyMessage.MarshalJSON()
+	if err != nil {
+		t.Fatalf("Key to json failed: %s", err)
+	}
+
+	actualValue, err := valueMessage.MarshalJSON()
+	if err != nil {
+		t.Fatalf("Value to json failed: %s", err)
+	}
+
+	testutil.AssertEquals(t, key, string(actualKey))
+	testutil.AssertEquals(t, value, string(actualValue))
+}
+
+func TestProduceProtosetFileIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	pbTopic := testutil.CreateTopic(t, "produce-topic-pb")
+
+	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata", "msg.protoset")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	key := `{"fvalue":1.2}`
+	value := `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`
+
+	if _, err := kafkaCtl.Execute("produce", pbTopic,
+		"--key", key, "--key-proto-type", "TopicKey",
+		"--value", value, "--value-proto-type", "TopicMessage",
+		"--protoset-file", protoPath); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "--print-keys", "--key-encoding", "hex", "--value-encoding", "hex"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	kv := strings.Split(kafkaCtl.GetStdOut(), "#")
+
+	rawKey, err := hex.DecodeString(strings.TrimSpace(kv[0]))
+	if err != nil {
+		t.Fatalf("Failed to decode key: %s", err)
+	}
+
+	rawValue, err := hex.DecodeString(strings.TrimSpace(kv[1]))
+	if err != nil {
+		t.Fatalf("Failed to decode value: %s", err)
+	}
+
+	keyMessage := dynamic.NewMessage(protobuf.ResolveMessageType(protobuf.SearchContext{
+		ProtosetFiles: []string{protoPath},
+	}, "TopicKey"))
+	valueMessage := dynamic.NewMessage(protobuf.ResolveMessageType(protobuf.SearchContext{
+		ProtosetFiles: []string{protoPath},
+	}, "TopicMessage"))
+
+	if err = keyMessage.Unmarshal(rawKey); err != nil {
+		t.Fatalf("Unmarshal key failed: %s", err)
+	}
+	if err = valueMessage.Unmarshal(rawValue); err != nil {
+		t.Fatalf("Unmarshal value failed: %s", err)
+	}
+
+	actualKey, err := keyMessage.MarshalJSON()
+	if err != nil {
+		t.Fatalf("Key to json failed: %s", err)
+	}
+
+	actualValue, err := valueMessage.MarshalJSON()
+	if err != nil {
+		t.Fatalf("Value to json failed: %s", err)
+	}
+
+	testutil.AssertEquals(t, key, string(actualKey))
+	testutil.AssertEquals(t, value, string(actualValue))
+}
+
+func TestProduceProtoFileBadJSONIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	pbTopic := testutil.CreateTopic(t, "produce-topic-pb")
+
+	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	value := `{"producedAt":"2021-12-01T14:10:1`
+
+	if _, err := kafkaCtl.Execute("produce", pbTopic,
+		"--value", value, "--value-proto-type", "TopicMessage",
+		"--proto-import-path", protoPath, "--proto-file", "msg.proto"); err != nil {
+		testutil.AssertErrorContains(t, "invalid json", err)
+	} else {
+		t.Fatalf("Expected producer to fail")
+	}
+}
+
+func TestProduceProtoFileErrNoMessageIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	pbTopic := testutil.CreateTopic(t, "produce-topic-pb")
+
+	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	value := `{"producedAt":"2021-12-01T14:10:1`
+
+	if _, err := kafkaCtl.Execute("produce", pbTopic,
+		"--value", value, "--value-proto-type", "unknown",
+		"--proto-import-path", protoPath, "--proto-file", "msg.proto"); err != nil {
+		testutil.AssertErrorContains(t, "not found in provided files", err)
+	} else {
+		t.Fatalf("Expected producer to fail")
+	}
 }

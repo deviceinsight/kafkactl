@@ -17,19 +17,24 @@ import (
 )
 
 type Flags struct {
-	PrintKeys       bool
-	PrintTimestamps bool
-	PrintAvroSchema bool
-	PrintHeaders    bool
-	OutputFormat    string
-	Separator       string
-	Partitions      []int
-	Offsets         []string
-	FromBeginning   bool
-	Tail            int
-	Exit            bool
-	EncodeValue     string
-	EncodeKey       string
+	PrintKeys        bool
+	PrintTimestamps  bool
+	PrintAvroSchema  bool
+	PrintHeaders     bool
+	OutputFormat     string
+	Separator        string
+	Partitions       []int
+	Offsets          []string
+	FromBeginning    bool
+	Tail             int
+	Exit             bool
+	EncodeValue      string
+	EncodeKey        string
+	ProtoFiles       []string
+	ProtoImportPaths []string
+	ProtosetFiles    []string
+	KeyProtoType     string
+	ValueProtoType   string
 }
 
 type ConsumedMessage struct {
@@ -73,27 +78,32 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 		return errors.Wrap(err, "Failed to start consumer: ")
 	}
 
-	var deserializer MessageDeserializer
+	var deserializers MessageDeserializerChain
 
 	if clientContext.AvroSchemaRegistry != "" {
-		deserializer, err = CreateAvroMessageDeserializer(topic, clientContext.AvroSchemaRegistry)
+		deserializer, err := CreateAvroMessageDeserializer(topic, clientContext.AvroSchemaRegistry)
 		if err != nil {
 			return err
 		}
-		if canDeserialize, err := deserializer.CanDeserialize(topic); err != nil {
-			return err
-		} else if !canDeserialize {
-			output.Debugf("no avro topic")
-			deserializer = nil
-		} else {
-			output.Debugf("using AvroMessageDeserializer")
-		}
+
+		deserializers = append(deserializers, deserializer)
 	}
 
-	if deserializer == nil {
-		output.Debugf("using DefaultMessageDeserializer")
-		deserializer = DefaultMessageDeserializer{}
+	if flags.ValueProtoType != "" {
+		context := clientContext.Protobuf
+		context.ProtosetFiles = append(flags.ProtosetFiles, context.ProtosetFiles...)
+		context.ProtoFiles = append(flags.ProtoFiles, context.ProtoFiles...)
+		context.ProtoImportPaths = append(flags.ProtoImportPaths, context.ProtoImportPaths...)
+
+		deserializer, err := CreateProtobufMessageDeserializer(context, flags.KeyProtoType, flags.ValueProtoType)
+		if err != nil {
+			return err
+		}
+
+		deserializers = append(deserializers, deserializer)
 	}
+
+	deserializers = append(deserializers, DefaultMessageDeserializer{})
 
 	var partitions []int32
 
@@ -200,7 +210,7 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 			}
 			lastIndex := len(sortedMessages) - 1
 			for i := range sortedMessages {
-				err := deserializer.Deserialize(sortedMessages[lastIndex-i], flags)
+				err := deserializers.Deserialize(sortedMessages[lastIndex-i], flags)
 				if err != nil {
 					recordFirstError(errChannel, err)
 					return
@@ -213,7 +223,7 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 		go func() {
 			defer wgPendingMessages.Done()
 			for msg := range messages {
-				err := deserializer.Deserialize(msg, flags)
+				err := deserializers.Deserialize(msg, flags)
 				if err != nil {
 					if recordFirstError(errChannel, err) {
 						close(closing)

@@ -12,6 +12,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/internal/helpers"
+	"github.com/deviceinsight/kafkactl/internal/helpers/protobuf"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -54,6 +55,7 @@ type ClientContext struct {
 	ClientID           string
 	KafkaVersion       sarama.KafkaVersion
 	AvroSchemaRegistry string
+	Protobuf           protobuf.SearchContext
 	DefaultPartitioner string
 	RequiredAcks       string
 }
@@ -95,6 +97,9 @@ func CreateClientContext() (ClientContext, error) {
 		return context, err
 	}
 	context.AvroSchemaRegistry = viper.GetString("contexts." + context.Name + ".avro.schemaRegistry")
+	context.Protobuf.ProtosetFiles = viper.GetStringSlice("contexts." + context.Name + ".protobuf.protosetFiles")
+	context.Protobuf.ProtoImportPaths = viper.GetStringSlice("contexts." + context.Name + ".protobuf.importPaths")
+	context.Protobuf.ProtoFiles = viper.GetStringSlice("contexts." + context.Name + ".protobuf.protoFiles")
 	context.DefaultPartitioner = viper.GetString("contexts." + context.Name + ".defaultPartitioner")
 	context.RequiredAcks = viper.GetString("contexts." + context.Name + ".requiredAcks")
 	context.Sasl.Enabled = viper.GetBool("contexts." + context.Name + ".sasl.enabled")

@@ -54,6 +54,10 @@ func TestEnvironmentVariableLoadingAliases(t *testing.T) {
 	_ = os.Setenv("CLIENTID", "my-client")
 	_ = os.Setenv("KAFKAVERSION", "2.0.1")
 	_ = os.Setenv("AVRO_SCHEMAREGISTRY", "registry:8888")
+	_ = os.Setenv("PROTOBUF_PROTOSETFILES", "/usr/include/protosets/ps1.protoset /usr/lib/ps2.protoset")
+	_ = os.Setenv("PROTOBUF_PROTOSETPATHS", "/usr/include/protosets /usr/lib/protosets")
+	_ = os.Setenv("PROTOBUF_IMPORTPATHS", "/usr/include/protobuf /usr/lib/protobuf")
+	_ = os.Setenv("PROTOBUF_PROTOFILES", "message.proto other.proto")
 	_ = os.Setenv("DEFAULTPARTITIONER", "hash")
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
@@ -81,5 +85,9 @@ func TestEnvironmentVariableLoadingAliases(t *testing.T) {
 	testutil.AssertEquals(t, "my-client", viper.GetString("contexts.default.clientID"))
 	testutil.AssertEquals(t, "2.0.1", viper.GetString("contexts.default.kafkaVersion"))
 	testutil.AssertEquals(t, "registry:8888", viper.GetString("contexts.default.avro.schemaRegistry"))
+	testutil.AssertEquals(t, "/usr/include/protosets/ps1.protoset", viper.GetStringSlice("contexts.default.protobuf.protosetFiles")[0])
+	testutil.AssertEquals(t, "/usr/include/protosets", viper.GetStringSlice("contexts.default.protobuf.protosetPaths")[0])
+	testutil.AssertEquals(t, "/usr/include/protobuf", viper.GetStringSlice("contexts.default.protobuf.importPaths")[0])
+	testutil.AssertEquals(t, "message.proto", viper.GetStringSlice("contexts.default.protobuf.protoFiles")[0])
 	testutil.AssertEquals(t, "hash", viper.GetString("contexts.default.defaultPartitioner"))
 }
