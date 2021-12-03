@@ -12,6 +12,7 @@ A command-line interface for interaction with Apache Kafka
 - support for avro schemas
 - Configuration of different contexts
 - directly access kafka clusters inside your kubernetes cluster
+- support for consuming and producing protobuf-encoded messages
 
 [![asciicast](https://asciinema.org/a/vmxrTA0h8CAXPnJnSFk5uHKzr.svg)](https://asciinema.org/a/vmxrTA0h8CAXPnJnSFk5uHKzr)
 
@@ -118,6 +119,16 @@ contexts:
     # optional: avro schema registry
     avro:
       schemaRegistry: localhost:8081
+    
+    # optional: default protobuf messages search paths
+    protobuf:
+       importPaths:
+          - "/usr/include/protobuf"
+       protoFiles:
+          - "someMessage.proto"
+          - "otherMessage.proto"
+       protosetFiles:
+          - "/usr/include/protoset/other.protoset"
     
     # optional: changes the default partitioner
     defaultPartitioner: "hash"
@@ -254,8 +265,7 @@ kubectl get svc | grep kafka
 a bash available. The second option uses a docker image build from scratch and should therefore be quicker.
 Which option is more suitable, will depend on your use-case. 
 
-> :warning: when _kafkactl_ was installed via _snap_ make sure to configure the absolute path to your `kubectl` binary. 
-Snaps run with a different $PATH and therefore are unable to access binaries on $PATH. 
+> :warning: currently _kafkactl_ must **NOT** be installed via _snap_ in order for the kubernetes feature to work. The snap runs in a sandbox and is therefore unable to access the `kubectl` binary. 
 
 ## Command documentation
 
@@ -301,6 +311,11 @@ kafkactl consume my-topic --from-beginning --exit
 The following example prints keys in hex and values in base64:
 ```bash
 kafkactl consume my-topic --print-keys --key-encoding=hex --value-encoding=base64
+```
+
+The consumer can convert protobuf messages to JSON in keys (optional) and values:
+```bash
+kafkactl consume my-topic --value-proto-type MyTopicValue --key-proto-type MyTopicKey --proto-file kafkamsg.proto
 ```
 
 ### Producing messages
@@ -379,6 +394,11 @@ Producing null values (tombstone record) is also possible:
  kafkactl produce my-topic --null-value
  ```
 
+Producing protobuf message converted from JSON:
+```bash
+kafkactl produce my-topic --key='{"keyField":123}' --key-proto-type MyKeyMessage --value='{"valueField":"value"}' --value-proto-type MyValueMessage --proto-file kafkamsg.proto
+```
+
 ### Avro support
 
 In order to enable avro support you just have to add the schema registry to your configuration:
@@ -420,6 +440,66 @@ decoded with an avro schema.
 The `consume` command handles this automatically and no configuration is needed.
 
 An additional parameter `print-schema` can be provided to display the schema used for decoding.
+
+### Protobuf support
+
+`kafkactl` can consume and produce protobuf-encoded messages. In order to enable protobuf serialization/deserialization
+you should add flag `--value-proto-type` and optionally `--key-proto-type` (if keys encoded in protobuf format) 
+with type name. Protobuf-encoded messages are mapped with [pbjson](https://developers.google.com/protocol-buffers/docs/proto3#json).
+
+`kafkactl` will search messages in following order:
+1. Protoset files specified in `--protoset-file` flag
+2. Protoset files specified in `context.protobuf.protosetFiles` config value
+3. Proto files specified in `--proto-file` flag
+4. Proto files specified in `context.protobuf.protoFiles` config value
+
+Proto files may require some dependencies in `import` sections. To specify additional lookup paths use
+`--proto-import-path` flag or `context.protobuf.importPaths` config value.
+
+If provided message types was not found `kafkactl` will return error.
+
+Note that if you want to use raw proto files `protoc` installation don't need to be installed.
+
+Also note that protoset files must be compiled with included imports:
+```bash
+protoc -o kafkamsg.protoset --include_imports kafkamsg.proto
+```
+
+#### Example
+Assume you have following proto schema in `kafkamsg.proto`:
+```protobuf
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+message TopicMessage {
+  google.protobuf.Timestamp produced_at = 1;
+  int64 num = 2;
+}
+
+message TopicKey {
+  float fvalue = 1;
+}
+```
+"well-known" `google/protobuf` types are included so no additional proto files needed.
+
+To produce message run
+```bash
+kafkactl produce <topic> --key '{"fvalue":1.2}' --key-proto-type TopicKey --value '{"producedAt":"2021-12-01T14:10:12Z","num":"1"}' --value-proto-type TopicValue --proto-file kafkamsg.proto
+```
+or with protoset
+```bash
+kafkactl produce <topic> --key '{"fvalue":1.2}' --key-proto-type TopicKey --value '{"producedAt":"2021-12-01T14:10:12Z","num":"1"}' --value-proto-type TopicValue --protoset-file kafkamsg.protoset
+```
+
+To consume messages run
+```bash
+kafkactl consume <topic> --key-proto-type TopicKey --value-proto-type TopicValue --proto-file kafkamsg.proto
+```
+or with protoset
+```bash
+kafkactl consume <topic> --key-proto-type TopicKey --value-proto-type TopicValue --protoset-file kafkamsg.protoset
+```
 
 ### Altering topics
 

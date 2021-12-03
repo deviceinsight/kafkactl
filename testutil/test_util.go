@@ -21,6 +21,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var RootDir string
+
 var random = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 var configFile = "it-config.yml"
@@ -57,6 +59,8 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	RootDir = rootDir
 
 	if err := os.Setenv("KAFKA_CTL_CONFIG", filepath.Join(rootDir, configFile)); err != nil {
 		panic(err)

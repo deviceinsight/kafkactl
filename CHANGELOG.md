@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.24.0 - 2021-12-03
+
+### Added
+- [#110](https://github.com/deviceinsight/kafkactl/issues/110) Added protobuf support to consume/produce commands (@xakep666 thank you for the contribution)
+
 ## 1.23.1 - 2021-11-23
 
 ### Fixed
