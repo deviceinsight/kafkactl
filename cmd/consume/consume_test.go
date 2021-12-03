@@ -210,7 +210,7 @@ func TestProtobufConsumeProtoFileIntegration(t *testing.T) {
 	}
 
 	// produce valid pb message
-	if _, err := kafkaCtl.Execute("produce", pbTopic, "--key", "test-key", "--value", hex.EncodeToString(value), "--value-encoding", "hex", "-H", "key1:value1", "-H", "key\\:2:value\\:2"); err != nil {
+	if _, err := kafkaCtl.Execute("produce", pbTopic, "--key", "test-key", "--value", hex.EncodeToString(value), "--value-encoding", "hex"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
