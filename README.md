@@ -265,8 +265,7 @@ kubectl get svc | grep kafka
 a bash available. The second option uses a docker image build from scratch and should therefore be quicker.
 Which option is more suitable, will depend on your use-case. 
 
-> :warning: when _kafkactl_ was installed via _snap_ make sure to configure the absolute path to your `kubectl` binary. 
-Snaps run with a different $PATH and therefore are unable to access binaries on $PATH. 
+> :warning: currently _kafkactl_ must **NOT** be installed via _snap_ in order for the kubernetes feature to work. The snap runs in a sandbox and is therefore unable to access the `kubectl` binary. 
 
 ## Command documentation
 
