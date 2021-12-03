@@ -1,11 +1,18 @@
 package consume_test
 
 import (
+	"encoding/hex"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/deviceinsight/kafkactl/internal/helpers/protobuf"
 
 	"github.com/deviceinsight/kafkactl/testutil"
+	"github.com/jhump/protoreflect/dynamic"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestConsumeWithKeyAndValueIntegration(t *testing.T) {
@@ -177,5 +184,115 @@ func TestAvroDeserializationErrorHandlingIntegration(t *testing.T) {
 		testutil.AssertEquals(t, fmt.Sprintf("%s\n%s", value, value), kafkaCtl.GetStdOut())
 	} else {
 		t.Fatalf("expected consumer to fail")
+	}
+}
+
+func TestProtobufConsumeProtoFileIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	pbTopic := testutil.CreateTopic(t, "proto-file")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+	now := time.Date(2021, time.December, 1, 14, 10, 12, 0, time.UTC)
+	pbMessageDesc := protobuf.ResolveMessageType(protobuf.SearchContext{
+		ProtoImportPaths: []string{protoPath},
+		ProtoFiles:       []string{"msg.proto"},
+	}, "TopicMessage")
+	pbMessage := dynamic.NewMessage(pbMessageDesc)
+	pbMessage.SetFieldByNumber(1, timestamppb.New(now))
+	pbMessage.SetFieldByNumber(2, int64(1))
+
+	value, err := pbMessage.Marshal()
+	if err != nil {
+		t.Fatalf("Failed to marshal proto message: %s", err)
+	}
+
+	// produce valid pb message
+	if _, err := kafkaCtl.Execute("produce", pbTopic, "--key", "test-key", "--value", hex.EncodeToString(value), "--value-encoding", "hex", "-H", "key1:value1", "-H", "key\\:2:value\\:2"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "--proto-import-path", protoPath, "--proto-file", "msg.proto", "--value-proto-type", "TopicMessage"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, kafkaCtl.GetStdOut())
+}
+
+func TestProtobufConsumeProtosetFileIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	pbTopic := testutil.CreateTopic(t, "proto-file")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata", "msg.protoset")
+	now := time.Date(2021, time.December, 1, 14, 10, 12, 0, time.UTC)
+	pbMessageDesc := protobuf.ResolveMessageType(protobuf.SearchContext{
+		ProtosetFiles: []string{protoPath},
+	}, "TopicMessage")
+	pbMessage := dynamic.NewMessage(pbMessageDesc)
+	pbMessage.SetFieldByNumber(1, timestamppb.New(now))
+	pbMessage.SetFieldByNumber(2, int64(1))
+
+	value, err := pbMessage.Marshal()
+	if err != nil {
+		t.Fatalf("Failed to marshal proto message: %s", err)
+	}
+
+	// produce valid pb message
+	if _, err := kafkaCtl.Execute("produce", pbTopic, "--key", "test-key", "--value", hex.EncodeToString(value), "--value-encoding", "hex"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "--protoset-file", protoPath, "--value-proto-type", "TopicMessage"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, kafkaCtl.GetStdOut())
+}
+
+func TestProtobufConsumeProtoFileErrNoMessageIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	pbTopic := testutil.CreateTopic(t, "proto-file")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata", "msg.protoset")
+
+	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "--proto-import-path", protoPath, "--proto-file", "msg.proto", "--value-proto-type", "NonExisting"); err != nil {
+		testutil.AssertErrorContains(t, "not found in provided files", err)
+	} else {
+		t.Fatal("Expected consumer to fail")
+	}
+}
+
+func TestProtobufConsumeProtoFileErrDecodeIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	pbTopic := testutil.CreateTopic(t, "proto-file")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+
+	// produce invalid pb message
+	if _, err := kafkaCtl.Execute("produce", pbTopic, "--key", "test-key", "--value", "nonpb"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "--proto-import-path", protoPath, "--proto-file", "msg.proto", "--value-proto-type", "TopicMessage"); err != nil {
+		testutil.AssertErrorContains(t, "value decode failed: proto: bad wiretype", err)
+	} else {
+		t.Fatal("Expected consumer to fail")
 	}
 }

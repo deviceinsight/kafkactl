@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+// generate protoset file with 'protoc -o msg.protoset --include_imports msg.proto'
+
+message TopicMessage {
+  google.protobuf.Timestamp produced_at = 1;
+  int64 num = 2;
+}
+
+message TopicKey {
+  float fvalue = 1;
+}

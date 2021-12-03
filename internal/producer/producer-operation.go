@@ -33,6 +33,11 @@ type Flags struct {
 	ValueEncoding      string
 	Silent             bool
 	RateInSeconds      int
+	ProtoFiles         []string
+	ProtoImportPaths   []string
+	ProtosetFiles      []string
+	KeyProtoType       string
+	ValueProtoType     string
 }
 
 type Operation struct {
@@ -83,27 +88,32 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 		return errors.New("separator is used to split input from stdin/file. it cannot be used together with key or value")
 	}
 
-	var serializer MessageSerializer
+	serializers := MessageSerializerChain{topic: topic}
 
 	if clientContext.AvroSchemaRegistry != "" {
-		serializer, err = CreateAvroMessageSerializer(topic, clientContext.AvroSchemaRegistry)
+		serializer, err := CreateAvroMessageSerializer(topic, clientContext.AvroSchemaRegistry)
 		if err != nil {
 			return err
 		}
-		if canSerialize, err := serializer.CanSerialize(topic); err != nil {
-			return err
-		} else if !canSerialize {
-			output.Debugf("no avro topic")
-			serializer = nil
-		} else {
-			output.Debugf("using AvroMessageSerializer")
-		}
+
+		serializers.serializers = append(serializers.serializers, serializer)
 	}
 
-	if serializer == nil {
-		output.Debugf("using DefaultMessageSerializer")
-		serializer = DefaultMessageSerializer{topic: topic}
+	if flags.ValueProtoType != "" {
+		context := clientContext.Protobuf
+		context.ProtosetFiles = append(flags.ProtosetFiles, context.ProtosetFiles...)
+		context.ProtoFiles = append(flags.ProtoFiles, context.ProtoFiles...)
+		context.ProtoImportPaths = append(flags.ProtoImportPaths, context.ProtoImportPaths...)
+
+		serializer, err := CreateProtobufMessageSerializer(topic, context, flags.KeyProtoType, flags.ValueProtoType)
+		if err != nil {
+			return err
+		}
+
+		serializers.serializers = append(serializers.serializers, serializer)
 	}
+
+	serializers.serializers = append(serializers.serializers, DefaultMessageSerializer{topic: topic})
 
 	output.Debugf("producer config: %+v", config.Producer)
 	producer, err := sarama.NewSyncProducer(clientContext.Brokers, config)
@@ -134,9 +144,9 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 		var message *sarama.ProducerMessage
 
 		if flags.NullValue {
-			message, err = serializer.Serialize([]byte(key), nil, flags)
+			message, err = serializers.Serialize([]byte(key), nil, flags)
 		} else {
-			message, err = serializer.Serialize([]byte(key), []byte(flags.Value), flags)
+			message, err = serializers.Serialize([]byte(key), []byte(flags.Value), flags)
 		}
 
 		if err != nil {
@@ -228,7 +238,7 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 			}
 
 			messageCount++
-			message, err := serializer.Serialize([]byte(key), []byte(value), flags)
+			message, err := serializers.Serialize([]byte(key), []byte(value), flags)
 			if err != nil {
 				return errors.Wrap(err, "Failed to produce message")
 			}
