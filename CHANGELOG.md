@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2.0.0 - 2022-01-17
+
 ### Added
 - [#112](https://github.com/deviceinsight/kafkactl/issues/112) make `maxMessageBytes` configurable in produce command.
   
