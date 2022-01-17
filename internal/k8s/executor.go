@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/deviceinsight/kafkactl/internal"
 	"github.com/deviceinsight/kafkactl/output"
@@ -21,6 +22,7 @@ type executor struct {
 	kubectlBinary string
 	version       Version
 	runner        Runner
+	clientID      string
 	kubeConfig    string
 	kubeContext   string
 	namespace     string
@@ -30,6 +32,9 @@ type executor struct {
 const letterBytes = "abcdefghijklmnpqrstuvwxyz123456789"
 
 func randomString(n int) string {
+
+	rand.Seed(time.Now().UnixNano())
+
 	b := make([]byte, n)
 	for i := range b {
 		b[i] = letterBytes[rand.Intn(len(letterBytes))]
@@ -81,6 +86,7 @@ func newExecutor(context internal.ClientContext, runner Runner) *executor {
 	return &executor{
 		kubectlBinary: context.Kubernetes.Binary,
 		version:       getKubectlVersion(context.Kubernetes.Binary, runner),
+		clientID:      internal.GetClientID(&context, ""),
 		kubeConfig:    context.Kubernetes.KubeConfig,
 		kubeContext:   context.Kubernetes.KubeContext,
 		namespace:     context.Kubernetes.Namespace,
@@ -103,6 +109,10 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 	dockerImage := "deviceinsight/kafkactl:" + KafkaCtlVersion + "-" + dockerImageType
 
 	podName := "kafkactl-" + randomString(10)
+
+	if kubectl.clientID != "" {
+		podName = "kafkactl-" + kubectl.clientID
+	}
 
 	kubectlArgs := []string{
 		"run", "--rm", "-i", "--tty", "--restart=Never", podName,

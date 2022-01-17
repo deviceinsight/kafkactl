@@ -143,7 +143,7 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 
 	var config = sarama.NewConfig()
 	config.Version = context.KafkaVersion
-	config.ClientID = getClientID(context)
+	config.ClientID = GetClientID(context, "kafkactl-")
 
 	if context.RequestTimeout > 0 {
 		output.Debugf("using admin request timeout: %s", context.RequestTimeout.String())
@@ -191,7 +191,7 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 	return config, nil
 }
 
-func getClientID(context *ClientContext) string {
+func GetClientID(context *ClientContext, defaultPrefix string) string {
 
 	var (
 		err error
@@ -202,9 +202,9 @@ func getClientID(context *ClientContext) string {
 		return context.ClientID
 	} else if usr, err = user.Current(); err != nil {
 		output.Warnf("Failed to read current user: %v", err)
-		return "kafkactl"
+		return strings.TrimSuffix(defaultPrefix, "-")
 	} else {
-		return "kafkactl-" + sanitizeUsername(usr.Username)
+		return defaultPrefix + sanitizeUsername(usr.Username)
 	}
 }
 
