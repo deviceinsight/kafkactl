@@ -441,6 +441,12 @@ func findAssignedTopics(admin sarama.ClusterAdmin, groupNames []string) (map[str
 				continue
 			}
 
+			if description.State != "Stable" {
+				// only take stable groups into account to circumvent https://github.com/deviceinsight/kafkactl/issues/109
+				output.Debugf("do not filter on group %s, because state is: %s", description.GroupId, description.State)
+				continue
+			}
+
 			assignment, err := member.GetMemberAssignment()
 
 			if err != nil {
