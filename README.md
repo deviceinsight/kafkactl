@@ -3,7 +3,7 @@
 
 A command-line interface for interaction with Apache Kafka
 
-[![Build Status](https://github.com/deviceinsight/kafkactl/workflows/Lint%20%2F%20Test%20%2F%20IT/badge.svg?branch=master)](https://github.com/deviceinsight/kafkactl/actions)
+[![Build Status](https://github.com/deviceinsight/kafkactl/workflows/Lint%20%2F%20Test%20%2F%20IT/badge.svg?branch=main)](https://github.com/deviceinsight/kafkactl/actions)
 | [![command docs](https://img.shields.io/badge/command-docs-blue.svg)](https://deviceinsight.github.io/kafkactl/)  
 
 ## Features
@@ -130,13 +130,16 @@ contexts:
        protosetFiles:
           - "/usr/include/protoset/other.protoset"
     
-    # optional: changes the default partitioner
-    defaultPartitioner: "hash"
+    producer:
+      # optional: changes the default partitioner
+      partitioner: "hash"
 
-    # optional: changes default required acks in produce request
-    # see: https://pkg.go.dev/github.com/Shopify/sarama?utm_source=godoc#RequiredAcks
-    requiredAcks: "WaitForAll"
+      # optional: changes default required acks in produce request
+      # see: https://pkg.go.dev/github.com/Shopify/sarama?utm_source=godoc#RequiredAcks
+      requiredAcks: "WaitForAll"
 
+      # optional: maximum permitted size of a message (defaults to 1000000)
+      maxMessageBytes: 1000000
 
 current-context: default
 ```

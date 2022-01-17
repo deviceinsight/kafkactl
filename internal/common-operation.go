@@ -45,6 +45,12 @@ type K8sConfig struct {
 	Namespace   string
 }
 
+type ProducerConfig struct {
+	Partitioner     string
+	RequiredAcks    string
+	MaxMessageBytes int
+}
+
 type ClientContext struct {
 	Name               string
 	Brokers            []string
@@ -56,8 +62,7 @@ type ClientContext struct {
 	KafkaVersion       sarama.KafkaVersion
 	AvroSchemaRegistry string
 	Protobuf           protobuf.SearchContext
-	DefaultPartitioner string
-	RequiredAcks       string
+	Producer           ProducerConfig
 }
 
 type Config struct {
@@ -100,8 +105,9 @@ func CreateClientContext() (ClientContext, error) {
 	context.Protobuf.ProtosetFiles = viper.GetStringSlice("contexts." + context.Name + ".protobuf.protosetFiles")
 	context.Protobuf.ProtoImportPaths = viper.GetStringSlice("contexts." + context.Name + ".protobuf.importPaths")
 	context.Protobuf.ProtoFiles = viper.GetStringSlice("contexts." + context.Name + ".protobuf.protoFiles")
-	context.DefaultPartitioner = viper.GetString("contexts." + context.Name + ".defaultPartitioner")
-	context.RequiredAcks = viper.GetString("contexts." + context.Name + ".requiredAcks")
+	context.Producer.Partitioner = viper.GetString("contexts." + context.Name + ".producer.partitioner")
+	context.Producer.RequiredAcks = viper.GetString("contexts." + context.Name + ".producer.requiredAcks")
+	context.Producer.MaxMessageBytes = viper.GetInt("contexts." + context.Name + ".producer.maxMessageBytes")
 	context.Sasl.Enabled = viper.GetBool("contexts." + context.Name + ".sasl.enabled")
 	context.Sasl.Username = viper.GetString("contexts." + context.Name + ".sasl.username")
 	context.Sasl.Password = viper.GetString("contexts." + context.Name + ".sasl.password")
@@ -137,7 +143,7 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 
 	var config = sarama.NewConfig()
 	config.Version = context.KafkaVersion
-	config.ClientID = getClientID(context)
+	config.ClientID = GetClientID(context, "kafkactl-")
 
 	if context.RequestTimeout > 0 {
 		output.Debugf("using admin request timeout: %s", context.RequestTimeout.String())
@@ -185,7 +191,7 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 	return config, nil
 }
 
-func getClientID(context *ClientContext) string {
+func GetClientID(context *ClientContext, defaultPrefix string) string {
 
 	var (
 		err error
@@ -196,9 +202,9 @@ func getClientID(context *ClientContext) string {
 		return context.ClientID
 	} else if usr, err = user.Current(); err != nil {
 		output.Warnf("Failed to read current user: %v", err)
-		return "kafkactl"
+		return strings.TrimSuffix(defaultPrefix, "-")
 	} else {
-		return "kafkactl-" + sanitizeUsername(usr.Username)
+		return defaultPrefix + sanitizeUsername(usr.Username)
 	}
 }
 

@@ -138,6 +138,7 @@ func (operation *Operation) DescribeTopic(topic string, flags DescribeTopicFlags
 		admin   sarama.ClusterAdmin
 		err     error
 		exists  bool
+		t       Topic
 	)
 
 	if context, err = internal.CreateClientContext(); err != nil {
@@ -160,7 +161,9 @@ func (operation *Operation) DescribeTopic(topic string, flags DescribeTopicFlags
 		return errors.Wrap(err, "failed to create cluster admin")
 	}
 
-	var t, _ = readTopic(&client, &admin, topic, allFields)
+	if t, err = readTopic(&client, &admin, topic, allFields); err != nil {
+		return errors.Wrap(err, "failed to read topic")
+	}
 
 	return operation.printTopic(t, flags)
 }
@@ -239,6 +242,7 @@ func (operation *Operation) AlterTopic(topic string, flags AlterTopicFlags) erro
 		admin   sarama.ClusterAdmin
 		err     error
 		exists  bool
+		t       Topic
 	)
 
 	if context, err = internal.CreateClientContext(); err != nil {
@@ -261,7 +265,9 @@ func (operation *Operation) AlterTopic(topic string, flags AlterTopicFlags) erro
 		return errors.Wrap(err, "failed to create cluster admin")
 	}
 
-	var t, _ = readTopic(&client, &admin, topic, allFields)
+	if t, err = readTopic(&client, &admin, topic, allFields); err != nil {
+		return errors.Wrap(err, "failed to read topic")
+	}
 
 	if flags.Partitions != 0 {
 		if len(t.Partitions) > int(flags.Partitions) {
@@ -595,7 +601,6 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 	}
 
 	partitionChannel := make(chan Partition)
-	errChannel := make(chan error)
 
 	// read partitions in parallel
 	for _, p := range ps {
@@ -606,38 +611,37 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 
 			if requestedFields.partitionOffset {
 				if np.OldestOffset, err = (*client).GetOffset(name, partitionId, sarama.OffsetOldest); err != nil {
-					errChannel <- errors.Errorf("unable to read oldest offset for topic %s partition %d", name, partitionId)
-					return
+					output.Warnf("unable to read oldest offset for topic %s partition %d", name, partitionId)
 				}
 
 				if np.NewestOffset, err = (*client).GetOffset(name, partitionId, sarama.OffsetNewest); err != nil {
-					errChannel <- errors.Errorf("unable to read newest offset for topic %s partition %d", name, partitionId)
-					return
+					output.Warnf("unable to read newest offset for topic %s partition %d", name, partitionId)
 				}
 			}
 
 			if requestedFields.partitionLeader {
 				if led, err = (*client).Leader(name, partitionId); err != nil {
-					errChannel <- errors.Errorf("unable to read leader for topic %s partition %d", name, partitionId)
-					return
+					output.Warnf("unable to read leader for topic %s partition %d", name, partitionId)
+					np.Leader = "none"
+				} else {
+					np.Leader = led.Addr()
 				}
-				np.Leader = led.Addr()
 			}
 
 			if requestedFields.partitionReplicas {
 				if np.Replicas, err = (*client).Replicas(name, partitionId); err != nil {
-					errChannel <- errors.Errorf("unable to read replicas for topic %s partition %d", name, partitionId)
-					return
+					output.Warnf("unable to read replicas for topic %s partition %d", name, partitionId)
+				} else {
+					sort.Slice(np.Replicas, func(i, j int) bool { return np.Replicas[i] < np.Replicas[j] })
 				}
-				sort.Slice(np.Replicas, func(i, j int) bool { return np.Replicas[i] < np.Replicas[j] })
 			}
 
 			if requestedFields.partitionISRs {
 				if np.ISRs, err = (*client).InSyncReplicas(name, partitionId); err != nil {
-					errChannel <- errors.Errorf("unable to read inSyncReplicas for topic %s partition %d", name, partitionId)
-					return
+					output.Warnf("unable to read inSyncReplicas for topic %s partition %d", name, partitionId)
+				} else {
+					sort.Slice(np.ISRs, func(i, j int) bool { return np.ISRs[i] < np.ISRs[j] })
 				}
-				sort.Slice(np.ISRs, func(i, j int) bool { return np.ISRs[i] < np.ISRs[j] })
 			}
 
 			partitionChannel <- np
@@ -645,12 +649,8 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 	}
 
 	for range ps {
-		select {
-		case partition := <-partitionChannel:
-			top.Partitions = append(top.Partitions, partition)
-		case err := <-errChannel:
-			return top, err
-		}
+		partition := <-partitionChannel
+		top.Partitions = append(top.Partitions, partition)
 	}
 
 	sort.Slice(top.Partitions, func(i, j int) bool {

@@ -1019,6 +1019,7 @@ kafkactl produce TOPIC [flags]
       --key-proto-type string       key protobuf message type
   -K, --key-schema-version int      avro schema version that should be used for key serialization (default is latest) (default -1)
   -L, --lineSeparator string        separator to split multiple messages from stdin or file (default "\n")
+      --max-message-bytes int       the maximum permitted size of a message (defaults to 1000000)
       --null-value                  produce a null value (can be used instead of providing a value with --value)
   -p, --partition int32             partition to produce to (default -1)
   -P, --partitioner murmur2         the partitioning scheme to use. Can be murmur2, `hash`, `hash-ref` `manual`, or `random`. (default is murmur2)

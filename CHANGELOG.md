@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2.0.0 - 2022-01-17
+
+### Added
+- [#112](https://github.com/deviceinsight/kafkactl/issues/112) make `maxMessageBytes` configurable in produce command.
+  
+  :warning: this is a breaking change since the format of the `config.yml` has been changed in order to group producer
+  related configurations under `context.producer`.
+
+### Fixed
+- fixed error handling for describe topic command. previously errors for requests to describe partitions had been swallowed.
+
+### Changed
+- changed naming of kafkactl pod when running in k8s. pod is now named based on clientID specified in config.yml
+
 ## 1.24.0 - 2021-12-03
 
 ### Added
@@ -154,7 +168,7 @@ of `plaintext`.
 ## 1.11.0 - 2020-08-07
 
 ### Added
-- direct support for kafka clusters [running in kubernetes](https://github.com/deviceinsight/kafkactl/blob/master/README.md#running-in-kubernetes)
+- direct support for kafka clusters [running in kubernetes](https://github.com/deviceinsight/kafkactl/blob/main/README.md#running-in-kubernetes)
 - `attach` command to get a bash into kafkactl pod when running in kubernetes
 
 ## 1.10.0 - 2020-08-03

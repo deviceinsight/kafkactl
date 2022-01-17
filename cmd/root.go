@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/deviceinsight/kafkactl/internal/env"
+
 	"github.com/deviceinsight/kafkactl/cmd/alter"
 	"github.com/deviceinsight/kafkactl/cmd/attach"
 	"github.com/deviceinsight/kafkactl/cmd/config"
@@ -26,27 +28,7 @@ import (
 var cfgFile string
 var Verbose bool
 
-var envMapping = map[string]string{
-	"REQUESTTIMEOUT":         "CONTEXTS_DEFAULT_REQUESTTIMEOUT",
-	"BROKERS":                "CONTEXTS_DEFAULT_BROKERS",
-	"TLS_ENABLED":            "CONTEXTS_DEFAULT_TLS_ENABLED",
-	"TLS_CA":                 "CONTEXTS_DEFAULT_TLS_CA",
-	"TLS_CERT":               "CONTEXTS_DEFAULT_TLS_CERT",
-	"TLS_CERTKEY":            "CONTEXTS_DEFAULT_TLS_CERTKEY",
-	"TLS_INSECURE":           "CONTEXTS_DEFAULT_TLS_INSECURE",
-	"SASL_ENABLED":           "CONTEXTS_DEFAULT_SASL_ENABLED",
-	"SASL_USERNAME":          "CONTEXTS_DEFAULT_SASL_USERNAME",
-	"SASL_PASSWORD":          "CONTEXTS_DEFAULT_SASL_PASSWORD",
-	"SASL_MECHANISM":         "CONTEXTS_DEFAULT_SASL_MECHANISM",
-	"CLIENTID":               "CONTEXTS_DEFAULT_CLIENTID",
-	"KAFKAVERSION":           "CONTEXTS_DEFAULT_KAFKAVERSION",
-	"AVRO_SCHEMAREGISTRY":    "CONTEXTS_DEFAULT_AVRO_SCHEMAREGISTRY",
-	"PROTOBUF_PROTOSETFILES": "CONTEXTS_DEFAULT_PROTOBUF_PROTOSETFILES",
-	"PROTOBUF_PROTOSETPATHS": "CONTEXTS_DEFAULT_PROTOBUF_PROTOSETPATHS",
-	"PROTOBUF_IMPORTPATHS":   "CONTEXTS_DEFAULT_PROTOBUF_IMPORTPATHS",
-	"PROTOBUF_PROTOFILES":    "CONTEXTS_DEFAULT_PROTOBUF_PROTOFILES",
-	"DEFAULTPARTITIONER":     "CONTEXTS_DEFAULT_DEFAULTPARTITIONER",
-}
+const defaultContextPrefix = "CONTEXTS_DEFAULT_"
 
 var configPaths = []string{"$HOME/.config/kafkactl", "$HOME/.kafkactl", "$SNAP_REAL_HOME/.config/kafkactl", "$SNAP_DATA/kafkactl", "/etc/kafkactl"}
 
@@ -128,7 +110,8 @@ func initConfig() {
 }
 
 func mapEnvVariables() {
-	for short, long := range envMapping {
+	for _, short := range env.Variables {
+		long := defaultContextPrefix + short
 		if os.Getenv(short) != "" && os.Getenv(long) == "" {
 			_ = os.Setenv(long, os.Getenv(short))
 		}
