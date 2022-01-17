@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   :warning: this is a breaking change since the format of the `config.yml` has been changed in order to group producer
   related configurations under `context.producer`.
 
+### Fixed
+- fixed error handling for describe topic command. previously errors for requests to describe partitions had been swallowed.
+
 ## 1.24.0 - 2021-12-03
 
 ### Added
