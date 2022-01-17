@@ -4,6 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/deviceinsight/kafkactl/internal/env"
+
 	"github.com/deviceinsight/kafkactl/testutil"
 	"github.com/spf13/viper"
 )
@@ -40,25 +42,31 @@ func TestEnvironmentVariableLoadingAliases(t *testing.T) {
 
 	testutil.StartUnitTest(t)
 
-	_ = os.Setenv("REQUESTTIMEOUT", "30")
-	_ = os.Setenv("BROKERS", "broker1:9092 broker2:9092")
-	_ = os.Setenv("TLS_ENABLED", "true")
-	_ = os.Setenv("TLS_CA", "my-ca")
-	_ = os.Setenv("TLS_CERT", "my-cert")
-	_ = os.Setenv("TLS_CERTKEY", "my-cert-key")
-	_ = os.Setenv("TLS_INSECURE", "true")
-	_ = os.Setenv("SASL_ENABLED", "true")
-	_ = os.Setenv("SASL_USERNAME", "user")
-	_ = os.Setenv("SASL_PASSWORD", "pass")
-	_ = os.Setenv("SASL_MECHANISM", "scram-sha512")
-	_ = os.Setenv("CLIENTID", "my-client")
-	_ = os.Setenv("KAFKAVERSION", "2.0.1")
-	_ = os.Setenv("AVRO_SCHEMAREGISTRY", "registry:8888")
-	_ = os.Setenv("PROTOBUF_PROTOSETFILES", "/usr/include/protosets/ps1.protoset /usr/lib/ps2.protoset")
-	_ = os.Setenv("PROTOBUF_PROTOSETPATHS", "/usr/include/protosets /usr/lib/protosets")
-	_ = os.Setenv("PROTOBUF_IMPORTPATHS", "/usr/include/protobuf /usr/lib/protobuf")
-	_ = os.Setenv("PROTOBUF_PROTOFILES", "message.proto other.proto")
-	_ = os.Setenv("DEFAULTPARTITIONER", "hash")
+	_ = os.Setenv(env.RequestTimeout, "30")
+	_ = os.Setenv(env.Brokers, "broker1:9092 broker2:9092")
+	_ = os.Setenv(env.TLSEnabled, "true")
+	_ = os.Setenv(env.TLSCa, "my-ca")
+	_ = os.Setenv(env.TLSCert, "my-cert")
+	_ = os.Setenv(env.TLSCertKey, "my-cert-key")
+	_ = os.Setenv(env.TLSInsecure, "true")
+	_ = os.Setenv(env.SaslEnabled, "true")
+	_ = os.Setenv(env.SaslUsername, "user")
+	_ = os.Setenv(env.SaslPassword, "pass")
+	_ = os.Setenv(env.SaslMechanism, "scram-sha512")
+	_ = os.Setenv(env.ClientID, "my-client")
+	_ = os.Setenv(env.KafkaVersion, "2.0.1")
+	_ = os.Setenv(env.AvroSchemaRegistry, "registry:8888")
+	_ = os.Setenv(env.ProtobufProtoSetFiles, "/usr/include/protosets/ps1.protoset /usr/lib/ps2.protoset")
+	_ = os.Setenv(env.ProtobufImportPaths, "/usr/include/protobuf /usr/lib/protobuf")
+	_ = os.Setenv(env.ProtobufProtoFiles, "message.proto other.proto")
+	_ = os.Setenv(env.ProducerPartitioner, "hash")
+	_ = os.Setenv(env.ProducerRequiredAcks, "WaitForAll")
+
+	for _, key := range env.Variables {
+		if os.Getenv(key) == "" {
+			t.Fatalf("missing test case for env variable: %s", key)
+		}
+	}
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
@@ -86,8 +94,8 @@ func TestEnvironmentVariableLoadingAliases(t *testing.T) {
 	testutil.AssertEquals(t, "2.0.1", viper.GetString("contexts.default.kafkaVersion"))
 	testutil.AssertEquals(t, "registry:8888", viper.GetString("contexts.default.avro.schemaRegistry"))
 	testutil.AssertEquals(t, "/usr/include/protosets/ps1.protoset", viper.GetStringSlice("contexts.default.protobuf.protosetFiles")[0])
-	testutil.AssertEquals(t, "/usr/include/protosets", viper.GetStringSlice("contexts.default.protobuf.protosetPaths")[0])
 	testutil.AssertEquals(t, "/usr/include/protobuf", viper.GetStringSlice("contexts.default.protobuf.importPaths")[0])
 	testutil.AssertEquals(t, "message.proto", viper.GetStringSlice("contexts.default.protobuf.protoFiles")[0])
-	testutil.AssertEquals(t, "hash", viper.GetString("contexts.default.defaultPartitioner"))
+	testutil.AssertEquals(t, "hash", viper.GetString("contexts.default.producer.partitioner"))
+	testutil.AssertEquals(t, "WaitForAll", viper.GetString("contexts.default.producer.requiredAcks"))
 }

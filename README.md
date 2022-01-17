@@ -130,12 +130,13 @@ contexts:
        protosetFiles:
           - "/usr/include/protoset/other.protoset"
     
-    # optional: changes the default partitioner
-    defaultPartitioner: "hash"
+    producer:
+      # optional: changes the default partitioner
+      partitioner: "hash"
 
-    # optional: changes default required acks in produce request
-    # see: https://pkg.go.dev/github.com/Shopify/sarama?utm_source=godoc#RequiredAcks
-    requiredAcks: "WaitForAll"
+      # optional: changes default required acks in produce request
+      # see: https://pkg.go.dev/github.com/Shopify/sarama?utm_source=godoc#RequiredAcks
+      requiredAcks: "WaitForAll"
 
 
 current-context: default

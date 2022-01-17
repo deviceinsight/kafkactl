@@ -64,23 +64,7 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 	config.Producer.Return.Errors = true
 	config.Producer.Return.Successes = true
 
-	partitioner := clientContext.DefaultPartitioner
-	if flags.Partitioner != "" {
-		partitioner = flags.Partitioner
-	}
-
-	config.Producer.Partitioner, err = parsePartitioner(partitioner, flags)
-	if err != nil {
-		return err
-	}
-
-	requiredAcks := clientContext.RequiredAcks
-	if flags.RequiredAcks != "" {
-		requiredAcks = flags.RequiredAcks
-	}
-
-	config.Producer.RequiredAcks, err = parseRequiredAcks(requiredAcks)
-	if err != nil {
+	if err = applyProducerConfigs(config, clientContext, flags); err != nil {
 		return err
 	}
 
@@ -257,6 +241,31 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 	} else {
 		return errors.New("value is required, or you have to provide the value on stdin")
 	}
+	return nil
+}
+
+func applyProducerConfigs(config *sarama.Config, clientContext internal.ClientContext, flags Flags) error {
+
+	var err error
+
+	partitioner := clientContext.Producer.Partitioner
+	if flags.Partitioner != "" {
+		partitioner = flags.Partitioner
+	}
+
+	if config.Producer.Partitioner, err = parsePartitioner(partitioner, flags); err != nil {
+		return err
+	}
+
+	requiredAcks := clientContext.Producer.RequiredAcks
+	if flags.RequiredAcks != "" {
+		requiredAcks = flags.RequiredAcks
+	}
+
+	if config.Producer.RequiredAcks, err = parseRequiredAcks(requiredAcks); err != nil {
+		return err
+	}
+
 	return nil
 }
 
