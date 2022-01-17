@@ -146,6 +146,7 @@ func parsePodEnvironment(context internal.ClientContext) []string {
 	env = appendStringIfDefined(env, "SASL_USERNAME", context.Sasl.Username)
 	env = appendStringIfDefined(env, "SASL_PASSWORD", context.Sasl.Password)
 	env = appendStringIfDefined(env, "SASL_MECHANISM", context.Sasl.Mechanism)
+	env = appendStringIfDefined(env, "REQUESTTIMEOUT", context.RequestTimeout.String())
 	env = appendStringIfDefined(env, "CLIENTID", context.ClientID)
 	env = appendStringIfDefined(env, "KAFKAVERSION", context.KafkaVersion.String())
 	env = appendStringIfDefined(env, "AVRO_SCHEMAREGISTRY", context.AvroSchemaRegistry)
