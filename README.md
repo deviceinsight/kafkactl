@@ -138,6 +138,8 @@ contexts:
       # see: https://pkg.go.dev/github.com/Shopify/sarama?utm_source=godoc#RequiredAcks
       requiredAcks: "WaitForAll"
 
+      # optional: maximum permitted size of a message (defaults to 1000000)
+      maxMessageBytes: 1000000
 
 current-context: default
 ```

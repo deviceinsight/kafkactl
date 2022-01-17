@@ -157,6 +157,7 @@ func parsePodEnvironment(context internal.ClientContext) []string {
 	envVariables = appendStrings(envVariables, env.ProtobufProtoFiles, context.Protobuf.ProtoFiles)
 	envVariables = appendStringIfDefined(envVariables, env.ProducerPartitioner, context.Producer.Partitioner)
 	envVariables = appendStringIfDefined(envVariables, env.ProducerRequiredAcks, context.Producer.RequiredAcks)
+	envVariables = appendIntIfGreaterZero(envVariables, env.ProducerMaxMessageBytes, context.Producer.MaxMessageBytes)
 
 	return envVariables
 }
@@ -175,6 +176,13 @@ func appendBool(env []string, key string, value bool) []string {
 func appendStringIfDefined(env []string, key string, value string) []string {
 	if value != "" {
 		return append(env, fmt.Sprintf("%s=%s", key, value))
+	}
+	return env
+}
+
+func appendIntIfGreaterZero(env []string, key string, value int) []string {
+	if value > 0 {
+		return append(env, fmt.Sprintf("%s=%d", key, value))
 	}
 	return env
 }

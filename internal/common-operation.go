@@ -46,8 +46,9 @@ type K8sConfig struct {
 }
 
 type ProducerConfig struct {
-	Partitioner  string
-	RequiredAcks string
+	Partitioner     string
+	RequiredAcks    string
+	MaxMessageBytes int
 }
 
 type ClientContext struct {
@@ -106,6 +107,7 @@ func CreateClientContext() (ClientContext, error) {
 	context.Protobuf.ProtoFiles = viper.GetStringSlice("contexts." + context.Name + ".protobuf.protoFiles")
 	context.Producer.Partitioner = viper.GetString("contexts." + context.Name + ".producer.partitioner")
 	context.Producer.RequiredAcks = viper.GetString("contexts." + context.Name + ".producer.requiredAcks")
+	context.Producer.MaxMessageBytes = viper.GetInt("contexts." + context.Name + ".producer.maxMessageBytes")
 	context.Sasl.Enabled = viper.GetBool("contexts." + context.Name + ".sasl.enabled")
 	context.Sasl.Username = viper.GetString("contexts." + context.Name + ".sasl.username")
 	context.Sasl.Password = viper.GetString("contexts." + context.Name + ".sasl.password")

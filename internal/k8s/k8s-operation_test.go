@@ -34,6 +34,7 @@ func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {
 	context.Protobuf.ProtoFiles = []string{"message.proto", "other.proto"}
 	context.Producer.Partitioner = "hash"
 	context.Producer.RequiredAcks = "WaitForAll"
+	context.Producer.MaxMessageBytes = 1234
 
 	environment := k8s.ParsePodEnvironment(context)
 
@@ -69,4 +70,5 @@ func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {
 	testutil.AssertEquals(t, "message.proto other.proto", envMap[env.ProtobufProtoFiles])
 	testutil.AssertEquals(t, "hash", envMap[env.ProducerPartitioner])
 	testutil.AssertEquals(t, "WaitForAll", envMap[env.ProducerRequiredAcks])
+	testutil.AssertEquals(t, "1234", envMap[env.ProducerMaxMessageBytes])
 }

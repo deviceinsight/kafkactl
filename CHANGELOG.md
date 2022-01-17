@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- [#112](https://github.com/deviceinsight/kafkactl/issues/112) make `maxMessageBytes` configurable in produce command.
+  :warning: this is a breaking change since the format of the `config.yml` has been changed in order to group producer
+  related configurations under `context.producer`.
+
 ## 1.24.0 - 2021-12-03
 
 ### Added

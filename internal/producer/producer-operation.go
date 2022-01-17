@@ -19,6 +19,7 @@ import (
 type Flags struct {
 	Partitioner        string
 	RequiredAcks       string
+	MaxMessageBytes    int
 	Partition          int32
 	Separator          string
 	LineSeparator      string
@@ -264,6 +265,15 @@ func applyProducerConfigs(config *sarama.Config, clientContext internal.ClientCo
 
 	if config.Producer.RequiredAcks, err = parseRequiredAcks(requiredAcks); err != nil {
 		return err
+	}
+
+	maxMessageBytes := clientContext.Producer.MaxMessageBytes
+	if flags.MaxMessageBytes > 0 {
+		maxMessageBytes = flags.MaxMessageBytes
+	}
+
+	if maxMessageBytes > 0 {
+		config.Producer.MaxMessageBytes = maxMessageBytes
 	}
 
 	return nil

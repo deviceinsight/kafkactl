@@ -61,6 +61,7 @@ func TestEnvironmentVariableLoadingAliases(t *testing.T) {
 	_ = os.Setenv(env.ProtobufProtoFiles, "message.proto other.proto")
 	_ = os.Setenv(env.ProducerPartitioner, "hash")
 	_ = os.Setenv(env.ProducerRequiredAcks, "WaitForAll")
+	_ = os.Setenv(env.ProducerMaxMessageBytes, "1234")
 
 	for _, key := range env.Variables {
 		if os.Getenv(key) == "" {
@@ -98,4 +99,5 @@ func TestEnvironmentVariableLoadingAliases(t *testing.T) {
 	testutil.AssertEquals(t, "message.proto", viper.GetStringSlice("contexts.default.protobuf.protoFiles")[0])
 	testutil.AssertEquals(t, "hash", viper.GetString("contexts.default.producer.partitioner"))
 	testutil.AssertEquals(t, "WaitForAll", viper.GetString("contexts.default.producer.requiredAcks"))
+	testutil.AssertEquals(t, "1234", viper.GetString("contexts.default.producer.maxMessageBytes"))
 }
