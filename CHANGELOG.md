@@ -159,7 +159,7 @@ of `plaintext`.
 ## 1.11.0 - 2020-08-07
 
 ### Added
-- direct support for kafka clusters [running in kubernetes](https://github.com/deviceinsight/kafkactl/blob/master/README.md#running-in-kubernetes)
+- direct support for kafka clusters [running in kubernetes](https://github.com/deviceinsight/kafkactl/blob/main/README.md#running-in-kubernetes)
 - `attach` command to get a bash into kafkactl pod when running in kubernetes
 
 ## 1.10.0 - 2020-08-03

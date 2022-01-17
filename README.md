@@ -3,7 +3,7 @@
 
 A command-line interface for interaction with Apache Kafka
 
-[![Build Status](https://github.com/deviceinsight/kafkactl/workflows/Lint%20%2F%20Test%20%2F%20IT/badge.svg?branch=master)](https://github.com/deviceinsight/kafkactl/actions)
+[![Build Status](https://github.com/deviceinsight/kafkactl/workflows/Lint%20%2F%20Test%20%2F%20IT/badge.svg?branch=main)](https://github.com/deviceinsight/kafkactl/actions)
 | [![command docs](https://img.shields.io/badge/command-docs-blue.svg)](https://deviceinsight.github.io/kafkactl/)  
 
 ## Features
