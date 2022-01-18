@@ -180,7 +180,8 @@ source <(kafkactl completion zsh)
 
 To load completions for each session, execute once:
 ```
-kafkactl completion zsh > "${fpath[1]}/_kafkactl"
+kafkactl completion zsh > $ZSH/cache/completions/_kafkactl
+echo '\nautoload -U compinit; compinit' >> ~/.zprofile
 ```
 
 #### Fish
