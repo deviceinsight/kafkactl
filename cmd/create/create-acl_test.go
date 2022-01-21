@@ -101,5 +101,9 @@ func TestCreateTopicAlterConfigsDenyAclIntegration(t *testing.T) {
 	testutil.SwitchContext("sasl-user")
 
 	_, err := kafkaCtl.Execute("alter", "topic", topicName, "--config", "retention.ms=600000")
-	testutil.AssertErrorContains(t, "The client is not authorized to access this topic", err)
+
+	pre27ErrorMessage := "The client is not authorized to access this topic"
+	errorMessage := "Topic authorization failed"
+
+	testutil.AssertErrorContainsOneOf(t, []string{pre27ErrorMessage, errorMessage}, err)
 }
