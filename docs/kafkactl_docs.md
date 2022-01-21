@@ -30,7 +30,7 @@ A command-line interface the simplifies interaction with Kafka.
 * [kafkactl version](kafkactl_version.md)	 - print the version of kafkactl
 
 
-### kafkactl alter
+### <a name="kafkactl-alter"></a>kafkactl alter
 
 alter topics, partitions
 
@@ -121,7 +121,7 @@ kafkactl alter topic TOPIC [flags]
 
 ##### SEE ALSO
 
-* [kafkactl alter](kafkactl_alter.md)	 - alter topics, partitions
+* [kafkactl alter](#kafkactl-alter)	 - xxxx alter topics, partitions
 
 
 ### kafkactl attach
