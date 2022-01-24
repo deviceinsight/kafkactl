@@ -111,7 +111,7 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 	podName := "kafkactl-" + randomString(10)
 
 	if kubectl.clientID != "" {
-		podName = "kafkactl-" + kubectl.clientID
+		podName = "kafkactl-" + strings.ToLower(kubectl.clientID)
 	}
 
 	kubectlArgs := []string{

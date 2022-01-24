@@ -10,7 +10,8 @@ import (
 
 func newCompletionCmd() *cobra.Command {
 	var cmdCompletion = &cobra.Command{
-		Use: "completion [bash|zsh|fish|powershell]",
+		Use:   "completion [bash|zsh|fish|powershell]",
+		Short: "generate shell auto-completion file",
 		Long: `To load completions:
 
 Bash:

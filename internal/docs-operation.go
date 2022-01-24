@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -84,6 +85,7 @@ func generateSinglePage(flags DocsFlags) error {
 		content := string(bytes)
 
 		content = adjustChapters(f.Name(), content)
+		content = adjustLinks(content)
 		content = removeFooter(content)
 
 		if err != nil {
@@ -112,6 +114,34 @@ func adjustChapters(filename string, content string) string {
 	chapterRegex := regexp.MustCompile("(?m)^(#+.*)$")
 
 	return chapterRegex.ReplaceAllString(content, strings.Repeat("#", startLayer)+"$1")
+}
+
+func adjustLinks(content string) string {
+
+	linkRegex := regexp.MustCompile(`(\[[\w\s\-]+\])\((kafkactl[a-z\-_]*)\.md\)`)
+
+	startIdx := 0
+	var buffer bytes.Buffer
+
+	for _, submatches := range linkRegex.FindAllStringSubmatchIndex(content, -1) {
+
+		buffer.WriteString(content[startIdx:submatches[0]])
+
+		label := content[submatches[2]:submatches[3]]
+		link := content[submatches[4]:submatches[5]]
+
+		buffer.WriteString(label)
+		buffer.WriteString("(#")
+		buffer.WriteString(strings.ReplaceAll(link, "_", "-"))
+
+		buffer.WriteString(")")
+
+		startIdx = submatches[1]
+	}
+
+	buffer.WriteString(content[startIdx:])
+
+	return buffer.String()
 }
 
 func removeFooter(content string) string {

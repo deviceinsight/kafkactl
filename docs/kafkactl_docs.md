@@ -16,18 +16,18 @@ A command-line interface the simplifies interaction with Kafka.
 
 ### SEE ALSO
 
-* [kafkactl alter](kafkactl_alter.md)	 - alter topics, partitions
-* [kafkactl attach](kafkactl_attach.md)	 - run kafkactl pod in kubernetes and attach to it
-* [kafkactl completion](kafkactl_completion.md)	 - 
-* [kafkactl config](kafkactl_config.md)	 - show and edit configurations
-* [kafkactl consume](kafkactl_consume.md)	 - consume messages from a topic
-* [kafkactl create](kafkactl_create.md)	 - create topics, consumerGroups, acls
-* [kafkactl delete](kafkactl_delete.md)	 - delete topics, consumerGroups, consumer-group-offset, acls
-* [kafkactl describe](kafkactl_describe.md)	 - describe topics, consumerGroups, brokers
-* [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups, acls, brokers
-* [kafkactl produce](kafkactl_produce.md)	 - produce messages to a topic
-* [kafkactl reset](kafkactl_reset.md)	 - reset consumerGroupsOffset
-* [kafkactl version](kafkactl_version.md)	 - print the version of kafkactl
+* [kafkactl alter](#kafkactl-alter)	 - alter topics, partitions
+* [kafkactl attach](#kafkactl-attach)	 - run kafkactl pod in kubernetes and attach to it
+* [kafkactl completion](#kafkactl-completion)	 - generate shell auto-completion file
+* [kafkactl config](#kafkactl-config)	 - show and edit configurations
+* [kafkactl consume](#kafkactl-consume)	 - consume messages from a topic
+* [kafkactl create](#kafkactl-create)	 - create topics, consumerGroups, acls
+* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls
+* [kafkactl describe](#kafkactl-describe)	 - describe topics, consumerGroups, brokers
+* [kafkactl get](#kafkactl-get)	 - get info about topics, consumerGroups, acls, brokers
+* [kafkactl produce](#kafkactl-produce)	 - produce messages to a topic
+* [kafkactl reset](#kafkactl-reset)	 - reset consumerGroupsOffset
+* [kafkactl version](#kafkactl-version)	 - print the version of kafkactl
 
 
 ### kafkactl alter
@@ -53,9 +53,9 @@ alter topics, partitions
 
 #### SEE ALSO
 
-* [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
-* [kafkactl alter partition](kafkactl_alter_partition.md)	 - alter a partition
-* [kafkactl alter topic](kafkactl_alter_topic.md)	 - alter a topic
+* [kafkactl](#kafkactl)	 - command-line interface for Apache Kafka
+* [kafkactl alter partition](#kafkactl-alter-partition)	 - alter a partition
+* [kafkactl alter topic](#kafkactl-alter-topic)	 - alter a topic
 
 
 #### kafkactl alter partition
@@ -87,7 +87,7 @@ kafkactl alter partition TOPIC PARTITION [flags]
 
 ##### SEE ALSO
 
-* [kafkactl alter](kafkactl_alter.md)	 - alter topics, partitions
+* [kafkactl alter](#kafkactl-alter)	 - alter topics, partitions
 
 
 #### kafkactl alter topic
@@ -121,7 +121,7 @@ kafkactl alter topic TOPIC [flags]
 
 ##### SEE ALSO
 
-* [kafkactl alter](#kafkactl-alter)	 - xxxx alter topics, partitions
+* [kafkactl alter](#kafkactl-alter)	 - alter topics, partitions
 
 
 ### kafkactl attach
@@ -151,12 +151,12 @@ kafkactl attach [flags]
 
 #### SEE ALSO
 
-* [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
+* [kafkactl](#kafkactl)	 - command-line interface for Apache Kafka
 
 
 ### kafkactl completion
 
-
+generate shell auto-completion file
 
 #### Synopsis
 
@@ -206,7 +206,7 @@ kafkactl completion [bash|zsh|fish|powershell]
 
 #### SEE ALSO
 
-* [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
+* [kafkactl](#kafkactl)	 - command-line interface for Apache Kafka
 
 
 ### kafkactl config
@@ -232,11 +232,11 @@ show and edit configurations
 
 #### SEE ALSO
 
-* [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
-* [kafkactl config current-context](kafkactl_config_current-context.md)	 - show current context
-* [kafkactl config get-contexts](kafkactl_config_get-contexts.md)	 - list configured contexts
-* [kafkactl config use-context](kafkactl_config_use-context.md)	 - switch active context
-* [kafkactl config view](kafkactl_config_view.md)	 - show contents of config file
+* [kafkactl](#kafkactl)	 - command-line interface for Apache Kafka
+* [kafkactl config current-context](#kafkactl-config-current-context)	 - show current context
+* [kafkactl config get-contexts](#kafkactl-config-get-contexts)	 - list configured contexts
+* [kafkactl config use-context](#kafkactl-config-use-context)	 - switch active context
+* [kafkactl config view](#kafkactl-config-view)	 - show contents of config file
 
 
 #### kafkactl config current-context
@@ -266,7 +266,7 @@ kafkactl config current-context [flags]
 
 ##### SEE ALSO
 
-* [kafkactl config](kafkactl_config.md)	 - show and edit configurations
+* [kafkactl config](#kafkactl-config)	 - show and edit configurations
 
 
 #### kafkactl config get-contexts
@@ -297,7 +297,7 @@ kafkactl config get-contexts [flags]
 
 ##### SEE ALSO
 
-* [kafkactl config](kafkactl_config.md)	 - show and edit configurations
+* [kafkactl config](#kafkactl-config)	 - show and edit configurations
 
 
 #### kafkactl config use-context
@@ -327,7 +327,7 @@ kafkactl config use-context [flags]
 
 ##### SEE ALSO
 
-* [kafkactl config](kafkactl_config.md)	 - show and edit configurations
+* [kafkactl config](#kafkactl-config)	 - show and edit configurations
 
 
 #### kafkactl config view
@@ -357,7 +357,7 @@ kafkactl config view [flags]
 
 ##### SEE ALSO
 
-* [kafkactl config](kafkactl_config.md)	 - show and edit configurations
+* [kafkactl config](#kafkactl-config)	 - show and edit configurations
 
 
 ### kafkactl consume
@@ -405,7 +405,7 @@ kafkactl consume TOPIC [flags]
 
 #### SEE ALSO
 
-* [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
+* [kafkactl](#kafkactl)	 - command-line interface for Apache Kafka
 
 
 ### kafkactl create
@@ -431,10 +431,10 @@ create topics, consumerGroups, acls
 
 #### SEE ALSO
 
-* [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
-* [kafkactl create access-control-list](kafkactl_create_access-control-list.md)	 - create an acl
-* [kafkactl create consumer-group](kafkactl_create_consumer-group.md)	 - create a consumerGroup
-* [kafkactl create topic](kafkactl_create_topic.md)	 - create a topic
+* [kafkactl](#kafkactl)	 - command-line interface for Apache Kafka
+* [kafkactl create access-control-list](#kafkactl-create-access-control-list)	 - create an acl
+* [kafkactl create consumer-group](#kafkactl-create-consumer-group)	 - create a consumerGroup
+* [kafkactl create topic](#kafkactl-create-topic)	 - create a topic
 
 
 #### kafkactl create access-control-list
@@ -474,7 +474,7 @@ kafkactl create access-control-list [flags]
 
 ##### SEE ALSO
 
-* [kafkactl create](kafkactl_create.md)	 - create topics, consumerGroups, acls
+* [kafkactl create](#kafkactl-create)	 - create topics, consumerGroups, acls
 
 
 #### kafkactl create consumer-group
@@ -509,7 +509,7 @@ kafkactl create consumer-group GROUP [flags]
 
 ##### SEE ALSO
 
-* [kafkactl create](kafkactl_create.md)	 - create topics, consumerGroups, acls
+* [kafkactl create](#kafkactl-create)	 - create topics, consumerGroups, acls
 
 
 #### kafkactl create topic
@@ -543,7 +543,7 @@ kafkactl create topic TOPIC [flags]
 
 ##### SEE ALSO
 
-* [kafkactl create](kafkactl_create.md)	 - create topics, consumerGroups, acls
+* [kafkactl create](#kafkactl-create)	 - create topics, consumerGroups, acls
 
 
 ### kafkactl delete
@@ -569,11 +569,11 @@ delete topics, consumerGroups, consumer-group-offset, acls
 
 #### SEE ALSO
 
-* [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
-* [kafkactl delete access-control-list](kafkactl_delete_access-control-list.md)	 - delete an acl
-* [kafkactl delete consumer-group](kafkactl_delete_consumer-group.md)	 - delete a consumer-group
-* [kafkactl delete consumer-group-offset](kafkactl_delete_consumer-group-offset.md)	 - delete a consumer-group-offset
-* [kafkactl delete topic](kafkactl_delete_topic.md)	 - delete a topic
+* [kafkactl](#kafkactl)	 - command-line interface for Apache Kafka
+* [kafkactl delete access-control-list](#kafkactl-delete-access-control-list)	 - delete an acl
+* [kafkactl delete consumer-group](#kafkactl-delete-consumer-group)	 - delete a consumer-group
+* [kafkactl delete consumer-group-offset](#kafkactl-delete-consumer-group-offset)	 - delete a consumer-group-offset
+* [kafkactl delete topic](#kafkactl-delete-topic)	 - delete a topic
 
 
 #### kafkactl delete access-control-list
@@ -611,7 +611,7 @@ kafkactl delete access-control-list [flags]
 
 ##### SEE ALSO
 
-* [kafkactl delete](kafkactl_delete.md)	 - delete topics, consumerGroups, consumer-group-offset, acls
+* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls
 
 
 #### kafkactl delete consumer-group-offset
@@ -643,7 +643,7 @@ kafkactl delete consumer-group-offset CONSUMER-GROUP --topic=TOPIC --partition=P
 
 ##### SEE ALSO
 
-* [kafkactl delete](kafkactl_delete.md)	 - delete topics, consumerGroups, consumer-group-offset, acls
+* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls
 
 
 #### kafkactl delete consumer-group
@@ -673,7 +673,7 @@ kafkactl delete consumer-group CONSUMER-GROUP [flags]
 
 ##### SEE ALSO
 
-* [kafkactl delete](kafkactl_delete.md)	 - delete topics, consumerGroups, consumer-group-offset, acls
+* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls
 
 
 #### kafkactl delete topic
@@ -703,7 +703,7 @@ kafkactl delete topic TOPIC [flags]
 
 ##### SEE ALSO
 
-* [kafkactl delete](kafkactl_delete.md)	 - delete topics, consumerGroups, consumer-group-offset, acls
+* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls
 
 
 ### kafkactl describe
@@ -729,10 +729,10 @@ describe topics, consumerGroups, brokers
 
 #### SEE ALSO
 
-* [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
-* [kafkactl describe broker](kafkactl_describe_broker.md)	 - describe a broker
-* [kafkactl describe consumer-group](kafkactl_describe_consumer-group.md)	 - describe a consumerGroup
-* [kafkactl describe topic](kafkactl_describe_topic.md)	 - describe a topic
+* [kafkactl](#kafkactl)	 - command-line interface for Apache Kafka
+* [kafkactl describe broker](#kafkactl-describe-broker)	 - describe a broker
+* [kafkactl describe consumer-group](#kafkactl-describe-consumer-group)	 - describe a consumerGroup
+* [kafkactl describe topic](#kafkactl-describe-topic)	 - describe a topic
 
 
 #### kafkactl describe broker
@@ -763,7 +763,7 @@ kafkactl describe broker ID [flags]
 
 ##### SEE ALSO
 
-* [kafkactl describe](kafkactl_describe.md)	 - describe topics, consumerGroups, brokers
+* [kafkactl describe](#kafkactl-describe)	 - describe topics, consumerGroups, brokers
 
 
 #### kafkactl describe consumer-group
@@ -798,7 +798,7 @@ kafkactl describe consumer-group GROUP [flags]
 
 ##### SEE ALSO
 
-* [kafkactl describe](kafkactl_describe.md)	 - describe topics, consumerGroups, brokers
+* [kafkactl describe](#kafkactl-describe)	 - describe topics, consumerGroups, brokers
 
 
 #### kafkactl describe topic
@@ -831,7 +831,7 @@ kafkactl describe topic TOPIC [flags]
 
 ##### SEE ALSO
 
-* [kafkactl describe](kafkactl_describe.md)	 - describe topics, consumerGroups, brokers
+* [kafkactl describe](#kafkactl-describe)	 - describe topics, consumerGroups, brokers
 
 
 ### kafkactl get
@@ -857,11 +857,11 @@ get info about topics, consumerGroups, acls, brokers
 
 #### SEE ALSO
 
-* [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
-* [kafkactl get access-control-list](kafkactl_get_access-control-list.md)	 - list available acls
-* [kafkactl get brokers](kafkactl_get_brokers.md)	 - list brokers
-* [kafkactl get consumer-groups](kafkactl_get_consumer-groups.md)	 - list available consumerGroups
-* [kafkactl get topics](kafkactl_get_topics.md)	 - list available topics
+* [kafkactl](#kafkactl)	 - command-line interface for Apache Kafka
+* [kafkactl get access-control-list](#kafkactl-get-access-control-list)	 - list available acls
+* [kafkactl get brokers](#kafkactl-get-brokers)	 - list brokers
+* [kafkactl get consumer-groups](#kafkactl-get-consumer-groups)	 - list available consumerGroups
+* [kafkactl get topics](#kafkactl-get-topics)	 - list available topics
 
 
 #### kafkactl get access-control-list
@@ -899,7 +899,7 @@ kafkactl get access-control-list [flags]
 
 ##### SEE ALSO
 
-* [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups, acls, brokers
+* [kafkactl get](#kafkactl-get)	 - get info about topics, consumerGroups, acls, brokers
 
 
 #### kafkactl get brokers
@@ -930,7 +930,7 @@ kafkactl get brokers [flags]
 
 ##### SEE ALSO
 
-* [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups, acls, brokers
+* [kafkactl get](#kafkactl-get)	 - get info about topics, consumerGroups, acls, brokers
 
 
 #### kafkactl get consumer-groups
@@ -962,7 +962,7 @@ kafkactl get consumer-groups [flags]
 
 ##### SEE ALSO
 
-* [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups, acls, brokers
+* [kafkactl get](#kafkactl-get)	 - get info about topics, consumerGroups, acls, brokers
 
 
 #### kafkactl get topics
@@ -993,7 +993,7 @@ kafkactl get topics [flags]
 
 ##### SEE ALSO
 
-* [kafkactl get](kafkactl_get.md)	 - get info about topics, consumerGroups, acls, brokers
+* [kafkactl get](#kafkactl-get)	 - get info about topics, consumerGroups, acls, brokers
 
 
 ### kafkactl produce
@@ -1045,7 +1045,7 @@ kafkactl produce TOPIC [flags]
 
 #### SEE ALSO
 
-* [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
+* [kafkactl](#kafkactl)	 - command-line interface for Apache Kafka
 
 
 ### kafkactl reset
@@ -1071,8 +1071,8 @@ reset consumerGroupsOffset
 
 #### SEE ALSO
 
-* [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
-* [kafkactl reset consumer-group-offset](kafkactl_reset_consumer-group-offset.md)	 - reset a consumer group offset
+* [kafkactl](#kafkactl)	 - command-line interface for Apache Kafka
+* [kafkactl reset consumer-group-offset](#kafkactl-reset-consumer-group-offset)	 - reset a consumer group offset
 
 
 #### kafkactl reset consumer-group-offset
@@ -1109,7 +1109,7 @@ kafkactl reset consumer-group-offset GROUP [flags]
 
 ##### SEE ALSO
 
-* [kafkactl reset](kafkactl_reset.md)	 - reset consumerGroupsOffset
+* [kafkactl reset](#kafkactl-reset)	 - reset consumerGroupsOffset
 
 
 ### kafkactl version
@@ -1139,6 +1139,6 @@ kafkactl version [flags]
 
 #### SEE ALSO
 
-* [kafkactl](kafkactl.md)	 - command-line interface for Apache Kafka
+* [kafkactl](#kafkactl)	 - command-line interface for Apache Kafka
 
 
