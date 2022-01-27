@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- add config options `image`, `imagePullSecret` in order to pull kafkactl from private registry when running in k8s (fixes #116).
+
 ## 2.0.1 - 2022-01-24
 
 ### Fixed

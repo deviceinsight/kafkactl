@@ -106,6 +106,10 @@ contexts:
       kubeConfig: ~/.kube/config #optional
       kubeContext: my-cluster
       namespace: my-namespace
+      # optional: docker image to use (tag will be added by kafkactl based on the current version) 
+      image: private.registry.com/deviceinsight/kafkactl
+      # optional: secret for private docker registry
+      imagePullSecret: registry-secret
 
     # optional: clientID config (defaults to kafkactl-{username})
     clientID: my-client-id
