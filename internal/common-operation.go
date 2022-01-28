@@ -38,11 +38,13 @@ type TLSConfig struct {
 }
 
 type K8sConfig struct {
-	Enabled     bool
-	Binary      string
-	KubeConfig  string
-	KubeContext string
-	Namespace   string
+	Enabled         bool
+	Binary          string
+	KubeConfig      string
+	KubeContext     string
+	Namespace       string
+	Image           string
+	ImagePullSecret string
 }
 
 type ProducerConfig struct {
@@ -119,6 +121,8 @@ func CreateClientContext() (ClientContext, error) {
 	context.Kubernetes.KubeConfig = viper.GetString("contexts." + context.Name + ".kubernetes.kubeConfig")
 	context.Kubernetes.KubeContext = viper.GetString("contexts." + context.Name + ".kubernetes.kubeContext")
 	context.Kubernetes.Namespace = viper.GetString("contexts." + context.Name + ".kubernetes.namespace")
+	context.Kubernetes.Image = viper.GetString("contexts." + context.Name + ".kubernetes.image")
+	context.Kubernetes.ImagePullSecret = viper.GetString("contexts." + context.Name + ".kubernetes.imagePullSecret")
 
 	return context, nil
 }
