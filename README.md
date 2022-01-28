@@ -177,14 +177,20 @@ kafkactl completion bash > /usr/local/etc/bash_completion.d/kafkactl
 
 #### zsh
 
+If shell completion is not already enabled in your environment,
+you will need to enable it.  You can execute the following once:
+
 ```
-source <(kafkactl completion zsh)
+echo "autoload -U compinit; compinit" >> ~/.zshrc
 ```
 
 To load completions for each session, execute once:
+
 ```
 kafkactl completion zsh > "${fpath[1]}/_kafkactl"
 ```
+
+You will need to start a new shell for this setup to take effect.
 
 #### Fish
 
