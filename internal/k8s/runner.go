@@ -23,7 +23,7 @@ type ShellRunner struct {
 	Dir string
 }
 
-func (shell ShellRunner) ExecuteAndReturn(binary string, args []string) ([]byte, error) {
+func (shell *ShellRunner) ExecuteAndReturn(binary string, args []string) ([]byte, error) {
 	cmd := exec.Command(binary, args...)
 	cmd.Dir = shell.Dir
 	cmd.Env = os.Environ()
@@ -57,7 +57,7 @@ func (shell ShellRunner) ExecuteAndReturn(binary string, args []string) ([]byte,
 }
 
 // Execute a shell command
-func (shell ShellRunner) Execute(binary string, args []string) error {
+func (shell *ShellRunner) Execute(binary string, args []string) error {
 	cmd := exec.Command(binary, args...)
 	cmd.Dir = shell.Dir
 	cmd.Env = os.Environ()

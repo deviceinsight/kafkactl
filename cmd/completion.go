@@ -55,7 +55,7 @@ $ kafkactl completion fish > ~/.config/fish/completions/kafkactl.fish
 			case "powershell":
 				err = cmd.Root().GenPowerShellCompletion(os.Stdout)
 			default:
-				err = errors.Errorf("Unsupported shell type %q.", args[0])
+				err = errors.Errorf("unsupported shell type %q", args[0])
 			}
 
 			if err != nil {

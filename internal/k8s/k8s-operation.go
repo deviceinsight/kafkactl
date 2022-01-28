@@ -50,7 +50,8 @@ func (operation *Operation) Attach() error {
 		return err
 	}
 
-	exec := newExecutor(operation.context, &ShellRunner{})
+	var runner Runner = &ShellRunner{}
+	exec := newExecutor(operation.context, &runner)
 
 	podEnvironment := parsePodEnvironment(operation.context)
 
@@ -81,7 +82,8 @@ func (operation *Operation) Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	exec := newExecutor(operation.context, &ShellRunner{})
+	var runner Runner = &ShellRunner{}
+	exec := newExecutor(operation.context, &runner)
 
 	kafkaCtlCommand := parseCompleteCommand(cmd, []string{})
 	kafkaCtlFlags, err := parseFlags(cmd)
@@ -163,7 +165,10 @@ func parsePodEnvironment(context internal.ClientContext) []string {
 }
 
 func appendStrings(env []string, key string, value []string) []string {
-	return append(env, fmt.Sprintf("%s=%s", key, strings.Join(value, " ")))
+	if len(value) > 0 {
+		return append(env, fmt.Sprintf("%s=%s", key, strings.Join(value, " ")))
+	}
+	return env
 }
 
 func appendBool(env []string, key string, value bool) []string {

@@ -316,7 +316,7 @@ func parsePartitioner(partitioner string, flags Flags) (sarama.PartitionerConstr
 		}
 		return sarama.NewManualPartitioner, nil
 	default:
-		return nil, errors.Errorf("Partitioner %s not supported.", flags.Partitioner)
+		return nil, errors.Errorf("partitioner %s not supported", flags.Partitioner)
 	}
 }
 
