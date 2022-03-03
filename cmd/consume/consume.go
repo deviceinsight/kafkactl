@@ -1,7 +1,7 @@
 package consume
 
 import (
-	"github.com/deviceinsight/kafkactl/internal/consumer"
+	"github.com/deviceinsight/kafkactl/internal/consume"
 	"github.com/deviceinsight/kafkactl/internal/k8s"
 	"github.com/deviceinsight/kafkactl/internal/topic"
 	"github.com/deviceinsight/kafkactl/output"
@@ -10,7 +10,7 @@ import (
 
 func NewConsumeCmd() *cobra.Command {
 
-	var flags consumer.Flags
+	var flags consume.Flags
 
 	var cmdConsume = &cobra.Command{
 		Use:   "consume TOPIC",
@@ -18,7 +18,7 @@ func NewConsumeCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			if !(&k8s.Operation{}).TryRun(cmd, args) {
-				if err := (&consumer.Operation{}).Consume(args[0], flags); err != nil {
+				if err := (&consume.Operation{}).Consume(args[0], flags); err != nil {
 					output.Fail(err)
 				}
 			}
@@ -34,6 +34,7 @@ func NewConsumeCmd() *cobra.Command {
 	cmdConsume.Flags().BoolVarP(&flags.Exit, "exit", "e", flags.Exit, "stop consuming when latest offset is reached")
 	cmdConsume.Flags().IntSliceVarP(&flags.Partitions, "partitions", "p", flags.Partitions, "partitions to consume. The default is to consume from all partitions.")
 	cmdConsume.Flags().StringVarP(&flags.Separator, "separator", "s", "#", "separator to split key and value")
+	cmdConsume.Flags().StringVarP(&flags.Group, "group", "g", "", "consumer group to join")
 	cmdConsume.Flags().StringArrayVarP(&flags.Offsets, "offset", "", flags.Offsets, "offsets in format `partition=offset (for partitions not specified, other parameters apply)`")
 	cmdConsume.Flags().BoolVarP(&flags.FromBeginning, "from-beginning", "b", false, "set offset for consumer to the oldest offset")
 	cmdConsume.Flags().StringVarP(&flags.OutputFormat, "output", "o", flags.OutputFormat, "output format. One of: json|yaml")
