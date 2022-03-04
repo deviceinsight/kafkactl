@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2.2.0 - 2022-03-04
+
 ### Added
 - add parameter `--max-messages` to consume command, to stop consumption after a fixed amount of messages
 - [#60](https://github.com/deviceinsight/kafkactl/issues/60) add parameter `--group` to consume command, which allows consuming as a member of the given consumer group
