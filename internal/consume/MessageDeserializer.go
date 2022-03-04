@@ -1,4 +1,4 @@
-package consumer
+package consume
 
 import (
 	"encoding/base64"

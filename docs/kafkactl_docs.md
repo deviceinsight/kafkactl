@@ -377,9 +377,11 @@ kafkactl consume TOPIC [flags]
 ```
   -e, --exit                                                                             stop consuming when latest offset is reached
   -b, --from-beginning                                                                   set offset for consumer to the oldest offset
+  -g, --group string                                                                     consumer group to join
   -h, --help                                                                             help for consume
       --key-encoding string                                                              key encoding (auto-detected by default). One of: none|hex|base64
       --key-proto-type string                                                            key protobuf message type
+      --max-messages int                                                                 stop consuming after n messages have been read (default -1)
       --offset partition=offset (for partitions not specified, other parameters apply)   offsets in format partition=offset (for partitions not specified, other parameters apply)
   -o, --output string                                                                    output format. One of: json|yaml
   -p, --partitions ints                                                                  partitions to consume. The default is to consume from all partitions.

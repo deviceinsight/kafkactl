@@ -1,4 +1,4 @@
-package consumer
+package consume
 
 import (
 	schemaregistry "github.com/landoop/schema-registry"

@@ -6,9 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## 2.1.0 - 2022-01-28
+## 2.2.0 - 2022-03-04
 
-## v2.1.0 - 2022-01-28
+### Added
+- add parameter `--max-messages` to consume command, to stop consumption after a fixed amount of messages
+- [#60](https://github.com/deviceinsight/kafkactl/issues/60) add parameter `--group` to consume command, which allows consuming as a member of the given consumer group
+
+## 2.1.0 - 2022-01-28
 
 ### Added
 - add config options `image`, `imagePullSecret` in order to pull kafkactl from private registry when running in k8s (fixes #116).
