@@ -49,7 +49,7 @@ func CreatePartitionConsumer(client *sarama.Client, topic string, partitions []i
 	}, nil
 }
 
-func (c *PartitionConsumer) Start(ctx context.Context, flags Flags, messages chan<- *sarama.ConsumerMessage) error {
+func (c *PartitionConsumer) Start(ctx context.Context, flags Flags, messages chan<- *sarama.ConsumerMessage, stopConsumers <-chan bool) error {
 
 	partitionErrorGroup, _ := errgroup.WithContext(ctx)
 
@@ -101,6 +101,10 @@ func (c *PartitionConsumer) Start(ctx context.Context, flags Flags, messages cha
 							pc.AsyncClose()
 							break messageChannelRead
 						}
+					case <-stopConsumers:
+						output.Debugf("stop consumer on partition %d via channel", partitionID)
+						pc.AsyncClose()
+						break messageChannelRead
 					case <-partitionContext.Done():
 						output.Debugf("stop consumer on partition %d", partitionID)
 						pc.AsyncClose()

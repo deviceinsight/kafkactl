@@ -2,6 +2,7 @@ package consume
 
 import (
 	"github.com/deviceinsight/kafkactl/internal/consume"
+	"github.com/deviceinsight/kafkactl/internal/consumergroups"
 	"github.com/deviceinsight/kafkactl/internal/k8s"
 	"github.com/deviceinsight/kafkactl/internal/topic"
 	"github.com/deviceinsight/kafkactl/output"
@@ -31,6 +32,7 @@ func NewConsumeCmd() *cobra.Command {
 	cmdConsume.Flags().BoolVarP(&flags.PrintAvroSchema, "print-schema", "a", false, "print details about avro schema used for decoding")
 	cmdConsume.Flags().BoolVarP(&flags.PrintHeaders, "print-headers", "", false, "print message headers")
 	cmdConsume.Flags().IntVarP(&flags.Tail, "tail", "", -1, "show only the last n messages on the topic")
+	cmdConsume.Flags().Int64VarP(&flags.MaxMessages, "max-messages", "", -1, "stop consuming after n messages have been read")
 	cmdConsume.Flags().BoolVarP(&flags.Exit, "exit", "e", flags.Exit, "stop consuming when latest offset is reached")
 	cmdConsume.Flags().IntSliceVarP(&flags.Partitions, "partitions", "p", flags.Partitions, "partitions to consume. The default is to consume from all partitions.")
 	cmdConsume.Flags().StringVarP(&flags.Separator, "separator", "s", "#", "separator to split key and value")
@@ -45,6 +47,12 @@ func NewConsumeCmd() *cobra.Command {
 	cmdConsume.Flags().StringSliceVarP(&flags.ProtosetFiles, "protoset-file", "", flags.ProtosetFiles, "additional compiled protobuf description file for searching message description")
 	cmdConsume.Flags().StringVarP(&flags.KeyProtoType, "key-proto-type", "", flags.KeyProtoType, "key protobuf message type")
 	cmdConsume.Flags().StringVarP(&flags.ValueProtoType, "value-proto-type", "", flags.ValueProtoType, "value protobuf message type")
+
+	if err := cmdConsume.RegisterFlagCompletionFunc("group", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return consumergroups.CompleteConsumerGroups(cmd, args, toComplete)
+	}); err != nil {
+		panic(err)
+	}
 
 	return cmdConsume
 }

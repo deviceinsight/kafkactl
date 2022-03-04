@@ -25,7 +25,7 @@ func CreateGroupConsumer(client *sarama.Client, topic string, group string) (*Gr
 	}, nil
 }
 
-func (c *GroupConsumer) Start(ctx context.Context, flags Flags, messages chan<- *sarama.ConsumerMessage) error {
+func (c *GroupConsumer) Start(ctx context.Context, flags Flags, messages chan<- *sarama.ConsumerMessage, stopConsumers <-chan bool) error {
 
 	if flags.FromBeginning {
 		(*c.client).Config().Consumer.Offsets.Initial = sarama.OffsetOldest
@@ -38,9 +38,12 @@ func (c *GroupConsumer) Start(ctx context.Context, flags Flags, messages chan<- 
 	c.consumerGroupClient = &consumerGroupClient
 
 	var groupHandler = groupHandler{
-		messages: messages,
-		ready:    make(chan bool),
+		messages:      messages,
+		stopConsumers: stopConsumers,
+		ready:         make(chan bool),
 	}
+
+	ctx, groupHandler.cancel = context.WithCancel(ctx)
 	c.errorGroup, ctx = errgroup.WithContext(ctx)
 
 	c.errorGroup.Go(func() error {
@@ -72,8 +75,10 @@ func (c *GroupConsumer) Close() error {
 }
 
 type groupHandler struct {
-	messages chan<- *sarama.ConsumerMessage
-	ready    chan bool
+	messages      chan<- *sarama.ConsumerMessage
+	stopConsumers <-chan bool
+	ready         chan bool
+	cancel        context.CancelFunc
 }
 
 func (handler *groupHandler) Setup(sarama.ConsumerGroupSession) error {
@@ -87,12 +92,19 @@ func (handler *groupHandler) Cleanup(sarama.ConsumerGroupSession) error {
 
 func (handler *groupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 
-	for message := range claim.Messages() {
-		if message != nil {
-			handler.messages <- message
-		}
-		session.MarkMessage(message, "")
-	}
+	messageChannel := claim.Messages()
 
-	return nil
+	for {
+		select {
+		case message := <-messageChannel:
+			if message != nil {
+				handler.messages <- message
+			}
+			session.MarkMessage(message, "")
+		case <-handler.stopConsumers:
+			output.Debugf("stop consume claim via channel")
+			handler.cancel()
+			return nil
+		}
+	}
 }

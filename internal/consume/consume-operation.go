@@ -26,6 +26,7 @@ type Flags struct {
 	FromBeginning    bool
 	Tail             int
 	Exit             bool
+	MaxMessages      int64
 	EncodeValue      string
 	EncodeKey        string
 	ProtoFiles       []string
@@ -117,6 +118,7 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 	}
 
 	messages := make(chan *sarama.ConsumerMessage)
+	stopConsumers := make(chan bool)
 
 	var consumer Consumer
 
@@ -134,11 +136,11 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 
 	ctx := CreateTerminalContext()
 
-	if err := consumer.Start(ctx, flags, messages); err != nil {
+	if err := consumer.Start(ctx, flags, messages, stopConsumers); err != nil {
 		return errors.Wrap(err, "Failed to start consumer")
 	}
 
-	deserializationGroup := deserializeMessages(ctx, flags, messages, deserializers)
+	deserializationGroup := deserializeMessages(ctx, flags, messages, stopConsumers, deserializers)
 
 	if err := consumer.Wait(); err != nil {
 		return errors.Wrap(err, "Failed while waiting for consumer")
@@ -159,7 +161,7 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 	return nil
 }
 
-func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sarama.ConsumerMessage, deserializers MessageDeserializerChain) *errgroup.Group {
+func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sarama.ConsumerMessage, stopConsumers chan<- bool, deserializers MessageDeserializerChain) *errgroup.Group {
 
 	errorGroup, _ := errgroup.WithContext(ctx)
 
@@ -188,13 +190,27 @@ func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sara
 	} else {
 		//just print the messages
 		errorGroup.Go(func() error {
+			var messageCount int64
+			var err error
+
 			for msg := range messages {
-				err := deserializers.Deserialize(msg, flags)
+				err = deserializers.Deserialize(msg, flags)
+				messageCount++
 				if err != nil {
-					return err
+					close(stopConsumers)
+					break
+				}
+				if flags.MaxMessages > 0 && messageCount >= flags.MaxMessages {
+					close(stopConsumers)
+					break
 				}
 			}
-			return nil
+
+			// drop remaining messages after break
+			for range messages {
+			}
+
+			return err
 		})
 	}
 
