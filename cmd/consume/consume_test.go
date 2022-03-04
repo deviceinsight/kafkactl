@@ -2,7 +2,6 @@ package consume_test
 
 import (
 	"encoding/hex"
-	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -21,13 +20,9 @@ func TestConsumeWithKeyAndValueIntegration(t *testing.T) {
 
 	topicName := testutil.CreateTopic(t, "consume-topic")
 
+	testutil.ProduceMessage(t, topicName, "test-key", "test-value", 0, 0)
+
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
-
-	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", "test-value"); err != nil {
-		t.Fatalf("failed to execute command: %v", err)
-	}
-
-	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
 
 	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-keys"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
@@ -36,19 +31,60 @@ func TestConsumeWithKeyAndValueIntegration(t *testing.T) {
 	testutil.AssertEquals(t, "test-key#test-value", kafkaCtl.GetStdOut())
 }
 
+func TestConsumeWithEmptyPartitionsIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	topicName := testutil.CreateTopic(t, "consume-topic", "--partitions", "10")
+
+	testutil.ProduceMessage(t, topicName, "test-key", "test-value", 1, 0)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-keys"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "test-key#test-value", kafkaCtl.GetStdOut())
+}
+
+func TestConsumeTailIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	topicName := testutil.CreateTopic(t, "consume-topic", "--partitions", "10")
+
+	testutil.ProduceMessage(t, topicName, "test-key-1", "test-value-1", 6, 0)
+	testutil.ProduceMessage(t, topicName, "test-key-2", "test-value-2a", 2, 0)
+	testutil.ProduceMessage(t, topicName, "test-key-3", "test-value-3", 5, 0)
+	testutil.ProduceMessage(t, topicName, "test-key-2", "test-value-2b", 2, 1)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--tail", "3", "--print-keys"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	messages := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+
+	if len(messages) != 3 {
+		t.Fatalf("expected 3 messages")
+	}
+
+	testutil.AssertEquals(t, "test-key-2#test-value-2a", messages[0])
+	testutil.AssertEquals(t, "test-key-3#test-value-3", messages[1])
+	testutil.AssertEquals(t, "test-key-2#test-value-2b", messages[2])
+}
+
 func TestConsumeWithKeyAndValueAsBase64Integration(t *testing.T) {
 
 	testutil.StartIntegrationTest(t)
 
 	topicName := testutil.CreateTopic(t, "consume-topic")
 
+	testutil.ProduceMessage(t, topicName, "test-key", "test-value", 0, 0)
+
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
-
-	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", "test-value"); err != nil {
-		t.Fatalf("failed to execute command: %v", err)
-	}
-
-	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
 
 	if _, err := kafkaCtl.Execute(
 		"consume",
@@ -66,13 +102,9 @@ func TestConsumeWithKeyAndValueAsHexIntegration(t *testing.T) {
 
 	topicName := testutil.CreateTopic(t, "consume-topic")
 
+	testutil.ProduceMessage(t, topicName, "test-key", "test-value", 0, 0)
+
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
-
-	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", "test-value"); err != nil {
-		t.Fatalf("failed to execute command: %v", err)
-	}
-
-	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
 
 	if _, err := kafkaCtl.Execute(
 		"consume",
@@ -110,30 +142,6 @@ func TestConsumeWithKeyAndValueAutoDetectBinaryValueIntegration(t *testing.T) {
 	testutil.AssertEquals(t, "test-key#AAABc3O+NFw=", kafkaCtl.GetStdOut())
 }
 
-func TestConsumeAutoCompletionIntegration(t *testing.T) {
-
-	testutil.StartIntegrationTest(t)
-
-	prefix := "consume-complete-"
-
-	topicName1 := testutil.CreateTopic(t, prefix+"a")
-	topicName2 := testutil.CreateTopic(t, prefix+"b")
-	topicName3 := testutil.CreateTopic(t, prefix+"c")
-
-	kafkaCtl := testutil.CreateKafkaCtlCommand()
-	kafkaCtl.Verbose = false
-
-	if _, err := kafkaCtl.Execute("__complete", "consume", ""); err != nil {
-		t.Fatalf("failed to execute command: %v", err)
-	}
-
-	outputLines := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
-
-	testutil.AssertContains(t, topicName1, outputLines)
-	testutil.AssertContains(t, topicName2, outputLines)
-	testutil.AssertContains(t, topicName3, outputLines)
-}
-
 func TestAvroDeserializationErrorHandlingIntegration(t *testing.T) {
 
 	testutil.StartIntegrationTest(t)
@@ -149,8 +157,11 @@ func TestAvroDeserializationErrorHandlingIntegration(t *testing.T) {
   ]
 }`
 	value := `{"name":"Peter Mueller"}`
+	value2 := `{"name":"Peter Pan"}`
 
 	topicName := testutil.CreateAvroTopic(t, "avro-topic", "", valueSchema)
+
+	group := testutil.CreateConsumerGroup(t, topicName, "avro-topic-consumer-group")
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
@@ -173,7 +184,7 @@ func TestAvroDeserializationErrorHandlingIntegration(t *testing.T) {
 	testutil.SwitchContext("default")
 
 	// produce another valid avro message
-	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", value, "-H", "key1:value1", "-H", "key\\:2:value\\:2"); err != nil {
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", value2, "-H", "key1:value1", "-H", "key\\:2:value\\:2"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
@@ -181,7 +192,16 @@ func TestAvroDeserializationErrorHandlingIntegration(t *testing.T) {
 
 	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit"); err != nil {
 		testutil.AssertErrorContains(t, "failed to find avro schema", err)
-		testutil.AssertEquals(t, fmt.Sprintf("%s\n%s", value, value), kafkaCtl.GetStdOut())
+		testutil.AssertEquals(t, value, kafkaCtl.GetStdOut())
+	} else {
+		t.Fatalf("expected consumer to fail")
+	}
+
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--group", group, "--max-messages", "3"); err != nil {
+		testutil.AssertErrorContains(t, "failed to find avro schema", err)
+		testutil.AssertEquals(t, value, kafkaCtl.GetStdOut())
 	} else {
 		t.Fatalf("expected consumer to fail")
 	}
@@ -295,4 +315,88 @@ func TestProtobufConsumeProtoFileErrDecodeIntegration(t *testing.T) {
 	} else {
 		t.Fatal("Expected consumer to fail")
 	}
+}
+
+func TestConsumeGroupIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	prefix := "consume-group-"
+
+	topicName := testutil.CreateTopic(t, prefix+"topic")
+
+	group1 := testutil.CreateConsumerGroup(t, topicName, prefix+"a")
+
+	testutil.ProduceMessage(t, topicName, "test-key", "test-value1", 0, 0)
+
+	group2 := testutil.CreateConsumerGroup(t, topicName, prefix+"b")
+
+	testutil.ProduceMessage(t, topicName, "test-key", "test-value2", 0, 1)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--group", group1, "--max-messages", "2"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	results := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+	testutil.AssertContains(t, "test-value1", results)
+	testutil.AssertContains(t, "test-value2", results)
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--group", group2, "--max-messages", "1"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	results = strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+	testutil.AssertContains(t, "test-value2", results)
+}
+
+func TestConsumeAutoCompletionIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	prefix := "consume-complete-"
+
+	topicName1 := testutil.CreateTopic(t, prefix+"a")
+	topicName2 := testutil.CreateTopic(t, prefix+"b")
+	topicName3 := testutil.CreateTopic(t, prefix+"c")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	kafkaCtl.Verbose = false
+
+	if _, err := kafkaCtl.Execute("__complete", "consume", ""); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	outputLines := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+
+	testutil.AssertContains(t, topicName1, outputLines)
+	testutil.AssertContains(t, topicName2, outputLines)
+	testutil.AssertContains(t, topicName3, outputLines)
+}
+
+func TestConsumeGroupCompletionIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	prefix := "consume-group-complete-"
+
+	topicName := testutil.CreateTopic(t, prefix+"topic")
+
+	group1 := testutil.CreateConsumerGroup(t, topicName, prefix+"a")
+	group2 := testutil.CreateConsumerGroup(t, topicName, prefix+"b")
+	group3 := testutil.CreateConsumerGroup(t, topicName, prefix+"c")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	kafkaCtl.Verbose = false
+
+	if _, err := kafkaCtl.Execute("__complete", "consume", topicName, "--group", ""); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	outputLines := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+
+	testutil.AssertContains(t, group1, outputLines)
+	testutil.AssertContains(t, group2, outputLines)
+	testutil.AssertContains(t, group3, outputLines)
 }

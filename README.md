@@ -331,6 +331,16 @@ The consumer can convert protobuf messages to JSON in keys (optional) and values
 kafkactl consume my-topic --value-proto-type MyTopicValue --key-proto-type MyTopicKey --proto-file kafkamsg.proto
 ```
 
+To join a consumer group and consume messages as a member of the group:
+```bash
+kafkactl consume my-topic --group my-consumer-group
+```
+
+If you want to limit the number of messages that will be read, specify `--max-messages`:
+```bash
+kafkactl consume my-topic --max-messages 2
+```
+
 ### Producing messages
 
 Producing messages can be done in multiple ways. If we want to produce a message with `key='my-key'`,

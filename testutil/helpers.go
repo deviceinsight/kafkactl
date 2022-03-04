@@ -107,6 +107,17 @@ func CreateConsumerGroup(t *testing.T, topic string, groupPrefix string) string 
 	return groupName
 }
 
+func ProduceMessage(t *testing.T, topic, key, value string, expectedPartition, expectedOffset int64) {
+
+	kafkaCtl := CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", topic, "--key", key, "--value", value); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	AssertEquals(t, fmt.Sprintf("message produced (partition=%d\toffset=%d)", expectedPartition, expectedOffset), kafkaCtl.GetStdOut())
+}
+
 func VerifyGroupExists(t *testing.T, group string) {
 
 	kafkaCtl := CreateKafkaCtlCommand()
