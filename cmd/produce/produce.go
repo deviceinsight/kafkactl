@@ -1,6 +1,8 @@
 package produce
 
 import (
+	"fmt"
+
 	"github.com/deviceinsight/kafkactl/internal/k8s"
 	"github.com/deviceinsight/kafkactl/internal/producer"
 	"github.com/deviceinsight/kafkactl/internal/topic"
@@ -29,7 +31,7 @@ func NewProduceCmd() *cobra.Command {
 	cmdProduce.Flags().Int32VarP(&flags.Partition, "partition", "p", -1, "partition to produce to")
 	cmdProduce.Flags().StringVarP(&flags.Partitioner, "partitioner", "P", "", "the partitioning scheme to use. Can be `murmur2`, `hash`, `hash-ref` `manual`, or `random`. (default is murmur2)")
 	cmdProduce.Flags().StringVarP(&flags.RequiredAcks, "required-acks", "", "", "required acks. One of `NoResponse`, `WaitForLocal`, `WaitForAll`. (default is WaitForLocal)")
-	cmdProduce.Flags().IntVarP(&flags.MaxMessageBytes, "max-message-bytes", "", 0, "the maximum permitted size of a message (defaults to 1000000)")
+	cmdProduce.Flags().IntVarP(&flags.MaxMessageBytes, "max-message-bytes", "", 0, fmt.Sprintf("the maximum permitted size of a message (defaults to %d)", producer.DefaultMaxMessagesBytes))
 	cmdProduce.Flags().StringVarP(&flags.Key, "key", "k", "", "key to use for all messages")
 	cmdProduce.Flags().StringVarP(&flags.Value, "value", "v", "", "value to produce")
 	cmdProduce.Flags().BoolVarP(&flags.NullValue, "null-value", "", false, "produce a null value (can be used instead of providing a value with --value)")

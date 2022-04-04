@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2.2.1 - 2022-04-04
+
+### Fixed
+- [#124](https://github.com/deviceinsight/kafkactl/issues/124) make sure input buffer can hold long messages when producing messages to a topic
+
 ## 2.2.0 - 2022-03-04
 
 ### Added

@@ -1,9 +1,13 @@
 package produce_test
 
 import (
+	"bufio"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -348,6 +352,66 @@ func TestProduceProtoFileErrNoMessageIntegration(t *testing.T) {
 		"--value", value, "--value-proto-type", "unknown",
 		"--proto-import-path", protoPath, "--proto-file", "msg.proto"); err != nil {
 		testutil.AssertErrorContains(t, "not found in provided files", err)
+	} else {
+		t.Fatalf("Expected producer to fail")
+	}
+}
+
+func TestProduceLongMessageSucceedsIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	topic := testutil.CreateTopic(t, "produce-topic-long")
+
+	file, err := ioutil.TempFile(os.TempDir(), "long-message-")
+	if err != nil {
+		t.Fatalf("unable to generate test file: %v", err)
+	}
+	defer os.Remove(file.Name())
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	data := make([]byte, bufio.MaxScanTokenSize)
+
+	for i := range data {
+		data[i] = 'K'
+	}
+
+	if err := os.WriteFile(file.Name(), data, 0644); err != nil {
+		t.Fatalf("unable to write test file: %v", err)
+	}
+
+	if _, err := kafkaCtl.Execute("produce", topic, "--file", file.Name()); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "1 messages produced", kafkaCtl.GetStdOut())
+}
+
+func TestProduceLongMessageFailsIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	topic := testutil.CreateTopic(t, "produce-topic-long")
+
+	file, err := ioutil.TempFile(os.TempDir(), "long-message-")
+	if err != nil {
+		t.Fatalf("unable to generate test file: %v", err)
+	}
+	defer os.Remove(file.Name())
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	data := make([]byte, bufio.MaxScanTokenSize)
+
+	for i := range data {
+		data[i] = 'K'
+	}
+
+	if err := os.WriteFile(file.Name(), data, 0644); err != nil {
+		t.Fatalf("unable to write test file: %v", err)
+	}
+
+	if _, err := kafkaCtl.Execute("produce", topic, "--max-message-bytes", strconv.Itoa(bufio.MaxScanTokenSize), "--file", file.Name()); err != nil {
+		testutil.AssertErrorContains(t, "error reading input (try specifying --max-message-bytes when producing long messages)", err)
 	} else {
 		t.Fatalf("Expected producer to fail")
 	}
