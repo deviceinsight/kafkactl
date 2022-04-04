@@ -41,6 +41,8 @@ type Flags struct {
 	ValueProtoType     string
 }
 
+const DefaultMaxMessagesBytes = 1000000
+
 type Operation struct {
 }
 
@@ -182,6 +184,7 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 		}
 
 		scanner := bufio.NewScanner(inputReader)
+		scanner.Buffer(make([]byte, 0, config.Producer.MaxMessageBytes), config.Producer.MaxMessageBytes)
 
 		if len(flags.LineSeparator) > 0 && flags.LineSeparator != "\n" {
 			scanner.Split(splitAt(convertControlChars(flags.LineSeparator)))
@@ -238,6 +241,10 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 			}
 		}
 
+		if scanner.Err() != nil {
+			return errors.Wrap(scanner.Err(), "error reading input (try specifying --max-message-bytes when producing long messages)")
+		}
+
 		output.Infof("\r%d messages produced", messageCount)
 	} else {
 		return errors.New("value is required, or you have to provide the value on stdin")
@@ -267,14 +274,12 @@ func applyProducerConfigs(config *sarama.Config, clientContext internal.ClientCo
 		return err
 	}
 
-	maxMessageBytes := clientContext.Producer.MaxMessageBytes
+	maxMessageBytes := DefaultMaxMessagesBytes
 	if flags.MaxMessageBytes > 0 {
 		maxMessageBytes = flags.MaxMessageBytes
 	}
 
-	if maxMessageBytes > 0 {
-		config.Producer.MaxMessageBytes = maxMessageBytes
-	}
+	config.Producer.MaxMessageBytes = maxMessageBytes
 
 	return nil
 }
