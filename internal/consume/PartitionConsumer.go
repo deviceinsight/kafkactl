@@ -134,7 +134,9 @@ func (c *PartitionConsumer) Close() error {
 
 func getOffsetBounds(client *sarama.Client, topic string, flags Flags, currentPartition int32) (int64, int64, error) {
 
-	if flags.Exit && flags.FromTs != -1 {
+	if !flags.Exit && flags.FromTs != -1 {
+		return -1, -1, errors.Errorf("parameters --exit has to be used in combination with --from-timestamp")
+	} else if flags.Exit && flags.FromTs != -1 {
 
 		var newestOffset int64
 		var oldestOffset int64
