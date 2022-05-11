@@ -321,6 +321,16 @@ The consumer can be stopped when the latest offset is reached using `--exit` par
 kafkactl consume my-topic --from-beginning --exit
 ```
 
+The consumer can start consuming from a particular timestamp and it is supposed to be used in tandem with `--exit` e.g.:
+```bash
+kafkactl consume my-topic --from-timestamp <timestamp-with-milliseconds> --exit
+```
+There is an optional parameter to give end timestamp e.g.:
+```bash
+kafkactl consume my-topic --from-timestamp <timestamp-with-milliseconds> --end-timestamp <timestamp-with-milliseconds> --exit
+```
+
+
 The following example prints keys in hex and values in base64:
 ```bash
 kafkactl consume my-topic --print-keys --key-encoding=hex --value-encoding=base64
