@@ -134,7 +134,22 @@ func (c *PartitionConsumer) Close() error {
 
 func getOffsetBounds(client *sarama.Client, topic string, flags Flags, currentPartition int32) (int64, int64, error) {
 
-	if flags.Exit && len(flags.Offsets) == 0 && !flags.FromBeginning {
+	if flags.Exit && flags.FromTs != -1 {
+
+		var newestOffset int64
+		var oldestOffset int64
+		var err error
+		if oldestOffset, err = (*client).GetOffset(topic, currentPartition, flags.FromTs); err != nil {
+			return -1, -1, errors.Errorf("failed to get offset for topic %s Partition %d: %v", topic, currentPartition, err)
+		}
+
+		if newestOffset, err = (*client).GetOffset(topic, currentPartition, flags.EndTs); err != nil {
+			return -1, -1, errors.Errorf("failed to get offset for topic %s Partition %d: %v", topic, currentPartition, err)
+		}
+
+		return oldestOffset, newestOffset, err
+
+	} else if flags.Exit && len(flags.Offsets) == 0 && !flags.FromBeginning {
 		return -1, -1, errors.Errorf("parameter --exit has to be used in combination with --from-beginning or --offset")
 	} else if flags.Tail > 0 && len(flags.Offsets) > 0 {
 		return -1, -1, errors.Errorf("parameters --offset and --tail cannot be used together")
