@@ -4,6 +4,7 @@
 *.iws
 *.iml
 *.ipr
+.go.mod.swp
 
 ### Visual Studio Code
 .vscode
