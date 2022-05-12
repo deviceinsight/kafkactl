@@ -18,3 +18,4 @@ Please delete options that are not relevant.
 - [ ] the change is mentioned in the `## [Unreleased]` section of `CHANGELOG.md`
 - [ ] the configuration yaml was changed and the example config in `README.md` was updated
 - [ ] a usage example was added to `README.md`
+- [ ] tests for the changes have been implemented (see: [Testing your changes](https://github.com/deviceinsight/kafkactl/blob/main/.github/contributing.md#testing-your-changes))
