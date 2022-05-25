@@ -13,6 +13,7 @@ import (
 
 type ResetConsumerGroupOffsetFlags struct {
 	Topic             string
+	AllTopics         bool
 	Partition         int32
 	Offset            int64
 	OldestOffset      bool
@@ -35,7 +36,7 @@ type ConsumerGroupOffsetOperation struct {
 
 func (operation *ConsumerGroupOffsetOperation) ResetConsumerGroupOffset(flags ResetConsumerGroupOffsetFlags, groupName string) error {
 
-	if flags.Topic == "" {
+	if (flags.Topic == "") && (!flags.AllTopics) {
 		return errors.New("no topic specified")
 	}
 
@@ -68,9 +69,10 @@ func (operation *ConsumerGroupOffsetOperation) ResetConsumerGroupOffset(flags Re
 		return errors.Wrap(err, "failed to create cluster admin")
 	}
 
-	if topics, err := client.Topics(); err != nil {
+	topics, err := client.Topics()
+	if err != nil {
 		return errors.Wrap(err, "failed to list available topics")
-	} else if !util.ContainsString(topics, flags.Topic) {
+	} else if !flags.AllTopics && !util.ContainsString(topics, flags.Topic) {
 		return errors.Errorf("topic does not exist: %s", flags.Topic)
 	}
 
@@ -100,20 +102,30 @@ func (operation *ConsumerGroupOffsetOperation) ResetConsumerGroupOffset(flags Re
 
 	backgroundCtx := context.Background()
 
+	var processingTopics = []string{}
+	if flags.AllTopics {
+		processingTopics = topics
+		output.Infof("Processing all topics %v\n", processingTopics)
+	} else {
+		processingTopics = []string{flags.Topic}
+		output.Infof("Processing topic %v\n", processingTopics)
+	}
+
 	consumer := Consumer{
 		client:    client,
 		groupName: groupName,
-		flags:     flags,
 	}
 
-	topics := []string{flags.Topic}
+	for _, _topic := range processingTopics {
+		flags.Topic = _topic
+		consumer.flags = flags
+		consumer.ready = make(chan bool)
 
-	consumer.ready = make(chan bool)
-	err = consumerGroup.Consume(backgroundCtx, topics, &consumer)
-	if err != nil {
-		return err
+		err = consumerGroup.Consume(backgroundCtx, processingTopics, &consumer)
+		if err != nil {
+			return err
+		}
 	}
-
 	<-consumer.ready
 
 	err = consumerGroup.Close()

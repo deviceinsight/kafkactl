@@ -29,6 +29,7 @@ func newResetOffsetCmd() *cobra.Command {
 
 	cmdResetOffset.Flags().BoolVarP(&offsetFlags.OldestOffset, "oldest", "", false, "set the offset to oldest offset (for all partitions or the specified partition)")
 	cmdResetOffset.Flags().BoolVarP(&offsetFlags.NewestOffset, "newest", "", false, "set the offset to newest offset (for all partitions or the specified partition)")
+	cmdResetOffset.Flags().BoolVarP(&offsetFlags.AllTopics, "all-topics", "", false, "do the operation for all topics")
 	cmdResetOffset.Flags().Int64VarP(&offsetFlags.Offset, "offset", "", -1, "set offset to this value. offset with value -1 is ignored")
 	cmdResetOffset.Flags().Int32VarP(&offsetFlags.Partition, "partition", "p", -1, "partition to apply the offset. -1 stands for all partitions")
 	cmdResetOffset.Flags().StringVarP(&offsetFlags.Topic, "topic", "t", offsetFlags.Topic, "topic to change offset for")
