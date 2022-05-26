@@ -595,6 +595,8 @@ kafkactl reset offset my-group --topic my-topic --oldest
 kafkactl reset offset my-group --topic my-topic --newest
 # reset offset for a single partition to specific offset
 kafkactl reset offset my-group --topic my-topic --partition 5 --offset 100
+# reset offset to newest for all topics in the cluster
+kafkactl reset offset my-group --all-topics --newest
 ```
 
 ### Delete consumer group offsets
