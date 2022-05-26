@@ -597,6 +597,9 @@ kafkactl reset offset my-group --topic my-topic --newest
 kafkactl reset offset my-group --topic my-topic --partition 5 --offset 100
 # reset offset to newest for all topics in the cluster
 kafkactl reset offset my-group --all-topics --newest
+# reset offset to newest for all topics read from a text file. Newline separated, ignore empty line and trailing spaces 
+kafkactl reset offset my-group --topic-list-file <filename> --newest
+
 ```
 
 ### Delete consumer group offsets

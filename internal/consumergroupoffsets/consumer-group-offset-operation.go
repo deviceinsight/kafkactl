@@ -2,7 +2,9 @@ package consumergroupoffsets
 
 import (
 	"context"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/internal"
@@ -15,6 +17,7 @@ import (
 type ResetConsumerGroupOffsetFlags struct {
 	Topic             string
 	AllTopics         bool
+	TopicListFile     string
 	Partition         int32
 	Offset            int64
 	OldestOffset      bool
@@ -37,7 +40,7 @@ type ConsumerGroupOffsetOperation struct {
 
 func (operation *ConsumerGroupOffsetOperation) ResetConsumerGroupOffset(flags ResetConsumerGroupOffsetFlags, groupName string) error {
 
-	if (flags.Topic == "") && (!flags.AllTopics) {
+	if (flags.Topic == "") && (!flags.AllTopics) && (flags.TopicListFile == "") {
 		return errors.New("no topic specified")
 	}
 
@@ -73,7 +76,7 @@ func (operation *ConsumerGroupOffsetOperation) ResetConsumerGroupOffset(flags Re
 	topics, err := client.Topics()
 	if err != nil {
 		return errors.Wrap(err, "failed to list available topics")
-	} else if !flags.AllTopics && !util.ContainsString(topics, flags.Topic) {
+	} else if !flags.AllTopics && !util.ContainsString(topics, flags.Topic) && (flags.TopicListFile == "") {
 		return errors.Errorf("topic does not exist: %s", flags.Topic)
 	}
 
@@ -107,20 +110,29 @@ func (operation *ConsumerGroupOffsetOperation) ResetConsumerGroupOffset(flags Re
 	if flags.AllTopics {
 		processingTopics = topics
 		output.Infof("Processing all topics %v\n", processingTopics)
+	} else if flags.TopicListFile != "" {
+		fcontentB, err := os.ReadFile(flags.TopicListFile)
+		if err != nil {
+			return errors.Wrap(err, "failed to read from topic list file")
+		}
+		processingTopics = strings.Split(strings.ReplaceAll(string(fcontentB), "\r\n", "\n"), "\n")
 	} else {
 		processingTopics = []string{flags.Topic}
-		output.Infof("Processing topic %v\n", processingTopics)
 	}
+	output.Infof("Processing topic %v\n", processingTopics)
 
 	consumeErrorGroup, _ := errgroup.WithContext(backgroundCtx)
 	consumeErrorGroup.SetLimit(500)
 
 	for _, _topic := range processingTopics {
+		if (_topic == "") || (_topic == "\n") {
+			continue
+		}
 		consumer := Consumer{
 			client:    client,
 			groupName: groupName,
 		}
-		thetopic := _topic
+		thetopic := strings.TrimSpace(_topic)
 		consumeErrorGroup.Go(func() error {
 			flags.Topic = thetopic
 			consumer.flags = flags
