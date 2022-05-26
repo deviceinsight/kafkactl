@@ -25,7 +25,7 @@ require (
 	github.com/xdg/stringprep v1.0.3 // indirect
 	go.uber.org/atomic v1.5.1 // indirect
 	go.uber.org/ratelimit v0.1.0
-	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
+	golang.org/x/sync v0.0.0-20220513210516-0976fa681c29
 	golang.org/x/tools v0.1.0 // indirect
 	google.golang.org/protobuf v1.25.1-0.20200805231151-a709e31e5d12
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect

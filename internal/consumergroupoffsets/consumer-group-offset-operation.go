@@ -9,6 +9,7 @@ import (
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/deviceinsight/kafkactl/util"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 )
 
 type ResetConsumerGroupOffsetFlags struct {
@@ -111,27 +112,37 @@ func (operation *ConsumerGroupOffsetOperation) ResetConsumerGroupOffset(flags Re
 		output.Infof("Processing topic %v\n", processingTopics)
 	}
 
-	consumer := Consumer{
-		client:    client,
-		groupName: groupName,
-	}
+	consumeErrorGroup, _ := errgroup.WithContext(backgroundCtx)
+	consumeErrorGroup.SetLimit(500)
 
 	for _, _topic := range processingTopics {
-		flags.Topic = _topic
-		consumer.flags = flags
-		consumer.ready = make(chan bool)
-
-		err = consumerGroup.Consume(backgroundCtx, processingTopics, &consumer)
-		if err != nil {
-			return err
+		consumer := Consumer{
+			client:    client,
+			groupName: groupName,
 		}
+		thetopic := _topic
+		consumeErrorGroup.Go(func() error {
+			flags.Topic = thetopic
+			consumer.flags = flags
+			consumer.ready = make(chan bool)
+			err := consumerGroup.Consume(backgroundCtx, []string{flags.Topic}, &consumer)
+			if err != nil {
+				return err
+			}
+			<-consumer.ready
+			return err
+		})
 	}
-	<-consumer.ready
+	err = consumeErrorGroup.Wait()
+	if err != nil {
+		return err
+	}
 
 	err = consumerGroup.Close()
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
