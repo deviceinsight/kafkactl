@@ -18,7 +18,7 @@ func TestDeleteSingleConsumerGroupIntegration(t *testing.T) {
 
 	testutil.StartIntegrationTest(t)
 	topicName := testutil.CreateTopic(t, "delete-consumer-group-single")
-	groupName := testutil.CreateConsumerGroup(t, topicName, "consumer-group-to-be-deleted")
+	groupName := testutil.CreateConsumerGroup(t, "consumer-group-to-be-deleted", topicName)
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
@@ -35,8 +35,8 @@ func TestDeleteMultipleConsumerGroupsIntegration(t *testing.T) {
 
 	testutil.StartIntegrationTest(t)
 	topicName := testutil.CreateTopic(t, "delete-consumer-group-multiple")
-	groupName1 := testutil.CreateConsumerGroup(t, topicName, "consumer-group-to-be-deleted")
-	groupName2 := testutil.CreateConsumerGroup(t, topicName, "consumer-group-to-be-deleted")
+	groupName1 := testutil.CreateConsumerGroup(t, "consumer-group-to-be-deleted", topicName)
+	groupName2 := testutil.CreateConsumerGroup(t, "consumer-group-to-be-deleted", topicName)
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
@@ -63,9 +63,9 @@ func TestDeleteConsumerGroupAutoCompletionIntegration(t *testing.T) {
 	topicName := testutil.CreateTopic(t, "delete-consumer-group-completion")
 	prefix := "delete-complete-"
 
-	groupName1 := testutil.CreateConsumerGroup(t, topicName, prefix+"a")
-	groupName2 := testutil.CreateConsumerGroup(t, topicName, prefix+"b")
-	groupName3 := testutil.CreateConsumerGroup(t, topicName, prefix+"c")
+	groupName1 := testutil.CreateConsumerGroup(t, prefix+"a", topicName)
+	groupName2 := testutil.CreateConsumerGroup(t, prefix+"b", topicName)
+	groupName3 := testutil.CreateConsumerGroup(t, prefix+"c", topicName)
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 	kafkaCtl.Verbose = false

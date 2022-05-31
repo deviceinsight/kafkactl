@@ -159,9 +159,9 @@ func TestDeleteConsumerGroupOffsetAutoCompletionIntegration(t *testing.T) {
 	topicName := testutil.CreateTopic(t, "delete-consumer-group-completion")
 	prefix := "delete-complete-"
 
-	groupName1 := testutil.CreateConsumerGroup(t, topicName, prefix+"a")
-	groupName2 := testutil.CreateConsumerGroup(t, topicName, prefix+"b")
-	groupName3 := testutil.CreateConsumerGroup(t, topicName, prefix+"c")
+	groupName1 := testutil.CreateConsumerGroup(t, prefix+"a", topicName)
+	groupName2 := testutil.CreateConsumerGroup(t, prefix+"b", topicName)
+	groupName3 := testutil.CreateConsumerGroup(t, prefix+"c", topicName)
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 	kafkaCtl.Verbose = false

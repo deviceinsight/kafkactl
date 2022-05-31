@@ -1,8 +1,10 @@
 package consumergroupoffsets
 
 import (
-	"context"
 	"strconv"
+
+	"github.com/deviceinsight/kafkactl/internal/helpers"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/internal"
@@ -12,7 +14,8 @@ import (
 )
 
 type ResetConsumerGroupOffsetFlags struct {
-	Topic             string
+	Topic             []string
+	AllTopics         bool
 	Partition         int32
 	Offset            int64
 	OldestOffset      bool
@@ -35,7 +38,7 @@ type ConsumerGroupOffsetOperation struct {
 
 func (operation *ConsumerGroupOffsetOperation) ResetConsumerGroupOffset(flags ResetConsumerGroupOffsetFlags, groupName string) error {
 
-	if flags.Topic == "" {
+	if (flags.Topic == nil || len(flags.Topic) == 0) && (!flags.AllTopics) {
 		return errors.New("no topic specified")
 	}
 
@@ -68,11 +71,34 @@ func (operation *ConsumerGroupOffsetOperation) ResetConsumerGroupOffset(flags Re
 		return errors.Wrap(err, "failed to create cluster admin")
 	}
 
-	if topics, err := client.Topics(); err != nil {
-		return errors.Wrap(err, "failed to list available topics")
-	} else if !util.ContainsString(topics, flags.Topic) {
-		return errors.Errorf("topic does not exist: %s", flags.Topic)
+	var topics []string
+
+	if flags.AllTopics {
+		// retrieve all topics in the consumerGroup
+		offsets, err := admin.ListConsumerGroupOffsets(groupName, nil)
+		if err != nil {
+			return errors.Wrap(err, "failed to list consumer group offsets")
+		}
+		for topic := range offsets.Blocks {
+			topics = append(topics, topic)
+		}
+	} else {
+		// verify that the provided topics exist
+		existingTopics, err := client.Topics()
+		if err != nil {
+			return errors.Wrap(err, "failed to list available topics")
+		}
+
+		for _, topic := range flags.Topic {
+			if !util.ContainsString(existingTopics, topic) {
+				return errors.Errorf("topic does not exist: %s", topic)
+			}
+		}
+
+		topics = flags.Topic
 	}
+
+	output.Debugf("reset consumer-group offset for topics: %v", topics)
 
 	if flags.allowedGroupState == "" {
 		// a reset is only allowed if group is empty (no one in the group)
@@ -98,28 +124,41 @@ func (operation *ConsumerGroupOffsetOperation) ResetConsumerGroupOffset(flags Re
 		return errors.Errorf("failed to create consumer group %s: %v", groupName, err)
 	}
 
-	backgroundCtx := context.Background()
+	terminalCtx := helpers.CreateTerminalContext()
 
-	consumer := Consumer{
-		client:    client,
-		groupName: groupName,
-		flags:     flags,
+	consumeErrorGroup, _ := errgroup.WithContext(terminalCtx)
+	consumeErrorGroup.SetLimit(100)
+
+	for _, topic := range topics {
+		topicName := topic
+		consumeErrorGroup.Go(func() error {
+			consumer := Consumer{
+				client:    client,
+				groupName: groupName,
+				topicName: topicName,
+				flags:     flags,
+				ready:     make(chan bool),
+			}
+
+			err = consumerGroup.Consume(terminalCtx, []string{topicName}, &consumer)
+			if err != nil {
+				return err
+			}
+			<-consumer.ready
+			return nil
+		})
 	}
 
-	topics := []string{flags.Topic}
-
-	consumer.ready = make(chan bool)
-	err = consumerGroup.Consume(backgroundCtx, topics, &consumer)
+	err = consumeErrorGroup.Wait()
 	if err != nil {
 		return err
 	}
-
-	<-consumer.ready
 
 	err = consumerGroup.Close()
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -141,6 +180,7 @@ type Consumer struct {
 	ready     chan bool
 	client    sarama.Client
 	groupName string
+	topicName string
 	flags     ResetConsumerGroupOffsetFlags
 }
 
@@ -169,20 +209,20 @@ func (consumer *Consumer) Setup(session sarama.ConsumerGroupSession) error {
 	offsets := make([]partitionOffsets, 0)
 
 	if flags.Partition > -1 {
-		offset, err := resetOffset(consumer.client, flags.Partition, flags, groupOffsets, session)
+		offset, err := resetOffset(consumer.client, consumer.topicName, flags.Partition, flags, groupOffsets, session)
 		if err != nil {
 			return err
 		}
 		offsets = append(offsets, offset)
 	} else {
 
-		partitions, err := consumer.client.Partitions(flags.Topic)
+		partitions, err := consumer.client.Partitions(consumer.topicName)
 		if err != nil {
 			return errors.Wrap(err, "failed to list partitions")
 		}
 
 		for _, partition := range partitions {
-			offset, err := resetOffset(consumer.client, partition, flags, groupOffsets, session)
+			offset, err := resetOffset(consumer.client, consumer.topicName, partition, flags, groupOffsets, session)
 			if err != nil {
 				return err
 			}
@@ -222,17 +262,17 @@ func (consumer *Consumer) ConsumeClaim(sarama.ConsumerGroupSession, sarama.Consu
 	return nil
 }
 
-func getPartitionOffsets(client sarama.Client, partition int32, flags ResetConsumerGroupOffsetFlags) (partitionOffsets, error) {
+func getPartitionOffsets(client sarama.Client, topic string, partition int32, flags ResetConsumerGroupOffsetFlags) (partitionOffsets, error) {
 
 	var err error
 	offsets := partitionOffsets{Partition: partition}
 
-	if offsets.OldestOffset, err = client.GetOffset(flags.Topic, partition, sarama.OffsetOldest); err != nil {
-		return offsets, errors.Errorf("failed to get offset for topic %s Partition %d: %v", flags.Topic, partition, err)
+	if offsets.OldestOffset, err = client.GetOffset(topic, partition, sarama.OffsetOldest); err != nil {
+		return offsets, errors.Errorf("failed to get offset for topic %s Partition %d: %v", topic, partition, err)
 	}
 
-	if offsets.NewestOffset, err = client.GetOffset(flags.Topic, partition, sarama.OffsetNewest); err != nil {
-		return offsets, errors.Errorf("failed to get offset for topic %s Partition %d: %v", flags.Topic, partition, err)
+	if offsets.NewestOffset, err = client.GetOffset(topic, partition, sarama.OffsetNewest); err != nil {
+		return offsets, errors.Errorf("failed to get offset for topic %s Partition %d: %v", topic, partition, err)
 	}
 
 	if flags.Offset > -1 {
@@ -256,19 +296,19 @@ func getPartitionOffsets(client sarama.Client, partition int32, flags ResetConsu
 	return offsets, nil
 }
 
-func resetOffset(client sarama.Client, partition int32, flags ResetConsumerGroupOffsetFlags, groupOffsets *sarama.OffsetFetchResponse, session sarama.ConsumerGroupSession) (partitionOffsets, error) {
-	offset, err := getPartitionOffsets(client, partition, flags)
+func resetOffset(client sarama.Client, topic string, partition int32, flags ResetConsumerGroupOffsetFlags, groupOffsets *sarama.OffsetFetchResponse, session sarama.ConsumerGroupSession) (partitionOffsets, error) {
+	offset, err := getPartitionOffsets(client, topic, partition, flags)
 	if err != nil {
 		return offset, err
 	}
 
-	offset.CurrentOffset = getGroupOffset(groupOffsets, flags.Topic, partition)
+	offset.CurrentOffset = getGroupOffset(groupOffsets, topic, partition)
 
 	if flags.Execute {
 		if offset.TargetOffset > offset.CurrentOffset {
-			session.MarkOffset(flags.Topic, partition, offset.TargetOffset, "")
+			session.MarkOffset(topic, partition, offset.TargetOffset, "")
 		} else if offset.TargetOffset < offset.CurrentOffset {
-			session.ResetOffset(flags.Topic, partition, offset.TargetOffset, "")
+			session.ResetOffset(topic, partition, offset.TargetOffset, "")
 		}
 	}
 

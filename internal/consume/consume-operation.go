@@ -5,6 +5,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/deviceinsight/kafkactl/internal/helpers"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/Shopify/sarama"
@@ -134,7 +136,7 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 
 	output.Debugf("Start consuming topic: %s", topic)
 
-	ctx := CreateTerminalContext()
+	ctx := helpers.CreateTerminalContext()
 
 	if err := consumer.Start(ctx, flags, messages, stopConsumers); err != nil {
 		return errors.Wrap(err, "Failed to start consumer")
