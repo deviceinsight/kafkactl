@@ -39,9 +39,9 @@ func TestDescribeConsumerGroupCompletionIntegration(t *testing.T) {
 
 	topicName := testutil.CreateTopic(t, prefix+"topic")
 
-	group1 := testutil.CreateConsumerGroup(t, topicName, prefix+"a")
-	group2 := testutil.CreateConsumerGroup(t, topicName, prefix+"b")
-	group3 := testutil.CreateConsumerGroup(t, topicName, prefix+"c")
+	group1 := testutil.CreateConsumerGroup(t, prefix+"a", topicName)
+	group2 := testutil.CreateConsumerGroup(t, prefix+"b", topicName)
+	group3 := testutil.CreateConsumerGroup(t, prefix+"c", topicName)
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 	kafkaCtl.Verbose = false

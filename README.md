@@ -583,6 +583,21 @@ kafkactl describe consumer-group my-group --topic my-topic
 kafkactl describe cg my-group
 ```
 
+### Create consumer groups
+
+A consumer-group can be created as follows:
+
+```bash
+# create group with offset for all partitions set to oldest
+kafkactl create consumer-group my-group --topic my-topic --oldest
+# create group with offset for all partitions set to newest
+kafkactl create consumer-group my-group --topic my-topic --newest
+# create group with offset for a single partition set to specific offset
+kafkactl create consumer-group my-group --topic my-topic --partition 5 --offset 100
+# create group for multiple topics with offset for all partitions set to oldest
+kafkactl create consumer-group my-group --topic my-topic-a --topic my-topic-b --oldest
+```
+
 ### Reset consumer group offsets
 
 in order to ensure the reset does what it is expected, per default only
@@ -595,11 +610,10 @@ kafkactl reset offset my-group --topic my-topic --oldest
 kafkactl reset offset my-group --topic my-topic --newest
 # reset offset for a single partition to specific offset
 kafkactl reset offset my-group --topic my-topic --partition 5 --offset 100
-# reset offset to newest for all topics in the cluster
+# reset offset to newest for all topics in the group
 kafkactl reset offset my-group --all-topics --newest
-# reset offset to newest for all topics read from a text file. Newline separated, ignore empty line and trailing spaces 
-kafkactl reset offset my-group --topic-list-file <filename> --newest
-
+# reset offset of for all partitions on multiple topics to oldest offset
+kafkactl reset offset my-group --topic my-topic-a --topic my-topic-b --oldest
 ```
 
 ### Delete consumer group offsets

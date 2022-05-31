@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add option `--all-topics` to allow reset consumergroup for all topics. See [#127](https://github.com/deviceinsight/kafkactl/issues/127)
 - add parameter `--topic-list-file` to allow reset consumergroup for all topics from the text file 
 
-##  - 2022-05-25
+### Added
+- [#127](https://github.com/deviceinsight/kafkactl/issues/127) the commands `create consumer-group` and `reset consumer-group-offset` can now be called with multiple `--topic` parameters.
+  Additionally, `reset consumer-group-offset` can be called with `--all-topics` parameter, which will reset all topics in the group.
 
 ## 2.2.1 - 2022-04-04
 

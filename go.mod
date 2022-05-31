@@ -33,7 +33,7 @@ require (
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
 	gopkg.in/ini.v1 v1.61.0 // indirect
 	gopkg.in/yaml.v2 v2.3.0
-	gotest.tools/gotestsum v1.7.0 // indirect
+	gotest.tools/gotestsum v1.8.1 // indirect
 )
 
 go 1.16

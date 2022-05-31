@@ -28,7 +28,7 @@ func newCreateConsumerGroupCmd() *cobra.Command {
 	cmdCreateConsumerGroup.Flags().BoolVarP(&cgFlags.NewestOffset, "newest", "", false, "set the offset to newest offset (for all partitions or the specified partition)")
 	cmdCreateConsumerGroup.Flags().Int64VarP(&cgFlags.Offset, "offset", "", -1, "set offset to this value. offset with value -1 is ignored")
 	cmdCreateConsumerGroup.Flags().Int32VarP(&cgFlags.Partition, "partition", "p", -1, "partition to create group for. -1 stands for all partitions")
-	cmdCreateConsumerGroup.Flags().StringVarP(&cgFlags.Topic, "topic", "t", cgFlags.Topic, "topic to change create group for")
+	cmdCreateConsumerGroup.Flags().StringArrayVarP(&cgFlags.Topic, "topic", "t", cgFlags.Topic, "one or more topics to create group for")
 
 	return cmdCreateConsumerGroup
 }

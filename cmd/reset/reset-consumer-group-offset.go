@@ -29,11 +29,10 @@ func newResetOffsetCmd() *cobra.Command {
 
 	cmdResetOffset.Flags().BoolVarP(&offsetFlags.OldestOffset, "oldest", "", false, "set the offset to oldest offset (for all partitions or the specified partition)")
 	cmdResetOffset.Flags().BoolVarP(&offsetFlags.NewestOffset, "newest", "", false, "set the offset to newest offset (for all partitions or the specified partition)")
-	cmdResetOffset.Flags().BoolVarP(&offsetFlags.AllTopics, "all-topics", "", false, "do the operation for all topics")
-	cmdResetOffset.Flags().StringVarP(&offsetFlags.TopicListFile, "topic-list-file", "f", "", "use topic list from text file")
+	cmdResetOffset.Flags().BoolVarP(&offsetFlags.AllTopics, "all-topics", "", false, "do the operation for all topics in the consumer group")
 	cmdResetOffset.Flags().Int64VarP(&offsetFlags.Offset, "offset", "", -1, "set offset to this value. offset with value -1 is ignored")
 	cmdResetOffset.Flags().Int32VarP(&offsetFlags.Partition, "partition", "p", -1, "partition to apply the offset. -1 stands for all partitions")
-	cmdResetOffset.Flags().StringVarP(&offsetFlags.Topic, "topic", "t", offsetFlags.Topic, "topic to change offset for")
+	cmdResetOffset.Flags().StringArrayVarP(&offsetFlags.Topic, "topic", "t", offsetFlags.Topic, "one ore more topics to change offset for")
 	cmdResetOffset.Flags().BoolVarP(&offsetFlags.Execute, "execute", "e", false, "execute the reset (as default only the results are displayed for validation)")
 	cmdResetOffset.Flags().StringVarP(&offsetFlags.OutputFormat, "output", "o", offsetFlags.OutputFormat, "output format. One of: json|yaml")
 
