@@ -494,12 +494,12 @@ kafkactl create consumer-group GROUP [flags]
 ##### Options
 
 ```
-  -h, --help              help for consumer-group
-      --newest            set the offset to newest offset (for all partitions or the specified partition)
-      --offset int        set offset to this value. offset with value -1 is ignored (default -1)
-      --oldest            set the offset to oldest offset (for all partitions or the specified partition)
-  -p, --partition int32   partition to create group for. -1 stands for all partitions (default -1)
-  -t, --topic string      topic to change create group for
+  -h, --help                help for consumer-group
+      --newest              set the offset to newest offset (for all partitions or the specified partition)
+      --offset int          set offset to this value. offset with value -1 is ignored (default -1)
+      --oldest              set the offset to oldest offset (for all partitions or the specified partition)
+  -p, --partition int32     partition to create group for. -1 stands for all partitions (default -1)
+  -t, --topic stringArray   one or more topics to create group for
 ```
 
 ##### Options inherited from parent commands
@@ -1092,14 +1092,15 @@ kafkactl reset consumer-group-offset GROUP [flags]
 ##### Options
 
 ```
-  -e, --execute           execute the reset (as default only the results are displayed for validation)
-  -h, --help              help for consumer-group-offset
-      --newest            set the offset to newest offset (for all partitions or the specified partition)
-      --offset int        set offset to this value. offset with value -1 is ignored (default -1)
-      --oldest            set the offset to oldest offset (for all partitions or the specified partition)
-  -o, --output string     output format. One of: json|yaml
-  -p, --partition int32   partition to apply the offset. -1 stands for all partitions (default -1)
-  -t, --topic string      topic to change offset for
+      --all-topics          do the operation for all topics in the consumer group
+  -e, --execute             execute the reset (as default only the results are displayed for validation)
+  -h, --help                help for consumer-group-offset
+      --newest              set the offset to newest offset (for all partitions or the specified partition)
+      --offset int          set offset to this value. offset with value -1 is ignored (default -1)
+      --oldest              set the offset to oldest offset (for all partitions or the specified partition)
+  -o, --output string       output format. One of: json|yaml
+  -p, --partition int32     partition to apply the offset. -1 stands for all partitions (default -1)
+  -t, --topic stringArray   one ore more topics to change offset for
 ```
 
 ##### Options inherited from parent commands

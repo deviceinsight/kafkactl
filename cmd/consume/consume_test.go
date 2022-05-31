@@ -161,7 +161,7 @@ func TestAvroDeserializationErrorHandlingIntegration(t *testing.T) {
 
 	topicName := testutil.CreateAvroTopic(t, "avro-topic", "", valueSchema)
 
-	group := testutil.CreateConsumerGroup(t, topicName, "avro-topic-consumer-group")
+	group := testutil.CreateConsumerGroup(t, "avro-topic-consumer-group", topicName)
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
@@ -325,11 +325,11 @@ func TestConsumeGroupIntegration(t *testing.T) {
 
 	topicName := testutil.CreateTopic(t, prefix+"topic")
 
-	group1 := testutil.CreateConsumerGroup(t, topicName, prefix+"a")
+	group1 := testutil.CreateConsumerGroup(t, prefix+"a", topicName)
 
 	testutil.ProduceMessage(t, topicName, "test-key", "test-value1", 0, 0)
 
-	group2 := testutil.CreateConsumerGroup(t, topicName, prefix+"b")
+	group2 := testutil.CreateConsumerGroup(t, prefix+"b", topicName)
 
 	testutil.ProduceMessage(t, topicName, "test-key", "test-value2", 0, 1)
 
@@ -383,9 +383,9 @@ func TestConsumeGroupCompletionIntegration(t *testing.T) {
 
 	topicName := testutil.CreateTopic(t, prefix+"topic")
 
-	group1 := testutil.CreateConsumerGroup(t, topicName, prefix+"a")
-	group2 := testutil.CreateConsumerGroup(t, topicName, prefix+"b")
-	group3 := testutil.CreateConsumerGroup(t, topicName, prefix+"c")
+	group1 := testutil.CreateConsumerGroup(t, prefix+"a", topicName)
+	group2 := testutil.CreateConsumerGroup(t, prefix+"b", topicName)
+	group3 := testutil.CreateConsumerGroup(t, prefix+"c", topicName)
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 	kafkaCtl.Verbose = false

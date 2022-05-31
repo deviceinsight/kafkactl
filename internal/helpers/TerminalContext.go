@@ -1,4 +1,4 @@
-package consume
+package helpers
 
 import (
 	"context"
