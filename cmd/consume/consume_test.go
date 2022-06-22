@@ -279,6 +279,26 @@ func TestProtobufConsumeProtoFileWithoutProtoImportPathIntegration(t *testing.T)
 	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, kafkaCtl.GetStdOut())
 }
 
+func TestConsumeTombstoneWithProtoFileIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	pbTopic := testutil.CreateTopic(t, "proto-file")
+	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", pbTopic, "--null-value"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "-o", "yaml", "--proto-import-path", protoPath, "--proto-file", "msg.proto", "--value-proto-type", "TopicMessage"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	record := strings.ReplaceAll(kafkaCtl.GetStdOut(), "\n", " ")
+	testutil.AssertEquals(t, "partition: 0 offset: 0 value: null", record)
+}
+
 func TestProtobufConsumeProtosetFileIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 

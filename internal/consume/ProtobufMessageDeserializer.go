@@ -135,6 +135,10 @@ func (deserializer ProtobufMessageDeserializer) CanDeserialize(_ string) (bool, 
 }
 
 func decodeProtobuf(b []byte, msgDesc *desc.MessageDescriptor, encoding string) (*string, error) {
+	if len(b) == 0 { // tombstone record, can't be unmarshalled as protobuf
+		return nil, nil
+	}
+
 	msg := dynamic.NewMessage(msgDesc)
 	if err := msg.Unmarshal(b); err != nil {
 		return nil, err
