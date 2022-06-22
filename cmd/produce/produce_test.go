@@ -252,6 +252,73 @@ func TestProduceProtoFileIntegration(t *testing.T) {
 	testutil.AssertEquals(t, value, string(actualValue))
 }
 
+func TestProduceProtoFileWithoutProtoImportPathIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	pbTopic := testutil.CreateTopic(t, "produce-topic-pb")
+
+	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	key := `{"fvalue":1.2}`
+	value := `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`
+
+	if _, err := kafkaCtl.Execute("produce", pbTopic,
+		"--key", key, "--key-proto-type", "TopicKey",
+		"--value", value, "--value-proto-type", "TopicMessage",
+		"--proto-file", filepath.Join(protoPath, "msg.proto")); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "--print-keys", "--key-encoding", "hex", "--value-encoding", "hex"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	kv := strings.Split(kafkaCtl.GetStdOut(), "#")
+
+	rawKey, err := hex.DecodeString(strings.TrimSpace(kv[0]))
+	if err != nil {
+		t.Fatalf("Failed to decode key: %s", err)
+	}
+
+	rawValue, err := hex.DecodeString(strings.TrimSpace(kv[1]))
+	if err != nil {
+		t.Fatalf("Failed to decode value: %s", err)
+	}
+
+	keyMessage := dynamic.NewMessage(protobuf.ResolveMessageType(protobuf.SearchContext{
+		ProtoImportPaths: []string{protoPath},
+		ProtoFiles:       []string{"msg.proto"},
+	}, "TopicKey"))
+	valueMessage := dynamic.NewMessage(protobuf.ResolveMessageType(protobuf.SearchContext{
+		ProtoImportPaths: []string{protoPath},
+		ProtoFiles:       []string{"msg.proto"},
+	}, "TopicMessage"))
+
+	if err = keyMessage.Unmarshal(rawKey); err != nil {
+		t.Fatalf("Unmarshal key failed: %s", err)
+	}
+	if err = valueMessage.Unmarshal(rawValue); err != nil {
+		t.Fatalf("Unmarshal value failed: %s", err)
+	}
+
+	actualKey, err := keyMessage.MarshalJSON()
+	if err != nil {
+		t.Fatalf("Key to json failed: %s", err)
+	}
+
+	actualValue, err := valueMessage.MarshalJSON()
+	if err != nil {
+		t.Fatalf("Value to json failed: %s", err)
+	}
+
+	testutil.AssertEquals(t, key, string(actualKey))
+	testutil.AssertEquals(t, value, string(actualValue))
+}
+
 func TestProduceProtosetFileIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
