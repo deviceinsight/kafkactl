@@ -54,7 +54,7 @@ func makeDescriptors(context SearchContext) []*desc.FileDescriptor {
 			output.Warnf("Proto parser error [%s]: %s", err.GetPosition(), err)
 			return nil
 		},
-		WarningReporter: func(pos protoparse.ErrorWithPos) {
+		WarningReporter: func(err protoparse.ErrorWithPos) {
 			output.Warnf("Proto parse warning: %s", err)
 		},
 	}).ParseFiles(resolvedFilenames...)
