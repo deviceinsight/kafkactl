@@ -2,6 +2,8 @@ package protobuf
 
 import (
 	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -31,24 +33,31 @@ func makeDescriptors(context SearchContext) []*desc.FileDescriptor {
 	var ret []*desc.FileDescriptor
 
 	ret = appendProtosets(ret, context.ProtosetFiles)
+	importPaths := append([]string{}, context.ProtoImportPaths...)
 
-	absFiles, err := protoparse.ResolveFilenames(context.ProtoImportPaths, context.ProtoFiles...)
+	// extend import paths with existing files directories
+	// this allows to specify only proto file path
+	for _, existingFile := range getExistingFiles(context.ProtoFiles) {
+		importPaths = append(importPaths, filepath.Dir(existingFile))
+	}
+
+	resolvedFilenames, err := protoparse.ResolveFilenames(importPaths, context.ProtoFiles...)
 	if err != nil {
 		output.Warnf("Resolve proto files failed: %s", err)
 		return ret
 	}
 
 	protoFiles, err := (&protoparse.Parser{
-		ImportPaths:      append([]string{"."}, context.ProtoImportPaths...),
+		ImportPaths:      importPaths,
 		InferImportPaths: true,
 		ErrorReporter: func(err protoparse.ErrorWithPos) error {
 			output.Warnf("Proto parser error [%s]: %s", err.GetPosition(), err)
 			return nil
 		},
-		WarningReporter: func(pos protoparse.ErrorWithPos) {
+		WarningReporter: func(err protoparse.ErrorWithPos) {
 			output.Warnf("Proto parse warning: %s", err)
 		},
-	}).ParseFiles(absFiles...)
+	}).ParseFiles(resolvedFilenames...)
 	if err != nil {
 		output.Warnf("Proto files parse error: %s", err)
 	}
@@ -86,4 +95,24 @@ func appendProtosets(descs []*desc.FileDescriptor, protosetFiles []string) []*de
 	}
 
 	return descs
+}
+
+func getExistingFiles(protoFiles []string) []string {
+	var existing []string
+
+	for _, protoFile := range protoFiles {
+		_, err := os.Stat(protoFile)
+		if err != nil {
+			continue
+		}
+
+		abs, err := filepath.Abs(protoFile)
+		if err != nil {
+			continue
+		}
+
+		existing = append(existing, abs)
+	}
+
+	return existing
 }

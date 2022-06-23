@@ -243,6 +243,62 @@ func TestProtobufConsumeProtoFileIntegration(t *testing.T) {
 	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, kafkaCtl.GetStdOut())
 }
 
+func TestProtobufConsumeProtoFileWithoutProtoImportPathIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	pbTopic := testutil.CreateTopic(t, "proto-file")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+	now := time.Date(2021, time.December, 1, 14, 10, 12, 0, time.UTC)
+	pbMessageDesc := protobuf.ResolveMessageType(protobuf.SearchContext{
+		ProtoImportPaths: []string{protoPath},
+		ProtoFiles:       []string{"msg.proto"},
+	}, "TopicMessage")
+	pbMessage := dynamic.NewMessage(pbMessageDesc)
+	pbMessage.SetFieldByNumber(1, timestamppb.New(now))
+	pbMessage.SetFieldByNumber(2, int64(1))
+
+	value, err := pbMessage.Marshal()
+	if err != nil {
+		t.Fatalf("Failed to marshal proto message: %s", err)
+	}
+
+	// produce valid pb message
+	if _, err := kafkaCtl.Execute("produce", pbTopic, "--key", "test-key", "--value", hex.EncodeToString(value), "--value-encoding", "hex"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "--proto-file", filepath.Join(protoPath, "msg.proto"), "--value-proto-type", "TopicMessage"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, kafkaCtl.GetStdOut())
+}
+
+func TestConsumeTombstoneWithProtoFileIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	pbTopic := testutil.CreateTopic(t, "proto-file")
+	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", pbTopic, "--null-value"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "-o", "yaml", "--proto-import-path", protoPath, "--proto-file", "msg.proto", "--value-proto-type", "TopicMessage"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	record := strings.ReplaceAll(kafkaCtl.GetStdOut(), "\n", " ")
+	testutil.AssertEquals(t, "partition: 0 offset: 0 value: null", record)
+}
+
 func TestProtobufConsumeProtosetFileIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 

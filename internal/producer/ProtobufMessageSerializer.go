@@ -17,13 +17,13 @@ type ProtobufMessageSerializer struct {
 
 func CreateProtobufMessageSerializer(topic string, context protobuf.SearchContext, keyType, valueType string) (*ProtobufMessageSerializer, error) {
 	valueDescriptor := protobuf.ResolveMessageType(context, valueType)
-	if valueDescriptor == nil {
+	if valueDescriptor == nil && valueType != "" {
 		return nil, errors.Errorf("value message type %q not found in provided files", valueType)
 	}
 
 	keyDescriptor := protobuf.ResolveMessageType(context, keyType)
-	if valueDescriptor == nil && keyType != "" {
-		return nil, errors.Errorf("key message type %q not found in provided files", valueType)
+	if keyDescriptor == nil && keyType != "" {
+		return nil, errors.Errorf("key message type %q not found in provided files", keyType)
 	}
 
 	return &ProtobufMessageSerializer{
