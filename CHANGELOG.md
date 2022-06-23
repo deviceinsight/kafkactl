@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2.4.0 - 2022-06-23
+### Fixed
+- [#129](https://github.com/deviceinsight/kafkactl/issues/129) Fix tombstone record handling if protobuf encoding used.
+- allow producing messages where only key is protobuf encoded
+
+### Changed
+- Implicitly extend `--proto-import-path` with existing file path from `--proto-file` so that the parameter can be neglected in some cases.
+
 ## 2.3.0 - 2022-05-31
 
 ### Added

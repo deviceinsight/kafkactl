@@ -86,7 +86,7 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 		serializers.serializers = append(serializers.serializers, serializer)
 	}
 
-	if flags.ValueProtoType != "" {
+	if flags.KeyProtoType != "" || flags.ValueProtoType != "" {
 		context := clientContext.Protobuf
 		context.ProtosetFiles = append(flags.ProtosetFiles, context.ProtosetFiles...)
 		context.ProtoFiles = append(flags.ProtoFiles, context.ProtoFiles...)
