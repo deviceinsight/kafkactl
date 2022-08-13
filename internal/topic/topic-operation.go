@@ -506,15 +506,15 @@ func (operation *Operation) GetTopics(flags GetTopicsFlags) error {
 	var requestedFields requestedTopicFields
 
 	if flags.OutputFormat == "" {
-		requestedFields = requestedTopicFields{partitionID: true}
-		if err := tableWriter.WriteHeader("TOPIC", "PARTITIONS"); err != nil {
+		requestedFields = requestedTopicFields{partitionID: true, partitionReplicas: true}
+		if err := tableWriter.WriteHeader("TOPIC", "PARTITIONS", "REPLICATION FACTOR"); err != nil {
 			return err
 		}
 	} else if flags.OutputFormat == "compact" {
 		tableWriter.Initialize()
 	} else if flags.OutputFormat == "wide" {
-		requestedFields = requestedTopicFields{partitionID: true, config: true}
-		if err := tableWriter.WriteHeader("TOPIC", "PARTITIONS", "CONFIGS"); err != nil {
+		requestedFields = requestedTopicFields{partitionID: true, partitionReplicas: true, config: true}
+		if err := tableWriter.WriteHeader("TOPIC", "PARTITIONS", "REPLICATION FACTOR", "CONFIGS"); err != nil {
 			return err
 		}
 	} else if flags.OutputFormat == "json" {
@@ -558,7 +558,7 @@ func (operation *Operation) GetTopics(flags GetTopicsFlags) error {
 		return output.PrintObject(topicList, flags.OutputFormat)
 	} else if flags.OutputFormat == "wide" {
 		for _, t := range topicList {
-			if err := tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions)), getConfigString(t.Configs)); err != nil {
+			if err := tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions)), replicationFactor(t), getConfigString(t.Configs)); err != nil {
 				return err
 			}
 		}
@@ -570,7 +570,7 @@ func (operation *Operation) GetTopics(flags GetTopicsFlags) error {
 		}
 	} else {
 		for _, t := range topicList {
-			if err := tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions))); err != nil {
+			if err := tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions)), replicationFactor(t)); err != nil {
 				return err
 			}
 		}
@@ -681,6 +681,18 @@ func getConfigString(configs []internal.Config) string {
 	}
 
 	return strings.Trim(strings.Join(configStrings, ","), "[]")
+}
+
+// replicationFactor for topic calculated as minimal replication factor across partitions.
+func replicationFactor(t Topic) string {
+	var factor int
+	for _, partition := range t.Partitions {
+		if len(partition.Replicas) < factor || factor == 0 {
+			factor = len(partition.Replicas)
+		}
+	}
+
+	return strconv.Itoa(factor)
 }
 
 func CompleteTopicNames(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
