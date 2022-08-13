@@ -8,7 +8,7 @@ url="https://github.com/deviceinsight/kafkactl/"
 arch=("i686" "x86_64" "aarch64")
 license=("APACHE")
 depends=("glibc")
-makedepends=('go>=1.16')
+makedepends=('go>=1.19')
 optdepends=('kubectl: for kafka running in Kubernetes cluster',
 'bash-completion: auto-completion for kafkactl in Bash',
 'zsh-completions: auto-completion for kafkactl in ZSH')

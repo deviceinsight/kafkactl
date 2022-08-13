@@ -1,7 +1,6 @@
 package config_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
@@ -47,7 +46,7 @@ current-context: default`
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	configContent, err := ioutil.ReadFile(newConfigFile)
+	configContent, err := os.ReadFile(newConfigFile)
 	if err != nil {
 		t.Fatalf("error reading generated config %s %v", newConfigFile, err)
 	}
