@@ -264,6 +264,15 @@ func (kafkactl *KafkaCtlTestCommand) GetStdOut() string {
 	return kafkactl.Streams.Out.(*bytes.Buffer).String()
 }
 
+func (kafkactl *KafkaCtlTestCommand) GetStdOutLines() []string {
+
+	space := regexp.MustCompile(`[[:blank:]]{2,}`)
+
+	stdOutput := space.ReplaceAllString(kafkactl.GetStdOut(), "|")
+
+	return strings.Split(stdOutput, "\n")
+}
+
 func (kafkactl *KafkaCtlTestCommand) GetStdErr() string {
 	return kafkactl.Streams.ErrOut.(*bytes.Buffer).String()
 }
