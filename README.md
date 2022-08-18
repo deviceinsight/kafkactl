@@ -557,6 +557,16 @@ The assigned replicas of a partition can directly be altered with:
 kafkactl alter topic my-topic 3 -r 102,103
 ```
 
+### Clone topic
+
+New topic may be created from existing topic as follows:
+```bash
+kafkactl clone topic source-topic target-topic
+```
+
+Source topic must not exist, target topic must not exist.
+`kafkactl` clones partitions count, replication factor and config entries.
+
 ### Consumer groups
 
 In order to get a list of consumer groups the `get consumer-groups` command can be used:
@@ -597,6 +607,16 @@ kafkactl create consumer-group my-group --topic my-topic --partition 5 --offset 
 # create group for multiple topics with offset for all partitions set to oldest
 kafkactl create consumer-group my-group --topic my-topic-a --topic my-topic-b --oldest
 ```
+
+### Clone consumer group
+
+A consumer group may be created as clone of another consumer group as follows:
+```bash
+kafkactl clone consumer-group source-group target-group
+```
+
+Source group must exist and have committed offsets. Target group must not exist or don't have committed offsets.
+`kafkactl` clones topic assignment and partition offsets.
 
 ### Reset consumer group offsets
 

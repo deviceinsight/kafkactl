@@ -176,6 +176,131 @@ func (operation *ConsumerGroupOffsetOperation) CreateConsumerGroup(flags ResetCo
 	return nil
 }
 
+type PartitionOffset struct {
+	Offset   int64
+	Metadata string
+}
+
+type SettingOffsetConsumer struct {
+	Topic            string
+	PartitionOffsets map[int32]PartitionOffset
+
+	ready chan struct{}
+}
+
+func (s *SettingOffsetConsumer) Setup(session sarama.ConsumerGroupSession) error {
+	s.ready = make(chan struct{})
+
+	for partition, offset := range s.PartitionOffsets {
+		session.MarkOffset(s.Topic, partition, offset.Offset, offset.Metadata)
+	}
+
+	return nil
+}
+
+func (s *SettingOffsetConsumer) Cleanup(sarama.ConsumerGroupSession) error {
+	close(s.ready)
+	return nil
+}
+
+func (s *SettingOffsetConsumer) ConsumeClaim(sarama.ConsumerGroupSession, sarama.ConsumerGroupClaim) error {
+	return nil
+}
+
+func (operation *ConsumerGroupOffsetOperation) CloneConsumerGroup(srcGroup, targetGroup string) error {
+	var (
+		err                       error
+		context                   internal.ClientContext
+		config                    *sarama.Config
+		admin                     sarama.ClusterAdmin
+		srcOffsets, targetOffsets *sarama.OffsetFetchResponse
+	)
+
+	if context, err = internal.CreateClientContext(); err != nil {
+		return err
+	}
+
+	if config, err = internal.CreateClientConfig(&context); err != nil {
+		return err
+	}
+
+	if admin, err = internal.CreateClusterAdmin(&context); err != nil {
+		return errors.Wrap(err, "failed to create cluster admin")
+	}
+
+	if srcOffsets, err = admin.ListConsumerGroupOffsets(srcGroup, nil); err != nil {
+		return errors.Wrapf(err, "failed to get consumerGroup '%s' offsets", srcGroup)
+	}
+
+	if len(srcOffsets.Blocks) == 0 {
+		return errors.Errorf("consumerGroup '%s' does not contain offsets", srcGroup)
+	}
+
+	if targetOffsets, err = admin.ListConsumerGroupOffsets(targetGroup, nil); err != nil {
+		return errors.Wrapf(err, "failed to get consumerGroup '%s' offsets", targetGroup)
+	}
+
+	if len(targetOffsets.Blocks) != 0 {
+		return errors.Errorf("consumerGroup '%s' contains offsets", targetGroup)
+	}
+
+	topicPartitionOffsets := make(map[string]map[int32]PartitionOffset) // topic->partition->offset
+
+	for topic, partitions := range srcOffsets.Blocks {
+		p := topicPartitionOffsets[topic]
+		if p == nil {
+			p = make(map[int32]PartitionOffset)
+		}
+
+		for partition, block := range partitions {
+			p[partition] = PartitionOffset{Offset: block.Offset, Metadata: block.Metadata}
+		}
+
+		topicPartitionOffsets[topic] = p
+	}
+
+	consumerGroup, err := sarama.NewConsumerGroup(context.Brokers, targetGroup, config)
+	if err != nil {
+		return errors.Errorf("failed to create consumer group %s: %v", targetGroup, err)
+	}
+
+	terminalCtx := helpers.CreateTerminalContext()
+
+	consumeErrorGroup, _ := errgroup.WithContext(terminalCtx)
+	consumeErrorGroup.SetLimit(100)
+
+	for topic, partitionOffsets := range topicPartitionOffsets {
+		topicName, offsets := topic, partitionOffsets
+		consumeErrorGroup.Go(func() error {
+			consumer := SettingOffsetConsumer{
+				Topic:            topicName,
+				PartitionOffsets: offsets,
+			}
+
+			err = consumerGroup.Consume(terminalCtx, []string{topicName}, &consumer)
+			if err != nil {
+				return err
+			}
+			<-consumer.ready
+			return nil
+		})
+	}
+
+	err = consumeErrorGroup.Wait()
+	if err != nil {
+		return err
+	}
+
+	err = consumerGroup.Close()
+	if err != nil {
+		return err
+	}
+
+	output.Infof("consumer-group %s cloned to %s", srcGroup, targetGroup)
+
+	return nil
+}
+
 type Consumer struct {
 	ready     chan bool
 	client    sarama.Client

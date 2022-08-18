@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 - [#105](https://github.com/deviceinsight/kafkactl/issues/105) Add replication factor to `get topics`
 - [#108](https://github.com/deviceinsight/kafkactl/issues/108) Fix "system root pool not available on Windows" by migrating to go 1.19
+- Add `clone` command for `consumer-group` and `topic`
+- Print topic configs when yaml and json output format used with `-c` flag
 
 ## 2.4.0 - 2022-06-23
 ### Fixed
