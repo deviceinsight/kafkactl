@@ -564,7 +564,7 @@ New topic may be created from existing topic as follows:
 kafkactl clone topic source-topic target-topic
 ```
 
-Source topic must not exist, target topic must not exist.
+Source topic must exist, target topic must not exist.
 `kafkactl` clones partitions count, replication factor and config entries.
 
 ### Consumer groups
