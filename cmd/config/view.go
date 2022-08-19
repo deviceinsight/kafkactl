@@ -1,7 +1,7 @@
 package config
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"
@@ -17,7 +17,7 @@ func newViewCmd() *cobra.Command {
 		Long:  `Shows the contents of the config file that is currently used`,
 		Run: func(cmd *cobra.Command, args []string) {
 
-			yamlFile, err := ioutil.ReadFile(viper.ConfigFileUsed())
+			yamlFile, err := os.ReadFile(viper.ConfigFileUsed())
 			if err != nil {
 				output.Fail(errors.Wrap(err, "unable to read config"))
 			}

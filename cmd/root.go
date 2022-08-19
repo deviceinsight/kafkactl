@@ -10,6 +10,7 @@ import (
 
 	"github.com/deviceinsight/kafkactl/cmd/alter"
 	"github.com/deviceinsight/kafkactl/cmd/attach"
+	"github.com/deviceinsight/kafkactl/cmd/clone"
 	"github.com/deviceinsight/kafkactl/cmd/config"
 	"github.com/deviceinsight/kafkactl/cmd/consume"
 	"github.com/deviceinsight/kafkactl/cmd/create"
@@ -52,6 +53,7 @@ func NewKafkactlCommand(streams output.IOStreams) *cobra.Command {
 	rootCmd.AddCommand(produce.NewProduceCmd())
 	rootCmd.AddCommand(reset.NewResetCmd())
 	rootCmd.AddCommand(attach.NewAttachCmd())
+	rootCmd.AddCommand(clone.NewCloneCmd())
 	rootCmd.AddCommand(newCompletionCmd())
 	rootCmd.AddCommand(newVersionCmd())
 	rootCmd.AddCommand(newDocsCmd())

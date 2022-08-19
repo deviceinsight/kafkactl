@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"os/user"
 	"regexp"
 	"strings"
@@ -236,7 +236,7 @@ func setupTLSConfig(tlsConfig TLSConfig) (*tls.Config, error) {
 	}
 
 	if tlsConfig.CA != "" {
-		caString, err := ioutil.ReadFile(tlsConfig.CA)
+		caString, err := os.ReadFile(tlsConfig.CA)
 		if err != nil {
 			return nil, err
 		}

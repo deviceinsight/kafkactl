@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -480,7 +479,7 @@ func TestProduceLongMessageSucceedsIntegration(t *testing.T) {
 
 	topic := testutil.CreateTopic(t, "produce-topic-long")
 
-	file, err := ioutil.TempFile(os.TempDir(), "long-message-")
+	file, err := os.CreateTemp(os.TempDir(), "long-message-")
 	if err != nil {
 		t.Fatalf("unable to generate test file: %v", err)
 	}
@@ -510,7 +509,7 @@ func TestProduceLongMessageFailsIntegration(t *testing.T) {
 
 	topic := testutil.CreateTopic(t, "produce-topic-long")
 
-	file, err := ioutil.TempFile(os.TempDir(), "long-message-")
+	file, err := os.CreateTemp(os.TempDir(), "long-message-")
 	if err != nil {
 		t.Fatalf("unable to generate test file: %v", err)
 	}

@@ -18,6 +18,7 @@ A command-line interface the simplifies interaction with Kafka.
 
 * [kafkactl alter](#kafkactl-alter)	 - alter topics, partitions
 * [kafkactl attach](#kafkactl-attach)	 - run kafkactl pod in kubernetes and attach to it
+* [kafkactl clone](#kafkactl-clone)	 - clone topics, consumerGroups
 * [kafkactl completion](#kafkactl-completion)	 - generate shell auto-completion file
 * [kafkactl config](#kafkactl-config)	 - show and edit configurations
 * [kafkactl consume](#kafkactl-consume)	 - consume messages from a topic
@@ -152,6 +153,94 @@ kafkactl attach [flags]
 #### SEE ALSO
 
 * [kafkactl](#kafkactl)	 - command-line interface for Apache Kafka
+
+
+### kafkactl clone
+
+clone topics, consumerGroups
+
+#### Synopsis
+
+clone topics, consumerGroups
+
+#### Options
+
+```
+  -h, --help   help for clone
+```
+
+#### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -V, --verbose              verbose output
+```
+
+#### SEE ALSO
+
+* [kafkactl](#kafkactl)	 - command-line interface for Apache Kafka
+* [kafkactl clone consumer-group](#kafkactl-clone-consumer-group)	 - clone existing consumerGroup with all offsets
+* [kafkactl clone topic](#kafkactl-clone-topic)	 - clone existing topic (number of partitions, replication factor, config entries) to new one
+
+
+#### kafkactl clone consumer-group
+
+clone existing consumerGroup with all offsets
+
+##### Synopsis
+
+clone existing consumerGroup with all offsets
+
+```
+kafkactl clone consumer-group SOURCE_GROUP TARGET_GROUP [flags]
+```
+
+##### Options
+
+```
+  -h, --help   help for consumer-group
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl clone](#kafkactl-clone)	 - clone topics, consumerGroups
+
+
+#### kafkactl clone topic
+
+clone existing topic (number of partitions, replication factor, config entries) to new one
+
+##### Synopsis
+
+clone existing topic (number of partitions, replication factor, config entries) to new one
+
+```
+kafkactl clone topic SOURCE_TOPIC TARGET_TOPIC [flags]
+```
+
+##### Options
+
+```
+  -h, --help   help for topic
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl clone](#kafkactl-clone)	 - clone topics, consumerGroups
 
 
 ### kafkactl completion

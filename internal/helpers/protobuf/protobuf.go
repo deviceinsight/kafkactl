@@ -1,7 +1,6 @@
 package protobuf
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -71,7 +70,7 @@ func appendProtosets(descs []*desc.FileDescriptor, protosetFiles []string) []*de
 	for _, protosetFile := range protosetFiles {
 		var files descriptorpb.FileDescriptorSet
 
-		b, err := ioutil.ReadFile(protosetFile)
+		b, err := os.ReadFile(protosetFile)
 		if err != nil {
 			output.Warnf("Read protoset file %s failed: %s", protosetFile, err)
 			continue

@@ -3,7 +3,7 @@ package output
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 
@@ -11,8 +11,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var DebugLogger StdLogger = log.New(ioutil.Discard, "[kafkactl] ", log.LstdFlags)
-var TestLogger StdLogger = log.New(ioutil.Discard, "[test    ] ", log.LstdFlags)
+var DebugLogger StdLogger = log.New(io.Discard, "[kafkactl] ", log.LstdFlags)
+var TestLogger StdLogger = log.New(io.Discard, "[test    ] ", log.LstdFlags)
 
 // StdLogger is used to log error messages.
 type StdLogger interface {
