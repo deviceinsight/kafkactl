@@ -15,6 +15,7 @@ const (
 	ClientID                = "CLIENTID"
 	KafkaVersion            = "KAFKAVERSION"
 	AvroSchemaRegistry      = "AVRO_SCHEMAREGISTRY"
+	AvroJSONCodec           = "AVRO_JSONCODEC"
 	ProtobufProtoSetFiles   = "PROTOBUF_PROTOSETFILES"
 	ProtobufImportPaths     = "PROTOBUF_IMPORTPATHS"
 	ProtobufProtoFiles      = "PROTOBUF_PROTOFILES"
@@ -38,6 +39,7 @@ var Variables = []string{
 	ClientID,
 	KafkaVersion,
 	AvroSchemaRegistry,
+	AvroJSONCodec,
 	ProtobufProtoSetFiles,
 	ProtobufImportPaths,
 	ProtobufProtoFiles,
