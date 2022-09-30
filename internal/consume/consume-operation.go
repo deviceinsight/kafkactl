@@ -77,7 +77,7 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 	var deserializers MessageDeserializerChain
 
 	if clientContext.AvroSchemaRegistry != "" {
-		deserializer, err := CreateAvroMessageDeserializer(topic, clientContext.AvroSchemaRegistry)
+		deserializer, err := CreateAvroMessageDeserializer(topic, clientContext.AvroSchemaRegistry, clientContext.AvroJSONCodec)
 		if err != nil {
 			return err
 		}

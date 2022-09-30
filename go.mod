@@ -8,7 +8,7 @@ require (
 	github.com/golang/protobuf v1.4.2
 	github.com/jhump/protoreflect v1.10.1
 	github.com/landoop/schema-registry v0.0.0-20190327143759-50a5701c1891
-	github.com/linkedin/goavro/v2 v2.10.0
+	github.com/linkedin/goavro/v2 v2.11.2-0.20220819205120-9a4764661614
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.0.1-0.20200629195214-2c5a0d300f8b
 	github.com/spf13/pflag v1.0.5
