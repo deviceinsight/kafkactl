@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deviceinsight/kafkactl/internal/env"
+
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/cmd"
 	"github.com/deviceinsight/kafkactl/internal"
@@ -64,6 +66,12 @@ func init() {
 
 	if err := os.Setenv("KAFKA_CTL_CONFIG", filepath.Join(rootDir, configFile)); err != nil {
 		panic(err)
+	}
+
+	for _, variable := range env.Variables {
+		if err := os.Setenv(variable, ""); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -189,6 +197,12 @@ func AssertErrorContains(t *testing.T, expected string, err error) {
 
 	if !strings.Contains(err.Error(), expected) {
 		t.Fatalf("expected error to contain: %s\n: %v", expected, err)
+	}
+}
+
+func AssertContainSubstring(t *testing.T, expected, actual string) {
+	if !strings.Contains(actual, expected) {
+		t.Fatalf("expected string to contain: %s actual: %s", expected, actual)
 	}
 }
 

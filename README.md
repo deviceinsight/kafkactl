@@ -123,6 +123,9 @@ contexts:
     # optional: avro schema registry
     avro:
       schemaRegistry: localhost:8081
+      # optional: configure codec for (de)serialization as standard,avro (defaults to standard)
+      # see: https://github.com/deviceinsight/kafkactl/issues/123
+      jsonCodec: avro
     
     # optional: default protobuf messages search paths
     protobuf:

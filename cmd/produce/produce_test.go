@@ -92,6 +92,122 @@ func TestProduceAvroMessageWithHeadersIntegration(t *testing.T) {
 	testutil.AssertEquals(t, fmt.Sprintf("key1:value1,key\\:2:value\\:2#test-key#%s", value), kafkaCtl.GetStdOut())
 }
 
+func TestProduceAvroMessageOmitDefaultValue(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	valueSchema := `{
+	  "name": "CreateUserProfileWallet",
+	  "namespace": "Messaging.Contracts.WalletManager.Commands",
+	  "type": "record",
+	  "fields": [
+		{ "name": "CurrencyCode", "type": "string" },
+		{ "name": "ExpiresOn", "type": ["null", "string"], "default": null}
+	  ]
+	}`
+	value := `{
+	 "CurrencyCode": "EUR"
+	}`
+
+	topicName := testutil.CreateAvroTopic(t, "produce-avro-topic", "", valueSchema)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", topicName, "--value", value); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	stdout := kafkaCtl.GetStdOut()
+	testutil.AssertContainSubstring(t, `"CurrencyCode":"EUR"`, stdout)
+	testutil.AssertContainSubstring(t, `"ExpiresOn":null`, stdout)
+}
+
+func TestProduceAvroMessageWithUnionStandardJson(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	valueSchema := `{
+	  "name": "CreateUserProfileWallet",
+	  "namespace": "Messaging.Contracts.WalletManager.Commands",
+	  "type": "record",
+	  "fields": [
+		{ "name": "CurrencyCode", "type": "string" },
+		{ "name": "ExpiresOn", "type": ["null", "string"], "default": null}
+	  ]
+	}`
+
+	value := `{
+	 "CurrencyCode": "EUR",
+	 "ExpiresOn": "2022-12-12"
+	}`
+
+	topicName := testutil.CreateAvroTopic(t, "produce-topic", "", valueSchema)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", topicName, "--value", value); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	stdout := kafkaCtl.GetStdOut()
+	testutil.AssertContainSubstring(t, `"CurrencyCode":"EUR"`, stdout)
+	testutil.AssertContainSubstring(t, `"ExpiresOn":"2022-12-12"`, stdout)
+}
+
+func TestProduceAvroMessageWithUnionAvroJson(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	valueSchema := `{
+	  "name": "CreateUserProfileWallet",
+	  "namespace": "Messaging.Contracts.WalletManager.Commands",
+	  "type": "record",
+	  "fields": [
+		{ "name": "CurrencyCode", "type": "string" },
+		{ "name": "ExpiresOn", "type": ["null", "string"], "default": null}
+	  ]
+	}`
+
+	value := `{
+	 "CurrencyCode": "EUR",
+	 "ExpiresOn": {"string": "2022-12-12"}
+	}`
+
+	if err := os.Setenv("AVRO_JSONCODEC", "avro"); err != nil {
+		t.Fatalf("unable to set env variable: %v", err)
+	}
+
+	topicName := testutil.CreateAvroTopic(t, "produce-topic", "", valueSchema)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", topicName, "--value", value); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	stdout := kafkaCtl.GetStdOut()
+	testutil.AssertContainSubstring(t, `"CurrencyCode":"EUR"`, stdout)
+	testutil.AssertContainSubstring(t, `"ExpiresOn":{"string":"2022-12-12"}`, stdout)
+}
+
 func TestProduceTombstoneIntegration(t *testing.T) {
 
 	testutil.StartIntegrationTest(t)
