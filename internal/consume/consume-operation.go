@@ -16,6 +16,7 @@ import (
 )
 
 type Flags struct {
+	PrintPartitions  bool
 	PrintKeys        bool
 	PrintTimestamps  bool
 	PrintAvroSchema  bool
