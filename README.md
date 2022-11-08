@@ -212,10 +212,10 @@ kafkactl completion fish > ~/.config/fish/completions/kafkactl.fish
 
 ## Running in docker
 
-Assuming your Kafka broker is accessible as `kafka:9092`, you can list topics by running: 
+Assuming your Kafka brokers are accessible under `kafka1:9092` and `kafka2:9092`, you can list topics by running: 
 
 ```bash
-docker run --env BROKERS=kafka:9092 deviceinsight/kafkactl:latest get topics
+docker run --env BROKERS="kafka1:9092 kafka2:9092" deviceinsight/kafkactl:latest get topics
 ```
 
 If a more elaborate config is needed, you can mount it as a volume:
@@ -234,6 +234,9 @@ for a key can be found by applying the following rules:
 1. write the key name in ALL CAPS
 
 e.g. the key `contexts.default.tls.certKey` has the corresponding environment variable `CONTEXTS_DEFAULT_TLS_CERTKEY`.
+
+**NOTE:** an array variable can be written using whitespace as delimiter. For example `BROKERS` can be provided as
+`BROKERS="broker1:9092 broker2:9092 broker3:9092"`.
 
 If environment variables for the `default` context should be set, the prefix `CONTEXTS_DEFAULT_` can be omitted.
 So, instead of `CONTEXTS_DEFAULT_TLS_CERTKEY` one can also set `TLS_CERTKEY`.

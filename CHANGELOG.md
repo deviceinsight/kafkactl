@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 3.0.1 - 2022-11-08
+### Fixed
+- [#138](https://github.com/deviceinsight/kafkactl/issues/138) remove default value for `BROKERS` in Dockerfiles
+
 ## 3.0.0 - 2022-09-30
 ### Changed
 - [#123](https://github.com/deviceinsight/kafkactl/issues/123) Make avro json codec configurable and switch default to standard json
