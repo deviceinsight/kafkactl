@@ -1,6 +1,5 @@
 FROM ubuntu:latest
 ENV USER docker
-ENV BROKERS localhost:9092
 COPY kafkactl /usr/local/bin
 RUN apt-get update && apt-get install -y bash-completion
 
