@@ -27,6 +27,7 @@ func NewConsumeCmd() *cobra.Command {
 		ValidArgsFunction: topic.CompleteTopicNames,
 	}
 
+	cmdConsume.Flags().BoolVarP(&flags.PrintPartitions, "print-partitions", "", false, "print message partitions")
 	cmdConsume.Flags().BoolVarP(&flags.PrintKeys, "print-keys", "k", false, "print message keys")
 	cmdConsume.Flags().BoolVarP(&flags.PrintTimestamps, "print-timestamps", "t", false, "print message timestamps")
 	cmdConsume.Flags().BoolVarP(&flags.PrintAvroSchema, "print-schema", "a", false, "print details about avro schema used for decoding")

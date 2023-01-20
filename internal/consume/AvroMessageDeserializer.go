@@ -197,7 +197,9 @@ func (deserializer AvroMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerM
 				row = append(row, "")
 			}
 		}
-
+		if flags.PrintPartitions {
+			row = append(row, strconv.Itoa(int(msg.Partition)))
+		}
 		if flags.PrintKeys {
 			if msg.Key != nil {
 				row = append(row, *msg.Key)

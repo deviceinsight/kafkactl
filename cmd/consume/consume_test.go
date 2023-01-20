@@ -31,6 +31,23 @@ func TestConsumeWithKeyAndValueIntegration(t *testing.T) {
 	testutil.AssertEquals(t, "test-key#test-value", kafkaCtl.GetStdOut())
 }
 
+func TestConsumeWithPartitionAndValueIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	topicName := testutil.CreateTopic(t, "consume-topic", "--partitions", "2")
+
+	testutil.ProduceMessage(t, topicName, "test-key", "test-value", 1, 0)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-partitions"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "1#test-value", kafkaCtl.GetStdOut())
+}
+
 func TestConsumeWithEmptyPartitionsIntegration(t *testing.T) {
 
 	testutil.StartIntegrationTest(t)

@@ -1,6 +1,7 @@
 package consume
 
 import (
+	"strconv"
 	"strings"
 	"time"
 
@@ -99,6 +100,10 @@ func (deserializer ProtobufMessageDeserializer) Deserialize(rawMsg *sarama.Consu
 		} else {
 			row = append(row, "")
 		}
+	}
+
+	if flags.PrintPartitions {
+		row = append(row, strconv.Itoa(int(msg.Partition)))
 	}
 
 	if flags.PrintKeys {
