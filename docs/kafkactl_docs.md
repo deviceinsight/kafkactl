@@ -476,6 +476,7 @@ kafkactl consume TOPIC [flags]
   -p, --partitions ints                                                                  partitions to consume. The default is to consume from all partitions.
       --print-headers                                                                    print message headers
   -k, --print-keys                                                                       print message keys
+      --print-partitions                                                                 print message partitions
   -a, --print-schema                                                                     print details about avro schema used for decoding
   -t, --print-timestamps                                                                 print message timestamps
       --proto-file strings                                                               additional protobuf description file for searching message description

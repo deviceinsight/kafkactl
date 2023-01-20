@@ -312,6 +312,11 @@ The following example prints message `key` and `timestamp` as well as `partition
 kafkactl consume my-topic --print-keys --print-timestamps -o yaml
 ```
 
+To print partition in default output format use:
+```bash
+kafkactl consume my-topic --print-partitions
+```
+
 Headers of kafka messages can be printed with the parameter `--print-headers` e.g.:
 ```bash
 kafkactl consume my-topic --print-headers -o yaml
@@ -730,4 +735,20 @@ In order to see linter errors before commit, add the following pre-commit hook:
 ```bash
 pip install --user pre-commit
 pre-commit install
+```
+
+### Pull requests
+
+```shell
+# checkout locally
+PULL_REQUEST_ID=123
+LOCAL_BRANCH_NAME=feature/abc
+git fetch origin pull/${PULL_REQUEST_ID}/head:${LOCAL_BRANCH_NAME}
+git checkout ${LOCAL_BRANCH_NAME}
+
+# push to PR
+NAME=username
+REMOTE_BRANCH_NAME=abc
+git remote add $NAME git@github.com:$NAME/kafkactl.git
+git push $NAME ${LOCAL_BRANCH_NAME}:${REMOTE_BRANCH_NAME}
 ```

@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 3.0.2 - 2023-01-20
+### Changed
+- [#143](https://github.com/deviceinsight/kafkactl/pull/143) Dependencies have been updated
+- [#139](https://github.com/deviceinsight/kafkactl/pull/139) Option to print partitions in default output format
+
 ## 3.0.1 - 2022-11-08
 ### Fixed
 - [#138](https://github.com/deviceinsight/kafkactl/issues/138) remove default value for `BROKERS` in Dockerfiles
