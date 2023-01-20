@@ -309,6 +309,11 @@ The following example prints message `key` and `timestamp` as well as `partition
 kafkactl consume my-topic --print-keys --print-timestamps -o yaml
 ```
 
+To print partition in default output format use:
+```bash
+kafkactl consume my-topic --print-partitions
+```
+
 Headers of kafka messages can be printed with the parameter `--print-headers` e.g.:
 ```bash
 kafkactl consume my-topic --print-headers -o yaml
