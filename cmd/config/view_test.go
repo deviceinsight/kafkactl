@@ -38,8 +38,8 @@ func TestViewConfigWithEnvVariablesInGeneratedConfigSet(t *testing.T) {
 
 	defaultConfigContent := `
 contexts:
-  default:
-    brokers: env-broker:9092
+    default:
+        brokers: env-broker:9092
 current-context: default`
 
 	if _, err := kafkaCtl.Execute("config", "view"); err != nil {
