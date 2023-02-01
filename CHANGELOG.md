@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 3.0.3 - 2023-02-01
+### Changed
+- [#144](https://github.com/deviceinsight/kafkactl/issues/144) Dependencies have been updated
+
 ## 3.0.2 - 2023-01-20
 ### Changed
 - [#143](https://github.com/deviceinsight/kafkactl/pull/143) Dependencies have been updated

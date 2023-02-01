@@ -35,10 +35,6 @@ A command-line interface the simplifies interaction with Kafka.
 
 alter topics, partitions
 
-#### Synopsis
-
-alter topics, partitions
-
 #### Options
 
 ```
@@ -60,10 +56,6 @@ alter topics, partitions
 
 
 #### kafkactl alter partition
-
-alter a partition
-
-##### Synopsis
 
 alter a partition
 
@@ -92,10 +84,6 @@ kafkactl alter partition TOPIC PARTITION [flags]
 
 
 #### kafkactl alter topic
-
-alter a topic
-
-##### Synopsis
 
 alter a topic
 
@@ -129,10 +117,6 @@ kafkactl alter topic TOPIC [flags]
 
 run kafkactl pod in kubernetes and attach to it
 
-#### Synopsis
-
-run kafkactl pod in kubernetes and attach to it
-
 ```
 kafkactl attach [flags]
 ```
@@ -156,10 +140,6 @@ kafkactl attach [flags]
 
 
 ### kafkactl clone
-
-clone topics, consumerGroups
-
-#### Synopsis
 
 clone topics, consumerGroups
 
@@ -187,10 +167,6 @@ clone topics, consumerGroups
 
 clone existing consumerGroup with all offsets
 
-##### Synopsis
-
-clone existing consumerGroup with all offsets
-
 ```
 kafkactl clone consumer-group SOURCE_GROUP TARGET_GROUP [flags]
 ```
@@ -214,10 +190,6 @@ kafkactl clone consumer-group SOURCE_GROUP TARGET_GROUP [flags]
 
 
 #### kafkactl clone topic
-
-clone existing topic (number of partitions, replication factor, config entries) to new one
-
-##### Synopsis
 
 clone existing topic (number of partitions, replication factor, config entries) to new one
 
@@ -299,10 +271,6 @@ kafkactl completion [bash|zsh|fish|powershell]
 
 
 ### kafkactl config
-
-show and edit configurations
-
-#### Synopsis
 
 show and edit configurations
 
@@ -453,10 +421,6 @@ kafkactl config view [flags]
 
 consume messages from a topic
 
-#### Synopsis
-
-consume messages from a topic
-
 ```
 kafkactl consume TOPIC [flags]
 ```
@@ -504,10 +468,6 @@ kafkactl consume TOPIC [flags]
 
 create topics, consumerGroups, acls
 
-#### Synopsis
-
-create topics, consumerGroups, acls
-
 #### Options
 
 ```
@@ -530,10 +490,6 @@ create topics, consumerGroups, acls
 
 
 #### kafkactl create access-control-list
-
-create an acl
-
-##### Synopsis
 
 create an acl
 
@@ -573,10 +529,6 @@ kafkactl create access-control-list [flags]
 
 create a consumerGroup
 
-##### Synopsis
-
-create a consumerGroup
-
 ```
 kafkactl create consumer-group GROUP [flags]
 ```
@@ -605,10 +557,6 @@ kafkactl create consumer-group GROUP [flags]
 
 
 #### kafkactl create topic
-
-create a topic
-
-##### Synopsis
 
 create a topic
 
@@ -642,10 +590,6 @@ kafkactl create topic TOPIC [flags]
 
 delete topics, consumerGroups, consumer-group-offset, acls
 
-#### Synopsis
-
-delete topics, consumerGroups, consumer-group-offset, acls
-
 #### Options
 
 ```
@@ -669,10 +613,6 @@ delete topics, consumerGroups, consumer-group-offset, acls
 
 
 #### kafkactl delete access-control-list
-
-delete an acl
-
-##### Synopsis
 
 delete an acl
 
@@ -710,10 +650,6 @@ kafkactl delete access-control-list [flags]
 
 delete a consumer-group-offset
 
-##### Synopsis
-
-delete a consumer-group-offset
-
 ```
 kafkactl delete consumer-group-offset CONSUMER-GROUP --topic=TOPIC --partition=PARTITION [flags]
 ```
@@ -739,10 +675,6 @@ kafkactl delete consumer-group-offset CONSUMER-GROUP --topic=TOPIC --partition=P
 
 
 #### kafkactl delete consumer-group
-
-delete a consumer-group
-
-##### Synopsis
 
 delete a consumer-group
 
@@ -772,10 +704,6 @@ kafkactl delete consumer-group CONSUMER-GROUP [flags]
 
 delete a topic
 
-##### Synopsis
-
-delete a topic
-
 ```
 kafkactl delete topic TOPIC [flags]
 ```
@@ -799,10 +727,6 @@ kafkactl delete topic TOPIC [flags]
 
 
 ### kafkactl describe
-
-describe topics, consumerGroups, brokers
-
-#### Synopsis
 
 describe topics, consumerGroups, brokers
 
@@ -831,10 +755,6 @@ describe topics, consumerGroups, brokers
 
 describe a broker
 
-##### Synopsis
-
-describe a broker
-
 ```
 kafkactl describe broker ID [flags]
 ```
@@ -859,10 +779,6 @@ kafkactl describe broker ID [flags]
 
 
 #### kafkactl describe consumer-group
-
-describe a consumerGroup
-
-##### Synopsis
 
 describe a consumerGroup
 
@@ -897,10 +813,6 @@ kafkactl describe consumer-group GROUP [flags]
 
 describe a topic
 
-##### Synopsis
-
-describe a topic
-
 ```
 kafkactl describe topic TOPIC [flags]
 ```
@@ -930,10 +842,6 @@ kafkactl describe topic TOPIC [flags]
 
 get info about topics, consumerGroups, acls, brokers
 
-#### Synopsis
-
-get info about topics, consumerGroups, acls, brokers
-
 #### Options
 
 ```
@@ -957,10 +865,6 @@ get info about topics, consumerGroups, acls, brokers
 
 
 #### kafkactl get access-control-list
-
-list available acls
-
-##### Synopsis
 
 list available acls
 
@@ -998,10 +902,6 @@ kafkactl get access-control-list [flags]
 
 list brokers
 
-##### Synopsis
-
-list brokers
-
 ```
 kafkactl get brokers [flags]
 ```
@@ -1026,10 +926,6 @@ kafkactl get brokers [flags]
 
 
 #### kafkactl get consumer-groups
-
-list available consumerGroups
-
-##### Synopsis
 
 list available consumerGroups
 
@@ -1061,10 +957,6 @@ kafkactl get consumer-groups [flags]
 
 list available topics
 
-##### Synopsis
-
-list available topics
-
 ```
 kafkactl get topics [flags]
 ```
@@ -1089,10 +981,6 @@ kafkactl get topics [flags]
 
 
 ### kafkactl produce
-
-produce messages to a topic
-
-#### Synopsis
 
 produce messages to a topic
 
@@ -1144,10 +1032,6 @@ kafkactl produce TOPIC [flags]
 
 reset consumerGroupsOffset
 
-#### Synopsis
-
-reset consumerGroupsOffset
-
 #### Options
 
 ```
@@ -1168,10 +1052,6 @@ reset consumerGroupsOffset
 
 
 #### kafkactl reset consumer-group-offset
-
-reset a consumer group offset
-
-##### Synopsis
 
 reset a consumer group offset
 
@@ -1206,10 +1086,6 @@ kafkactl reset consumer-group-offset GROUP [flags]
 
 
 ### kafkactl version
-
-print the version of kafkactl
-
-#### Synopsis
 
 print the version of kafkactl
 
