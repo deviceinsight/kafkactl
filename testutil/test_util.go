@@ -170,7 +170,7 @@ func startTest(t *testing.T, logFilename string) {
 func AssertEquals(t *testing.T, expected, actual string) {
 
 	if strings.TrimSpace(actual) != strings.TrimSpace(expected) {
-		t.Fatalf("unexpected output:\nexpected:\t%s\n  actual:\t%s", expected, strings.TrimSpace(actual))
+		t.Fatalf("unexpected output:\nexpected:\n--\n%s\n--\nactual:\n--\n%s\n--", expected, strings.TrimSpace(actual))
 	}
 }
 
