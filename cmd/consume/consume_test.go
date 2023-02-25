@@ -3,6 +3,7 @@ package consume_test
 import (
 	"encoding/hex"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -91,6 +92,46 @@ func TestConsumeTailIntegration(t *testing.T) {
 	testutil.AssertEquals(t, "test-key-2#test-value-2a", messages[0])
 	testutil.AssertEquals(t, "test-key-3#test-value-3", messages[1])
 	testutil.AssertEquals(t, "test-key-2#test-value-2b", messages[2])
+}
+
+func TestConsumeFromTimestamp(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	topicName := testutil.CreateTopic(t, "consume-topic", "--partitions", "2")
+
+	testutil.ProduceMessageOnPartition(t, topicName, "key-1", "a", 0, 0)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-1", "b", 0, 1)
+
+	time.Sleep(1 * time.Millisecond) // need to have messaged produced at different milliseconds to have reproductible test
+	t1 := time.Now().UnixMilli()
+
+	testutil.ProduceMessageOnPartition(t, topicName, "key-2", "c", 1, 0)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-2", "d", 1, 1)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-1", "e", 0, 2)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-2", "f", 1, 2)
+
+	time.Sleep(1 * time.Millisecond)
+	t2 := time.Now().UnixMilli()
+
+	testutil.ProduceMessageOnPartition(t, topicName, "key-2", "g", 1, 3)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-1", "h", 0, 3)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", strconv.FormatInt(t1, 10), "--to-timestamp", strconv.FormatInt(t2, 10)); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	messages := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+
+	if len(messages) != 4 {
+		t.Fatalf("expected 4 messages. Got %d : %s", len(messages), messages)
+	}
+	testutil.AssertContains(t, "c", messages)
+	testutil.AssertContains(t, "d", messages)
+	testutil.AssertContains(t, "e", messages)
+	testutil.AssertContains(t, "f", messages)
 }
 
 func TestConsumeWithKeyAndValueAsBase64Integration(t *testing.T) {
