@@ -332,15 +332,17 @@ The consumer can be stopped when the latest offset is reached using `--exit` par
 kafkactl consume my-topic --from-beginning --exit
 ```
 
-The consumer can start consuming from a particular timestamp and it is supposed to be used in tandem with `--exit` e.g.:
+The consumer can compute the offset it starts from using a timestamp :
 ```bash
-kafkactl consume my-topic --from-timestamp <timestamp-with-milliseconds> --exit
+kafkactl consume my-topic --from-timestamp <timestamp-with-milliseconds>
 ```
-There is an optional parameter to give end timestamp e.g.:
-```bash
-kafkactl consume my-topic --from-timestamp <timestamp-with-milliseconds> --end-timestamp <timestamp-with-milliseconds> --exit
-```
+**NOTE:** `--from-timestamp` is not designed to schedule the beginning of consumer's consumption. The offset corresponding to the timestamp is computed at the begininng of the process. So if you set it to a date in the future, the consumer will start from the latest offset.
 
+The consumer can be stopped when the offset corresponding to a particuliar timestamp is reached :
+```bash
+kafkactl consume my-topic --from-timestamp <timestamp-with-milliseconds> --to-timestamp <timestamp-with-milliseconds> --exit
+```
+**NOTE:** `--to-timestamp` is not designed to schedule the end of consumer's consumption. The offset corresponding to the timestamp is computed at the begininng of the process. So if you set it to a date in the future, the consumer will stop to the current latest offset.
 
 The following example prints keys in hex and values in base64:
 ```bash
