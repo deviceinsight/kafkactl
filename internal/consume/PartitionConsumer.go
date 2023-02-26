@@ -74,7 +74,7 @@ func (c *PartitionConsumer) Start(ctx context.Context, flags Flags, messages cha
 				return errors.Errorf("Failed to start consumer for partition %d: %s", partitionID, err)
 			}
 
-			if lastOffset == -1 && (flags.Exit || flags.Tail > 0) {
+			if lastOffset == -1 && (flags.Exit || flags.Tail > 0 || flags.ToTimestamp > -1) {
 				output.Debugf("Skipping empty partition %d", partitionID)
 				return nil
 			} else if lastOffset == -1 || initialOffset <= lastOffset {
@@ -146,12 +146,17 @@ func getOffsetBounds(client *sarama.Client, topic string, flags Flags, currentPa
 	}
 	if endOffset, err = getEndOffset(client, topic, flags, currentPartition); err != nil {
 		return ERR_OFFSET, ERR_OFFSET, err
+	} else if startOffset == endOffset {
+		endOffset = -1 //nothing to consume on this partition
 	} else if endOffset != sarama.OffsetNewest {
 		endOffset = endOffset - 1
 	}
-	if flags.Tail > 0 {
-		if endOffset-int64(flags.Tail) > startOffset {
+	if flags.Tail > 0 && startOffset == sarama.OffsetNewest {
+		//When --tail is used compute startOffset so that it minimizes the number of messages consumed
+		if endOffset-int64(flags.Tail) > 0 {
 			startOffset = endOffset - int64(flags.Tail)
+		} else {
+			startOffset = sarama.OffsetOldest
 		}
 	}
 	output.Debugf("consumer will consume offset %d to %d on partition %d", startOffset, endOffset, currentPartition)
@@ -168,25 +173,19 @@ func getStartOffset(client *sarama.Client, topic string, flags Flags, currentPar
 		return (*client).GetOffset(topic, currentPartition, sarama.OffsetOldest)
 	} else if len(flags.Offsets) > 0 {
 		return extractOffsetForPartition(flags, currentPartition)
-	} else if flags.Tail > 0 {
-		if newestOffset, err := (*client).GetOffset(topic, currentPartition, sarama.OffsetNewest); err != nil {
-			return -1, errors.Errorf("failed to get newestOffset for topic %s Partition %d: %v", topic, currentPartition, err)
-		} else {
-			return newestOffset - int64(flags.Tail), nil
-		}
 	} else {
 		return sarama.OffsetNewest, nil
 	}
 }
 
 func getEndOffset(client *sarama.Client, topic string, flags Flags, currentPartition int32) (int64, error) {
-	if flags.EndTimestamp > -1 {
-		return (*client).GetOffset(topic, currentPartition, flags.EndTimestamp)
-	} else if flags.Exit {
+	if flags.ToTimestamp > -1 {
+		return (*client).GetOffset(topic, currentPartition, flags.ToTimestamp)
+	} else if flags.Exit || flags.Tail > 0 {
 		if newestOffset, err := (*client).GetOffset(topic, currentPartition, sarama.OffsetNewest); err != nil {
 			return ERR_OFFSET, err
 		} else {
-			return newestOffset - 1, nil
+			return newestOffset, nil
 		}
 	} else {
 		return sarama.OffsetNewest, nil
