@@ -34,7 +34,7 @@ func NewConsumeCmd() *cobra.Command {
 	cmdConsume.Flags().BoolVarP(&flags.PrintHeaders, "print-headers", "", false, "print message headers")
 	cmdConsume.Flags().IntVarP(&flags.Tail, "tail", "", -1, "show only the last n messages on the topic")
 	cmdConsume.Flags().Int64VarP(&flags.FromTs, "from-timestamp", "", -1, "consume data from offset of given timestamp")
-	cmdConsume.Flags().Int64VarP(&flags.EndTs, "end-timestamp", "", -1, "consume data till offset of given timestamp")
+	cmdConsume.Flags().Int64VarP(&flags.EndTs, "to-timestamp", "", -1, "consume data till offset of given timestamp")
 	cmdConsume.Flags().Int64VarP(&flags.MaxMessages, "max-messages", "", -1, "stop consuming after n messages have been read")
 	cmdConsume.Flags().BoolVarP(&flags.Exit, "exit", "e", flags.Exit, "stop consuming when latest offset is reached")
 	cmdConsume.Flags().IntSliceVarP(&flags.Partitions, "partitions", "p", flags.Partitions, "partitions to consume. The default is to consume from all partitions.")
