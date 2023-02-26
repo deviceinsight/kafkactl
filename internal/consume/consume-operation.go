@@ -28,7 +28,7 @@ type Flags struct {
 	Offsets          []string
 	FromBeginning    bool
 	FromTimestamp    int64
-	EndTimestamp     int64
+	ToTimestamp      int64
 	Tail             int
 	Exit             bool
 	MaxMessages      int64
