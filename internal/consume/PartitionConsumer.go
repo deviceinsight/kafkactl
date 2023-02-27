@@ -182,11 +182,12 @@ func getEndOffset(client *sarama.Client, topic string, flags Flags, currentParti
 	if flags.ToTimestamp > -1 {
 		return (*client).GetOffset(topic, currentPartition, flags.ToTimestamp)
 	} else if flags.Exit || flags.Tail > 0 {
-		if newestOffset, err := (*client).GetOffset(topic, currentPartition, sarama.OffsetNewest); err != nil {
+		var newestOffset int64
+		var err error
+		if newestOffset, err = (*client).GetOffset(topic, currentPartition, sarama.OffsetNewest); err != nil {
 			return ErrOffset, err
-		} else {
-			return newestOffset, nil
 		}
+		return newestOffset, nil
 	} else {
 		return sarama.OffsetNewest, nil
 	}
