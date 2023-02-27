@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- [#121](https://github.com/deviceinsight/kafkactl/issues/121) Support for from-timestamp message consumption
+
 
 ## 3.0.3 - 2023-02-01
 ### Changed

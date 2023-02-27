@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	ERR_OFFSET = math.MinInt64
+	ErrOffset = math.MinInt64
 )
 
 type PartitionConsumer struct {
@@ -142,10 +142,10 @@ func getOffsetBounds(client *sarama.Client, topic string, flags Flags, currentPa
 	var endOffset int64
 	var err error
 	if startOffset, err = getStartOffset(client, topic, flags, currentPartition); err != nil {
-		return ERR_OFFSET, ERR_OFFSET, err
+		return ErrOffset, ErrOffset, err
 	}
 	if endOffset, err = getEndOffset(client, topic, flags, currentPartition); err != nil {
-		return ERR_OFFSET, ERR_OFFSET, err
+		return ErrOffset, ErrOffset, err
 	} else if startOffset == endOffset {
 		endOffset = -1 //nothing to consume on this partition
 	} else if endOffset != sarama.OffsetNewest {
@@ -183,7 +183,7 @@ func getEndOffset(client *sarama.Client, topic string, flags Flags, currentParti
 		return (*client).GetOffset(topic, currentPartition, flags.ToTimestamp)
 	} else if flags.Exit || flags.Tail > 0 {
 		if newestOffset, err := (*client).GetOffset(topic, currentPartition, sarama.OffsetNewest); err != nil {
-			return ERR_OFFSET, err
+			return ErrOffset, err
 		} else {
 			return newestOffset, nil
 		}
@@ -209,13 +209,13 @@ func extractOffsetForPartition(flags Flags, currentPartition int32) (int64, erro
 
 			offset, err := strconv.ParseInt(offsetParts[1], 10, 64)
 			if err != nil {
-				return ERR_OFFSET, errors.Errorf("unable to parse offset parameter: %s (%v)", offsetFlag, err)
+				return ErrOffset, errors.Errorf("unable to parse offset parameter: %s (%v)", offsetFlag, err)
 			}
 
 			return offset, nil
 		}
 	}
-	return ERR_OFFSET, errors.Errorf("unable to find offset parameter for partition %d: %s", currentPartition, flags.Offsets)
+	return ErrOffset, errors.Errorf("unable to find offset parameter for partition %d: %s", currentPartition, flags.Offsets)
 }
 
 func hasExclusiveConditions(flags ...bool) bool {
