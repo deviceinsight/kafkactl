@@ -78,7 +78,7 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 	serializers := MessageSerializerChain{topic: topic}
 
 	if clientContext.AvroSchemaRegistry != "" {
-		serializer, err := CreateAvroMessageSerializer(topic, clientContext.AvroSchemaRegistry)
+		serializer, err := CreateAvroMessageSerializer(topic, clientContext.AvroSchemaRegistry, clientContext.AvroJSONCodec)
 		if err != nil {
 			return err
 		}
@@ -86,7 +86,7 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 		serializers.serializers = append(serializers.serializers, serializer)
 	}
 
-	if flags.ValueProtoType != "" {
+	if flags.KeyProtoType != "" || flags.ValueProtoType != "" {
 		context := clientContext.Protobuf
 		context.ProtosetFiles = append(flags.ProtosetFiles, context.ProtosetFiles...)
 		context.ProtoFiles = append(flags.ProtoFiles, context.ProtoFiles...)

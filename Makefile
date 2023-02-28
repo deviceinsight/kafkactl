@@ -51,11 +51,13 @@ clean:
 	rm -f kafkactl
 	go clean -testcache
 
-# usage make version=0.0.4 release
+# usage make version=2.5.0 release
 #
 # manually executing goreleaser:
 # export GITHUB_TOKEN=xyz
+# export AUR_SSH_PRIVATE_KEY=$(cat /path/to/id_aur)
 # snapcraft login
+# docker login
 # goreleaser --rm-dist (--skip-validate)
 #
 .PHONY: release

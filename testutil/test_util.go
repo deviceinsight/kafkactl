@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deviceinsight/kafkactl/internal/env"
+
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/cmd"
 	"github.com/deviceinsight/kafkactl/internal"
@@ -64,6 +66,12 @@ func init() {
 
 	if err := os.Setenv("KAFKA_CTL_CONFIG", filepath.Join(rootDir, configFile)); err != nil {
 		panic(err)
+	}
+
+	for _, variable := range env.Variables {
+		if err := os.Setenv(variable, ""); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -162,7 +170,7 @@ func startTest(t *testing.T, logFilename string) {
 func AssertEquals(t *testing.T, expected, actual string) {
 
 	if strings.TrimSpace(actual) != strings.TrimSpace(expected) {
-		t.Fatalf("unexpected output:\nexpected:\t%s\n  actual:\t%s", expected, strings.TrimSpace(actual))
+		t.Fatalf("unexpected output:\nexpected:\n--\n%s\n--\nactual:\n--\n%s\n--", expected, strings.TrimSpace(actual))
 	}
 }
 
@@ -189,6 +197,12 @@ func AssertErrorContains(t *testing.T, expected string, err error) {
 
 	if !strings.Contains(err.Error(), expected) {
 		t.Fatalf("expected error to contain: %s\n: %v", expected, err)
+	}
+}
+
+func AssertContainSubstring(t *testing.T, expected, actual string) {
+	if !strings.Contains(actual, expected) {
+		t.Fatalf("expected string to contain: %s actual: %s", expected, actual)
 	}
 }
 
@@ -262,6 +276,15 @@ func (kafkactl *KafkaCtlTestCommand) Execute(args ...string) (cmd *cobra.Command
 
 func (kafkactl *KafkaCtlTestCommand) GetStdOut() string {
 	return kafkactl.Streams.Out.(*bytes.Buffer).String()
+}
+
+func (kafkactl *KafkaCtlTestCommand) GetStdOutLines() []string {
+
+	space := regexp.MustCompile(`[[:blank:]]{2,}`)
+
+	stdOutput := space.ReplaceAllString(kafkactl.GetStdOut(), "|")
+
+	return strings.Split(stdOutput, "\n")
 }
 
 func (kafkactl *KafkaCtlTestCommand) GetStdErr() string {

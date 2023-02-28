@@ -34,5 +34,5 @@ ${SCRIPT_DIR}/wait-for-kafka.sh
 [ -f integration-test.log ] && rm integration-test.log
 
 # run integration tests
-go get gotest.tools/gotestsum
+go install gotest.tools/gotestsum@latest
 gotestsum --format testname -- -run Integration ./...

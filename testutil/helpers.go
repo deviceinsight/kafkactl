@@ -3,6 +3,7 @@ package testutil
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -89,12 +90,16 @@ func VerifyTopicExists(t *testing.T, topic string) {
 	time.Sleep(1000 * time.Millisecond)
 }
 
-func CreateConsumerGroup(t *testing.T, topic string, groupPrefix string) string {
+func CreateConsumerGroup(t *testing.T, groupPrefix string, topics ...string) string {
 
 	kafkaCtl := CreateKafkaCtlCommand()
 	groupName := GetPrefixedName(groupPrefix)
 
-	createCgo := []string{"create", "consumer-group", groupName, "--topic", topic, "--newest"}
+	createCgo := []string{"create", "consumer-group", groupName, "--newest"}
+
+	for _, topic := range topics {
+		createCgo = append(createCgo, "--topic", topic)
+	}
 
 	if _, err := kafkaCtl.Execute(createCgo...); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
@@ -148,4 +153,70 @@ func VerifyGroupExists(t *testing.T, group string) {
 	// add a sleep here, so that the new group is known by all
 	// brokers hopefully
 	time.Sleep(500 * time.Millisecond)
+}
+
+func VerifyConsumerGroupOffset(t *testing.T, group, topic string, expectedConsumerOffset int) {
+
+	kafkaCtl := CreateKafkaCtlCommand()
+
+	consumerOffsetRegex, _ := regexp.Compile(`consumerOffset: (\d)`)
+
+	verifyConsumerOffset := func(attempt uint) error {
+		_, err := kafkaCtl.Execute("describe", "cg", group, "--topic", topic, "-o", "yaml")
+
+		if err != nil {
+			return err
+		}
+
+		match := consumerOffsetRegex.FindStringSubmatch(kafkaCtl.GetStdOut())
+
+		if len(match) == 2 {
+			if match[1] == fmt.Sprintf("%d", expectedConsumerOffset) {
+				return nil
+			}
+			return fmt.Errorf("unexpected consumer offset %s != %d", match[1], expectedConsumerOffset)
+		}
+
+		return errors.New("cannot find consumer offset")
+	}
+
+	err := retry.Retry(
+		verifyConsumerOffset,
+		strategy.Limit(5),
+		strategy.Backoff(backoff.Linear(10*time.Millisecond)),
+	)
+
+	if err != nil {
+		t.Fatalf("failed to verify offset for group=%s topic=%s: %v", group, topic, err)
+	}
+}
+
+func VerifyTopicNotInConsumerGroup(t *testing.T, group, topic string) {
+
+	kafkaCtl := CreateKafkaCtlCommand()
+
+	emptyTopicsRegex, _ := regexp.Compile(`topics: \[]`)
+
+	verifyTopicNotInGroup := func(attempt uint) error {
+		_, err := kafkaCtl.Execute("describe", "cg", group, "--topic", topic, "-o", "yaml")
+
+		if err != nil {
+			return err
+		}
+
+		if emptyTopicsRegex.MatchString(kafkaCtl.GetStdOut()) {
+			return nil
+		}
+		return errors.New("expected topic not to be part of consumer-group")
+	}
+
+	err := retry.Retry(
+		verifyTopicNotInGroup,
+		strategy.Limit(5),
+		strategy.Backoff(backoff.Linear(10*time.Millisecond)),
+	)
+
+	if err != nil {
+		t.Fatalf("failed to verify topic=%s not in group=%s: %v", topic, group, err)
+	}
 }

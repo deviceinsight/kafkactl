@@ -6,6 +6,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 3.0.3 - 2023-02-01
+### Changed
+- [#144](https://github.com/deviceinsight/kafkactl/issues/144) Dependencies have been updated
+
+## 3.0.2 - 2023-01-20
+### Changed
+- [#143](https://github.com/deviceinsight/kafkactl/pull/143) Dependencies have been updated
+- [#139](https://github.com/deviceinsight/kafkactl/pull/139) Option to print partitions in default output format
+
+## 3.0.1 - 2022-11-08
+### Fixed
+- [#138](https://github.com/deviceinsight/kafkactl/issues/138) remove default value for `BROKERS` in Dockerfiles
+
+## 3.0.0 - 2022-09-30
+### Changed
+- [#123](https://github.com/deviceinsight/kafkactl/issues/123) Make avro json codec configurable and switch default to standard json
+
+## 2.5.0 - 2022-08-19
+### Added
+- [#105](https://github.com/deviceinsight/kafkactl/issues/105) Add replication factor to `get topics`
+- Add `clone` command for `consumer-group` and `topic`
+
+### Fixed
+- [#108](https://github.com/deviceinsight/kafkactl/issues/108) Fix "system root pool not available on Windows" by migrating to go 1.19
+- Print topic configs when yaml and json output format used with `-c` flag
+
+## 2.4.0 - 2022-06-23
+### Fixed
+- [#129](https://github.com/deviceinsight/kafkactl/issues/129) Fix tombstone record handling if protobuf encoding used.
+- allow producing messages where only key is protobuf encoded
+
+### Changed
+- Implicitly extend `--proto-import-path` with existing file path from `--proto-file` so that the parameter can be neglected in some cases.
+
+## 2.3.0 - 2022-05-31
+
+### Added
+- [#127](https://github.com/deviceinsight/kafkactl/issues/127) the commands `create consumer-group` and `reset consumer-group-offset` can now be called with multiple `--topic` parameters.
+  Additionally, `reset consumer-group-offset` can be called with `--all-topics` parameter, which will reset all topics in the group.
+
 ## 2.2.1 - 2022-04-04
 
 ### Fixed

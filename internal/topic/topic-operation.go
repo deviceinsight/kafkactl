@@ -170,26 +170,26 @@ func (operation *Operation) DescribeTopic(topic string, flags DescribeTopicFlags
 
 func (operation *Operation) printTopic(topic Topic, flags DescribeTopicFlags) error {
 
-	if flags.PrintConfigs {
-		if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
-			topic.Configs = nil
-		} else {
-			configTableWriter := output.CreateTableWriter()
-			if err := configTableWriter.WriteHeader("CONFIG", "VALUE"); err != nil {
-				return err
-			}
+	if !flags.PrintConfigs {
+		topic.Configs = nil
+	}
 
-			for _, c := range topic.Configs {
-				if err := configTableWriter.Write(c.Name, c.Value); err != nil {
-					return err
-				}
-			}
-
-			if err := configTableWriter.Flush(); err != nil {
-				return err
-			}
-			output.PrintStrings("")
+	if len(topic.Configs) != 0 && flags.OutputFormat != "json" && flags.OutputFormat != "yaml" {
+		configTableWriter := output.CreateTableWriter()
+		if err := configTableWriter.WriteHeader("CONFIG", "VALUE"); err != nil {
+			return err
 		}
+
+		for _, c := range topic.Configs {
+			if err := configTableWriter.Write(c.Name, c.Value); err != nil {
+				return err
+			}
+		}
+
+		if err := configTableWriter.Flush(); err != nil {
+			return err
+		}
+		output.PrintStrings("")
 	}
 
 	if flags.SkipEmptyPartitions {
@@ -430,6 +430,74 @@ func (operation *Operation) ListTopicsNames() ([]string, error) {
 	return topics, nil
 }
 
+func (operation *Operation) CloneTopic(sourceTopic, targetTopic string) error {
+
+	var (
+		context internal.ClientContext
+		client  sarama.Client
+		admin   sarama.ClusterAdmin
+		err     error
+		exists  bool
+		t       Topic
+	)
+
+	if context, err = internal.CreateClientContext(); err != nil {
+		return err
+	}
+
+	if client, err = internal.CreateClient(&context); err != nil {
+		return errors.Wrap(err, "failed to create client")
+	}
+
+	if exists, err = internal.TopicExists(&client, sourceTopic); err != nil {
+		return errors.Wrap(err, "failed to read topics")
+	}
+
+	if !exists {
+		return errors.Errorf("topic '%s' does not exist", sourceTopic)
+	}
+
+	if exists, err = internal.TopicExists(&client, targetTopic); err != nil {
+		return errors.Wrap(err, "failed to read topics")
+	}
+
+	if exists {
+		return errors.Errorf("topic '%s' already exists", targetTopic)
+	}
+
+	if admin, err = internal.CreateClusterAdmin(&context); err != nil {
+		return errors.Wrap(err, "failed to create cluster admin")
+	}
+
+	requestedFields := requestedTopicFields{
+		partitionID:       true,
+		partitionReplicas: true,
+		config:            true,
+	}
+
+	if t, err = readTopic(&client, &admin, sourceTopic, requestedFields); err != nil {
+		return errors.Errorf("unable to read topic %s: %v", sourceTopic, err)
+	}
+
+	topicDetail := &sarama.TopicDetail{
+		NumPartitions:     int32(len(t.Partitions)),
+		ReplicationFactor: int16(replicationFactor(t)),
+		ConfigEntries:     make(map[string]*string, len(t.Configs)),
+	}
+
+	for _, configEntry := range t.Configs {
+		topicDetail.ConfigEntries[configEntry.Name] = &configEntry.Value
+	}
+
+	if err = admin.CreateTopic(targetTopic, topicDetail, false); err != nil {
+		return errors.Wrap(err, "failed to create topic")
+	}
+
+	output.Infof("topic %s cloned to %s", sourceTopic, targetTopic)
+
+	return nil
+}
+
 func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int, targetReplicationFactor int16) ([]int32, error) {
 
 	replicas := currentReplicas
@@ -506,15 +574,15 @@ func (operation *Operation) GetTopics(flags GetTopicsFlags) error {
 	var requestedFields requestedTopicFields
 
 	if flags.OutputFormat == "" {
-		requestedFields = requestedTopicFields{partitionID: true}
-		if err := tableWriter.WriteHeader("TOPIC", "PARTITIONS"); err != nil {
+		requestedFields = requestedTopicFields{partitionID: true, partitionReplicas: true}
+		if err := tableWriter.WriteHeader("TOPIC", "PARTITIONS", "REPLICATION FACTOR"); err != nil {
 			return err
 		}
 	} else if flags.OutputFormat == "compact" {
 		tableWriter.Initialize()
 	} else if flags.OutputFormat == "wide" {
-		requestedFields = requestedTopicFields{partitionID: true, config: true}
-		if err := tableWriter.WriteHeader("TOPIC", "PARTITIONS", "CONFIGS"); err != nil {
+		requestedFields = requestedTopicFields{partitionID: true, partitionReplicas: true, config: true}
+		if err := tableWriter.WriteHeader("TOPIC", "PARTITIONS", "REPLICATION FACTOR", "CONFIGS"); err != nil {
 			return err
 		}
 	} else if flags.OutputFormat == "json" {
@@ -558,7 +626,7 @@ func (operation *Operation) GetTopics(flags GetTopicsFlags) error {
 		return output.PrintObject(topicList, flags.OutputFormat)
 	} else if flags.OutputFormat == "wide" {
 		for _, t := range topicList {
-			if err := tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions)), getConfigString(t.Configs)); err != nil {
+			if err := tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions)), strconv.Itoa(replicationFactor(t)), getConfigString(t.Configs)); err != nil {
 				return err
 			}
 		}
@@ -570,7 +638,7 @@ func (operation *Operation) GetTopics(flags GetTopicsFlags) error {
 		}
 	} else {
 		for _, t := range topicList {
-			if err := tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions))); err != nil {
+			if err := tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions)), strconv.Itoa(replicationFactor(t))); err != nil {
 				return err
 			}
 		}
@@ -681,6 +749,18 @@ func getConfigString(configs []internal.Config) string {
 	}
 
 	return strings.Trim(strings.Join(configStrings, ","), "[]")
+}
+
+// replicationFactor for topic calculated as minimal replication factor across partitions.
+func replicationFactor(t Topic) int {
+	var factor int
+	for _, partition := range t.Partitions {
+		if len(partition.Replicas) < factor || factor == 0 {
+			factor = len(partition.Replicas)
+		}
+	}
+
+	return factor
 }
 
 func CompleteTopicNames(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {

@@ -123,6 +123,9 @@ contexts:
     # optional: avro schema registry
     avro:
       schemaRegistry: localhost:8081
+      # optional: configure codec for (de)serialization as standard,avro (defaults to standard)
+      # see: https://github.com/deviceinsight/kafkactl/issues/123
+      jsonCodec: avro
     
     # optional: default protobuf messages search paths
     protobuf:
@@ -209,10 +212,10 @@ kafkactl completion fish > ~/.config/fish/completions/kafkactl.fish
 
 ## Running in docker
 
-Assuming your Kafka broker is accessible as `kafka:9092`, you can list topics by running: 
+Assuming your Kafka brokers are accessible under `kafka1:9092` and `kafka2:9092`, you can list topics by running: 
 
 ```bash
-docker run --env BROKERS=kafka:9092 deviceinsight/kafkactl:latest get topics
+docker run --env BROKERS="kafka1:9092 kafka2:9092" deviceinsight/kafkactl:latest get topics
 ```
 
 If a more elaborate config is needed, you can mount it as a volume:
@@ -231,6 +234,9 @@ for a key can be found by applying the following rules:
 1. write the key name in ALL CAPS
 
 e.g. the key `contexts.default.tls.certKey` has the corresponding environment variable `CONTEXTS_DEFAULT_TLS_CERTKEY`.
+
+**NOTE:** an array variable can be written using whitespace as delimiter. For example `BROKERS` can be provided as
+`BROKERS="broker1:9092 broker2:9092 broker3:9092"`.
 
 If environment variables for the `default` context should be set, the prefix `CONTEXTS_DEFAULT_` can be omitted.
 So, instead of `CONTEXTS_DEFAULT_TLS_CERTKEY` one can also set `TLS_CERTKEY`.
@@ -304,6 +310,11 @@ kafkactl consume my-topic --from-beginning
 The following example prints message `key` and `timestamp` as well as `partition` and `offset` in `yaml` format:
 ```bash
 kafkactl consume my-topic --print-keys --print-timestamps -o yaml
+```
+
+To print partition in default output format use:
+```bash
+kafkactl consume my-topic --print-partitions
 ```
 
 Headers of kafka messages can be printed with the parameter `--print-headers` e.g.:
@@ -567,6 +578,16 @@ The assigned replicas of a partition can directly be altered with:
 kafkactl alter topic my-topic 3 -r 102,103
 ```
 
+### Clone topic
+
+New topic may be created from existing topic as follows:
+```bash
+kafkactl clone topic source-topic target-topic
+```
+
+Source topic must exist, target topic must not exist.
+`kafkactl` clones partitions count, replication factor and config entries.
+
 ### Consumer groups
 
 In order to get a list of consumer groups the `get consumer-groups` command can be used:
@@ -593,6 +614,31 @@ kafkactl describe consumer-group my-group --topic my-topic
 kafkactl describe cg my-group
 ```
 
+### Create consumer groups
+
+A consumer-group can be created as follows:
+
+```bash
+# create group with offset for all partitions set to oldest
+kafkactl create consumer-group my-group --topic my-topic --oldest
+# create group with offset for all partitions set to newest
+kafkactl create consumer-group my-group --topic my-topic --newest
+# create group with offset for a single partition set to specific offset
+kafkactl create consumer-group my-group --topic my-topic --partition 5 --offset 100
+# create group for multiple topics with offset for all partitions set to oldest
+kafkactl create consumer-group my-group --topic my-topic-a --topic my-topic-b --oldest
+```
+
+### Clone consumer group
+
+A consumer group may be created as clone of another consumer group as follows:
+```bash
+kafkactl clone consumer-group source-group target-group
+```
+
+Source group must exist and have committed offsets. Target group must not exist or don't have committed offsets.
+`kafkactl` clones topic assignment and partition offsets.
+
 ### Reset consumer group offsets
 
 in order to ensure the reset does what it is expected, per default only
@@ -605,6 +651,10 @@ kafkactl reset offset my-group --topic my-topic --oldest
 kafkactl reset offset my-group --topic my-topic --newest
 # reset offset for a single partition to specific offset
 kafkactl reset offset my-group --topic my-topic --partition 5 --offset 100
+# reset offset to newest for all topics in the group
+kafkactl reset offset my-group --all-topics --newest
+# reset offset of for all partitions on multiple topics to oldest offset
+kafkactl reset offset my-group --topic my-topic-a --topic my-topic-b --oldest
 ```
 
 ### Delete consumer group offsets
@@ -695,4 +745,20 @@ In order to see linter errors before commit, add the following pre-commit hook:
 ```bash
 pip install --user pre-commit
 pre-commit install
+```
+
+### Pull requests
+
+```shell
+# checkout locally
+PULL_REQUEST_ID=123
+LOCAL_BRANCH_NAME=feature/abc
+git fetch origin pull/${PULL_REQUEST_ID}/head:${LOCAL_BRANCH_NAME}
+git checkout ${LOCAL_BRANCH_NAME}
+
+# push to PR
+NAME=username
+REMOTE_BRANCH_NAME=abc
+git remote add $NAME git@github.com:$NAME/kafkactl.git
+git push $NAME ${LOCAL_BRANCH_NAME}:${REMOTE_BRANCH_NAME}
 ```

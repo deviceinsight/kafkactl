@@ -31,6 +31,23 @@ func TestConsumeWithKeyAndValueIntegration(t *testing.T) {
 	testutil.AssertEquals(t, "test-key#test-value", kafkaCtl.GetStdOut())
 }
 
+func TestConsumeWithPartitionAndValueIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	topicName := testutil.CreateTopic(t, "consume-topic", "--partitions", "2")
+
+	testutil.ProduceMessage(t, topicName, "test-key", "test-value", 1, 0)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-partitions"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "1#test-value", kafkaCtl.GetStdOut())
+}
+
 func TestConsumeWithEmptyPartitionsIntegration(t *testing.T) {
 
 	testutil.StartIntegrationTest(t)
@@ -161,7 +178,7 @@ func TestAvroDeserializationErrorHandlingIntegration(t *testing.T) {
 
 	topicName := testutil.CreateAvroTopic(t, "avro-topic", "", valueSchema)
 
-	group := testutil.CreateConsumerGroup(t, topicName, "avro-topic-consumer-group")
+	group := testutil.CreateConsumerGroup(t, "avro-topic-consumer-group", topicName)
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
@@ -241,6 +258,62 @@ func TestProtobufConsumeProtoFileIntegration(t *testing.T) {
 	}
 
 	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, kafkaCtl.GetStdOut())
+}
+
+func TestProtobufConsumeProtoFileWithoutProtoImportPathIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	pbTopic := testutil.CreateTopic(t, "proto-file")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+	now := time.Date(2021, time.December, 1, 14, 10, 12, 0, time.UTC)
+	pbMessageDesc := protobuf.ResolveMessageType(protobuf.SearchContext{
+		ProtoImportPaths: []string{protoPath},
+		ProtoFiles:       []string{"msg.proto"},
+	}, "TopicMessage")
+	pbMessage := dynamic.NewMessage(pbMessageDesc)
+	pbMessage.SetFieldByNumber(1, timestamppb.New(now))
+	pbMessage.SetFieldByNumber(2, int64(1))
+
+	value, err := pbMessage.Marshal()
+	if err != nil {
+		t.Fatalf("Failed to marshal proto message: %s", err)
+	}
+
+	// produce valid pb message
+	if _, err := kafkaCtl.Execute("produce", pbTopic, "--key", "test-key", "--value", hex.EncodeToString(value), "--value-encoding", "hex"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "--proto-file", filepath.Join(protoPath, "msg.proto"), "--value-proto-type", "TopicMessage"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, kafkaCtl.GetStdOut())
+}
+
+func TestConsumeTombstoneWithProtoFileIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	pbTopic := testutil.CreateTopic(t, "proto-file")
+	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", pbTopic, "--null-value"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "-o", "yaml", "--proto-import-path", protoPath, "--proto-file", "msg.proto", "--value-proto-type", "TopicMessage"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	record := strings.ReplaceAll(kafkaCtl.GetStdOut(), "\n", " ")
+	testutil.AssertEquals(t, "partition: 0 offset: 0 value: null", record)
 }
 
 func TestProtobufConsumeProtosetFileIntegration(t *testing.T) {
@@ -325,11 +398,11 @@ func TestConsumeGroupIntegration(t *testing.T) {
 
 	topicName := testutil.CreateTopic(t, prefix+"topic")
 
-	group1 := testutil.CreateConsumerGroup(t, topicName, prefix+"a")
+	group1 := testutil.CreateConsumerGroup(t, prefix+"a", topicName)
 
 	testutil.ProduceMessage(t, topicName, "test-key", "test-value1", 0, 0)
 
-	group2 := testutil.CreateConsumerGroup(t, topicName, prefix+"b")
+	group2 := testutil.CreateConsumerGroup(t, prefix+"b", topicName)
 
 	testutil.ProduceMessage(t, topicName, "test-key", "test-value2", 0, 1)
 
@@ -383,9 +456,9 @@ func TestConsumeGroupCompletionIntegration(t *testing.T) {
 
 	topicName := testutil.CreateTopic(t, prefix+"topic")
 
-	group1 := testutil.CreateConsumerGroup(t, topicName, prefix+"a")
-	group2 := testutil.CreateConsumerGroup(t, topicName, prefix+"b")
-	group3 := testutil.CreateConsumerGroup(t, topicName, prefix+"c")
+	group1 := testutil.CreateConsumerGroup(t, prefix+"a", topicName)
+	group2 := testutil.CreateConsumerGroup(t, prefix+"b", topicName)
+	group3 := testutil.CreateConsumerGroup(t, prefix+"c", topicName)
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 	kafkaCtl.Verbose = false

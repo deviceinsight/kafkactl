@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deviceinsight/kafkactl/internal/helpers/avro"
+
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/deviceinsight/kafkactl/util"
@@ -16,14 +18,15 @@ import (
 type AvroMessageDeserializer struct {
 	topic              string
 	avroSchemaRegistry string
+	jsonCodec          avro.JSONCodec
 	registry           *CachingSchemaRegistry
 }
 
-func CreateAvroMessageDeserializer(topic string, avroSchemaRegistry string) (AvroMessageDeserializer, error) {
+func CreateAvroMessageDeserializer(topic string, avroSchemaRegistry string, jsonCodec avro.JSONCodec) (AvroMessageDeserializer, error) {
 
 	var err error
 
-	deserializer := AvroMessageDeserializer{topic: topic, avroSchemaRegistry: avroSchemaRegistry}
+	deserializer := AvroMessageDeserializer{topic: topic, avroSchemaRegistry: avroSchemaRegistry, jsonCodec: jsonCodec}
 
 	deserializer.registry, err = CreateCachingSchemaRegistry(deserializer.avroSchemaRegistry)
 
@@ -131,7 +134,13 @@ func (deserializer AvroMessageDeserializer) decode(rawData []byte, flags Flags, 
 		return decodedValue{}, errors.Errorf("failed to find avro schema for subject: %s id: %d (%v)", subject, schemaID, err)
 	}
 
-	avroCodec, err := goavro.NewCodec(schema)
+	var avroCodec *goavro.Codec
+
+	if deserializer.jsonCodec == avro.Avro {
+		avroCodec, err = goavro.NewCodec(schema)
+	} else {
+		avroCodec, err = goavro.NewCodecForStandardJSONFull(schema)
+	}
 
 	if err != nil {
 		return decodedValue{}, errors.Wrap(err, "failed to parse avro schema")
@@ -188,7 +197,9 @@ func (deserializer AvroMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerM
 				row = append(row, "")
 			}
 		}
-
+		if flags.PrintPartitions {
+			row = append(row, strconv.Itoa(int(msg.Partition)))
+		}
 		if flags.PrintKeys {
 			if msg.Key != nil {
 				row = append(row, *msg.Key)

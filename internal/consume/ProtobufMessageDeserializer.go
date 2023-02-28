@@ -1,6 +1,7 @@
 package consume
 
 import (
+	"strconv"
 	"strings"
 	"time"
 
@@ -101,6 +102,10 @@ func (deserializer ProtobufMessageDeserializer) Deserialize(rawMsg *sarama.Consu
 		}
 	}
 
+	if flags.PrintPartitions {
+		row = append(row, strconv.Itoa(int(msg.Partition)))
+	}
+
 	if flags.PrintKeys {
 		if msg.Key != nil {
 			row = append(row, *msg.Key)
@@ -135,6 +140,10 @@ func (deserializer ProtobufMessageDeserializer) CanDeserialize(_ string) (bool, 
 }
 
 func decodeProtobuf(b []byte, msgDesc *desc.MessageDescriptor, encoding string) (*string, error) {
+	if len(b) == 0 { // tombstone record, can't be unmarshalled as protobuf
+		return nil, nil
+	}
+
 	msg := dynamic.NewMessage(msgDesc)
 	if err := msg.Unmarshal(b); err != nil {
 		return nil, err

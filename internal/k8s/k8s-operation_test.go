@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deviceinsight/kafkactl/internal/helpers/avro"
+
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/internal"
 	"github.com/deviceinsight/kafkactl/internal/env"
@@ -29,6 +31,7 @@ func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {
 	context.ClientID = "my-client"
 	context.KafkaVersion = sarama.V2_0_1_0
 	context.AvroSchemaRegistry = "registry:8888"
+	context.AvroJSONCodec = avro.Avro
 	context.Protobuf.ProtosetFiles = []string{"/usr/include/protosets/ps1.protoset", "/usr/lib/ps2.protoset"}
 	context.Protobuf.ProtoImportPaths = []string{"/usr/include/protobuf", "/usr/lib/protobuf"}
 	context.Protobuf.ProtoFiles = []string{"message.proto", "other.proto"}
@@ -65,6 +68,7 @@ func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {
 	testutil.AssertEquals(t, "my-client", envMap[env.ClientID])
 	testutil.AssertEquals(t, "2.0.1", envMap[env.KafkaVersion])
 	testutil.AssertEquals(t, "registry:8888", envMap[env.AvroSchemaRegistry])
+	testutil.AssertEquals(t, "avro", envMap[env.AvroJSONCodec])
 	testutil.AssertEquals(t, "/usr/include/protosets/ps1.protoset /usr/lib/ps2.protoset", envMap[env.ProtobufProtoSetFiles])
 	testutil.AssertEquals(t, "/usr/include/protobuf /usr/lib/protobuf", envMap[env.ProtobufImportPaths])
 	testutil.AssertEquals(t, "message.proto other.proto", envMap[env.ProtobufProtoFiles])

@@ -4,11 +4,13 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"os/user"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/deviceinsight/kafkactl/internal/helpers/avro"
 
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/internal/helpers"
@@ -63,6 +65,7 @@ type ClientContext struct {
 	ClientID           string
 	KafkaVersion       sarama.KafkaVersion
 	AvroSchemaRegistry string
+	AvroJSONCodec      avro.JSONCodec
 	Protobuf           protobuf.SearchContext
 	Producer           ProducerConfig
 }
@@ -104,6 +107,7 @@ func CreateClientContext() (ClientContext, error) {
 		return context, err
 	}
 	context.AvroSchemaRegistry = viper.GetString("contexts." + context.Name + ".avro.schemaRegistry")
+	context.AvroJSONCodec = avro.ParseJSONCodec(viper.GetString("contexts." + context.Name + ".avro.jsonCodec"))
 	context.Protobuf.ProtosetFiles = viper.GetStringSlice("contexts." + context.Name + ".protobuf.protosetFiles")
 	context.Protobuf.ProtoImportPaths = viper.GetStringSlice("contexts." + context.Name + ".protobuf.importPaths")
 	context.Protobuf.ProtoFiles = viper.GetStringSlice("contexts." + context.Name + ".protobuf.protoFiles")
@@ -236,7 +240,7 @@ func setupTLSConfig(tlsConfig TLSConfig) (*tls.Config, error) {
 	}
 
 	if tlsConfig.CA != "" {
-		caString, err := ioutil.ReadFile(tlsConfig.CA)
+		caString, err := os.ReadFile(tlsConfig.CA)
 		if err != nil {
 			return nil, err
 		}

@@ -3,6 +3,8 @@ package producer
 import (
 	"encoding/binary"
 
+	"github.com/deviceinsight/kafkactl/internal/helpers/avro"
+
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/util"
 	schemaregistry "github.com/landoop/schema-registry"
@@ -13,14 +15,15 @@ import (
 type AvroMessageSerializer struct {
 	topic              string
 	avroSchemaRegistry string
+	jsonCodec          avro.JSONCodec
 	client             *schemaregistry.Client
 }
 
-func CreateAvroMessageSerializer(topic string, avroSchemaRegistry string) (AvroMessageSerializer, error) {
+func CreateAvroMessageSerializer(topic string, avroSchemaRegistry string, jsonCodec avro.JSONCodec) (AvroMessageSerializer, error) {
 
 	var err error
 
-	serializer := AvroMessageSerializer{topic: topic, avroSchemaRegistry: avroSchemaRegistry}
+	serializer := AvroMessageSerializer{topic: topic, avroSchemaRegistry: avroSchemaRegistry, jsonCodec: jsonCodec}
 
 	serializer.client, err = schemaregistry.NewClient(serializer.avroSchemaRegistry)
 
@@ -62,18 +65,24 @@ func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int
 		}
 	}
 
-	codec, err := goavro.NewCodec(schema.Schema)
+	var avroCodec *goavro.Codec
+
+	if serializer.jsonCodec == avro.Avro {
+		avroCodec, err = goavro.NewCodec(schema.Schema)
+	} else {
+		avroCodec, err = goavro.NewCodecForStandardJSONFull(schema.Schema)
+	}
 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse avro schema")
 	}
 
-	native, _, err := codec.NativeFromTextual(rawData)
+	native, _, err := avroCodec.NativeFromTextual(rawData)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert value to avro data")
 	}
 
-	data, err := codec.BinaryFromNative(nil, native)
+	data, err := avroCodec.BinaryFromNative(nil, native)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert value to avro data")
 	}

@@ -2,7 +2,6 @@ package internal
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -55,7 +54,7 @@ func (operation *DocsOperation) GenerateDocs(rootCmd *cobra.Command, flags DocsF
 
 func generateSinglePage(flags DocsFlags) error {
 
-	files, err := ioutil.ReadDir(flags.Directory)
+	files, err := os.ReadDir(flags.Directory)
 	if err != nil {
 		return errors.Wrap(err, "unable to read files in directory")
 	}
@@ -80,7 +79,7 @@ func generateSinglePage(flags DocsFlags) error {
 		}
 
 		filename := filepath.Join(flags.Directory, f.Name())
-		bytes, err := ioutil.ReadFile(filename)
+		bytes, err := os.ReadFile(filename)
 
 		content := string(bytes)
 
