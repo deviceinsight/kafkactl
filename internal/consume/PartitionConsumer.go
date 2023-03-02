@@ -165,7 +165,7 @@ func getOffsetBounds(client *sarama.Client, topic string, flags Flags, currentPa
 
 func getStartOffset(client *sarama.Client, topic string, flags Flags, currentPartition int32) (int64, error) {
 	if hasExclusiveConditions(flags.FromTimestamp > -1, flags.FromBeginning, len(flags.Offsets) > 0) {
-		return -1, errors.Errorf("parameters '--from-timestamp', '--offset' and '--from-beginning' are exclusive")
+		return ErrOffset, errors.Errorf("parameters '--from-timestamp', '--offset' and '--from-beginning' are exclusive")
 	}
 	if flags.FromTimestamp != -1 {
 		return (*client).GetOffset(topic, currentPartition, flags.FromTimestamp)
