@@ -338,7 +338,7 @@ kafkactl consume my-topic --from-timestamp <timestamp-with-milliseconds>
 ```
 **NOTE:** `--from-timestamp` is not designed to schedule the beginning of consumer's consumption. The offset corresponding to the timestamp is computed at the begininng of the process. So if you set it to a date in the future, the consumer will start from the latest offset.
 
-The consumer can be stopped when the offset corresponding to a particuliar timestamp is reached :
+The consumer can be stopped when the offset corresponding to a particular timestamp is reached:
 ```bash
 kafkactl consume my-topic --from-timestamp <timestamp-with-milliseconds> --to-timestamp <timestamp-with-milliseconds>
 ```
