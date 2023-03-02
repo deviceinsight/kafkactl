@@ -342,7 +342,7 @@ The consumer can be stopped when the offset corresponding to a particular timest
 ```bash
 kafkactl consume my-topic --from-timestamp <timestamp-with-milliseconds> --to-timestamp <timestamp-with-milliseconds>
 ```
-**NOTE:** `--to-timestamp` is not designed to schedule the end of consumer's consumption. The offset corresponding to the timestamp is computed at the begininng of the process. So if you set it to a date in the future, the consumer will stop to the current latest offset.
+**NOTE:** `--to-timestamp` is not designed to schedule the end of consumer's consumption. The offset corresponding to the timestamp is computed at the begininng of the process. So if you set it to a date in the future, the consumer will stop at the current latest offset.
 
 The following example prints keys in hex and values in base64:
 ```bash
