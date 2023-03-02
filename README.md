@@ -332,7 +332,7 @@ The consumer can be stopped when the latest offset is reached using `--exit` par
 kafkactl consume my-topic --from-beginning --exit
 ```
 
-The consumer can compute the offset it starts from using a timestamp :
+The consumer can compute the offset it starts from using a timestamp:
 ```bash
 kafkactl consume my-topic --from-timestamp <timestamp-with-milliseconds>
 ```
