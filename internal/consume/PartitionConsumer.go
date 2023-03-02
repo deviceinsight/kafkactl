@@ -147,7 +147,7 @@ func getOffsetBounds(client *sarama.Client, topic string, flags Flags, currentPa
 	if endOffset, err = getEndOffset(client, topic, flags, currentPartition); err != nil {
 		return ErrOffset, ErrOffset, err
 	} else if startOffset == endOffset {
-		endOffset = -1 //nothing to consume on this partition
+		endOffset = sarama.OffsetNewest //nothing to consume on this partition
 	} else if endOffset != sarama.OffsetNewest {
 		endOffset = endOffset - 1
 	}
