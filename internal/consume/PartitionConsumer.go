@@ -173,9 +173,8 @@ func convertToEpocUnixMillis(timestamp string) (int64, error) {
 	aTime, err := util.ParseTimestamp(timestamp)
 	if err != nil {
 		return -1, err
-	} else {
-		return aTime.UnixMilli(), nil
 	}
+	return aTime.UnixMilli(), nil
 }
 
 func getStartOffset(client *sarama.Client, topic string, flags Flags, currentPartition int32) (int64, error) {
