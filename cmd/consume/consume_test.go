@@ -117,12 +117,22 @@ func TestConsumeFromTimestamp(t *testing.T) {
 	testutil.ProduceMessageOnPartition(t, topicName, "key-2", "g", 1, 3)
 	testutil.ProduceMessageOnPartition(t, topicName, "key-1", "h", 0, 3)
 
-	//test --from-timestamp with --to-timestamp
+	//test --from-timestamp with --to-timestamp with formatted dates
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
-	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", strconv.FormatInt(t1, 10), "--to-timestamp", strconv.FormatInt(t2, 10)); err != nil {
+	t1Formatted := time.UnixMilli(t1).Format("2006-01-02T15:04:05.123Z")
+	t2Formatted := time.UnixMilli(t2).Format("2006-01-02T15:04:05.123Z")
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", t1Formatted, "--to-timestamp", t2Formatted); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 	messages := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+	testutil.AssertArraysEquals(t, []string{"c", "d", "e", "f"}, messages)
+
+	//test --from-timestamp with --to-timestamp with unix epoch millis timestamps
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", strconv.FormatInt(t2, 10), "--to-timestamp", strconv.FormatInt(t2, 10)); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+	messages = strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
 	testutil.AssertArraysEquals(t, []string{"c", "d", "e", "f"}, messages)
 
 	//test --from-timestamp with --max-messages (--partitions present for reproducibility)

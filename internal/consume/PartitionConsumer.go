@@ -9,6 +9,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/util"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )
@@ -74,7 +75,7 @@ func (c *PartitionConsumer) Start(ctx context.Context, flags Flags, messages cha
 				return errors.Errorf("Failed to start consumer for partition %d: %s", partitionID, err)
 			}
 
-			if lastOffset == -1 && (flags.Exit || flags.Tail > 0 || flags.ToTimestamp > -1) {
+			if lastOffset == -1 && (flags.Exit || flags.Tail > 0 || flags.ToTimestamp != "") {
 				output.Debugf("Skipping empty partition %d", partitionID)
 				return nil
 			} else if lastOffset == -1 || initialOffset <= lastOffset {
@@ -163,12 +164,30 @@ func getOffsetBounds(client *sarama.Client, topic string, flags Flags, currentPa
 	return startOffset, endOffset, nil
 }
 
+// Converts string to epoch unix timestamp
+// The string might be null in that case, the flag is considered absent and the value -1 is returned
+func convertToEpocUnixMillis(timestamp string) (int64, error) {
+	if timestamp == "" {
+		return -1, nil
+	}
+	aTime, err := util.ParseTimestamp(timestamp)
+	if err != nil {
+		return -1, err
+	} else {
+		return aTime.UnixMilli(), nil
+	}
+}
+
 func getStartOffset(client *sarama.Client, topic string, flags Flags, currentPartition int32) (int64, error) {
-	if hasExclusiveConditions(flags.FromTimestamp > -1, flags.FromBeginning, len(flags.Offsets) > 0) {
+	var fromUnixMillis, err = convertToEpocUnixMillis(flags.FromTimestamp)
+	if err != nil {
+		return ErrOffset, err
+	}
+	if hasExclusiveConditions(fromUnixMillis > -1, flags.FromBeginning, len(flags.Offsets) > 0) {
 		return ErrOffset, errors.Errorf("parameters '--from-timestamp', '--offset' and '--from-beginning' are exclusive")
 	}
-	if flags.FromTimestamp != -1 {
-		return (*client).GetOffset(topic, currentPartition, flags.FromTimestamp)
+	if fromUnixMillis != -1 {
+		return (*client).GetOffset(topic, currentPartition, fromUnixMillis)
 	} else if flags.FromBeginning {
 		return (*client).GetOffset(topic, currentPartition, sarama.OffsetOldest)
 	} else if len(flags.Offsets) > 0 {
@@ -179,8 +198,12 @@ func getStartOffset(client *sarama.Client, topic string, flags Flags, currentPar
 }
 
 func getEndOffset(client *sarama.Client, topic string, flags Flags, currentPartition int32) (int64, error) {
-	if flags.ToTimestamp > -1 {
-		return (*client).GetOffset(topic, currentPartition, flags.ToTimestamp)
+	var toUnixMillis, err = convertToEpocUnixMillis(flags.ToTimestamp)
+	if err != nil {
+		return ErrOffset, err
+	}
+	if toUnixMillis > -1 {
+		return (*client).GetOffset(topic, currentPartition, toUnixMillis)
 	} else if flags.Exit || flags.Tail > 0 {
 		var newestOffset int64
 		var err error

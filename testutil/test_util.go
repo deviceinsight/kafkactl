@@ -179,7 +179,7 @@ func AssertArraysEquals(t *testing.T, expected, actual []string) {
 	sort.Strings(expected)
 	sort.Strings(actual)
 
-	if !util.StrArrayEqual(actual, expected) {
+	if !util.StringArraysEqual(actual, expected) {
 		t.Fatalf("unexpected values:\nexpected:\n--\n%s\n--\nactual:\n--\n%s\n--", expected, actual)
 	}
 }
