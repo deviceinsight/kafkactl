@@ -201,7 +201,7 @@ func extractOffsetForPartition(flags Flags, currentPartition int32) (int64, erro
 
 			partition, err := strconv.Atoi(offsetParts[0])
 			if err != nil {
-				return -1, errors.Errorf("unable to parse offset parameter: %s (%v)", offsetFlag, err)
+				return ErrOffset, errors.Errorf("unable to parse offset parameter: %s (%v)", offsetFlag, err)
 			}
 
 			if int32(partition) != currentPartition {
