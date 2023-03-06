@@ -334,14 +334,27 @@ kafkactl consume my-topic --from-beginning --exit
 
 The consumer can compute the offset it starts from using a timestamp:
 ```bash
-kafkactl consume my-topic --from-timestamp <timestamp-with-milliseconds>
+kafkactl consume my-topic --from-timestamp 1384216367189
+kafkactl consume my-topic --from-timestamp 2014-04-26T17:24:37.123Z
+kafkactl consume my-topic --from-timestamp 2014-04-26T17:24:37.123
+kafkactl consume my-topic --from-timestamp 2009-08-12T22:15:09Z
+kafkactl consume my-topic --from-timestamp 2017-07-19T03:21:51
+kafkactl consume my-topic --from-timestamp 2013-04-01T22:43
+kafkactl consume my-topic --from-timestamp 2014-04-26
 ```
-**NOTE:** `--from-timestamp` is not designed to schedule the beginning of consumer's consumption. The offset corresponding to the timestamp is computed at the begininng of the process. So if you set it to a date in the future, the consumer will start from the latest offset.
+
+The `from-timestamp` parameter supports different timestamp formats. It can either be a number representing the epoch milliseconds
+or a string with a timestamp in one of the [supported date formats](https://github.com/deviceinsight/kafkactl/blob/main/util/util.go#L10).
+
+**NOTE:** `--from-timestamp` is not designed to schedule the beginning of consumer's consumption. The offset corresponding to the timestamp is computed at the beginning of the process. So if you set it to a date in the future, the consumer will start from the latest offset.
 
 The consumer can be stopped when the offset corresponding to a particular timestamp is reached:
 ```bash
-kafkactl consume my-topic --from-timestamp <timestamp-with-milliseconds> --to-timestamp <timestamp-with-milliseconds>
+kafkactl consume my-topic --from-timestamp 2017-07-19T03:30:00 --to-timestamp 2017-07-19T04:30:00
 ```
+
+The `to-timestamp` parameter supports the same formats as `from-timestamp`.
+
 **NOTE:** `--to-timestamp` is not designed to schedule the end of consumer's consumption. The offset corresponding to the timestamp is computed at the begininng of the process. So if you set it to a date in the future, the consumer will stop at the current latest offset.
 
 The following example prints keys in hex and values in base64:
