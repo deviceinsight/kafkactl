@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -121,6 +122,17 @@ func ProduceMessage(t *testing.T, topic, key, value string, expectedPartition, e
 	}
 
 	AssertEquals(t, fmt.Sprintf("message produced (partition=%d\toffset=%d)", expectedPartition, expectedOffset), kafkaCtl.GetStdOut())
+}
+
+func ProduceMessageOnPartition(t *testing.T, topic, key, value string, partition int32, expectedOffset int64) {
+
+	kafkaCtl := CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", topic, "--key", key, "--value", value, "--partition", strconv.FormatInt(int64(partition), 10)); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	AssertEquals(t, fmt.Sprintf("message produced (partition=%d\toffset=%d)", partition, expectedOffset), kafkaCtl.GetStdOut())
 }
 
 func VerifyGroupExists(t *testing.T, group string) {
