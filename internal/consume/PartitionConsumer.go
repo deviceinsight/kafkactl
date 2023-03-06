@@ -2,14 +2,20 @@ package consume
 
 import (
 	"context"
+	"math"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/util"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
+)
+
+const (
+	ErrOffset = math.MinInt64
 )
 
 type PartitionConsumer struct {
@@ -69,7 +75,7 @@ func (c *PartitionConsumer) Start(ctx context.Context, flags Flags, messages cha
 				return errors.Errorf("Failed to start consumer for partition %d: %s", partitionID, err)
 			}
 
-			if lastOffset == -1 && (flags.Exit || flags.Tail > 0) {
+			if lastOffset == -1 && (flags.Exit || flags.Tail > 0 || flags.ToTimestamp != "") {
 				output.Debugf("Skipping empty partition %d", partitionID)
 				return nil
 			} else if lastOffset == -1 || initialOffset <= lastOffset {
@@ -133,38 +139,83 @@ func (c *PartitionConsumer) Close() error {
 }
 
 func getOffsetBounds(client *sarama.Client, topic string, flags Flags, currentPartition int32) (int64, int64, error) {
-
-	if flags.Exit && len(flags.Offsets) == 0 && !flags.FromBeginning {
-		return -1, -1, errors.Errorf("parameter --exit has to be used in combination with --from-beginning or --offset")
-	} else if flags.Tail > 0 && len(flags.Offsets) > 0 {
-		return -1, -1, errors.Errorf("parameters --offset and --tail cannot be used together")
-	} else if flags.Tail > 0 {
-
-		newestOffset, oldestOffset, err := getBoundaryOffsets(client, topic, currentPartition)
-		if err != nil {
-			return -1, -1, err
-		}
-
-		minOffset := newestOffset - int64(flags.Tail)
-		maxOffset := newestOffset - 1
-		if minOffset < oldestOffset {
-			minOffset = oldestOffset
-		}
-		return minOffset, maxOffset, nil
+	var startOffset int64
+	var endOffset int64
+	var err error
+	if startOffset, err = getStartOffset(client, topic, flags, currentPartition); err != nil {
+		return ErrOffset, ErrOffset, err
 	}
-
-	lastOffset := int64(-1)
-	oldestOffset := sarama.OffsetOldest
-
-	if flags.Exit {
-		newestOffset, oldestOff, err := getBoundaryOffsets(client, topic, currentPartition)
-		if err != nil {
-			return -1, -1, err
-		}
-		lastOffset = newestOffset - 1
-		oldestOffset = oldestOff
+	if endOffset, err = getEndOffset(client, topic, flags, currentPartition); err != nil {
+		return ErrOffset, ErrOffset, err
+	} else if startOffset == endOffset {
+		endOffset = sarama.OffsetNewest //nothing to consume on this partition
+	} else if endOffset != sarama.OffsetNewest {
+		endOffset = endOffset - 1
 	}
+	if flags.Tail > 0 && startOffset == sarama.OffsetNewest {
+		//When --tail is used compute startOffset so that it minimizes the number of messages consumed
+		if endOffset-int64(flags.Tail) > 0 {
+			startOffset = endOffset - int64(flags.Tail)
+		} else {
+			startOffset = sarama.OffsetOldest
+		}
+	}
+	output.Debugf("consumer will consume offset %d to %d on partition %d", startOffset, endOffset, currentPartition)
+	return startOffset, endOffset, nil
+}
 
+// Converts string to epoch unix timestamp
+// The string might be null in that case, the flag is considered absent and the value -1 is returned
+func convertToEpocUnixMillis(timestamp string) (int64, error) {
+	if timestamp == "" {
+		return -1, nil
+	}
+	aTime, err := util.ParseTimestamp(timestamp)
+	if err != nil {
+		return -1, err
+	}
+	return aTime.UnixMilli(), nil
+}
+
+func getStartOffset(client *sarama.Client, topic string, flags Flags, currentPartition int32) (int64, error) {
+	var fromUnixMillis, err = convertToEpocUnixMillis(flags.FromTimestamp)
+	if err != nil {
+		return ErrOffset, err
+	}
+	if hasExclusiveConditions(fromUnixMillis > -1, flags.FromBeginning, len(flags.Offsets) > 0) {
+		return ErrOffset, errors.Errorf("parameters '--from-timestamp', '--offset' and '--from-beginning' are exclusive")
+	}
+	if fromUnixMillis != -1 {
+		return (*client).GetOffset(topic, currentPartition, fromUnixMillis)
+	} else if flags.FromBeginning {
+		return (*client).GetOffset(topic, currentPartition, sarama.OffsetOldest)
+	} else if len(flags.Offsets) > 0 {
+		return extractOffsetForPartition(flags, currentPartition)
+	} else {
+		return sarama.OffsetNewest, nil
+	}
+}
+
+func getEndOffset(client *sarama.Client, topic string, flags Flags, currentPartition int32) (int64, error) {
+	var toUnixMillis, err = convertToEpocUnixMillis(flags.ToTimestamp)
+	if err != nil {
+		return ErrOffset, err
+	}
+	if toUnixMillis > -1 {
+		return (*client).GetOffset(topic, currentPartition, toUnixMillis)
+	} else if flags.Exit || flags.Tail > 0 {
+		var newestOffset int64
+		var err error
+		if newestOffset, err = (*client).GetOffset(topic, currentPartition, sarama.OffsetNewest); err != nil {
+			return ErrOffset, err
+		}
+		return newestOffset, nil
+	} else {
+		return sarama.OffsetNewest, nil
+	}
+}
+
+func extractOffsetForPartition(flags Flags, currentPartition int32) (int64, error) {
 	for _, offsetFlag := range flags.Offsets {
 		offsetParts := strings.Split(offsetFlag, "=")
 
@@ -172,7 +223,7 @@ func getOffsetBounds(client *sarama.Client, topic string, flags Flags, currentPa
 
 			partition, err := strconv.Atoi(offsetParts[0])
 			if err != nil {
-				return -1, -1, errors.Errorf("unable to parse offset parameter: %s (%v)", offsetFlag, err)
+				return ErrOffset, errors.Errorf("unable to parse offset parameter: %s (%v)", offsetFlag, err)
 			}
 
 			if int32(partition) != currentPartition {
@@ -181,27 +232,21 @@ func getOffsetBounds(client *sarama.Client, topic string, flags Flags, currentPa
 
 			offset, err := strconv.ParseInt(offsetParts[1], 10, 64)
 			if err != nil {
-				return -1, -1, errors.Errorf("unable to parse offset parameter: %s (%v)", offsetFlag, err)
+				return ErrOffset, errors.Errorf("unable to parse offset parameter: %s (%v)", offsetFlag, err)
 			}
 
-			return offset, lastOffset, nil
+			return offset, nil
 		}
 	}
-
-	if flags.FromBeginning {
-		return oldestOffset, lastOffset, nil
-	}
-	return sarama.OffsetNewest, -1, nil
+	return ErrOffset, errors.Errorf("unable to find offset parameter for partition %d: %s", currentPartition, flags.Offsets)
 }
 
-func getBoundaryOffsets(client *sarama.Client, topic string, partition int32) (newestOffset int64, oldestOffset int64, err error) {
-
-	if newestOffset, err = (*client).GetOffset(topic, partition, sarama.OffsetNewest); err != nil {
-		return -1, -1, errors.Errorf("failed to get offset for topic %s Partition %d: %v", topic, partition, err)
+func hasExclusiveConditions(flags ...bool) bool {
+	value := 0
+	for _, flag := range flags {
+		if flag {
+			value++
+		}
 	}
-
-	if oldestOffset, err = (*client).GetOffset(topic, partition, sarama.OffsetOldest); err != nil {
-		return -1, -1, errors.Errorf("failed to get offset for topic %s Partition %d: %v", topic, partition, err)
-	}
-	return newestOffset, oldestOffset, nil
+	return value > 1
 }

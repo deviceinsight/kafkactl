@@ -27,6 +27,8 @@ type Flags struct {
 	Partitions       []int
 	Offsets          []string
 	FromBeginning    bool
+	FromTimestamp    string
+	ToTimestamp      string
 	Tail             int
 	Exit             bool
 	MaxMessages      int64

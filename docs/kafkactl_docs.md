@@ -430,6 +430,7 @@ kafkactl consume TOPIC [flags]
 ```
   -e, --exit                                                                             stop consuming when latest offset is reached
   -b, --from-beginning                                                                   set offset for consumer to the oldest offset
+      --from-timestamp string                                                            consume data from offset of given timestamp
   -g, --group string                                                                     consumer group to join
   -h, --help                                                                             help for consume
       --key-encoding string                                                              key encoding (auto-detected by default). One of: none|hex|base64
@@ -448,6 +449,7 @@ kafkactl consume TOPIC [flags]
       --protoset-file strings                                                            additional compiled protobuf description file for searching message description
   -s, --separator string                                                                 separator to split key and value (default "#")
       --tail int                                                                         show only the last n messages on the topic (default -1)
+      --to-timestamp string                                                              consume data till offset of given timestamp
       --value-encoding string                                                            value encoding (auto-detected by default). One of: none|hex|base64
       --value-proto-type string                                                          value protobuf message type
 ```

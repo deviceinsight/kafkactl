@@ -3,6 +3,7 @@ package consume_test
 import (
 	"encoding/hex"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -85,12 +86,110 @@ func TestConsumeTailIntegration(t *testing.T) {
 	messages := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
 
 	if len(messages) != 3 {
-		t.Fatalf("expected 3 messages")
+		t.Fatalf("expected 3 messages, got %d", len(messages))
 	}
 
 	testutil.AssertEquals(t, "test-key-2#test-value-2a", messages[0])
 	testutil.AssertEquals(t, "test-key-3#test-value-3", messages[1])
 	testutil.AssertEquals(t, "test-key-2#test-value-2b", messages[2])
+}
+
+func TestConsumeFromTimestamp(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	topicName := testutil.CreateTopic(t, "consume-topic", "--partitions", "2")
+
+	testutil.ProduceMessageOnPartition(t, topicName, "key-1", "a", 0, 0)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-1", "b", 0, 1)
+
+	time.Sleep(1 * time.Millisecond) // need to have messaged produced at different milliseconds to have reproducible test
+	t1 := time.Now().UnixMilli()
+
+	testutil.ProduceMessageOnPartition(t, topicName, "key-2", "c", 1, 0)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-2", "d", 1, 1)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-1", "e", 0, 2)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-2", "f", 1, 2)
+
+	time.Sleep(1 * time.Millisecond)
+	t2 := time.Now().UnixMilli()
+
+	testutil.ProduceMessageOnPartition(t, topicName, "key-2", "g", 1, 3)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-1", "h", 0, 3)
+
+	//test --from-timestamp with --to-timestamp with formatted dates
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	t1Formatted := time.UnixMilli(t1).Format("2006-01-02T15:04:05.123Z")
+	t2Formatted := time.UnixMilli(t2).Format("2006-01-02T15:04:05.123Z")
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", t1Formatted, "--to-timestamp", t2Formatted); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+	messages := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+	testutil.AssertArraysEquals(t, []string{"c", "d", "e", "f"}, messages)
+
+	//test --from-timestamp with --to-timestamp with unix epoch millis timestamps
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", strconv.FormatInt(t2, 10), "--to-timestamp", strconv.FormatInt(t2, 10)); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+	messages = strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+	testutil.AssertArraysEquals(t, []string{"c", "d", "e", "f"}, messages)
+
+	//test --from-timestamp with --max-messages (--partitions present for reproducibility)
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", strconv.FormatInt(t1, 10), "--max-messages", strconv.Itoa(2), "--partitions", strconv.Itoa(1)); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+	messages = strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+	testutil.AssertArraysEquals(t, []string{"c", "d"}, messages)
+
+	//test --from-timestamp with --exit
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", strconv.FormatInt(t2, 10), "--exit"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+	messages = strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+	testutil.AssertArraysEquals(t, []string{"g", "h"}, messages)
+}
+
+func TestConsumeToTimestamp(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	topicName := testutil.CreateTopic(t, "consume-topic", "--partitions", "2")
+
+	testutil.ProduceMessageOnPartition(t, topicName, "key-1", "a", 0, 0)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-1", "b", 0, 1)
+
+	time.Sleep(1 * time.Millisecond) // need to have messages produced at different milliseconds to have reproducible test
+	t1 := time.Now().UnixMilli()
+
+	testutil.ProduceMessageOnPartition(t, topicName, "key-2", "c", 1, 0)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-2", "d", 1, 1)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-1", "e", 0, 2)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-2", "f", 1, 2)
+
+	time.Sleep(1 * time.Millisecond)
+	t2 := time.Now().UnixMilli()
+
+	testutil.ProduceMessageOnPartition(t, topicName, "key-2", "g", 1, 3)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-1", "h", 0, 3)
+
+	//test --from-beginning with --to-timestamp
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--to-timestamp", strconv.FormatInt(t1, 10)); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+	messages := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+	testutil.AssertArraysEquals(t, []string{"a", "b"}, messages)
+
+	//test --to-timestamp with --tail
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("consume", topicName, "--to-timestamp", strconv.FormatInt(t2, 10), "--tail", strconv.Itoa(4)); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+	messages = strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+	testutil.AssertArraysEquals(t, []string{"c", "d", "e", "f"}, messages)
 }
 
 func TestConsumeWithKeyAndValueAsBase64Integration(t *testing.T) {

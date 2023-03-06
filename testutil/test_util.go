@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -171,6 +172,15 @@ func AssertEquals(t *testing.T, expected, actual string) {
 
 	if strings.TrimSpace(actual) != strings.TrimSpace(expected) {
 		t.Fatalf("unexpected output:\nexpected:\n--\n%s\n--\nactual:\n--\n%s\n--", expected, strings.TrimSpace(actual))
+	}
+}
+
+func AssertArraysEquals(t *testing.T, expected, actual []string) {
+	sort.Strings(expected)
+	sort.Strings(actual)
+
+	if !util.StringArraysEqual(actual, expected) {
+		t.Fatalf("unexpected values:\nexpected:\n--\n%s\n--\nactual:\n--\n%s\n--", expected, actual)
 	}
 }
 
