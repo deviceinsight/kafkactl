@@ -97,6 +97,7 @@ func newExecutor(context internal.ClientContext, runner *Runner) *executor {
 		kubeConfig:      context.Kubernetes.KubeConfig,
 		kubeContext:     context.Kubernetes.KubeContext,
 		namespace:       context.Kubernetes.Namespace,
+		extra:           context.Kubernetes.Extra,
 		runner:          runner,
 	}
 }
