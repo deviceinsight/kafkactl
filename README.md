@@ -110,7 +110,10 @@ contexts:
       image: private.registry.com/deviceinsight/kafkactl
       # optional: secret for private docker registry
       imagePullSecret: registry-secret
-
+      # optional: extra args to be passed into the kubectl run command
+      extra:
+        - --overrides
+        - '{"spec": { "nodeSelector": {"kubernetes.io/hostname": "eks-staging-4"}}}'
     # optional: clientID config (defaults to kafkactl-{username})
     clientID: my-client-id
     
