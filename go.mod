@@ -6,7 +6,7 @@ require (
 	github.com/IBM/sarama v1.40.1
 	github.com/Rican7/retry v0.3.1
 	github.com/golang/protobuf v1.5.3
-	github.com/jhump/protoreflect v1.15.1
+	github.com/jhump/protoreflect v1.14.1
 	github.com/landoop/schema-registry v0.0.0-20190327143759-50a5701c1891
 	github.com/linkedin/goavro/v2 v2.12.0
 	github.com/pkg/errors v0.9.1
@@ -22,9 +22,7 @@ require (
 )
 
 require (
-	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect
 	github.com/benbjohnson/clock v1.3.5 // indirect
-	github.com/bufbuild/protocompile v0.6.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/eapache/go-resiliency v1.3.0 // indirect
