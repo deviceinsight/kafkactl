@@ -12,7 +12,7 @@ import (
 
 	"github.com/deviceinsight/kafkactl/internal/helpers/avro"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/internal/helpers"
 	"github.com/deviceinsight/kafkactl/internal/helpers/protobuf"
 	"github.com/deviceinsight/kafkactl/output"

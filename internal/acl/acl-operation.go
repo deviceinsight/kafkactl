@@ -1,7 +1,7 @@
 package acl
 
 import (
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/internal"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"

@@ -6,7 +6,7 @@ import (
 	"sort"
 	"unicode/utf8"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 )
 
 type MessageDeserializer interface {

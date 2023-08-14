@@ -1,7 +1,7 @@
 package producer
 
 import (
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 )
 
 type DefaultMessageSerializer struct {

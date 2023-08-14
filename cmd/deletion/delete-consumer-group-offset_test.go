@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/IBM/sarama"
 	"github.com/Rican7/retry"
 	"github.com/Rican7/retry/backoff"
 	"github.com/Rican7/retry/strategy"
-	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/testutil"
 	"github.com/deviceinsight/kafkactl/util"
 	"github.com/pkg/errors"

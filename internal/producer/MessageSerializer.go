@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"regexp"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/pkg/errors"
 )
 
