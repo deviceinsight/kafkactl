@@ -223,6 +223,6 @@ func (h consumerGrpHandler) Setup(_ sarama.ConsumerGroupSession) error {
 	return nil
 }
 func (consumerGrpHandler) Cleanup(_ sarama.ConsumerGroupSession) error { return nil }
-func (h consumerGrpHandler) ConsumeClaim(sess sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+func (h consumerGrpHandler) ConsumeClaim(_ sarama.ConsumerGroupSession, _ sarama.ConsumerGroupClaim) error {
 	return nil
 }

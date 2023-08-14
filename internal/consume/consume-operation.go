@@ -213,6 +213,7 @@ func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sara
 
 			// drop remaining messages after break
 			for range messages {
+				output.Debugf("drop message")
 			}
 
 			return err

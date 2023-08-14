@@ -552,7 +552,7 @@ func CompleteConsumerGroupsFiltered(flags DescribeConsumerGroupFlags) ([]string,
 	return groupNames, cobra.ShellCompDirectiveNoFileComp
 }
 
-func CompleteConsumerGroups(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func CompleteConsumerGroups(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 	return CompleteConsumerGroupsFiltered(DescribeConsumerGroupFlags{FilterTopic: ""})
 }
 
