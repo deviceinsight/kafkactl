@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/IBM/sarama"
 	"github.com/Rican7/retry"
 	"github.com/Rican7/retry/backoff"
 	"github.com/Rican7/retry/strategy"
-	"github.com/Shopify/sarama"
 	"github.com/deviceinsight/kafkactl/testutil"
 	"github.com/deviceinsight/kafkactl/util"
 	"github.com/pkg/errors"
@@ -223,6 +223,6 @@ func (h consumerGrpHandler) Setup(_ sarama.ConsumerGroupSession) error {
 	return nil
 }
 func (consumerGrpHandler) Cleanup(_ sarama.ConsumerGroupSession) error { return nil }
-func (h consumerGrpHandler) ConsumeClaim(sess sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+func (h consumerGrpHandler) ConsumeClaim(_ sarama.ConsumerGroupSession, _ sarama.ConsumerGroupClaim) error {
 	return nil
 }

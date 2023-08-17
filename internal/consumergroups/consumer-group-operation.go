@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/internal"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/deviceinsight/kafkactl/util"
@@ -552,7 +552,7 @@ func CompleteConsumerGroupsFiltered(flags DescribeConsumerGroupFlags) ([]string,
 	return groupNames, cobra.ShellCompDirectiveNoFileComp
 }
 
-func CompleteConsumerGroups(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func CompleteConsumerGroups(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 	return CompleteConsumerGroupsFiltered(DescribeConsumerGroupFlags{FilterTopic: ""})
 }
 

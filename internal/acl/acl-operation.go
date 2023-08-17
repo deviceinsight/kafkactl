@@ -1,7 +1,7 @@
 package acl
 
 import (
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/internal"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"
@@ -143,10 +143,7 @@ func (operation *Operation) GetACL(flags GetACLFlags) error {
 		aclList = append(aclList, resourceACL)
 	}
 
-	if err = printResourceAcls(flags.OutputFormat, aclList...); err != nil {
-		return err
-	}
-	return nil
+	return printResourceAcls(flags.OutputFormat, aclList...)
 }
 
 func (operation *Operation) CreateACL(flags CreateACLFlags) error {
@@ -243,10 +240,7 @@ func (operation *Operation) CreateACL(flags CreateACLFlags) error {
 		})
 	}
 
-	if err = printResourceAcls("", resourceACL); err != nil {
-		return err
-	}
-	return nil
+	return printResourceAcls("", resourceACL)
 }
 
 func (operation *Operation) DeleteACL(flags DeleteACLFlags) error {
@@ -325,10 +319,7 @@ func (operation *Operation) DeleteACL(flags DeleteACLFlags) error {
 		aclList = append(aclList, resourceACL)
 	}
 
-	if err = printResourceAcls("", aclList...); err != nil {
-		return err
-	}
-	return nil
+	return printResourceAcls("", aclList...)
 }
 
 func xor(values ...bool) bool {
@@ -374,7 +365,7 @@ func printResourceAcls(outputFormat string, aclList ...ResourceACLEntry) error {
 	return nil
 }
 
-func CompleteCreateACL(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func CompleteCreateACL(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 	output.Infof("complete")
 	return nil, cobra.ShellCompDirectiveError
 }

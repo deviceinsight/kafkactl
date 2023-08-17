@@ -7,7 +7,7 @@ import (
 
 	"github.com/deviceinsight/kafkactl/internal/helpers/avro"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/internal"
 	"github.com/deviceinsight/kafkactl/internal/env"
 	"github.com/deviceinsight/kafkactl/internal/k8s"

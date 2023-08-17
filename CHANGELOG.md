@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 3.2.0 - 2023-08-17
+
 ## 3.1.0 - 2023-03-06
 ### Added
 - [#121](https://github.com/deviceinsight/kafkactl/issues/121) Support message consumption with a specified timestamp range

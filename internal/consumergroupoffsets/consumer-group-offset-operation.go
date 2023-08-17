@@ -4,7 +4,7 @@ import (
 	"github.com/deviceinsight/kafkactl/internal/helpers"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/internal"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/deviceinsight/kafkactl/util"

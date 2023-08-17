@@ -12,7 +12,7 @@ import (
 
 	"github.com/deviceinsight/kafkactl/internal/helpers/avro"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/internal/helpers"
 	"github.com/deviceinsight/kafkactl/internal/helpers/protobuf"
 	"github.com/deviceinsight/kafkactl/output"
@@ -42,6 +42,7 @@ type TLSConfig struct {
 type K8sConfig struct {
 	Enabled         bool
 	Binary          string
+	Extra           []string
 	KubeConfig      string
 	KubeContext     string
 	Namespace       string
@@ -125,6 +126,7 @@ func CreateClientContext() (ClientContext, error) {
 	context.Kubernetes.KubeConfig = viper.GetString("contexts." + context.Name + ".kubernetes.kubeConfig")
 	context.Kubernetes.KubeContext = viper.GetString("contexts." + context.Name + ".kubernetes.kubeContext")
 	context.Kubernetes.Namespace = viper.GetString("contexts." + context.Name + ".kubernetes.namespace")
+	context.Kubernetes.Extra = viper.GetStringSlice("contexts." + context.Name + ".kubernetes.extra")
 	context.Kubernetes.Image = viper.GetString("contexts." + context.Name + ".kubernetes.image")
 	context.Kubernetes.ImagePullSecret = viper.GetString("contexts." + context.Name + ".kubernetes.imagePullSecret")
 

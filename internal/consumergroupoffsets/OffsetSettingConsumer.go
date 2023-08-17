@@ -1,6 +1,6 @@
 package consumergroupoffsets
 
-import "github.com/Shopify/sarama"
+import "github.com/IBM/sarama"
 
 type OffsetSettingConsumer struct {
 	Topic            string
