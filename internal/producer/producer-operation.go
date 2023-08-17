@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/internal"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"
@@ -307,7 +307,7 @@ func parsePartitioner(partitioner string, flags Flags) (sarama.PartitionerConstr
 		}
 		return NewJVMCompatiblePartitioner, nil
 	case "murmur2":
-		// https://github.com/Shopify/sarama/issues/1424
+		// https://github.com/IBM/sarama/issues/1424
 		return NewJVMCompatiblePartitioner, nil
 	case "hash":
 		return sarama.NewHashPartitioner, nil

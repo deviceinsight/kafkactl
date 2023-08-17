@@ -14,11 +14,7 @@ TESTS    := $(shell find . -name '*.go' -type f -not -name '*.pb.go' -not -name 
 
 .DEFAULT_GOAL := all
 .PHONY: all
-all: vet fmt lint test build docs
-
-.PHONY: vet
-vet:
-	go vet ./...
+all: fmt lint cve-check test build docs
 
 fmt:
 	gofmt -s -l -w $(FILES) $(TESTS)
@@ -26,6 +22,10 @@ fmt:
 
 lint:
 	golangci-lint run
+
+.PHONY: cve-check
+cve-check:
+	govulncheck ./...
 
 .PHONY: test
 test:

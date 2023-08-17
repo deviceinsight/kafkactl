@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/internal"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"
@@ -145,11 +145,7 @@ func printPartition(p partition) error {
 		return err
 	}
 
-	if err := partitionTableWriter.Flush(); err != nil {
-		return err
-	}
-
-	return nil
+	return partitionTableWriter.Flush()
 }
 
 func readPartition(client *sarama.Client, topic string, partitionID int32) (partition, error) {

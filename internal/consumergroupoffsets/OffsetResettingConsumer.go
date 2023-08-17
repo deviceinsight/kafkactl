@@ -3,7 +3,7 @@ package consumergroupoffsets
 import (
 	"strconv"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"
 )
@@ -29,7 +29,7 @@ func (consumer *OffsetResettingConsumer) Setup(session sarama.ConsumerGroupSessi
 	flags := consumer.flags
 
 	// admin.ListConsumerGroupOffsets(group, nil) can be used to fetch the offsets when
-	// https://github.com/Shopify/sarama/pull/1374 is merged
+	// https://github.com/IBM/sarama/pull/1374 is merged
 	coordinator, err := consumer.client.Coordinator(consumer.groupName)
 	if err != nil {
 		return errors.Wrap(err, "failed to get coordinator")
