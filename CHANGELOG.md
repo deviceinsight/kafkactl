@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Read config file from `$PWD` if present
+
 ## 3.2.0 - 2023-08-17
 
 ## 3.1.0 - 2023-03-06

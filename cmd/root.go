@@ -31,7 +31,15 @@ var Verbose bool
 
 const defaultContextPrefix = "CONTEXTS_DEFAULT_"
 
-var configPaths = []string{"$HOME/.config/kafkactl", "$HOME/.kafkactl", "$SNAP_REAL_HOME/.config/kafkactl", "$SNAP_DATA/kafkactl", "/etc/kafkactl"}
+var configPaths = []string{
+	"$PWD/.config/kafkactl",
+	"$PWD/.kafkactl",
+	"$HOME/.config/kafkactl",
+	"$HOME/.kafkactl",
+	"$SNAP_REAL_HOME/.config/kafkactl",
+	"$SNAP_DATA/kafkactl",
+	"/etc/kafkactl",
+}
 
 func NewKafkactlCommand(streams output.IOStreams) *cobra.Command {
 
