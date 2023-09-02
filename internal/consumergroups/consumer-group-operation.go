@@ -454,6 +454,11 @@ func findAssignedTopics(admin sarama.ClusterAdmin, groupNames []string) (map[str
 				return nil, errors.Wrap(err, "failed to get group member assignment")
 			}
 
+			if assignment == nil {
+				output.Warnf("assignment does not exist for member=%s, clientId=%s, group=%s", member.MemberId, member.ClientId, description.GroupId)
+				continue
+			}
+
 			for t := range assignment.Topics {
 				if !util.ContainsString(topics, t) {
 					topics = append(topics, t)
