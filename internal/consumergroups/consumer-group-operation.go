@@ -132,6 +132,8 @@ func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeCon
 			if err != nil {
 				output.Warnf("failed to get group member assignment (%s, %s): %v", member.ClientHost, member.ClientId, err)
 				assignedPartitions = make(map[string][]int32)
+                       } else if memberAssignment == nil {
+                               output.Warnf("client (host: %s, ID: %s) has no group member assignment", member.ClientHost, member.ClientId)
 			} else {
 				assignedPartitions = filterAssignedPartitions(memberAssignment.Topics, topicPartitions)
 			}
