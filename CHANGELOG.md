@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- [#162](https://github.com/deviceinsight/kafkactl/pull/162) Fix `consumer-group` crash when a group member has no assignment
 
 ## 3.2.0 - 2023-08-17
 
