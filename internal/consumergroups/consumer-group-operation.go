@@ -127,16 +127,16 @@ func (operation *ConsumerGroupOperation) DescribeConsumerGroup(flags DescribeCon
 
 			memberAssignment, err := member.GetMemberAssignment()
 
-			var assignedPartitions map[string][]int32
-
 			if err != nil {
-				output.Warnf("failed to get group member assignment (%s, %s): %v", member.ClientHost, member.ClientId, err)
-				assignedPartitions = make(map[string][]int32)
-                       } else if memberAssignment == nil {
-                               output.Warnf("client (host: %s, ID: %s) has no group member assignment", member.ClientHost, member.ClientId)
-			} else {
-				assignedPartitions = filterAssignedPartitions(memberAssignment.Topics, topicPartitions)
+				output.Debugf("group=%s, protocolType=%s, state=%s", description.GroupId, description.ProtocolType, description.State)
+				return errors.Wrap(err, "failed to get group member assignment")
 			}
+			if memberAssignment == nil {
+				output.Warnf("assignment does not exist for member=%s, host=%s, clientId=%s, group=%s", member.MemberId, member.ClientHost, member.ClientId, description.GroupId)
+				continue
+			}
+
+			assignedPartitions := filterAssignedPartitions(memberAssignment.Topics, topicPartitions)
 
 			consumerGroupDescription.Members = addMember(consumerGroupDescription.Members, member.ClientHost, member.ClientId, assignedPartitions)
 		}
@@ -456,6 +456,11 @@ func findAssignedTopics(admin sarama.ClusterAdmin, groupNames []string) (map[str
 				return nil, errors.Wrap(err, "failed to get group member assignment")
 			}
 
+			if assignment == nil {
+				output.Warnf("assignment does not exist for member=%s, host=%s, clientId=%s, group=%s", member.MemberId, member.ClientHost, member.ClientId, description.GroupId)
+				continue
+			}
+
 			for t := range assignment.Topics {
 				if !util.ContainsString(topics, t) {
 					topics = append(topics, t)
@@ -499,6 +504,10 @@ func filterGroups(admin sarama.ClusterAdmin, groupNames []string, topic string) 
 			if err != nil {
 				output.Debugf("group=%s, protocolType=%s, state=%s", description.GroupId, description.ProtocolType, description.State)
 				return nil, errors.Wrap(err, "failed to get group member assignment")
+			}
+			if assignment == nil {
+				output.Warnf("assignment does not exist for member=%s, host=%s, clientId=%s, group=%s", member.MemberId, member.ClientHost, member.ClientId, description.GroupId)
+				continue
 			}
 
 			topics := make([]string, 0, len(assignment.Topics))

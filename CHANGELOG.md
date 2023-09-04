@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Fixed
-- [#162](https://github.com/deviceinsight/kafkactl/pull/162) Fix `consumer-group` crash when a group member has no assignment
+- [#162](https://github.com/deviceinsight/kafkactl/pull/162) Fix `consumer-group` crashes when a group member has no assignment
 
 ## 3.2.0 - 2023-08-17
 
