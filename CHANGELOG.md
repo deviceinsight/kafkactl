@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- [#159](https://github.com/deviceinsight/kafkactl/issues/159) Add ability to read config file from `$PWD/kafkactl.yml` 
+
 ## 3.2.0 - 2023-08-17
 
 ## 3.1.0 - 2023-03-06

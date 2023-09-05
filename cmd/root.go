@@ -31,7 +31,15 @@ var Verbose bool
 
 const defaultContextPrefix = "CONTEXTS_DEFAULT_"
 
-var configPaths = []string{"$HOME/.config/kafkactl", "$HOME/.kafkactl", "$SNAP_REAL_HOME/.config/kafkactl", "$SNAP_DATA/kafkactl", "/etc/kafkactl"}
+const localConfigName = "kafkactl.yml"
+
+var configPaths = []string{
+	"$HOME/.config/kafkactl",
+	"$HOME/.kafkactl",
+	"$SNAP_REAL_HOME/.config/kafkactl",
+	"$SNAP_DATA/kafkactl",
+	"/etc/kafkactl",
+}
 
 func NewKafkactlCommand(streams output.IOStreams) *cobra.Command {
 
@@ -59,7 +67,8 @@ func NewKafkactlCommand(streams output.IOStreams) *cobra.Command {
 	rootCmd.AddCommand(newDocsCmd())
 
 	// use upper-case letters for shorthand params to avoid conflicts with local flags
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config-file", "C", "", fmt.Sprintf("config file. one of: %v", configPaths))
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config-file", "C", "",
+		fmt.Sprintf("config file. one of: %v", configPaths))
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "V", false, "verbose output")
 
 	k8s.KafkaCtlVersion = Version
@@ -75,12 +84,16 @@ func initConfig() {
 
 	viper.Reset()
 
-	if cfgFile != "" {
-		// Use config file from the flag.
+	localConfigFile := getConfigFileFromWorkingDir()
+
+	switch {
+	case cfgFile != "":
 		viper.SetConfigFile(cfgFile)
-	} else if os.Getenv("KAFKA_CTL_CONFIG") != "" {
+	case os.Getenv("KAFKA_CTL_CONFIG") != "":
 		viper.SetConfigFile(os.Getenv("KAFKA_CTL_CONFIG"))
-	} else {
+	case localConfigFile != "":
+		viper.SetConfigFile(localConfigFile)
+	default:
 		for _, path := range configPaths {
 			viper.AddConfigPath(os.ExpandEnv(path))
 		}
@@ -109,6 +122,14 @@ func initConfig() {
 	if err := readConfig(); err != nil {
 		output.Fail(err)
 	}
+}
+
+func getConfigFileFromWorkingDir() string {
+	if _, err := os.Stat(localConfigName); err != nil {
+		return ""
+	}
+
+	return localConfigName
 }
 
 func mapEnvVariables() {

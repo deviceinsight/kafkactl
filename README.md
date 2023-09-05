@@ -156,9 +156,10 @@ current-context: default
 
 The config file location is resolved by
 
-- checking for a provided commandline argument: `--config-file=$PATH_TO_CONFIG`
-- or by evaluating the environment variable: `export KAFKA_CTL_CONFIG=$PATH_TO_CONFIG`
-- or as default the config file is looked up from one of the following locations:
+1. checking for a provided commandline argument: `--config-file=$PATH_TO_CONFIG`
+2. evaluating the environment variable: `export KAFKA_CTL_CONFIG=$PATH_TO_CONFIG`
+3. checking for a config file in the working directory i.e. `$PWD/kafkactl.yml`
+4. as default the config file is looked up from one of the following locations:
   - `$HOME/.config/kafkactl/config.yml`
   - `$HOME/.kafkactl/config.yml`
   - `$SNAP_REAL_HOME/.kafkactl/config.yml`
