@@ -13,6 +13,9 @@ docs
 dist
 kafkactl
 
+### Configs
+kafkactl.yml
+
 ### Snap
 snap.login
 
