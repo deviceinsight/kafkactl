@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -16,9 +15,9 @@ import (
 )
 
 type Version struct {
-	Major int
-	Minor int
-	Patch int
+	Major      int
+	Minor      int
+	GitVersion string
 }
 
 type executor struct {
@@ -48,42 +47,45 @@ func randomString(n int) string {
 }
 
 func getKubectlVersion(kubectlBinary string, runner *Runner) Version {
-	bytes, err := (*runner).ExecuteAndReturn(kubectlBinary, []string{"version", "--client", "--short"})
+	bytes, err := (*runner).ExecuteAndReturn(kubectlBinary, []string{"version", "--client", "-o", "json"})
 	if err != nil {
 		output.Fail(err)
+		return Version{}
 	}
 
 	if len(bytes) == 0 {
 		return Version{}
 	}
 
-	re := regexp.MustCompile(`v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)`)
-	matches := re.FindStringSubmatch(string(bytes))
-
-	result := make(map[string]string)
-	for i, name := range re.SubexpNames() {
-		result[name] = matches[i]
+	type versionOutput struct {
+		ClientVersion struct {
+			Major      string `json:"major"`
+			Minor      string `json:"minor"`
+			GitVersion string `json:"gitVersion"`
+		} `json:"clientVersion"`
 	}
 
-	major, err := strconv.Atoi(result["major"])
+	var jsonOutput versionOutput
+
+	if err := json.Unmarshal(bytes, &jsonOutput); err != nil {
+		output.Fail(fmt.Errorf("unable to extract kubectl version: %w", err))
+		return Version{}
+	}
+
+	major, err := strconv.Atoi(jsonOutput.ClientVersion.Major)
 	if err != nil {
 		output.Fail(err)
 	}
 
-	minor, err := strconv.Atoi(result["minor"])
-	if err != nil {
-		output.Fail(err)
-	}
-
-	patch, err := strconv.Atoi(result["patch"])
+	minor, err := strconv.Atoi(jsonOutput.ClientVersion.Minor)
 	if err != nil {
 		output.Fail(err)
 	}
 
 	return Version{
-		Major: major,
-		Minor: minor,
-		Patch: patch,
+		Major:      major,
+		Minor:      minor,
+		GitVersion: jsonOutput.ClientVersion.GitVersion,
 	}
 }
 
@@ -192,7 +194,7 @@ func filter(slice []string, predicate func(string) bool) (ret []string) {
 
 func (kubectl *executor) exec(args []string) error {
 	cmd := fmt.Sprintf("exec: %s %s", kubectl.kubectlBinary, join(args))
-	output.Debugf("kubectl version: %d.%d.%d", kubectl.version.Major, kubectl.version.Minor, kubectl.version.Patch)
+	output.Debugf("kubectl version: %s", kubectl.version.GitVersion)
 	output.Debugf(cmd)
 	err := (*kubectl.runner).Execute(kubectl.kubectlBinary, args)
 	return err
