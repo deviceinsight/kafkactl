@@ -16,7 +16,7 @@ func newDescribeTopicCmd() *cobra.Command {
 		Short: "describe a topic",
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			if !(&k8s.Operation{}).TryRun(cmd, args) {
+			if !k8s.NewOperation().TryRun(cmd, args) {
 				if err := (&topic.Operation{}).DescribeTopic(args[0], flags); err != nil {
 					output.Fail(err)
 				}

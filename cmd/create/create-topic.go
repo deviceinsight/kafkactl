@@ -16,7 +16,7 @@ func newCreateTopicCmd() *cobra.Command {
 		Short: "create a topic",
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			if !(&k8s.Operation{}).TryRun(cmd, args) {
+			if !k8s.NewOperation().TryRun(cmd, args) {
 				if err := (&topic.Operation{}).CreateTopics(args, flags); err != nil {
 					output.Fail(err)
 				}

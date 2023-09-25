@@ -15,7 +15,7 @@ func newGetTopicsCmd() *cobra.Command {
 		Use:   "topics",
 		Short: "list available topics",
 		Run: func(cmd *cobra.Command, args []string) {
-			if !(&k8s.Operation{}).TryRun(cmd, args) {
+			if !k8s.NewOperation().TryRun(cmd, args) {
 				if err := (&topic.Operation{}).GetTopics(flags); err != nil {
 					output.Fail(err)
 				}

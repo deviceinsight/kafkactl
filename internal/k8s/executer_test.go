@@ -39,7 +39,7 @@ func TestExecWithImageAndImagePullSecretProvided(t *testing.T) {
 	var testRunner = TestRunner{}
 	var runner k8s.Runner = &testRunner
 
-	exec := k8s.NewExecutor(context, &runner)
+	exec := k8s.NewExecutor(context, runner)
 
 	err := exec.Run("scratch", "/kafkactl", []string{"version"}, []string{"ENV_A=1"})
 	if err != nil {
@@ -70,7 +70,7 @@ func TestExecWithImageAndTagFails(t *testing.T) {
 	var testRunner = TestRunner{}
 	var runner k8s.Runner = &testRunner
 
-	exec := k8s.NewExecutor(context, &runner)
+	exec := k8s.NewExecutor(context, runner)
 
 	err := exec.Run("scratch", "/kafkactl", []string{"version"}, []string{"ENV_A=1"})
 	testutil.AssertErrorContains(t, "image must not contain a tag", err)
@@ -129,7 +129,7 @@ func TestParseKubectlVersion(t *testing.T) {
 
 			testRunner.response = []byte(test.kubectlOutput)
 
-			version := k8s.GetKubectlVersion("kubectl", &runner)
+			version := k8s.GetKubectlVersion("kubectl", runner)
 
 			if test.wantErr != "" {
 				if err == nil {

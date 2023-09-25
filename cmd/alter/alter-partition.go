@@ -21,7 +21,7 @@ func newAlterPartitionCmd() *cobra.Command {
 		Short: "alter a partition",
 		Args:  cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			if !(&k8s.Operation{}).TryRun(cmd, args) {
+			if !k8s.NewOperation().TryRun(cmd, args) {
 
 				var partitionID int32
 

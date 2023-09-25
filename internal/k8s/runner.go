@@ -77,7 +77,7 @@ func (shell *ShellRunner) Execute(binary string, args []string) error {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
-		if err := filterOutput(os.Stdout, stdoutIn); err != nil {
+		if err := filterOutput(output.IoStreams.Out, stdoutIn); err != nil {
 			output.Fail(errors.Wrap(err, "unable to write std out"))
 		}
 		wg.Done()
