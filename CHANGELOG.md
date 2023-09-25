@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- [#165](https://github.com/deviceinsight/kafkactl/issues/165) Kubernetes pod name now always includes random suffix 
+
 ## 3.3.0 - 2023-09-05
 ### Fixed
 - [#162](https://github.com/deviceinsight/kafkactl/pull/162) Fix `consumer-group` crashes when a group member has no assignment
