@@ -15,7 +15,7 @@ func newGetBrokersCmd() *cobra.Command {
 		Use:   "brokers",
 		Short: "list brokers",
 		Run: func(cmd *cobra.Command, args []string) {
-			if !(&k8s.Operation{}).TryRun(cmd, args) {
+			if !k8s.NewOperation().TryRun(cmd, args) {
 				if err := (&broker.Operation{}).GetBrokers(flags); err != nil {
 					output.Fail(err)
 				}

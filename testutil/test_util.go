@@ -149,6 +149,10 @@ func startTest(t *testing.T, logFilename string) {
 		panic(err)
 	}
 
+	if err = os.Chdir(rootDir); err != nil {
+		panic(err)
+	}
+
 	logFilename = filepath.Join(rootDir, logFilename)
 	logFile, err := os.OpenFile(logFilename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {

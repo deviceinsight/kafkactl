@@ -49,4 +49,18 @@ contexts:
       schemaRegistry: localhost:18081
     kafkaversion: 2.6.0
 
+  # k8s-mock context with mocked kubectl
+  k8s-mock:
+    brokers:
+      - localhost:19093
+      - localhost:29093
+      - localhost:39093
+    requestTimeout: 15s
+    kubernetes:
+      enabled: true
+      binary: docker/kubectl-mock.sh
+      kubeContext: k8s-cluster
+      namespace: k8s-namespace
+    kafkaversion: 2.6.0
+
 current-context: default

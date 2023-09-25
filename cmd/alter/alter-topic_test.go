@@ -165,3 +165,48 @@ func TestAlterTopicDecreaseReplicationFactorIntegration(t *testing.T) {
 		t.Fatalf("could not check Replicas for topic %s: %v", topicName, err)
 	}
 }
+
+func TestAlterTopicConfigK8sIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTestWithContext(t, "k8s-mock")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	type testCases struct {
+		description      string
+		args             []string
+		wantInKubectlCmd []string
+	}
+
+	for _, test := range []testCases{
+		{
+			description:      "single_config_defined_with_space",
+			args:             []string{"alter", "topic", "fake-topic", "--config", "retention.ms=86400000"},
+			wantInKubectlCmd: []string{"--config=retention.ms=86400000"},
+		},
+		{
+			description:      "single_config_defined_with_equal",
+			args:             []string{"alter", "topic", "fake-topic", "--config=retention.ms=86400000"},
+			wantInKubectlCmd: []string{"--config=retention.ms=86400000"},
+		},
+		{
+			description: "multiple_configs",
+			args: []string{"alter", "topic", "fake-topic", "--config", "retention.ms=86400000",
+				"--config", "cleanup.policy=compact"},
+			wantInKubectlCmd: []string{"--config=retention.ms=86400000", "--config=cleanup.policy=compact"},
+		},
+	} {
+		t.Run(test.description, func(t *testing.T) {
+
+			if _, err := kafkaCtl.Execute(test.args...); err != nil {
+				t.Fatalf("failed to execute command: %v", err)
+			}
+
+			output := kafkaCtl.GetStdOut()
+
+			for _, wanted := range test.wantInKubectlCmd {
+				testutil.AssertContainSubstring(t, wanted, output)
+			}
+		})
+	}
+}

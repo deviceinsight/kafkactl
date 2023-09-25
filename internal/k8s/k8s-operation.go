@@ -1,9 +1,7 @@
 package k8s
 
 import (
-	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/deviceinsight/kafkactl/internal/env"
@@ -17,73 +15,80 @@ import (
 
 var KafkaCtlVersion string
 
-type Operation struct {
-	context internal.ClientContext
+type Operation interface {
+	Attach() error
+	TryRun(cmd *cobra.Command, args []string) bool
 }
 
-func (operation *Operation) initialize() error {
+type operation struct {
+	runner Runner
+}
 
-	if !operation.context.Kubernetes.Enabled {
-		return errors.Errorf("context is not a kubernetes context: %s", operation.context.Name)
+func NewOperation() Operation {
+	return &operation{
+		runner: &ShellRunner{},
+	}
+}
+
+func (op *operation) initialize(context internal.ClientContext) error {
+
+	if !context.Kubernetes.Enabled {
+		return errors.Errorf("context is not a kubernetes context: %s", context.Name)
 	}
 
-	if operation.context.Kubernetes.KubeContext == "" {
-		return errors.Errorf("context has no kubernetes context set: contexts.%s.kubernetes.kubeContext", operation.context.Name)
+	if context.Kubernetes.KubeContext == "" {
+		return errors.Errorf("context has no kubernetes context set: contexts.%s.kubernetes.kubeContext", context.Name)
 	}
 
-	if operation.context.Kubernetes.Namespace == "" {
-		return errors.Errorf("context has no kubernetes namespace set: contexts.%s.kubernetes.namespace", operation.context.Name)
+	if context.Kubernetes.Namespace == "" {
+		return errors.Errorf("context has no kubernetes namespace set: contexts.%s.kubernetes.namespace", context.Name)
 	}
 
 	return nil
 }
 
-func (operation *Operation) Attach() error {
+func (op *operation) Attach() error {
 
-	var err error
-
-	if operation.context, err = internal.CreateClientContext(); err != nil {
+	context, err := internal.CreateClientContext()
+	if err != nil {
 		return err
 	}
 
-	if err := operation.initialize(); err != nil {
+	if err := op.initialize(context); err != nil {
 		return err
 	}
 
-	var runner Runner = &ShellRunner{}
-	exec := newExecutor(operation.context, &runner)
+	exec := newExecutor(context, op.runner)
 
-	podEnvironment := parsePodEnvironment(operation.context)
+	podEnvironment := parsePodEnvironment(context)
 
 	return exec.Run("ubuntu", "bash", nil, podEnvironment)
 }
 
-func (operation *Operation) TryRun(cmd *cobra.Command, args []string) bool {
+func (op *operation) TryRun(cmd *cobra.Command, args []string) bool {
 
-	var err error
-
-	if operation.context, err = internal.CreateClientContext(); err != nil {
+	context, err := internal.CreateClientContext()
+	if err != nil {
 		return false
 	}
 
-	if !operation.context.Kubernetes.Enabled {
+	if !context.Kubernetes.Enabled {
 		return false
 	}
 
-	if err := operation.Run(cmd, args); err != nil {
+	if err := op.run(context, cmd, args); err != nil {
 		output.Fail(err)
 	}
 	return true
 }
 
-func (operation *Operation) Run(cmd *cobra.Command, args []string) error {
+func (op *operation) run(context internal.ClientContext, cmd *cobra.Command, args []string) error {
 
-	if err := operation.initialize(); err != nil {
+	if err := op.initialize(context); err != nil {
 		return err
 	}
 
-	var runner Runner = &ShellRunner{}
-	exec := newExecutor(operation.context, &runner)
+	exec := newExecutor(context, op.runner)
 
 	kafkaCtlCommand := parseCompleteCommand(cmd, []string{})
 	kafkaCtlFlags, err := parseFlags(cmd)
@@ -91,7 +96,7 @@ func (operation *Operation) Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	podEnvironment := parsePodEnvironment(operation.context)
+	podEnvironment := parsePodEnvironment(context)
 
 	kafkaCtlCommand = append(kafkaCtlCommand, args...)
 	kafkaCtlCommand = append(kafkaCtlCommand, kafkaCtlFlags...)
@@ -105,26 +110,55 @@ func parseFlags(cmd *cobra.Command) ([]string, error) {
 
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		if err == nil && flag.Changed {
-			if flag.Value.Type() == "intSlice" || flag.Value.Type() == "int32Slice" {
-				var intArray []int
-				intArray, err = parseIntArray(flag.Value.String())
-				if err == nil {
-					for _, value := range intArray {
-						flags = append(flags, fmt.Sprintf("--%s=%s", flag.Name, strconv.Itoa(value)))
-					}
-				}
+			if parsedFlags, parseErr := parseFlag(flag, cmd.Flags()); err != nil {
+				err = parseErr
 			} else {
-				flags = append(flags, fmt.Sprintf("--%s=%s", flag.Name, flag.Value.String()))
+				flags = append(flags, parsedFlags...)
 			}
 		}
 	})
 	return flags, err
 }
 
-func parseIntArray(array string) ([]int, error) {
-	var ints []int
-	err := json.Unmarshal([]byte(array), &ints)
-	return ints, err
+func parseFlag(flag *pflag.Flag, flagSet *pflag.FlagSet) (flags []string, err error) {
+	switch flag.Value.Type() {
+	case "intSlice":
+		var intSlice []int
+		intSlice, err = flagSet.GetIntSlice(flag.Name)
+		if err == nil {
+			for _, value := range intSlice {
+				flags = append(flags, fmt.Sprintf("--%s=%d", flag.Name, value))
+			}
+		}
+		return flags, err
+	case "int32Slice":
+		var int32Slice []int32
+		int32Slice, err = flagSet.GetInt32Slice(flag.Name)
+		if err == nil {
+			for _, value := range int32Slice {
+				flags = append(flags, fmt.Sprintf("--%s=%d", flag.Name, value))
+			}
+		}
+	case "stringArray":
+		var strArray []string
+		strArray, err = flagSet.GetStringArray(flag.Name)
+		if err == nil {
+			for _, value := range strArray {
+				flags = append(flags, fmt.Sprintf("--%s=%s", flag.Name, value))
+			}
+		}
+	case "stringSlice":
+		var strSlice []string
+		strSlice, err = flagSet.GetStringSlice(flag.Name)
+		if err == nil {
+			for _, value := range strSlice {
+				flags = append(flags, fmt.Sprintf("--%s=%s", flag.Name, value))
+			}
+		}
+	default:
+		flags = append(flags, fmt.Sprintf("--%s=%s", flag.Name, flag.Value.String()))
+	}
+	return flags, err
 }
 
 func parseCompleteCommand(cmd *cobra.Command, found []string) []string {

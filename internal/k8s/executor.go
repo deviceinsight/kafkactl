@@ -25,7 +25,7 @@ type executor struct {
 	image           string
 	imagePullSecret string
 	version         Version
-	runner          *Runner
+	runner          Runner
 	clientID        string
 	kubeConfig      string
 	kubeContext     string
@@ -46,8 +46,9 @@ func randomString(n int) string {
 	return string(b)
 }
 
-func getKubectlVersion(kubectlBinary string, runner *Runner) Version {
-	bytes, err := (*runner).ExecuteAndReturn(kubectlBinary, []string{"version", "--client", "-o", "json"})
+func getKubectlVersion(kubectlBinary string, runner Runner) Version {
+
+	bytes, err := runner.ExecuteAndReturn(kubectlBinary, []string{"version", "--client", "-o", "json"})
 	if err != nil {
 		output.Fail(err)
 		return Version{}
@@ -89,7 +90,7 @@ func getKubectlVersion(kubectlBinary string, runner *Runner) Version {
 	}
 }
 
-func newExecutor(context internal.ClientContext, runner *Runner) *executor {
+func newExecutor(context internal.ClientContext, runner Runner) *executor {
 	return &executor{
 		kubectlBinary:   context.Kubernetes.Binary,
 		version:         getKubectlVersion(context.Kubernetes.Binary, runner),
@@ -119,11 +120,7 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 		return err
 	}
 
-	podName := "kafkactl-" + randomString(10)
-
-	if kubectl.clientID != "" {
-		podName = "kafkactl-" + strings.ToLower(kubectl.clientID)
-	}
+	podName := fmt.Sprintf("kafkactl-%s-%s", strings.ToLower(kubectl.clientID), randomString(4))
 
 	kubectlArgs := []string{
 		"run", "--rm", "-i", "--tty", "--restart=Never", podName,
@@ -196,7 +193,7 @@ func (kubectl *executor) exec(args []string) error {
 	cmd := fmt.Sprintf("exec: %s %s", kubectl.kubectlBinary, join(args))
 	output.Debugf("kubectl version: %s", kubectl.version.GitVersion)
 	output.Debugf(cmd)
-	err := (*kubectl.runner).Execute(kubectl.kubectlBinary, args)
+	err := kubectl.runner.Execute(kubectl.kubectlBinary, args)
 	return err
 }
 

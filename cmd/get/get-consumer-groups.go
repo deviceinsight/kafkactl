@@ -18,7 +18,7 @@ func newGetConsumerGroupsCmd() *cobra.Command {
 		Short:   "list available consumerGroups",
 		Args:    cobra.MaximumNArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
-			if !(&k8s.Operation{}).TryRun(cmd, args) {
+			if !k8s.NewOperation().TryRun(cmd, args) {
 				if err := (&consumergroups.ConsumerGroupOperation{}).GetConsumerGroups(flags); err != nil {
 					output.Fail(err)
 				}
