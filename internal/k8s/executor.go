@@ -119,11 +119,7 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 		return err
 	}
 
-	podName := "kafkactl-" + randomString(10)
-
-	if kubectl.clientID != "" {
-		podName = "kafkactl-" + strings.ToLower(kubectl.clientID)
-	}
+	podName := fmt.Sprintf("kafkactl-%s-%s", strings.ToLower(kubectl.clientID), randomString(4))
 
 	kubectlArgs := []string{
 		"run", "--rm", "-i", "--tty", "--restart=Never", podName,
