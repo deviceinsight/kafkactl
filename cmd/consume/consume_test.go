@@ -572,3 +572,47 @@ func TestConsumeGroupCompletionIntegration(t *testing.T) {
 	testutil.AssertContains(t, group2, outputLines)
 	testutil.AssertContains(t, group3, outputLines)
 }
+
+func TestConsumePartitionsK8sIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTestWithContext(t, "k8s-mock")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	type testCases struct {
+		description      string
+		args             []string
+		wantInKubectlCmd []string
+	}
+
+	for _, test := range []testCases{
+		{
+			description:      "single_partition_defined_with_space",
+			args:             []string{"consume", "fake-topic", "--partitions", "5"},
+			wantInKubectlCmd: []string{"--partitions=5"},
+		},
+		{
+			description:      "single_partition_defined_with_equal",
+			args:             []string{"consume", "fake-topic", "--partitions=5"},
+			wantInKubectlCmd: []string{"--partitions=5"},
+		},
+		{
+			description:      "multiple_partitions",
+			args:             []string{"consume", "fake-topic", "--partitions", "5", "--partitions", "6"},
+			wantInKubectlCmd: []string{"--partitions=5", "--partitions=6"},
+		},
+	} {
+		t.Run(test.description, func(t *testing.T) {
+
+			if _, err := kafkaCtl.Execute(test.args...); err != nil {
+				t.Fatalf("failed to execute command: %v", err)
+			}
+
+			output := kafkaCtl.GetStdOut()
+
+			for _, wanted := range test.wantInKubectlCmd {
+				testutil.AssertContainSubstring(t, wanted, output)
+			}
+		})
+	}
+}

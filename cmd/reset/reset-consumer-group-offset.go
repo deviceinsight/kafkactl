@@ -18,7 +18,7 @@ func newResetOffsetCmd() *cobra.Command {
 		Short:   "reset a consumer group offset",
 		Args:    cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			if !(&k8s.Operation{}).TryRun(cmd, args) {
+			if !k8s.NewOperation().TryRun(cmd, args) {
 				if err := (&consumergroupoffsets.ConsumerGroupOffsetOperation{}).ResetConsumerGroupOffset(offsetFlags, args[0]); err != nil {
 					output.Fail(err)
 				}

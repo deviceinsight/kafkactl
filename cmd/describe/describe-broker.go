@@ -18,7 +18,7 @@ func newDescribeBrokerCmd() *cobra.Command {
 		Short: "describe a broker",
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			if !(&k8s.Operation{}).TryRun(cmd, args) {
+			if !k8s.NewOperation().TryRun(cmd, args) {
 
 				id, err := strconv.ParseInt(args[0], 10, 32)
 				if err != nil {

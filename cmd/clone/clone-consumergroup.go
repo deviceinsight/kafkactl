@@ -16,7 +16,7 @@ func newCloneConsumerGroupCmd() *cobra.Command {
 		Short:   "clone existing consumerGroup with all offsets",
 		Args:    cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			if !(&k8s.Operation{}).TryRun(cmd, args) {
+			if !k8s.NewOperation().TryRun(cmd, args) {
 				if err := (&consumergroupoffsets.ConsumerGroupOffsetOperation{}).CloneConsumerGroup(args[0], args[1]); err != nil {
 					output.Fail(err)
 				}
