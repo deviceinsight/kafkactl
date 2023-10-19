@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/IBM/sarama"
+	"github.com/deviceinsight/kafkactl/internal/consume"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"
 )
@@ -49,7 +50,7 @@ func (consumer *OffsetResettingConsumer) Setup(session sarama.ConsumerGroupSessi
 	offsets := make([]partitionOffsets, 0)
 
 	if flags.Partition > -1 {
-		offset, err := resetOffset(consumer.client, consumer.topicName, flags.Partition, flags, groupOffsets, session)
+		offset, err := resetOffset(&consumer.client, consumer.topicName, flags.Partition, flags, groupOffsets, session)
 		if err != nil {
 			return err
 		}
@@ -62,7 +63,7 @@ func (consumer *OffsetResettingConsumer) Setup(session sarama.ConsumerGroupSessi
 		}
 
 		for _, partition := range partitions {
-			offset, err := resetOffset(consumer.client, consumer.topicName, partition, flags, groupOffsets, session)
+			offset, err := resetOffset(&consumer.client, consumer.topicName, partition, flags, groupOffsets, session)
 			if err != nil {
 				return err
 			}
@@ -102,7 +103,7 @@ func (consumer *OffsetResettingConsumer) ConsumeClaim(sarama.ConsumerGroupSessio
 	return nil
 }
 
-func resetOffset(client sarama.Client, topic string, partition int32, flags ResetConsumerGroupOffsetFlags, groupOffsets *sarama.OffsetFetchResponse, session sarama.ConsumerGroupSession) (partitionOffsets, error) {
+func resetOffset(client *sarama.Client, topic string, partition int32, flags ResetConsumerGroupOffsetFlags, groupOffsets *sarama.OffsetFetchResponse, session sarama.ConsumerGroupSession) (partitionOffsets, error) {
 	offset, err := getPartitionOffsets(client, topic, partition, flags)
 	if err != nil {
 		return offset, err
@@ -121,16 +122,26 @@ func resetOffset(client sarama.Client, topic string, partition int32, flags Rese
 	return offset, nil
 }
 
-func getPartitionOffsets(client sarama.Client, topic string, partition int32, flags ResetConsumerGroupOffsetFlags) (partitionOffsets, error) {
+func getPartitionOffsets(client *sarama.Client, topic string, partition int32, flags ResetConsumerGroupOffsetFlags) (partitionOffsets, error) {
 
 	var err error
 	offsets := partitionOffsets{Partition: partition}
 
-	if offsets.OldestOffset, err = client.GetOffset(topic, partition, sarama.OffsetOldest); err != nil {
+	if flags.ToDatetime != "" {
+		milliTime, err := consume.ConvertToEpocUnixMillis(flags.ToDatetime)
+		if err != nil {
+			return offsets, err
+		}
+		if offsets.TargetOffset, err = (*client).GetOffset(topic, partition, milliTime); err == nil {
+			return offsets, nil
+		}
+	}
+
+	if offsets.OldestOffset, err = (*client).GetOffset(topic, partition, sarama.OffsetOldest); err != nil {
 		return offsets, errors.Errorf("failed to get offset for topic %s Partition %d: %v", topic, partition, err)
 	}
 
-	if offsets.NewestOffset, err = client.GetOffset(topic, partition, sarama.OffsetNewest); err != nil {
+	if offsets.NewestOffset, err = (*client).GetOffset(topic, partition, sarama.OffsetNewest); err != nil {
 		return offsets, errors.Errorf("failed to get offset for topic %s Partition %d: %v", topic, partition, err)
 	}
 

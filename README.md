@@ -720,6 +720,10 @@ kafkactl reset offset my-group --topic my-topic --partition 5 --offset 100
 kafkactl reset offset my-group --all-topics --newest
 # reset offset of for all partitions on multiple topics to oldest offset
 kafkactl reset offset my-group --topic my-topic-a --topic my-topic-b --oldest
+# reset offset to offset at a given timestamp(epoch)/datetime
+kafkactl reset offset my-group --topic my-topic-a --to-datetime 2014-04-26T17:24:37.123Z
+# reset offset to offset at a given timestamp(epoch)/datetime
+kafkactl reset offset my-group --topic my-topic-a --to-datetime 1697726906352
 ```
 
 ### Delete consumer group offsets

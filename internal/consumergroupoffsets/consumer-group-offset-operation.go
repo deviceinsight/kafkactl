@@ -21,6 +21,7 @@ type ResetConsumerGroupOffsetFlags struct {
 	Execute           bool
 	OutputFormat      string
 	allowedGroupState string
+	ToDatetime        string
 }
 
 type ConsumerGroupOffsetOperation struct {

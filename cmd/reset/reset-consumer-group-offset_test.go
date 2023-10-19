@@ -3,6 +3,7 @@ package reset_test
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/deviceinsight/kafkactl/testutil"
 )
@@ -128,6 +129,48 @@ func TestResetCGOForAllTopicsInTheGroupIntegration(t *testing.T) {
 	testutil.VerifyConsumerGroupOffset(t, group, topicA, 2)
 	testutil.VerifyConsumerGroupOffset(t, group, topicB, 2)
 	testutil.VerifyTopicNotInConsumerGroup(t, group, topicOther)
+}
+
+func TestResetCGOToDatetimeIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	topicName := testutil.CreateTopic(t, "reset-cgo-datetime")
+
+	group := testutil.CreateConsumerGroup(t, "reset-cgo-datetime", topicName)
+
+	testutil.ProduceMessage(t, topicName, "test-key", "a", 0, 0)
+	testutil.ProduceMessage(t, topicName, "test-key", "b", 0, 1)
+
+	time.Sleep(1 * time.Millisecond) // need to have messaged produced at different milliseconds to have reproducible test
+
+	t1 := time.Now()
+	t2 := t1.Format("2006-01-02T15:04:05.000Z")
+
+	testutil.ProduceMessage(t, topicName, "test-key", "c", 0, 2)
+	testutil.ProduceMessage(t, topicName, "test-key", "d", 0, 3)
+	testutil.ProduceMessage(t, topicName, "test-key", "e", 0, 4)
+	testutil.ProduceMessage(t, topicName, "test-key", "f", 0, 5)
+
+	testutil.VerifyConsumerGroupOffset(t, group, topicName, 0)
+
+	//test with --to-datetime
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("reset", "offset", group, "--topic", topicName, "--to-datetime", t2, "--execute"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.VerifyConsumerGroupOffset(t, group, topicName, 2)
+
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--group", group, "--max-messages", "4"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	messages := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+	testutil.AssertArraysEquals(t, []string{"c", "d", "e", "f"}, messages)
 }
 
 func TestResetCGOAutoCompletionIntegration(t *testing.T) {

@@ -35,6 +35,7 @@ func newResetOffsetCmd() *cobra.Command {
 	cmdResetOffset.Flags().StringArrayVarP(&offsetFlags.Topic, "topic", "t", offsetFlags.Topic, "one ore more topics to change offset for")
 	cmdResetOffset.Flags().BoolVarP(&offsetFlags.Execute, "execute", "e", false, "execute the reset (as default only the results are displayed for validation)")
 	cmdResetOffset.Flags().StringVarP(&offsetFlags.OutputFormat, "output", "o", offsetFlags.OutputFormat, "output format. One of: json|yaml")
+	cmdResetOffset.Flags().StringVarP(&offsetFlags.ToDatetime, "to-datetime", "", "", "set the offset to offset of given timestamp")
 
 	return cmdResetOffset
 }
