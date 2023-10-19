@@ -367,6 +367,53 @@ func TestProduceProtoFileIntegration(t *testing.T) {
 	testutil.AssertEquals(t, value, string(actualValue))
 }
 
+func TestProduceWithCSVFileIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+	topic := testutil.CreateTopic(t, "produce-topic-csv")
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	dataFilePath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+
+	if _, err := kafkaCtl.Execute("produce", topic,
+		"--file", filepath.Join(dataFilePath, "msg.csv")); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "3 messages produced", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topic, "--from-beginning", "--exit"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "1,a\n2,b\n3,c", kafkaCtl.GetStdOut())
+
+}
+
+func TestProduceWithJSONFileIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+	topic := testutil.CreateTopic(t, "produce-topic-json")
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	dataFilePath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+
+	if _, err := kafkaCtl.Execute("produce", topic,
+		"--file", filepath.Join(dataFilePath, "msg.txt"),
+		"--file-type", "json"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "3 messages produced", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topic, "--from-beginning", "--exit"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "a\nb\nc", kafkaCtl.GetStdOut())
+
+}
+
 func TestProduceProtoFileWithOnlyKeyEncodedIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 

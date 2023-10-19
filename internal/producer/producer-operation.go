@@ -2,6 +2,7 @@ package producer
 
 import (
 	"bufio"
+	"encoding/json"
 	"io"
 	"os"
 	"os/signal"
@@ -24,6 +25,7 @@ type Flags struct {
 	Separator          string
 	LineSeparator      string
 	File               string
+	FileType           string
 	Key                string
 	Value              string
 	NullValue          bool
@@ -44,6 +46,11 @@ type Flags struct {
 const DefaultMaxMessagesBytes = 1000000
 
 type Operation struct {
+}
+
+type KV struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 func (operation *Operation) Produce(topic string, flags Flags) error {
@@ -112,6 +119,8 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 			output.Warnf("Failed to close Kafka producer cleanly:", err)
 		}
 	}()
+
+	var kv KV
 
 	var key string
 	var value string
@@ -221,6 +230,13 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 				}
 				key = input[keyColumnIdx]
 				value = input[valueColumnIdx]
+			} else if flags.FileType == "json" {
+				if err = json.Unmarshal([]byte(line), &kv); err != nil {
+					return errors.Errorf("Can't unmarshal line at %d", messageCount)
+				}
+
+				key = kv.Key
+				value = kv.Value
 			} else {
 				value = line
 			}
