@@ -339,9 +339,8 @@ func resolveColumns(line []string) (keyColumnIdx, valueColumnIdx, columnCount in
 	} else if isTimestamp(line[1]) {
 		output.Warnf("assuming column 1 to be message timestamp. Column will be ignored")
 		return 0, 2, 3, nil
-	} else {
-		return -1, -1, -1, errors.Errorf("line contains unexpected amount of separators:\n%s", line)
 	}
+	return -1, -1, -1, errors.Errorf("line contains unexpected amount of separators:\n%s", line)
 }
 
 func isTimestamp(value string) bool {

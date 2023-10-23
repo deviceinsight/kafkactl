@@ -150,9 +150,8 @@ func getPartitionOffsets(client *sarama.Client, topic string, partition int32, f
 			return offsets, errors.Errorf("cannot set offset for Partition %d: offset (%d) < oldest offset (%d)", partition, flags.Offset, offsets.OldestOffset)
 		} else if flags.Offset > offsets.NewestOffset {
 			return offsets, errors.Errorf("cannot set offset for Partition %d: offset (%d) > newest offset (%d)", partition, flags.Offset, offsets.NewestOffset)
-		} else {
-			offsets.TargetOffset = flags.Offset
 		}
+		offsets.TargetOffset = flags.Offset
 	} else {
 		if flags.OldestOffset {
 			offsets.TargetOffset = offsets.OldestOffset

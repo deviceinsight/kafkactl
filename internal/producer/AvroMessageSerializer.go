@@ -106,9 +106,8 @@ func (serializer AvroMessageSerializer) CanSerialize(topic string) (bool, error)
 		return true, nil
 	} else if util.ContainsString(subjects, topic+"-value") {
 		return true, nil
-	} else {
-		return false, nil
 	}
+	return false, nil
 }
 
 func (serializer AvroMessageSerializer) Serialize(key, value []byte, flags Flags) (*sarama.ProducerMessage, error) {

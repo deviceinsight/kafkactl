@@ -191,9 +191,8 @@ func getStartOffset(client *sarama.Client, topic string, flags Flags, currentPar
 		return (*client).GetOffset(topic, currentPartition, sarama.OffsetOldest)
 	} else if len(flags.Offsets) > 0 {
 		return extractOffsetForPartition(flags, currentPartition)
-	} else {
-		return sarama.OffsetNewest, nil
 	}
+	return sarama.OffsetNewest, nil
 }
 
 func getEndOffset(client *sarama.Client, topic string, flags Flags, currentPartition int32) (int64, error) {
@@ -210,9 +209,8 @@ func getEndOffset(client *sarama.Client, topic string, flags Flags, currentParti
 			return ErrOffset, err
 		}
 		return newestOffset, nil
-	} else {
-		return sarama.OffsetNewest, nil
 	}
+	return sarama.OffsetNewest, nil
 }
 
 func extractOffsetForPartition(flags Flags, currentPartition int32) (int64, error) {

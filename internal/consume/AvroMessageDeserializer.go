@@ -171,9 +171,8 @@ func (deserializer AvroMessageDeserializer) CanDeserialize(topic string) (bool, 
 		return true, nil
 	} else if util.ContainsString(subjects, topic+"-value") {
 		return true, nil
-	} else {
-		return false, nil
 	}
+	return false, nil
 }
 
 func (deserializer AvroMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerMessage, flags Flags) error {

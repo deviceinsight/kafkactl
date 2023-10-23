@@ -44,9 +44,8 @@ func newAlterPartitionCmd() *cobra.Command {
 				return topic.CompleteTopicNames(cmd, args, toComplete)
 			} else if len(args) == 1 {
 				return partition.CompletePartitionIds(cmd, args, toComplete)
-			} else {
-				return nil, cobra.ShellCompDirectiveNoFileComp
 			}
+			return nil, cobra.ShellCompDirectiveNoFileComp
 		},
 	}
 
