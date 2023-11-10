@@ -166,7 +166,7 @@ func getOffsetBounds(client *sarama.Client, topic string, flags Flags, currentPa
 
 // Converts string to epoch unix timestamp
 // The string might be null in that case, the flag is considered absent and the value -1 is returned
-func convertToEpocUnixMillis(timestamp string) (int64, error) {
+func ConvertToEpocUnixMillis(timestamp string) (int64, error) {
 	if timestamp == "" {
 		return -1, nil
 	}
@@ -178,7 +178,7 @@ func convertToEpocUnixMillis(timestamp string) (int64, error) {
 }
 
 func getStartOffset(client *sarama.Client, topic string, flags Flags, currentPartition int32) (int64, error) {
-	var fromUnixMillis, err = convertToEpocUnixMillis(flags.FromTimestamp)
+	var fromUnixMillis, err = ConvertToEpocUnixMillis(flags.FromTimestamp)
 	if err != nil {
 		return ErrOffset, err
 	}
@@ -191,13 +191,12 @@ func getStartOffset(client *sarama.Client, topic string, flags Flags, currentPar
 		return (*client).GetOffset(topic, currentPartition, sarama.OffsetOldest)
 	} else if len(flags.Offsets) > 0 {
 		return extractOffsetForPartition(flags, currentPartition)
-	} else {
-		return sarama.OffsetNewest, nil
 	}
+	return sarama.OffsetNewest, nil
 }
 
 func getEndOffset(client *sarama.Client, topic string, flags Flags, currentPartition int32) (int64, error) {
-	var toUnixMillis, err = convertToEpocUnixMillis(flags.ToTimestamp)
+	var toUnixMillis, err = ConvertToEpocUnixMillis(flags.ToTimestamp)
 	if err != nil {
 		return ErrOffset, err
 	}
@@ -210,9 +209,8 @@ func getEndOffset(client *sarama.Client, topic string, flags Flags, currentParti
 			return ErrOffset, err
 		}
 		return newestOffset, nil
-	} else {
-		return sarama.OffsetNewest, nil
 	}
+	return sarama.OffsetNewest, nil
 }
 
 func extractOffsetForPartition(flags Flags, currentPartition int32) (int64, error) {

@@ -213,9 +213,8 @@ func GetClientID(context *ClientContext, defaultPrefix string) string {
 	} else if usr, err = user.Current(); err != nil {
 		output.Warnf("Failed to read current user: %v", err)
 		return strings.TrimSuffix(defaultPrefix, "-")
-	} else {
-		return defaultPrefix + sanitizeUsername(usr.Username)
 	}
+	return defaultPrefix + sanitizeUsername(usr.Username)
 }
 
 func sanitizeUsername(u string) string {
