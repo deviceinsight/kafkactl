@@ -2,17 +2,17 @@ package producer
 
 import (
 	"bufio"
-	"encoding/json"
 	"io"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/internal"
+	"github.com/deviceinsight/kafkactl/internal/producer/input"
 	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/util"
 	"github.com/pkg/errors"
 	"go.uber.org/ratelimit"
 )
@@ -25,7 +25,7 @@ type Flags struct {
 	Separator          string
 	LineSeparator      string
 	File               string
-	FileType           string
+	InputFormat        string
 	Key                string
 	Value              string
 	NullValue          bool
@@ -46,11 +46,6 @@ type Flags struct {
 const DefaultMaxMessagesBytes = 1000000
 
 type Operation struct {
-}
-
-type KV struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
 }
 
 func (operation *Operation) Produce(topic string, flags Flags) error {
@@ -120,15 +115,10 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 		}
 	}()
 
-	var kv KV
-
-	var key string
-	var value string
+	var inputMessage input.Message
 
 	if flags.Key != "" && flags.Separator != "" {
 		return errors.New("parameters --key and --separator cannot be used together")
-	} else if flags.Key != "" {
-		key = flags.Key
 	}
 
 	if flags.NullValue && flags.Value != "" {
@@ -140,9 +130,9 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 		var message *sarama.ProducerMessage
 
 		if flags.NullValue {
-			message, err = serializers.Serialize([]byte(key), nil, flags)
+			message, err = serializers.Serialize([]byte(flags.Key), nil, flags)
 		} else {
-			message, err = serializers.Serialize([]byte(key), []byte(flags.Value), flags)
+			message, err = serializers.Serialize([]byte(flags.Key), []byte(flags.Value), flags)
 		}
 
 		if err != nil {
@@ -166,9 +156,7 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 		}()
 
 		messageCount := 0
-		keyColumnIdx := 0
-		valueColumnIdx := 1
-		columnCount := 2
+
 		// print an empty line that will be replaced when updating the status
 		output.Statusf("")
 
@@ -182,6 +170,7 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 		}
 
 		var inputReader io.Reader
+		var inputParser input.Parser
 
 		if flags.File != "" {
 			inputReader, err = os.Open(flags.File)
@@ -192,11 +181,17 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 			inputReader = os.Stdin
 		}
 
+		if flags.InputFormat == "json" {
+			inputParser = input.NewJSONParser()
+		} else {
+			inputParser = input.NewCsvParser(flags.Key, flags.Separator)
+		}
+
 		scanner := bufio.NewScanner(inputReader)
 		scanner.Buffer(make([]byte, 0, config.Producer.MaxMessageBytes), config.Producer.MaxMessageBytes)
 
 		if len(flags.LineSeparator) > 0 && flags.LineSeparator != "\n" {
-			scanner.Split(splitAt(convertControlChars(flags.LineSeparator)))
+			scanner.Split(splitAt(util.ConvertControlChars(flags.LineSeparator)))
 		}
 
 		for scanner.Scan() {
@@ -216,33 +211,12 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 				continue
 			}
 
-			if flags.Separator != "" {
-				input := strings.Split(line, convertControlChars(flags.Separator))
-				if len(input) < 2 {
-					return failWithMessageCount(messageCount, "the provided input does not contain the separator %s", flags.Separator)
-				} else if len(input) == 3 && messageCount == 0 {
-					keyColumnIdx, valueColumnIdx, columnCount, err = resolveColumns(input)
-					if err != nil {
-						return failWithMessageCount(messageCount, err.Error())
-					}
-				} else if len(input) != columnCount {
-					return failWithMessageCount(messageCount, "line contains unexpected amount of separators:\n%s", line)
-				}
-				key = input[keyColumnIdx]
-				value = input[valueColumnIdx]
-			} else if flags.FileType == "json" {
-				if err = json.Unmarshal([]byte(line), &kv); err != nil {
-					return errors.Errorf("Can't unmarshal line at %d", messageCount)
-				}
-
-				key = kv.Key
-				value = kv.Value
-			} else {
-				value = line
+			if inputMessage, err = inputParser.ParseLine(line); err != nil {
+				return failWithMessageCount(messageCount, err.Error())
 			}
 
 			messageCount++
-			message, err := serializers.Serialize([]byte(key), []byte(value), flags)
+			message, err := serializers.Serialize([]byte(inputMessage.Key), []byte(inputMessage.Value), flags)
 			if err != nil {
 				return errors.Wrap(err, "Failed to produce message")
 			}
@@ -339,29 +313,6 @@ func parsePartitioner(partitioner string, flags Flags) (sarama.PartitionerConstr
 	default:
 		return nil, errors.Errorf("partitioner %s not supported", flags.Partitioner)
 	}
-}
-
-func convertControlChars(value string) string {
-	value = strings.Replace(value, "\\n", "\n", -1)
-	value = strings.Replace(value, "\\r", "\r", -1)
-	value = strings.Replace(value, "\\t", "\t", -1)
-	return value
-}
-
-func resolveColumns(line []string) (keyColumnIdx, valueColumnIdx, columnCount int, err error) {
-	if isTimestamp(line[0]) {
-		output.Warnf("assuming column 0 to be message timestamp. Column will be ignored")
-		return 1, 2, 3, nil
-	} else if isTimestamp(line[1]) {
-		output.Warnf("assuming column 1 to be message timestamp. Column will be ignored")
-		return 0, 2, 3, nil
-	}
-	return -1, -1, -1, errors.Errorf("line contains unexpected amount of separators:\n%s", line)
-}
-
-func isTimestamp(value string) bool {
-	_, e := time.Parse(time.RFC3339, value)
-	return e == nil
 }
 
 func failWithMessageCount(messageCount int, errorMessage string, args ...interface{}) error {

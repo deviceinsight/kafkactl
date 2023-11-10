@@ -432,6 +432,14 @@ kafkactl produce my-topic --separator=# --lineSeparator=|| --file=myfile
 **NOTE:** if the file was generated with `kafkactl consume --print-keys --print-timestamps my-topic` the produce
 command is able to detect the message timestamp in the input and will ignore it.
 
+It is also possible to produce messages in json format:
+
+```bash
+# each line in myfile.json is expected to contain a json object with fields key, value
+kafkactl produce my-topic --file=myfile.json --input-format=json
+cat myfile.json | kafkactl produce my-topic --input-format=json
+```
+
 the number of messages produced per second can be controlled with the `--rate` parameter:
 
 ```bash

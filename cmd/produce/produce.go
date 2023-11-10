@@ -36,7 +36,7 @@ func NewProduceCmd() *cobra.Command {
 	cmdProduce.Flags().StringVarP(&flags.Value, "value", "v", "", "value to produce")
 	cmdProduce.Flags().BoolVarP(&flags.NullValue, "null-value", "", false, "produce a null value (can be used instead of providing a value with --value)")
 	cmdProduce.Flags().StringVarP(&flags.File, "file", "f", "", "file to read input from")
-	cmdProduce.Flags().StringVarP(&flags.FileType, "file-type", "", "", "file type to read input from")
+	cmdProduce.Flags().StringVarP(&flags.InputFormat, "input-format", "", "", "input format. One of: csv,json (default is csv)")
 	cmdProduce.Flags().StringArrayVarP(&flags.Headers, "header", "H", flags.Headers, "headers in format `key:value`")
 	cmdProduce.Flags().StringVarP(&flags.Separator, "separator", "S", "", "separator to split key and value from stdin or file")
 	cmdProduce.Flags().StringVarP(&flags.LineSeparator, "lineSeparator", "L", "\n", "separator to split multiple messages from stdin or file")
