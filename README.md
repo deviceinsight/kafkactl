@@ -432,6 +432,14 @@ kafkactl produce my-topic --separator=# --lineSeparator=|| --file=myfile
 **NOTE:** if the file was generated with `kafkactl consume --print-keys --print-timestamps my-topic` the produce
 command is able to detect the message timestamp in the input and will ignore it.
 
+It is also possible to produce messages in json format:
+
+```bash
+# each line in myfile.json is expected to contain a json object with fields key, value
+kafkactl produce my-topic --file=myfile.json --input-format=json
+cat myfile.json | kafkactl produce my-topic --input-format=json
+```
+
 the number of messages produced per second can be controlled with the `--rate` parameter:
 
 ```bash
@@ -720,6 +728,10 @@ kafkactl reset offset my-group --topic my-topic --partition 5 --offset 100
 kafkactl reset offset my-group --all-topics --newest
 # reset offset of for all partitions on multiple topics to oldest offset
 kafkactl reset offset my-group --topic my-topic-a --topic my-topic-b --oldest
+# reset offset to offset at a given timestamp(epoch)/datetime
+kafkactl reset offset my-group --topic my-topic-a --to-datetime 2014-04-26T17:24:37.123Z
+# reset offset to offset at a given timestamp(epoch)/datetime
+kafkactl reset offset my-group --topic my-topic-a --to-datetime 1697726906352
 ```
 
 ### Delete consumer group offsets

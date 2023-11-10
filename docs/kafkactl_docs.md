@@ -996,6 +996,7 @@ kafkactl produce TOPIC [flags]
   -f, --file string                 file to read input from
   -H, --header key:value            headers in format key:value
   -h, --help                        help for produce
+      --input-format string         input format. One of: csv,json (default is csv)
   -k, --key string                  key to use for all messages
       --key-encoding string         key encoding (none by default). One of: none|hex|base64
       --key-proto-type string       key protobuf message type
@@ -1064,15 +1065,16 @@ kafkactl reset consumer-group-offset GROUP [flags]
 ##### Options
 
 ```
-      --all-topics          do the operation for all topics in the consumer group
-  -e, --execute             execute the reset (as default only the results are displayed for validation)
-  -h, --help                help for consumer-group-offset
-      --newest              set the offset to newest offset (for all partitions or the specified partition)
-      --offset int          set offset to this value. offset with value -1 is ignored (default -1)
-      --oldest              set the offset to oldest offset (for all partitions or the specified partition)
-  -o, --output string       output format. One of: json|yaml
-  -p, --partition int32     partition to apply the offset. -1 stands for all partitions (default -1)
-  -t, --topic stringArray   one ore more topics to change offset for
+      --all-topics           do the operation for all topics in the consumer group
+  -e, --execute              execute the reset (as default only the results are displayed for validation)
+  -h, --help                 help for consumer-group-offset
+      --newest               set the offset to newest offset (for all partitions or the specified partition)
+      --offset int           set offset to this value. offset with value -1 is ignored (default -1)
+      --oldest               set the offset to oldest offset (for all partitions or the specified partition)
+  -o, --output string        output format. One of: json|yaml
+  -p, --partition int32      partition to apply the offset. -1 stands for all partitions (default -1)
+      --to-datetime string   set the offset to offset of given timestamp
+  -t, --topic stringArray    one ore more topics to change offset for
 ```
 
 ##### Options inherited from parent commands

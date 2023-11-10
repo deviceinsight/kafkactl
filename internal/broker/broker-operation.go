@@ -163,40 +163,40 @@ func (operation *Operation) DescribeBroker(id int32, flags DescribeBrokerFlags) 
 		return output.PrintObject(brokerInfo, flags.OutputFormat)
 	} else if flags.OutputFormat != "" && flags.OutputFormat != "wide" {
 		return errors.Errorf("unknown outputFormat: %s", flags.OutputFormat)
-	} else {
+	}
 
-		tableWriter := output.CreateTableWriter()
+	tableWriter := output.CreateTableWriter()
 
-		// write broker info table
-		if err := tableWriter.WriteHeader("ID", "ADDRESS"); err != nil {
-			return err
-		}
+	// write broker info table
+	if err := tableWriter.WriteHeader("ID", "ADDRESS"); err != nil {
+		return err
+	}
 
-		if err := tableWriter.Write(fmt.Sprint(brokerInfo.ID), brokerInfo.Address); err != nil {
-			return err
-		}
+	if err := tableWriter.Write(fmt.Sprint(brokerInfo.ID), brokerInfo.Address); err != nil {
+		return err
+	}
 
-		if err := tableWriter.Flush(); err != nil {
-			return err
-		}
+	if err := tableWriter.Flush(); err != nil {
+		return err
+	}
 
-		output.PrintStrings("")
+	output.PrintStrings("")
 
-		// first write config table
-		if err := tableWriter.WriteHeader("CONFIG", "VALUE"); err != nil {
-			return err
-		}
+	// first write config table
+	if err := tableWriter.WriteHeader("CONFIG", "VALUE"); err != nil {
+		return err
+	}
 
-		for _, c := range brokerInfo.Configs {
-			if err := tableWriter.Write(c.Name, c.Value); err != nil {
-				return err
-			}
-		}
-
-		if err := tableWriter.Flush(); err != nil {
+	for _, c := range brokerInfo.Configs {
+		if err := tableWriter.Write(c.Name, c.Value); err != nil {
 			return err
 		}
 	}
+
+	if err := tableWriter.Flush(); err != nil {
+		return err
+	}
+
 	return nil
 }
 

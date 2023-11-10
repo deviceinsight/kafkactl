@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 3.5.0 - 2023-11-10
+
+### Added
+- [#171](https://github.com/deviceinsight/kafkactl/issues/171) Support for reset command to reset offset to offset from provided datetime
+- [#172](https://github.com/deviceinsight/kafkactl/issues/172) Support for json format in produce command
+
 ## 3.4.0 - 2023-09-25
 
 ### Fixed

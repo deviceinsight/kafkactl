@@ -2,14 +2,16 @@ package util
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"gopkg.in/errgo.v2/fmt/errors"
 )
 
 var dateFormats = []string{
-	"2006-01-02T15:04:05.123Z",
-	"2006-01-02T15:04:05.123",
+	"2006-01-02T15:04:05.00000Z",
+	"2006-01-02T15:04:05.000Z",
+	"2006-01-02T15:04:05.000",
 	"2006-01-02T15:04:05Z",
 	"2006-01-02T15:04:05",
 	"2006-01-02T15:04",
@@ -21,12 +23,21 @@ func ParseTimestamp(timestamp string) (time.Time, error) {
 		return time.UnixMilli(timeMs), nil
 	}
 
+	loc, _ := time.LoadLocation("Local")
+
 	for _, format := range dateFormats {
-		if val, e := time.Parse(format, timestamp); e == nil {
+		if val, e := time.ParseInLocation(format, timestamp, loc); e == nil {
 			return val, nil
 		}
 	}
 	return time.Time{}, errors.Newf("unable to parse timestamp: %s", timestamp)
+}
+
+func ConvertControlChars(value string) string {
+	value = strings.Replace(value, "\\n", "\n", -1)
+	value = strings.Replace(value, "\\r", "\r", -1)
+	value = strings.Replace(value, "\\t", "\t", -1)
+	return value
 }
 
 func ContainsString(list []string, element string) bool {
