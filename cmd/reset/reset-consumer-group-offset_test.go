@@ -145,7 +145,7 @@ func TestResetCGOToDatetimeIntegration(t *testing.T) {
 	time.Sleep(1 * time.Millisecond) // need to have messaged produced at different milliseconds to have reproducible test
 
 	t1 := time.Now()
-	t2 := t1.Format("2006-01-02T15:04:05.000Z")
+	t1Formatted := t1.Format("2006-01-02T15:04:05.000Z")
 
 	testutil.ProduceMessage(t, topicName, "test-key", "c", 0, 2)
 	testutil.ProduceMessage(t, topicName, "test-key", "d", 0, 3)
@@ -157,7 +157,7 @@ func TestResetCGOToDatetimeIntegration(t *testing.T) {
 	//test with --to-datetime
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	if _, err := kafkaCtl.Execute("reset", "offset", group, "--topic", topicName, "--to-datetime", t2, "--execute"); err != nil {
+	if _, err := kafkaCtl.Execute("reset", "offset", group, "--topic", topicName, "--to-datetime", t1Formatted, "--execute"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
