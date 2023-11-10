@@ -2,6 +2,7 @@ package util
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"gopkg.in/errgo.v2/fmt/errors"
@@ -30,6 +31,13 @@ func ParseTimestamp(timestamp string) (time.Time, error) {
 		}
 	}
 	return time.Time{}, errors.Newf("unable to parse timestamp: %s", timestamp)
+}
+
+func ConvertControlChars(value string) string {
+	value = strings.Replace(value, "\\n", "\n", -1)
+	value = strings.Replace(value, "\\r", "\r", -1)
+	value = strings.Replace(value, "\\t", "\t", -1)
+	return value
 }
 
 func ContainsString(list []string, element string) bool {
