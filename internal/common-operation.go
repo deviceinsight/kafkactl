@@ -309,10 +309,9 @@ func TopicExists(client *sarama.Client, name string) (bool, error) {
 	return false, nil
 }
 
-func ListConfigs(admin *sarama.ClusterAdmin, resource sarama.ConfigResource) ([]Config, error) {
+func ListConfigs(admin *sarama.ClusterAdmin, resource sarama.ConfigResource, includeDefaults bool) ([]Config, error) {
 
 	var (
-		configs       = make([]Config, 0)
 		configEntries []sarama.ConfigEntry
 		err           error
 	)
@@ -321,15 +320,19 @@ func ListConfigs(admin *sarama.ClusterAdmin, resource sarama.ConfigResource) ([]
 		return nil, errors.Wrap(err, fmt.Sprintf("failed to describe %v config", getResourceTypeName(resource.Type)))
 	}
 
+	return listConfigsFromEntries(configEntries, includeDefaults), nil
+}
+
+func listConfigsFromEntries(configEntries []sarama.ConfigEntry, includeDefaults bool) (configs []Config) {
 	for _, configEntry := range configEntries {
 
-		if !configEntry.Default && configEntry.Source != sarama.SourceDefault {
+		if includeDefaults || (!configEntry.Default && configEntry.Source != sarama.SourceDefault) {
 			entry := Config{Name: configEntry.Name, Value: configEntry.Value}
 			configs = append(configs, entry)
 		}
 	}
 
-	return configs, nil
+	return
 }
 
 func getResourceTypeName(resourceType sarama.ConfigResourceType) string {

@@ -32,12 +32,13 @@ type Partition struct {
 }
 
 type requestedTopicFields struct {
-	partitionID       bool
-	partitionOffset   bool
-	partitionLeader   bool
-	partitionReplicas bool
-	partitionISRs     bool
-	config            bool
+	partitionID           bool
+	partitionOffset       bool
+	partitionLeader       bool
+	partitionReplicas     bool
+	partitionISRs         bool
+	config                bool
+	configIncludeDefaults bool
 }
 
 var allFields = requestedTopicFields{partitionID: true, partitionOffset: true, partitionLeader: true, partitionReplicas: true, partitionISRs: true, config: true}
@@ -64,6 +65,7 @@ type DescribeTopicFlags struct {
 	PrintConfigs        bool
 	SkipEmptyPartitions bool
 	OutputFormat        string
+	IncludeDefaults     bool
 }
 
 type Operation struct {
@@ -161,7 +163,10 @@ func (operation *Operation) DescribeTopic(topic string, flags DescribeTopicFlags
 		return errors.Wrap(err, "failed to create cluster admin")
 	}
 
-	if t, err = readTopic(&client, &admin, topic, allFields); err != nil {
+	fields := allFields
+	fields.configIncludeDefaults = flags.IncludeDefaults
+
+	if t, err = readTopic(&client, &admin, topic, fields); err != nil {
 		return errors.Wrap(err, "failed to read topic")
 	}
 
@@ -732,7 +737,7 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 			Name: name,
 		}
 
-		if top.Configs, err = internal.ListConfigs(admin, topicConfig); err != nil {
+		if top.Configs, err = internal.ListConfigs(admin, topicConfig, requestedFields.configIncludeDefaults); err != nil {
 			return top, err
 		}
 	}
