@@ -323,7 +323,9 @@ func ListConfigs(admin *sarama.ClusterAdmin, resource sarama.ConfigResource, inc
 	return listConfigsFromEntries(configEntries, includeDefaults), nil
 }
 
-func listConfigsFromEntries(configEntries []sarama.ConfigEntry, includeDefaults bool) (configs []Config) {
+func listConfigsFromEntries(configEntries []sarama.ConfigEntry, includeDefaults bool) []Config {
+	var configs = make([]Config, 0)
+
 	for _, configEntry := range configEntries {
 
 		if includeDefaults || (!configEntry.Default && configEntry.Source != sarama.SourceDefault) {
@@ -332,7 +334,7 @@ func listConfigsFromEntries(configEntries []sarama.ConfigEntry, includeDefaults 
 		}
 	}
 
-	return
+	return configs
 }
 
 func getResourceTypeName(resourceType sarama.ConfigResourceType) string {
