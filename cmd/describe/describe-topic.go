@@ -26,9 +26,8 @@ func newDescribeTopicCmd() *cobra.Command {
 	}
 
 	cmdDescribeTopic.Flags().StringVarP(&flags.OutputFormat, "output", "o", flags.OutputFormat, "output format. One of: json|yaml|wide")
-	cmdDescribeTopic.Flags().BoolVarP(&flags.PrintConfigs, "print-configs", "c", true, "print configs")
+	cmdDescribeTopic.Flags().StringVarP((*string)(&flags.PrintConfigs), "print-configs", "c", "no_defaults", "print configs. One of none|no_defaults|all")
 	cmdDescribeTopic.Flags().BoolVarP(&flags.SkipEmptyPartitions, "skip-empty", "s", false, "show only partitions that have a messages")
-	cmdDescribeTopic.Flags().BoolVarP(&flags.IncludeDefaults, "include-defaults", "i", false, "include default configs")
 
 	return cmdDescribeTopic
 }

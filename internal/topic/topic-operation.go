@@ -32,16 +32,18 @@ type Partition struct {
 }
 
 type requestedTopicFields struct {
-	partitionID           bool
-	partitionOffset       bool
-	partitionLeader       bool
-	partitionReplicas     bool
-	partitionISRs         bool
-	config                bool
-	configIncludeDefaults bool
+	partitionID       bool
+	partitionOffset   bool
+	partitionLeader   bool
+	partitionReplicas bool
+	partitionISRs     bool
+	config            PrintConfigsParam
 }
 
-var allFields = requestedTopicFields{partitionID: true, partitionOffset: true, partitionLeader: true, partitionReplicas: true, partitionISRs: true, config: true}
+var allFields = requestedTopicFields{
+	partitionID: true, partitionOffset: true, partitionLeader: true,
+	partitionReplicas: true, partitionISRs: true, config: NonDefaultConfigs,
+}
 
 type GetTopicsFlags struct {
 	OutputFormat string
@@ -61,11 +63,18 @@ type AlterTopicFlags struct {
 	Configs           []string
 }
 
+type PrintConfigsParam string
+
+const (
+	NoConfigs         PrintConfigsParam = "none"
+	AllConfigs        PrintConfigsParam = "all"
+	NonDefaultConfigs PrintConfigsParam = "no_defaults"
+)
+
 type DescribeTopicFlags struct {
-	PrintConfigs        bool
+	PrintConfigs        PrintConfigsParam
 	SkipEmptyPartitions bool
 	OutputFormat        string
-	IncludeDefaults     bool
 }
 
 type Operation struct {
@@ -164,7 +173,7 @@ func (operation *Operation) DescribeTopic(topic string, flags DescribeTopicFlags
 	}
 
 	fields := allFields
-	fields.configIncludeDefaults = flags.IncludeDefaults
+	fields.config = flags.PrintConfigs
 
 	if t, err = readTopic(&client, &admin, topic, fields); err != nil {
 		return errors.Wrap(err, "failed to read topic")
@@ -175,7 +184,7 @@ func (operation *Operation) DescribeTopic(topic string, flags DescribeTopicFlags
 
 func (operation *Operation) printTopic(topic Topic, flags DescribeTopicFlags) error {
 
-	if !flags.PrintConfigs {
+	if flags.PrintConfigs == NoConfigs {
 		topic.Configs = nil
 	}
 
@@ -406,7 +415,11 @@ func (operation *Operation) AlterTopic(topic string, flags AlterTopicFlags) erro
 	}
 
 	if flags.ValidateOnly {
-		describeFlags := DescribeTopicFlags{PrintConfigs: len(flags.Configs) > 0}
+		printConfigs := NoConfigs
+		if len(flags.Configs) > 0 {
+			printConfigs = NonDefaultConfigs
+		}
+		describeFlags := DescribeTopicFlags{PrintConfigs: printConfigs}
 		return operation.printTopic(t, describeFlags)
 	}
 	return nil
@@ -477,7 +490,7 @@ func (operation *Operation) CloneTopic(sourceTopic, targetTopic string) error {
 	requestedFields := requestedTopicFields{
 		partitionID:       true,
 		partitionReplicas: true,
-		config:            true,
+		config:            NonDefaultConfigs,
 	}
 
 	if t, err = readTopic(&client, &admin, sourceTopic, requestedFields); err != nil {
@@ -586,7 +599,7 @@ func (operation *Operation) GetTopics(flags GetTopicsFlags) error {
 	} else if flags.OutputFormat == "compact" {
 		tableWriter.Initialize()
 	} else if flags.OutputFormat == "wide" {
-		requestedFields = requestedTopicFields{partitionID: true, partitionReplicas: true, config: true}
+		requestedFields = requestedTopicFields{partitionID: true, partitionReplicas: true, config: NonDefaultConfigs}
 		if err := tableWriter.WriteHeader("TOPIC", "PARTITIONS", "REPLICATION FACTOR", "CONFIGS"); err != nil {
 			return err
 		}
@@ -730,14 +743,14 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 		return top.Partitions[i].ID < top.Partitions[j].ID
 	})
 
-	if requestedFields.config {
+	if requestedFields.config != NoConfigs {
 
 		topicConfig := sarama.ConfigResource{
 			Type: sarama.TopicResource,
 			Name: name,
 		}
 
-		if top.Configs, err = internal.ListConfigs(admin, topicConfig, requestedFields.configIncludeDefaults); err != nil {
+		if top.Configs, err = internal.ListConfigs(admin, topicConfig, requestedFields.config == AllConfigs); err != nil {
 			return top, err
 		}
 	}
