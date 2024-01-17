@@ -686,6 +686,15 @@ kafkactl describe consumer-group my-group --topic my-topic
 kafkactl describe cg my-group
 ```
 
+### Delete Records from a topics
+
+Command to be used to delete records from partition, which have an offset smaller than the provided offset.
+
+```bash
+# delete records with offset < 123 from partition 0 and offset < 456 from partition 1
+kafkactl delete records my-topic --offset 0=123 --offset 1=456
+```
+
 ### Create consumer groups
 
 A consumer-group can be created as follows:
