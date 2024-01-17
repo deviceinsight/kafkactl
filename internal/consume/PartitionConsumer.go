@@ -3,8 +3,6 @@ package consume
 import (
 	"context"
 	"math"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/IBM/sarama"
@@ -190,7 +188,7 @@ func getStartOffset(client *sarama.Client, topic string, flags Flags, currentPar
 	} else if flags.FromBeginning {
 		return (*client).GetOffset(topic, currentPartition, sarama.OffsetOldest)
 	} else if len(flags.Offsets) > 0 {
-		return extractOffsetForPartition(flags, currentPartition)
+		return util.ExtractOffsetForPartition(flags.Offsets, currentPartition)
 	}
 	return sarama.OffsetNewest, nil
 }
@@ -211,32 +209,6 @@ func getEndOffset(client *sarama.Client, topic string, flags Flags, currentParti
 		return newestOffset, nil
 	}
 	return sarama.OffsetNewest, nil
-}
-
-func extractOffsetForPartition(flags Flags, currentPartition int32) (int64, error) {
-	for _, offsetFlag := range flags.Offsets {
-		offsetParts := strings.Split(offsetFlag, "=")
-
-		if len(offsetParts) == 2 {
-
-			partition, err := strconv.Atoi(offsetParts[0])
-			if err != nil {
-				return ErrOffset, errors.Errorf("unable to parse offset parameter: %s (%v)", offsetFlag, err)
-			}
-
-			if int32(partition) != currentPartition {
-				continue
-			}
-
-			offset, err := strconv.ParseInt(offsetParts[1], 10, 64)
-			if err != nil {
-				return ErrOffset, errors.Errorf("unable to parse offset parameter: %s (%v)", offsetFlag, err)
-			}
-
-			return offset, nil
-		}
-	}
-	return ErrOffset, errors.Errorf("unable to find offset parameter for partition %d: %s", currentPartition, flags.Offsets)
 }
 
 func hasExclusiveConditions(flags ...bool) bool {

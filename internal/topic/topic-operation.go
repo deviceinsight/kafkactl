@@ -63,6 +63,10 @@ type AlterTopicFlags struct {
 	Configs           []string
 }
 
+type DeleteRecordsFlags struct {
+	Offsets []string
+}
+
 type PrintConfigsParam string
 
 const (
@@ -668,6 +672,30 @@ func (operation *Operation) GetTopics(flags GetTopicsFlags) error {
 		}
 	}
 	return nil
+}
+
+func (operation *Operation) DeleteRecords(topic string, flags DeleteRecordsFlags) error {
+
+	var (
+		err     error
+		context internal.ClientContext
+		admin   sarama.ClusterAdmin
+	)
+
+	if context, err = internal.CreateClientContext(); err != nil {
+		return err
+	}
+
+	if admin, err = internal.CreateClusterAdmin(&context); err != nil {
+		return errors.Wrap(err, "failed to create cluster admin")
+	}
+
+	offsets, parseErr := util.ParseOffsets(flags.Offsets)
+	if parseErr != nil {
+		return parseErr
+	}
+
+	return admin.DeleteRecords(topic, offsets)
 }
 
 func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, requestedFields requestedTopicFields) (Topic, error) {
