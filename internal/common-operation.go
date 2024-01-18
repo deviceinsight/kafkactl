@@ -50,6 +50,10 @@ type K8sConfig struct {
 	ImagePullSecret string
 }
 
+type ConsumerConfig struct {
+	IsolationLevel string
+}
+
 type ProducerConfig struct {
 	Partitioner     string
 	RequiredAcks    string
@@ -69,6 +73,7 @@ type ClientContext struct {
 	AvroJSONCodec      avro.JSONCodec
 	Protobuf           protobuf.SearchContext
 	Producer           ProducerConfig
+	Consumer           ConsumerConfig
 }
 
 type Config struct {
@@ -115,6 +120,7 @@ func CreateClientContext() (ClientContext, error) {
 	context.Producer.Partitioner = viper.GetString("contexts." + context.Name + ".producer.partitioner")
 	context.Producer.RequiredAcks = viper.GetString("contexts." + context.Name + ".producer.requiredAcks")
 	context.Producer.MaxMessageBytes = viper.GetInt("contexts." + context.Name + ".producer.maxMessageBytes")
+	context.Consumer.IsolationLevel = viper.GetString("contexts." + context.Name + ".consumer.isolationLevel")
 	context.Sasl.Enabled = viper.GetBool("contexts." + context.Name + ".sasl.enabled")
 	context.Sasl.Username = viper.GetString("contexts." + context.Name + ".sasl.username")
 	context.Sasl.Password = viper.GetString("contexts." + context.Name + ".sasl.password")

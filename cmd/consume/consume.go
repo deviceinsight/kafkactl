@@ -50,6 +50,7 @@ func NewConsumeCmd() *cobra.Command {
 	cmdConsume.Flags().StringSliceVarP(&flags.ProtosetFiles, "protoset-file", "", flags.ProtosetFiles, "additional compiled protobuf description file for searching message description")
 	cmdConsume.Flags().StringVarP(&flags.KeyProtoType, "key-proto-type", "", flags.KeyProtoType, "key protobuf message type")
 	cmdConsume.Flags().StringVarP(&flags.ValueProtoType, "value-proto-type", "", flags.ValueProtoType, "value protobuf message type")
+	cmdConsume.Flags().StringVarP(&flags.IsolationLevel, "isolation-level", "i", "", "isolationLevel to use. One of: ReadUncommitted|ReadCommitted")
 
 	if err := cmdConsume.RegisterFlagCompletionFunc("group", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return consumergroups.CompleteConsumerGroups(cmd, args, toComplete)
