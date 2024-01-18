@@ -16,6 +16,6 @@ Please delete options that are not relevant.
 ## Documentation
 
 - [ ] the change is mentioned in the `## [Unreleased]` section of `CHANGELOG.md`
-- [ ] the configuration yaml was changed and the example config in `README.md` was updated
-- [ ] a usage example was added to `README.md`
+- [ ] the configuration yaml was changed and the example config in `README.adoc` was updated
+- [ ] a usage example was added to `README.adoc`
 - [ ] tests for the changes have been implemented (see: [Testing your changes](https://github.com/deviceinsight/kafkactl/blob/main/.github/contributing.md#testing-your-changes))

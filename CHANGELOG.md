@@ -262,7 +262,7 @@ of `plaintext`.
 ## 1.11.0 - 2020-08-07
 
 ### Added
-- direct support for kafka clusters [running in kubernetes](https://github.com/deviceinsight/kafkactl/blob/main/README.md#running-in-kubernetes)
+- direct support for kafka clusters [running in kubernetes](https://github.com/deviceinsight/kafkactl/blob/main/README.adoc#running-in-kubernetes)
 - `attach` command to get a bash into kafkactl pod when running in kubernetes
 
 ## 1.10.0 - 2020-08-03
@@ -352,7 +352,7 @@ of `plaintext`.
 ## 1.2.0 - 2019-05-24
 
 ### Added
-- Additional config file locations added. See README.md for details
+- Additional config file locations added. See README.adoc for details
 - Added `offset` parameter to `consume`
 - Support for basic auto completion in fish shell
 - Add 'config view` command, to view current config
