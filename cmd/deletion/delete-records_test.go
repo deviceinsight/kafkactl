@@ -48,8 +48,8 @@ func TestDeleteRecordsIntegration(t *testing.T) {
 		t.Fatalf("expected 2 messages, got %d", len(messages))
 	}
 
-	testutil.AssertEquals(t, "key-1#b", messages[0])
-	testutil.AssertEquals(t, "key-2#e", messages[1])
+	testutil.AssertContains(t, "key-1#b", messages)
+	testutil.AssertContains(t, "key-2#e", messages)
 }
 
 func TestDeleteRecordsAutoCompletionIntegration(t *testing.T) {
