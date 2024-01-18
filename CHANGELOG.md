@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 4.0.0 - 2024-01-18
+
 ### Added
 - [#182](https://github.com/deviceinsight/kafkactl/issues/182) Make isolationLevel configurable and change default to 'readCommitted'
 - [#184](https://github.com/deviceinsight/kafkactl/pull/184) Added option to show default configs when describing topics
