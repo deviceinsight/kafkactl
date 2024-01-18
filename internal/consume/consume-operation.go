@@ -3,6 +3,7 @@ package consume
 import (
 	"context"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/deviceinsight/kafkactl/internal/helpers"
@@ -39,6 +40,7 @@ type Flags struct {
 	ProtosetFiles    []string
 	KeyProtoType     string
 	ValueProtoType   string
+	IsolationLevel   string
 }
 
 type ConsumedMessage struct {
@@ -65,7 +67,16 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 		return err
 	}
 
-	if client, err = internal.CreateClient(&clientContext); err != nil {
+	config, err := internal.CreateClientConfig(&clientContext)
+	if err != nil {
+		return err
+	}
+
+	if err = applyConsumerConfigs(config, clientContext, flags); err != nil {
+		return err
+	}
+
+	if client, err = sarama.NewClient(clientContext.Brokers, config); err != nil {
 		return errors.Wrap(err, "failed to create client")
 	}
 
@@ -164,6 +175,37 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 	}
 
 	return nil
+}
+
+func applyConsumerConfigs(config *sarama.Config, clientContext internal.ClientContext, flags Flags) error {
+
+	var err error
+
+	isolationLevel := clientContext.Consumer.IsolationLevel
+	if flags.IsolationLevel != "" {
+		isolationLevel = flags.IsolationLevel
+	}
+
+	if config.Consumer.IsolationLevel, err = parseIsolationLevel(isolationLevel); err != nil {
+		return err
+	}
+
+	output.Debugf("using isolationLevel=%v", config.Consumer.IsolationLevel)
+
+	return nil
+}
+
+func parseIsolationLevel(isolationLevel string) (sarama.IsolationLevel, error) {
+	switch strings.ToLower(isolationLevel) {
+	case "":
+		return sarama.ReadCommitted, nil
+	case "readcommitted":
+		return sarama.ReadCommitted, nil
+	case "readuncommitted":
+		return sarama.ReadUncommitted, nil
+	default:
+		return sarama.ReadCommitted, errors.Errorf("isolationLevel=%s not supported", isolationLevel)
+	}
 }
 
 func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sarama.ConsumerMessage, stopConsumers chan<- bool, deserializers MessageDeserializerChain) *errgroup.Group {

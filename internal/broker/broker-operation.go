@@ -77,7 +77,7 @@ func (operation *Operation) GetBrokers(flags GetBrokersFlags) error {
 			Name: fmt.Sprint(broker.ID()),
 		}
 
-		if configs, err = internal.ListConfigs(&admin, brokerConfig); err != nil {
+		if configs, err = internal.ListConfigs(&admin, brokerConfig, false); err != nil {
 			return err
 		}
 
@@ -153,7 +153,7 @@ func (operation *Operation) DescribeBroker(id int32, flags DescribeBrokerFlags) 
 		Name: fmt.Sprint(broker.ID()),
 	}
 
-	if configs, err = internal.ListConfigs(&admin, brokerConfig); err != nil {
+	if configs, err = internal.ListConfigs(&admin, brokerConfig, false); err != nil {
 		return err
 	}
 

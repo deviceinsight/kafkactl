@@ -96,10 +96,13 @@ func (handler *groupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, c
 
 	for {
 		select {
-		case message := <-messageChannel:
-			if message != nil {
-				handler.messages <- message
+		case message, ok := <-messageChannel:
+			if !ok {
+				output.Debugf("consume claim via channel interrupted")
+				handler.cancel()
+				return nil
 			}
+			handler.messages <- message
 			session.MarkMessage(message, "")
 		case <-handler.stopConsumers:
 			output.Debugf("stop consume claim via channel")

@@ -23,7 +23,7 @@ A command-line interface the simplifies interaction with Kafka.
 * [kafkactl config](#kafkactl-config)	 - show and edit configurations
 * [kafkactl consume](#kafkactl-consume)	 - consume messages from a topic
 * [kafkactl create](#kafkactl-create)	 - create topics, consumerGroups, acls
-* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls
+* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records
 * [kafkactl describe](#kafkactl-describe)	 - describe topics, consumerGroups, brokers
 * [kafkactl get](#kafkactl-get)	 - get info about topics, consumerGroups, acls, brokers
 * [kafkactl produce](#kafkactl-produce)	 - produce messages to a topic
@@ -433,6 +433,7 @@ kafkactl consume TOPIC [flags]
       --from-timestamp string                                                            consume data from offset of given timestamp
   -g, --group string                                                                     consumer group to join
   -h, --help                                                                             help for consume
+  -i, --isolation-level string                                                           isolationLevel to use. One of: ReadUncommitted|ReadCommitted
       --key-encoding string                                                              key encoding (auto-detected by default). One of: none|hex|base64
       --key-proto-type string                                                            key protobuf message type
       --max-messages int                                                                 stop consuming after n messages have been read (default -1)
@@ -572,7 +573,7 @@ kafkactl create topic TOPIC [flags]
   -c, --config key=value           configs in format key=value
   -h, --help                       help for topic
   -p, --partitions int32           number of partitions (default 1)
-  -r, --replication-factor int16   replication factor (default 1)
+  -r, --replication-factor int16   replication factor (default -1)
   -v, --validate-only              validate only
 ```
 
@@ -590,7 +591,7 @@ kafkactl create topic TOPIC [flags]
 
 ### kafkactl delete
 
-delete topics, consumerGroups, consumer-group-offset, acls
+delete topics, consumerGroups, consumer-group-offset, acls, records
 
 #### Options
 
@@ -611,6 +612,7 @@ delete topics, consumerGroups, consumer-group-offset, acls
 * [kafkactl delete access-control-list](#kafkactl-delete-access-control-list)	 - delete an acl
 * [kafkactl delete consumer-group](#kafkactl-delete-consumer-group)	 - delete a consumer-group
 * [kafkactl delete consumer-group-offset](#kafkactl-delete-consumer-group-offset)	 - delete a consumer-group-offset
+* [kafkactl delete records](#kafkactl-delete-records)	 - delete a records from a topic
 * [kafkactl delete topic](#kafkactl-delete-topic)	 - delete a topic
 
 
@@ -645,7 +647,7 @@ kafkactl delete access-control-list [flags]
 
 ##### SEE ALSO
 
-* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls
+* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records
 
 
 #### kafkactl delete consumer-group-offset
@@ -673,7 +675,7 @@ kafkactl delete consumer-group-offset CONSUMER-GROUP --topic=TOPIC --partition=P
 
 ##### SEE ALSO
 
-* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls
+* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records
 
 
 #### kafkactl delete consumer-group
@@ -699,7 +701,34 @@ kafkactl delete consumer-group CONSUMER-GROUP [flags]
 
 ##### SEE ALSO
 
-* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls
+* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records
+
+
+#### kafkactl delete records
+
+delete a records from a topic
+
+```
+kafkactl delete records TOPIC [flags]
+```
+
+##### Options
+
+```
+  -h, --help                      help for records
+      --offset partition=offset   offsets in format partition=offset. records with smaller offset will be deleted.
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. one of: [$HOME/.config/kafkactl $HOME/.kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records
 
 
 #### kafkactl delete topic
@@ -725,7 +754,7 @@ kafkactl delete topic TOPIC [flags]
 
 ##### SEE ALSO
 
-* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls
+* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records
 
 
 ### kafkactl describe
@@ -822,10 +851,10 @@ kafkactl describe topic TOPIC [flags]
 ##### Options
 
 ```
-  -h, --help            help for topic
-  -o, --output string   output format. One of: json|yaml|wide
-  -c, --print-configs   print configs (default true)
-  -s, --skip-empty      show only partitions that have a messages
+  -h, --help                   help for topic
+  -o, --output string          output format. One of: json|yaml|wide
+  -c, --print-configs string   print configs. One of none|no_defaults|all (default "no_defaults")
+  -s, --skip-empty             show only partitions that have a messages
 ```
 
 ##### Options inherited from parent commands

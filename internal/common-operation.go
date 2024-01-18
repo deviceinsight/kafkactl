@@ -50,6 +50,10 @@ type K8sConfig struct {
 	ImagePullSecret string
 }
 
+type ConsumerConfig struct {
+	IsolationLevel string
+}
+
 type ProducerConfig struct {
 	Partitioner     string
 	RequiredAcks    string
@@ -69,6 +73,7 @@ type ClientContext struct {
 	AvroJSONCodec      avro.JSONCodec
 	Protobuf           protobuf.SearchContext
 	Producer           ProducerConfig
+	Consumer           ConsumerConfig
 }
 
 type Config struct {
@@ -115,6 +120,7 @@ func CreateClientContext() (ClientContext, error) {
 	context.Producer.Partitioner = viper.GetString("contexts." + context.Name + ".producer.partitioner")
 	context.Producer.RequiredAcks = viper.GetString("contexts." + context.Name + ".producer.requiredAcks")
 	context.Producer.MaxMessageBytes = viper.GetInt("contexts." + context.Name + ".producer.maxMessageBytes")
+	context.Consumer.IsolationLevel = viper.GetString("contexts." + context.Name + ".consumer.isolationLevel")
 	context.Sasl.Enabled = viper.GetBool("contexts." + context.Name + ".sasl.enabled")
 	context.Sasl.Username = viper.GetString("contexts." + context.Name + ".sasl.username")
 	context.Sasl.Password = viper.GetString("contexts." + context.Name + ".sasl.password")
@@ -309,10 +315,9 @@ func TopicExists(client *sarama.Client, name string) (bool, error) {
 	return false, nil
 }
 
-func ListConfigs(admin *sarama.ClusterAdmin, resource sarama.ConfigResource) ([]Config, error) {
+func ListConfigs(admin *sarama.ClusterAdmin, resource sarama.ConfigResource, includeDefaults bool) ([]Config, error) {
 
 	var (
-		configs       = make([]Config, 0)
 		configEntries []sarama.ConfigEntry
 		err           error
 	)
@@ -321,15 +326,21 @@ func ListConfigs(admin *sarama.ClusterAdmin, resource sarama.ConfigResource) ([]
 		return nil, errors.Wrap(err, fmt.Sprintf("failed to describe %v config", getResourceTypeName(resource.Type)))
 	}
 
+	return listConfigsFromEntries(configEntries, includeDefaults), nil
+}
+
+func listConfigsFromEntries(configEntries []sarama.ConfigEntry, includeDefaults bool) []Config {
+	var configs = make([]Config, 0)
+
 	for _, configEntry := range configEntries {
 
-		if !configEntry.Default && configEntry.Source != sarama.SourceDefault {
+		if includeDefaults || (!configEntry.Default && configEntry.Source != sarama.SourceDefault) {
 			entry := Config{Name: configEntry.Name, Value: configEntry.Value}
 			configs = append(configs, entry)
 		}
 	}
 
-	return configs, nil
+	return configs
 }
 
 func getResourceTypeName(resourceType sarama.ConfigResourceType) string {

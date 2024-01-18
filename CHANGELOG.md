@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 4.0.0 - 2024-01-18
+
+### Added
+- [#182](https://github.com/deviceinsight/kafkactl/issues/182) Make isolationLevel configurable and change default to 'readCommitted'
+- [#184](https://github.com/deviceinsight/kafkactl/pull/184) Added option to show default configs when describing topics
+- [#183](https://github.com/deviceinsight/kafkactl/issues/183) Add command `delete records` to delete records from topic
+
+### Changed
+- [#180](https://github.com/deviceinsight/kafkactl/issues/180) Change default for replication-factor when creating topics
+
 ## 3.5.1 - 2023-11-10
 
 ## 3.5.0 - 2023-11-10
@@ -258,7 +268,7 @@ of `plaintext`.
 ## 1.11.0 - 2020-08-07
 
 ### Added
-- direct support for kafka clusters [running in kubernetes](https://github.com/deviceinsight/kafkactl/blob/main/README.md#running-in-kubernetes)
+- direct support for kafka clusters [running in kubernetes](https://github.com/deviceinsight/kafkactl/blob/main/README.adoc#running-in-kubernetes)
 - `attach` command to get a bash into kafkactl pod when running in kubernetes
 
 ## 1.10.0 - 2020-08-03
@@ -348,7 +358,7 @@ of `plaintext`.
 ## 1.2.0 - 2019-05-24
 
 ### Added
-- Additional config file locations added. See README.md for details
+- Additional config file locations added. See README.adoc for details
 - Added `offset` parameter to `consume`
 - Support for basic auto completion in fish shell
 - Add 'config view` command, to view current config
