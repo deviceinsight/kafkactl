@@ -51,7 +51,7 @@ func TestAlterTopicPartitionsIntegration(t *testing.T) {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	getPartitions := func(attempt uint) error {
+	getPartitions := func(_ uint) error {
 		_, err := kafkaCtl.Execute("describe", "topic", topicName, "-o", "yaml")
 
 		if err != nil {
@@ -93,7 +93,7 @@ func TestAlterTopicIncreaseReplicationFactorIntegration(t *testing.T) {
 		return
 	}
 
-	checkReplicas := func(attempt uint) error {
+	checkReplicas := func(_ uint) error {
 		_, err := kafkaCtl.Execute("describe", "topic", topicName, "-o", "yaml")
 
 		if err != nil {
@@ -137,7 +137,7 @@ func TestAlterTopicDecreaseReplicationFactorIntegration(t *testing.T) {
 		return
 	}
 
-	checkReplicas := func(attempt uint) error {
+	checkReplicas := func(_ uint) error {
 		_, err := kafkaCtl.Execute("describe", "topic", topicName, "-o", "yaml")
 
 		if err != nil {

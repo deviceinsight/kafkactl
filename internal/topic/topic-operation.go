@@ -537,30 +537,30 @@ func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int
 		brokerReplicaCount[lastReplica]--
 	}
 
-	var unusedBrokerIds []int32
+	var unusedBrokerIDs []int32
 
 	if len(replicas) < int(targetReplicationFactor) {
 		for brokerID := range brokerReplicaCount {
 			if !util.ContainsInt32(replicas, brokerID) {
-				unusedBrokerIds = append(unusedBrokerIds, brokerID)
+				unusedBrokerIDs = append(unusedBrokerIDs, brokerID)
 			}
 		}
-		if len(unusedBrokerIds) < (int(targetReplicationFactor) - len(replicas)) {
+		if len(unusedBrokerIDs) < (int(targetReplicationFactor) - len(replicas)) {
 			return nil, errors.New("not enough brokers")
 		}
 	}
 
 	for len(replicas) < int(targetReplicationFactor) {
 
-		sort.Slice(unusedBrokerIds, func(i, j int) bool {
-			brokerI := unusedBrokerIds[i]
-			brokerJ := unusedBrokerIds[j]
+		sort.Slice(unusedBrokerIDs, func(i, j int) bool {
+			brokerI := unusedBrokerIDs[i]
+			brokerJ := unusedBrokerIDs[j]
 			return brokerReplicaCount[brokerI] < brokerReplicaCount[brokerJ] || (brokerReplicaCount[brokerI] == brokerReplicaCount[brokerJ] && brokerI > brokerJ)
 		})
 
-		replicas = append(replicas, unusedBrokerIds[0])
-		brokerReplicaCount[unusedBrokerIds[0]]++
-		unusedBrokerIds = unusedBrokerIds[1:]
+		replicas = append(replicas, unusedBrokerIDs[0])
+		brokerReplicaCount[unusedBrokerIDs[0]]++
+		unusedBrokerIDs = unusedBrokerIDs[1:]
 	}
 
 	return replicas, nil

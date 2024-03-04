@@ -5,11 +5,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deviceinsight/kafkactl/internal/global"
+
 	"github.com/deviceinsight/kafkactl/internal/helpers/avro"
 
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/internal"
-	"github.com/deviceinsight/kafkactl/internal/env"
 	"github.com/deviceinsight/kafkactl/internal/k8s"
 	"github.com/deviceinsight/kafkactl/testutil"
 )
@@ -48,31 +49,31 @@ func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {
 		envMap[strings.TrimSuffix(parts[0], "=")] = parts[1]
 	}
 
-	for _, key := range env.Variables {
+	for _, key := range global.EnvVariables {
 		if _, found := envMap[key]; !found {
 			t.Fatalf("env variable not found in parsed environment: %s", key)
 		}
 	}
 
-	testutil.AssertEquals(t, "broker1:9092 broker2:9092", envMap[env.Brokers])
-	testutil.AssertEquals(t, "30s", envMap[env.RequestTimeout])
-	testutil.AssertEquals(t, "true", envMap[env.TLSEnabled])
-	testutil.AssertEquals(t, "my-ca", envMap[env.TLSCa])
-	testutil.AssertEquals(t, "my-cert", envMap[env.TLSCert])
-	testutil.AssertEquals(t, "my-cert-key", envMap[env.TLSCertKey])
-	testutil.AssertEquals(t, "true", envMap[env.TLSInsecure])
-	testutil.AssertEquals(t, "true", envMap[env.SaslEnabled])
-	testutil.AssertEquals(t, "user", envMap[env.SaslUsername])
-	testutil.AssertEquals(t, "pass", envMap[env.SaslPassword])
-	testutil.AssertEquals(t, "scram-sha512", envMap[env.SaslMechanism])
-	testutil.AssertEquals(t, "my-client", envMap[env.ClientID])
-	testutil.AssertEquals(t, "2.0.1", envMap[env.KafkaVersion])
-	testutil.AssertEquals(t, "registry:8888", envMap[env.AvroSchemaRegistry])
-	testutil.AssertEquals(t, "avro", envMap[env.AvroJSONCodec])
-	testutil.AssertEquals(t, "/usr/include/protosets/ps1.protoset /usr/lib/ps2.protoset", envMap[env.ProtobufProtoSetFiles])
-	testutil.AssertEquals(t, "/usr/include/protobuf /usr/lib/protobuf", envMap[env.ProtobufImportPaths])
-	testutil.AssertEquals(t, "message.proto other.proto", envMap[env.ProtobufProtoFiles])
-	testutil.AssertEquals(t, "hash", envMap[env.ProducerPartitioner])
-	testutil.AssertEquals(t, "WaitForAll", envMap[env.ProducerRequiredAcks])
-	testutil.AssertEquals(t, "1234", envMap[env.ProducerMaxMessageBytes])
+	testutil.AssertEquals(t, "broker1:9092 broker2:9092", envMap[global.Brokers])
+	testutil.AssertEquals(t, "30s", envMap[global.RequestTimeout])
+	testutil.AssertEquals(t, "true", envMap[global.TLSEnabled])
+	testutil.AssertEquals(t, "my-ca", envMap[global.TLSCa])
+	testutil.AssertEquals(t, "my-cert", envMap[global.TLSCert])
+	testutil.AssertEquals(t, "my-cert-key", envMap[global.TLSCertKey])
+	testutil.AssertEquals(t, "true", envMap[global.TLSInsecure])
+	testutil.AssertEquals(t, "true", envMap[global.SaslEnabled])
+	testutil.AssertEquals(t, "user", envMap[global.SaslUsername])
+	testutil.AssertEquals(t, "pass", envMap[global.SaslPassword])
+	testutil.AssertEquals(t, "scram-sha512", envMap[global.SaslMechanism])
+	testutil.AssertEquals(t, "my-client", envMap[global.ClientID])
+	testutil.AssertEquals(t, "2.0.1", envMap[global.KafkaVersion])
+	testutil.AssertEquals(t, "registry:8888", envMap[global.AvroSchemaRegistry])
+	testutil.AssertEquals(t, "avro", envMap[global.AvroJSONCodec])
+	testutil.AssertEquals(t, "/usr/include/protosets/ps1.protoset /usr/lib/ps2.protoset", envMap[global.ProtobufProtoSetFiles])
+	testutil.AssertEquals(t, "/usr/include/protobuf /usr/lib/protobuf", envMap[global.ProtobufImportPaths])
+	testutil.AssertEquals(t, "message.proto other.proto", envMap[global.ProtobufProtoFiles])
+	testutil.AssertEquals(t, "hash", envMap[global.ProducerPartitioner])
+	testutil.AssertEquals(t, "WaitForAll", envMap[global.ProducerRequiredAcks])
+	testutil.AssertEquals(t, "1234", envMap[global.ProducerMaxMessageBytes])
 }

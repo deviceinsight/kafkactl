@@ -1,4 +1,4 @@
-package env
+package global
 
 const (
 	RequestTimeout          = "REQUESTTIMEOUT"
@@ -24,7 +24,7 @@ const (
 	ProducerMaxMessageBytes = "PRODUCER_MAXMESSAGEBYTES"
 )
 
-var Variables = []string{
+var EnvVariables = []string{
 	RequestTimeout,
 	Brokers,
 	TLSEnabled,

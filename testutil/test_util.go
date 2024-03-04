@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deviceinsight/kafkactl/internal/env"
+	"github.com/deviceinsight/kafkactl/internal/global"
 
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/cmd"
@@ -69,7 +69,7 @@ func init() {
 		panic(err)
 	}
 
-	for _, variable := range env.Variables {
+	for _, variable := range global.EnvVariables {
 		if err := os.Setenv(variable, ""); err != nil {
 			panic(err)
 		}

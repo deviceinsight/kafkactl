@@ -83,7 +83,7 @@ func TestDeleteConsumerGroupAutoCompletionIntegration(t *testing.T) {
 
 func verifyConsumerGroupDeleted(t *testing.T, kafkaCtl testutil.KafkaCtlTestCommand, groupName string) {
 
-	checkConsumerGrouDeleted := func(attempt uint) error {
+	checkConsumerGrouDeleted := func(_ uint) error {
 		_, err := kafkaCtl.Execute("get", "consumer-groups", "-o", "compact")
 
 		if err != nil {

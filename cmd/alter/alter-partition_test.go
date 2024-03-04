@@ -61,7 +61,7 @@ func TestAlterPartitionReplicationFactorIntegration(t *testing.T) {
 		return
 	}
 
-	checkReplicas := func(attempt uint) error {
+	checkReplicas := func(_ uint) error {
 		_, err := kafkaCtl.Execute("describe", "topic", topicName, "-o", "yaml")
 
 		if err != nil {

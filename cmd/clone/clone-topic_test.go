@@ -29,7 +29,7 @@ func TestCloneTopicIntegration(t *testing.T) {
 
 	testutil.AssertEquals(t, fmt.Sprintf("topic %s cloned to %s", srcTopic, targetTopic), kafkaCtl.GetStdOut())
 
-	getTopic := func(attempt uint) error {
+	getTopic := func(_ uint) error {
 		_, err := kafkaCtl.Execute("describe", "topic", targetTopic, "-o", "yaml")
 
 		if err != nil {

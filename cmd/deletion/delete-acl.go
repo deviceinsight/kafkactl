@@ -42,11 +42,11 @@ func newDeleteACLCmd() *cobra.Command {
 	_ = cmdDeleteACL.MarkFlagRequired("operation")
 	_ = cmdDeleteACL.MarkFlagRequired("pattern")
 
-	_ = cmdDeleteACL.RegisterFlagCompletionFunc("operation", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	_ = cmdDeleteACL.RegisterFlagCompletionFunc("operation", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 		return []string{"any", "all", "read", "write", "create", "delete", "alter", "describe", "clusteraction", "describeconfigs", "alterconfigs", "idempotentwrite"}, cobra.ShellCompDirectiveDefault
 	})
 
-	_ = cmdDeleteACL.RegisterFlagCompletionFunc("pattern", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	_ = cmdDeleteACL.RegisterFlagCompletionFunc("pattern", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 		return []string{"any", "match", "prefixed", "literal"}, cobra.ShellCompDirectiveDefault
 	})
 

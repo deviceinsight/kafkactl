@@ -110,7 +110,7 @@ partitions:
 }
 
 func describeTopic(t *testing.T, kafkaCtl testutil.KafkaCtlTestCommand, topicName string) {
-	describeTopic := func(attempt uint) error {
+	describeTopic := func(_ uint) error {
 		_, err := kafkaCtl.Execute("describe", "topic", topicName, "-o", "yaml")
 		return err
 	}
