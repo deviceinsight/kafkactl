@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deviceinsight/kafkactl/internal/auth"
+
 	"github.com/deviceinsight/kafkactl/internal/global"
 
 	"github.com/deviceinsight/kafkactl/internal/helpers/avro"
@@ -26,11 +28,17 @@ var (
 	invalidClientIDCharactersRegExp = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
 )
 
+type TokenProvider struct {
+	PluginName string
+	Options    map[string]any
+}
+
 type SaslConfig struct {
-	Enabled   bool
-	Username  string
-	Password  string
-	Mechanism string
+	Enabled       bool
+	Username      string
+	Password      string
+	Mechanism     string
+	TokenProvider TokenProvider
 }
 
 type TLSConfig struct {
@@ -127,6 +135,8 @@ func CreateClientContext() (ClientContext, error) {
 	context.Sasl.Username = viper.GetString("contexts." + context.Name + ".sasl.username")
 	context.Sasl.Password = viper.GetString("contexts." + context.Name + ".sasl.password")
 	context.Sasl.Mechanism = viper.GetString("contexts." + context.Name + ".sasl.mechanism")
+	context.Sasl.TokenProvider.PluginName = viper.GetString("contexts." + context.Name + ".sasl.tokenProvider.plugin")
+	context.Sasl.TokenProvider.Options = viper.GetStringMap("contexts." + context.Name + ".sasl.tokenProvider.options")
 
 	viper.SetDefault("contexts."+context.Name+".kubernetes.binary", "kubectl")
 	context.Kubernetes.Enabled = viper.GetBool("contexts." + context.Name + ".kubernetes.enabled")
@@ -182,7 +192,11 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 	}
 
 	if context.Sasl.Enabled {
-		output.Debugf("SASL is enabled (username = %s).", context.Sasl.Username)
+		if context.Sasl.Username != "" {
+			output.Debugf("SASL is enabled (username = %s)", context.Sasl.Username)
+		} else {
+			output.Debugf("SASL is enabled")
+		}
 		config.Net.SASL.Enable = true
 		config.Net.SASL.User = context.Sasl.Username
 		config.Net.SASL.Password = context.Sasl.Password
@@ -197,6 +211,8 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 			config.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
 				return &helpers.XDGSCRAMClient{HashGeneratorFcn: helpers.SHA256}
 			}
+		case "oauth":
+			config.Net.SASL.Mechanism = sarama.SASLTypeOAuth
 		case "plaintext":
 			fallthrough
 		case "":
@@ -204,6 +220,14 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 		default:
 			return nil, errors.Errorf("Unknown sasl mechanism: %s", context.Sasl.Mechanism)
 		}
+	}
+
+	if config.Net.SASL.Mechanism == sarama.SASLTypeOAuth {
+		tokenProvider, err := auth.LoadTokenProviderPlugin(context.Sasl.TokenProvider.PluginName, context.Sasl.TokenProvider.Options, context.Brokers)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load tokenProvider")
+		}
+		config.Net.SASL.TokenProvider = tokenProvider
 	}
 
 	return config, nil

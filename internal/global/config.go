@@ -45,6 +45,10 @@ func NewConfig() Config {
 	return configInstance
 }
 
+func GetFlags() Flags {
+	return configInstance.flags
+}
+
 func GetCurrentContext() string {
 	return configInstance.currentContext()
 }

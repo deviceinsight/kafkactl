@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"log"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -160,7 +159,7 @@ func startTest(t *testing.T, logFilename string) {
 	}
 
 	testIoStreams = output.NewTestIOStreams(logFile)
-	output.TestLogger = log.New(testIoStreams.DebugOut, "[test    ] ", log.LstdFlags)
+	output.TestLogger = output.CreateLogger(testIoStreams.DebugOut, "test")
 
 	output.TestLogf("---")
 	output.TestLogf("--- Starting: %s", t.Name())
