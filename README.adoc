@@ -163,20 +163,47 @@ contexts:
       # optional: isolationLevel (defaults to ReadCommitted)
       isolationLevel: ReadUncommitted
 
+# optional for project config files
 current-context: default
 ----
 
+[#_config_file_read_order]
 The config file location is resolved by
 
 . checking for a provided commandline argument: `--config-file=$PATH_TO_CONFIG`
 . evaluating the environment variable: `export KAFKA_CTL_CONFIG=$PATH_TO_CONFIG`
-. checking for a config file in the working directory i.e. `$PWD/kafkactl.yml`
+. checking for a project config file in the working directory (see <<_project_config_files>>)
 . as default the config file is looked up from one of the following locations:
  ** `$HOME/.config/kafkactl/config.yml`
  ** `$HOME/.kafkactl/config.yml`
  ** `$SNAP_REAL_HOME/.kafkactl/config.yml`
  ** `$SNAP_DATA/kafkactl/config.yml`
  ** `/etc/kafkactl/config.yml`
+
+[#_project_config_files]
+==== Project config files
+
+In addition to the config file locations above, _kafkactl_ allows to create a config file on project level.
+A project config file is meant to be placed at the root level of a git repo and declares the kafka configuration
+for this repository/project.
+
+In order to identify the config file as belonging to _kafkactl_ the following names can be used:
+
+* `kafkactl.yml`
+* `.kafkactl.yml`
+
+During initialization _kafkactl_ starts from the current working directory and recursively looks for a project level
+config file. The recursive lookup ends at the boundary of a git repository (i.e. if a `.git` folder is found).
+This way, _kafkactl_ can be used conveniently anywhere in the git repository.
+
+Additionally, project config files have a special feature to use them read-only. Topically, if you configure more than
+one context in a config file, and you switch the context with `kafkactl config use-context xy` this will lead to a write
+operation on the config file to save the _current context_.
+
+In order to avoid this for project config files, one can just omit the `current-context` parameter from the config file.
+In this case _kafkactl_ will delegate read and write operations for the _current context_ to the next configuration file
+according to <<_config_file_read_order, the config file read order>>.
+
 
 === Auto completion
 

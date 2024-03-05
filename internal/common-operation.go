@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deviceinsight/kafkactl/internal/global"
+
 	"github.com/deviceinsight/kafkactl/internal/helpers/avro"
 
 	"github.com/IBM/sarama"
@@ -84,7 +86,7 @@ type Config struct {
 func CreateClientContext() (ClientContext, error) {
 	var context ClientContext
 
-	context.Name = viper.GetString("current-context")
+	context.Name = global.GetCurrentContext()
 
 	if viper.Get("contexts."+context.Name) == nil {
 		return context, errors.Errorf("no context with name %s found", context.Name)

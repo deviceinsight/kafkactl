@@ -1,9 +1,9 @@
 package config
 
 import (
+	"github.com/deviceinsight/kafkactl/internal/global"
 	"github.com/deviceinsight/kafkactl/output"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 func newCurrentContextCmd() *cobra.Command {
@@ -12,8 +12,8 @@ func newCurrentContextCmd() *cobra.Command {
 		Aliases: []string{"currentContext"},
 		Short:   "show current context",
 		Long:    `Displays the name of context that is currently active`,
-		Run: func(cmd *cobra.Command, args []string) {
-			context := viper.GetString("current-context")
+		Run: func(_ *cobra.Command, _ []string) {
+			context := global.GetCurrentContext()
 			output.Infof("%s", context)
 		},
 	}

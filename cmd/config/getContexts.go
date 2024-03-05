@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/deviceinsight/kafkactl/internal/global"
 	"github.com/deviceinsight/kafkactl/output"
 
 	"github.com/spf13/cobra"
@@ -16,9 +17,9 @@ func newGetContextsCmd() *cobra.Command {
 		Aliases: []string{"getContexts"},
 		Short:   "list configured contexts",
 		Long:    `Output names of all configured contexts`,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			contexts := viper.GetStringMap("contexts")
-			currentContext := viper.GetString("current-context")
+			currentContext := global.GetCurrentContext()
 
 			if outputFormat == "compact" {
 				for name := range contexts {

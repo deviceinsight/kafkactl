@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- [#190](https://github.com/deviceinsight/kafkactl/pull/190) Improve handling of project config files
+
 ## 4.0.0 - 2024-01-18
 
 ### Added

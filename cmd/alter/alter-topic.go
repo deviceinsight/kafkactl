@@ -23,7 +23,7 @@ func newAlterTopicCmd() *cobra.Command {
 				}
 			}
 		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(cmd *cobra.Command, _ []string) error {
 			return validation.ValidateAtLeastOneRequiredFlag(cmd)
 		},
 		ValidArgsFunction: topic.CompleteTopicNames,

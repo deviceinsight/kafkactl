@@ -236,7 +236,7 @@ func readCurrentReplicas(client *sarama.Client, topic string) ([][]int32, error)
 	return replicaAssignment, nil
 }
 
-func CompletePartitionIds(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+func CompletePartitionIDs(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
 
 	if len(args) != 1 {
 		return nil, cobra.ShellCompDirectiveNoFileComp

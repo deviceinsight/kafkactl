@@ -36,14 +36,14 @@ func newAlterPartitionCmd() *cobra.Command {
 				}
 			}
 		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(cmd *cobra.Command, _ []string) error {
 			return validation.ValidateAtLeastOneRequiredFlag(cmd)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) == 0 {
 				return topic.CompleteTopicNames(cmd, args, toComplete)
 			} else if len(args) == 1 {
-				return partition.CompletePartitionIds(cmd, args, toComplete)
+				return partition.CompletePartitionIDs(cmd, args, toComplete)
 			}
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		},

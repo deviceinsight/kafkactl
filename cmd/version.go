@@ -25,7 +25,7 @@ func newVersionCmd() *cobra.Command {
 	var cmdVersion = &cobra.Command{
 		Use:   "version",
 		Short: "print the version of kafkactl",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			output.Infof("%#v", info{
 				version:   Version,
 				buildTime: BuildTime,

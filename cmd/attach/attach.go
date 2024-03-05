@@ -12,7 +12,7 @@ func NewAttachCmd() *cobra.Command {
 		Use:   "attach",
 		Short: "run kafkactl pod in kubernetes and attach to it",
 		Args:  cobra.NoArgs,
-		Run: func(cobraCmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			if err := k8s.NewOperation().Attach(); err != nil {
 				output.Fail(err)
 			}

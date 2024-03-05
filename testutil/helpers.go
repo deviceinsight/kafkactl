@@ -63,7 +63,7 @@ func VerifyTopicExists(t *testing.T, topic string) {
 
 	kafkaCtl := CreateKafkaCtlCommand()
 
-	findTopic := func(attempt uint) error {
+	findTopic := func(_ uint) error {
 		_, err := kafkaCtl.Execute("get", "topics", "-o", "compact")
 
 		if err != nil {
@@ -139,7 +139,7 @@ func VerifyGroupExists(t *testing.T, group string) {
 
 	kafkaCtl := CreateKafkaCtlCommand()
 
-	findConsumerGroup := func(attempt uint) error {
+	findConsumerGroup := func(_ uint) error {
 		_, err := kafkaCtl.Execute("get", "cg", "-o", "compact")
 
 		if err != nil {
@@ -173,7 +173,7 @@ func VerifyConsumerGroupOffset(t *testing.T, group, topic string, expectedConsum
 
 	consumerOffsetRegex, _ := regexp.Compile(`consumerOffset: (\d)`)
 
-	verifyConsumerOffset := func(attempt uint) error {
+	verifyConsumerOffset := func(_ uint) error {
 		_, err := kafkaCtl.Execute("describe", "cg", group, "--topic", topic, "-o", "yaml")
 
 		if err != nil {
@@ -209,7 +209,7 @@ func VerifyTopicNotInConsumerGroup(t *testing.T, group, topic string) {
 
 	emptyTopicsRegex, _ := regexp.Compile(`topics: \[]`)
 
-	verifyTopicNotInGroup := func(attempt uint) error {
+	verifyTopicNotInGroup := func(_ uint) error {
 		_, err := kafkaCtl.Execute("describe", "cg", group, "--topic", topic, "-o", "yaml")
 
 		if err != nil {

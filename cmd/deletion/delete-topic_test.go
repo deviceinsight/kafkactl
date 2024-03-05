@@ -83,7 +83,7 @@ func TestDeleteTopicAutoCompletionIntegration(t *testing.T) {
 
 func verifyTopicDeleted(t *testing.T, kafkaCtl testutil.KafkaCtlTestCommand, topicName string) {
 
-	checkTopicDeleted := func(attempt uint) error {
+	checkTopicDeleted := func(_ uint) error {
 		_, err := kafkaCtl.Execute("get", "topics", "-o", "compact")
 
 		if err != nil {

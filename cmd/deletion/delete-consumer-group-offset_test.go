@@ -188,7 +188,7 @@ func failedToDeleteMessage(groupName string, topic string, partition int32) stri
 }
 
 func checkOffsetDeleted(kafkaCtl testutil.KafkaCtlTestCommand, groupName string, topic string, partition int32) error {
-	checkOffsetDeleted := func(attempt uint) error {
+	checkOffsetDeleted := func(_ uint) error {
 		_, err := kafkaCtl.Execute("describe", "consumer-group", groupName, "-o", "yaml")
 
 		if err != nil {

@@ -47,11 +47,11 @@ func newCreateACLCmd() *cobra.Command {
 	_ = cmdCreateACL.MarkFlagRequired("principal")
 	_ = cmdCreateACL.MarkFlagRequired("operation")
 
-	_ = cmdCreateACL.RegisterFlagCompletionFunc("pattern", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	_ = cmdCreateACL.RegisterFlagCompletionFunc("pattern", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 		return []string{"match", "prefixed", "literal"}, cobra.ShellCompDirectiveDefault
 	})
 
-	_ = cmdCreateACL.RegisterFlagCompletionFunc("operation", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	_ = cmdCreateACL.RegisterFlagCompletionFunc("operation", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 		return []string{"any", "all", "read", "write", "create", "delete", "alter", "describe", "clusteraction", "describeconfigs", "alterconfigs", "idempotentwrite"}, cobra.ShellCompDirectiveDefault
 	})
 
