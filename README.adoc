@@ -571,6 +571,57 @@ Producing protobuf message converted from JSON:
 kafkactl produce my-topic --key='{"keyField":123}' --key-proto-type MyKeyMessage --value='{"valueField":"value"}' --value-proto-type MyValueMessage --proto-file kafkamsg.proto
 ----
 
+A more complex protobuf message converted from a multi-line JSON string can be produced using a file input with custom separators. 
+
+For example, if you have the following protobuf definition (`complex.proto`):
+
+[,protobuf]
+----
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+message ComplexMessage {
+  CustomerInfo customer_info = 1;
+  DeviceInfo device_info = 2;
+}
+
+message CustomerInfo {
+  string customer_id = 1;
+  string name = 2;
+}
+
+message DeviceInfo {
+  string serial = 1;
+  google.protobuf.Timestamp last_update  = 2;
+}
+----
+
+And you have the following file (`complex-msg.txt`) that contains the key and value of the message:
+
+[,text]
+----
+msg-key##
+{
+    "customer_info": {
+        "customer_id": "12345",
+        "name": "Bob"
+    },
+    "device_info": {
+        "serial": "abcde",
+        "last_update": "2024-03-02T07:01:02.000Z"
+    }
+}
++++
+----
+
+The command to produce the protobuf message using sample protobuf definition and input file would be:
+
+[,bash]
+----
+kafkactl produce my-topic --value-proto-type=ComplexMessage --proto-file=complex.proto --lineSeparator='+++' --separator='##' --file=complex-msg.txt
+----
+
 === Avro support
 
 In order to enable avro support you just have to add the schema registry to your configuration:
