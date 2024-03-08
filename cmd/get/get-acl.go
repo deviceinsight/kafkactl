@@ -1,9 +1,9 @@
 package get
 
 import (
-	"github.com/deviceinsight/kafkactl/internal/acl"
-	"github.com/deviceinsight/kafkactl/internal/k8s"
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/acl"
+	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/spf13/cobra"
 )
 
@@ -39,11 +39,11 @@ func newGetACLCmd() *cobra.Command {
 
 	cmdGetAcls.Flags().StringVarP(&flags.OutputFormat, "output", "o", flags.OutputFormat, "output format. One of: json|yaml")
 
-	_ = cmdGetAcls.RegisterFlagCompletionFunc("operation", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	_ = cmdGetAcls.RegisterFlagCompletionFunc("operation", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 		return []string{"any", "all", "read", "write", "create", "delete", "alter", "describe", "clusteraction", "describeconfigs", "alterconfigs", "idempotentwrite"}, cobra.ShellCompDirectiveDefault
 	})
 
-	_ = cmdGetAcls.RegisterFlagCompletionFunc("pattern", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	_ = cmdGetAcls.RegisterFlagCompletionFunc("pattern", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 		return []string{"any", "match", "prefixed", "literal"}, cobra.ShellCompDirectiveDefault
 	})
 

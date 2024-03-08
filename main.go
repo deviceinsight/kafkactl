@@ -17,8 +17,8 @@ package main
 import (
 	"os"
 
-	"github.com/deviceinsight/kafkactl/cmd"
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/v5/cmd"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 )
 
 func main() {

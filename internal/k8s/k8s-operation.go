@@ -1,13 +1,14 @@
 package k8s
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
-	"github.com/deviceinsight/kafkactl/internal/env"
+	"github.com/deviceinsight/kafkactl/v5/internal/global"
 
-	"github.com/deviceinsight/kafkactl/internal"
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -174,27 +175,29 @@ func parsePodEnvironment(context internal.ClientContext) []string {
 
 	var envVariables []string
 
-	envVariables = appendStrings(envVariables, env.Brokers, context.Brokers)
-	envVariables = appendBool(envVariables, env.TLSEnabled, context.TLS.Enabled)
-	envVariables = appendStringIfDefined(envVariables, env.TLSCa, context.TLS.CA)
-	envVariables = appendStringIfDefined(envVariables, env.TLSCert, context.TLS.Cert)
-	envVariables = appendStringIfDefined(envVariables, env.TLSCertKey, context.TLS.CertKey)
-	envVariables = appendBool(envVariables, env.TLSInsecure, context.TLS.Insecure)
-	envVariables = appendBool(envVariables, env.SaslEnabled, context.Sasl.Enabled)
-	envVariables = appendStringIfDefined(envVariables, env.SaslUsername, context.Sasl.Username)
-	envVariables = appendStringIfDefined(envVariables, env.SaslPassword, context.Sasl.Password)
-	envVariables = appendStringIfDefined(envVariables, env.SaslMechanism, context.Sasl.Mechanism)
-	envVariables = appendStringIfDefined(envVariables, env.RequestTimeout, context.RequestTimeout.String())
-	envVariables = appendStringIfDefined(envVariables, env.ClientID, context.ClientID)
-	envVariables = appendStringIfDefined(envVariables, env.KafkaVersion, context.KafkaVersion.String())
-	envVariables = appendStringIfDefined(envVariables, env.AvroSchemaRegistry, context.AvroSchemaRegistry)
-	envVariables = appendStringIfDefined(envVariables, env.AvroJSONCodec, context.AvroJSONCodec.String())
-	envVariables = appendStrings(envVariables, env.ProtobufProtoSetFiles, context.Protobuf.ProtosetFiles)
-	envVariables = appendStrings(envVariables, env.ProtobufImportPaths, context.Protobuf.ProtoImportPaths)
-	envVariables = appendStrings(envVariables, env.ProtobufProtoFiles, context.Protobuf.ProtoFiles)
-	envVariables = appendStringIfDefined(envVariables, env.ProducerPartitioner, context.Producer.Partitioner)
-	envVariables = appendStringIfDefined(envVariables, env.ProducerRequiredAcks, context.Producer.RequiredAcks)
-	envVariables = appendIntIfGreaterZero(envVariables, env.ProducerMaxMessageBytes, context.Producer.MaxMessageBytes)
+	envVariables = appendStrings(envVariables, global.Brokers, context.Brokers)
+	envVariables = appendBool(envVariables, global.TLSEnabled, context.TLS.Enabled)
+	envVariables = appendStringIfDefined(envVariables, global.TLSCa, context.TLS.CA)
+	envVariables = appendStringIfDefined(envVariables, global.TLSCert, context.TLS.Cert)
+	envVariables = appendStringIfDefined(envVariables, global.TLSCertKey, context.TLS.CertKey)
+	envVariables = appendBool(envVariables, global.TLSInsecure, context.TLS.Insecure)
+	envVariables = appendBool(envVariables, global.SaslEnabled, context.Sasl.Enabled)
+	envVariables = appendStringIfDefined(envVariables, global.SaslUsername, context.Sasl.Username)
+	envVariables = appendStringIfDefined(envVariables, global.SaslPassword, context.Sasl.Password)
+	envVariables = appendStringIfDefined(envVariables, global.SaslMechanism, context.Sasl.Mechanism)
+	envVariables = appendStringIfDefined(envVariables, global.SaslTokenProviderPlugin, context.Sasl.TokenProvider.PluginName)
+	envVariables = appendMapIfDefined(envVariables, global.SaslTokenProviderOptions, context.Sasl.TokenProvider.Options)
+	envVariables = appendStringIfDefined(envVariables, global.RequestTimeout, context.RequestTimeout.String())
+	envVariables = appendStringIfDefined(envVariables, global.ClientID, context.ClientID)
+	envVariables = appendStringIfDefined(envVariables, global.KafkaVersion, context.KafkaVersion.String())
+	envVariables = appendStringIfDefined(envVariables, global.AvroSchemaRegistry, context.AvroSchemaRegistry)
+	envVariables = appendStringIfDefined(envVariables, global.AvroJSONCodec, context.AvroJSONCodec.String())
+	envVariables = appendStrings(envVariables, global.ProtobufProtoSetFiles, context.Protobuf.ProtosetFiles)
+	envVariables = appendStrings(envVariables, global.ProtobufImportPaths, context.Protobuf.ProtoImportPaths)
+	envVariables = appendStrings(envVariables, global.ProtobufProtoFiles, context.Protobuf.ProtoFiles)
+	envVariables = appendStringIfDefined(envVariables, global.ProducerPartitioner, context.Producer.Partitioner)
+	envVariables = appendStringIfDefined(envVariables, global.ProducerRequiredAcks, context.Producer.RequiredAcks)
+	envVariables = appendIntIfGreaterZero(envVariables, global.ProducerMaxMessageBytes, context.Producer.MaxMessageBytes)
 
 	return envVariables
 }
@@ -223,6 +226,17 @@ func appendStringIfDefined(env []string, key string, value string) []string {
 func appendIntIfGreaterZero(env []string, key string, value int) []string {
 	if value > 0 {
 		return append(env, fmt.Sprintf("%s=%d", key, value))
+	}
+	return env
+}
+
+func appendMapIfDefined(env []string, key string, value map[string]any) []string {
+	if len(value) > 0 {
+		jsonMap, err := json.Marshal(value)
+		if err != nil {
+			panic(err)
+		}
+		return append(env, fmt.Sprintf("%s=%q", key, jsonMap))
 	}
 	return env
 }

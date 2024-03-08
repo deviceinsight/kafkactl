@@ -1,10 +1,10 @@
 package deletion
 
 import (
-	"github.com/deviceinsight/kafkactl/internal/consumergroupoffsets"
-	"github.com/deviceinsight/kafkactl/internal/consumergroups"
-	"github.com/deviceinsight/kafkactl/internal/k8s"
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/consumergroupoffsets"
+	"github.com/deviceinsight/kafkactl/v5/internal/consumergroups"
+	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/spf13/cobra"
 )
 

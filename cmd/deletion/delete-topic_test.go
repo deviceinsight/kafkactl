@@ -10,8 +10,8 @@ import (
 	"github.com/Rican7/retry"
 	"github.com/Rican7/retry/backoff"
 	"github.com/Rican7/retry/strategy"
-	"github.com/deviceinsight/kafkactl/testutil"
-	"github.com/deviceinsight/kafkactl/util"
+	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
+	"github.com/deviceinsight/kafkactl/v5/internal/util"
 )
 
 func TestDeleteSingleTopicIntegration(t *testing.T) {
@@ -83,7 +83,7 @@ func TestDeleteTopicAutoCompletionIntegration(t *testing.T) {
 
 func verifyTopicDeleted(t *testing.T, kafkaCtl testutil.KafkaCtlTestCommand, topicName string) {
 
-	checkTopicDeleted := func(attempt uint) error {
+	checkTopicDeleted := func(_ uint) error {
 		_, err := kafkaCtl.Execute("get", "topics", "-o", "compact")
 
 		if err != nil {

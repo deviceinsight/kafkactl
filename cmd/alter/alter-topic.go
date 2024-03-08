@@ -1,10 +1,10 @@
 package alter
 
 import (
-	"github.com/deviceinsight/kafkactl/cmd/validation"
-	"github.com/deviceinsight/kafkactl/internal/k8s"
-	"github.com/deviceinsight/kafkactl/internal/topic"
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/v5/cmd/validation"
+	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/topic"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +23,7 @@ func newAlterTopicCmd() *cobra.Command {
 				}
 			}
 		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(cmd *cobra.Command, _ []string) error {
 			return validation.ValidateAtLeastOneRequiredFlag(cmd)
 		},
 		ValidArgsFunction: topic.CompleteTopicNames,

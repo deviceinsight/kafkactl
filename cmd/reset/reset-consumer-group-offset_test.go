@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deviceinsight/kafkactl/testutil"
+	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 )
 
 func TestResetCGOForSingleTopicIntegration(t *testing.T) {

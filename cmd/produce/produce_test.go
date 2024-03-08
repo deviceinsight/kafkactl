@@ -10,11 +10,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deviceinsight/kafkactl/internal/helpers/protobuf"
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 
 	"github.com/jhump/protoreflect/dynamic"
 
-	"github.com/deviceinsight/kafkactl/testutil"
+	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 )
 
 func TestProduceWithKeyAndValueIntegration(t *testing.T) {
@@ -305,7 +305,7 @@ func TestProduceProtoFileIntegration(t *testing.T) {
 
 	pbTopic := testutil.CreateTopic(t, "produce-topic-pb")
 
-	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+	protoPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata")
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
@@ -373,7 +373,7 @@ func TestProduceWithCSVFileIntegration(t *testing.T) {
 	topic := testutil.CreateTopic(t, "produce-topic-csv")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	dataFilePath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+	dataFilePath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata")
 
 	if _, err := kafkaCtl.Execute("produce", topic, "--separator", ",",
 		"--file", filepath.Join(dataFilePath, "msg.csv")); err != nil {
@@ -395,7 +395,7 @@ func TestProduceWithCSVFileWithTimestampsFirstColumnIntegration(t *testing.T) {
 	topic := testutil.CreateTopic(t, "produce-topic-csv")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	dataFilePath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+	dataFilePath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata")
 
 	if _, err := kafkaCtl.Execute("produce", topic, "--separator", ",",
 		"--file", filepath.Join(dataFilePath, "msg-ts1.csv")); err != nil {
@@ -417,7 +417,7 @@ func TestProduceWithCSVFileWithTimestampsSecondColumnIntegration(t *testing.T) {
 	topic := testutil.CreateTopic(t, "produce-topic-csv")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	dataFilePath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+	dataFilePath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata")
 
 	if _, err := kafkaCtl.Execute("produce", topic, "--separator", ",",
 		"--file", filepath.Join(dataFilePath, "msg-ts2.csv")); err != nil {
@@ -439,7 +439,7 @@ func TestProduceWithJSONFileIntegration(t *testing.T) {
 	topic := testutil.CreateTopic(t, "produce-topic-json")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	dataFilePath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+	dataFilePath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata")
 
 	if _, err := kafkaCtl.Execute("produce", topic,
 		"--file", filepath.Join(dataFilePath, "msg.json"),
@@ -461,7 +461,7 @@ func TestProduceProtoFileWithOnlyKeyEncodedIntegration(t *testing.T) {
 
 	pbTopic := testutil.CreateTopic(t, "produce-topic-pb")
 
-	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+	protoPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata")
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
@@ -512,7 +512,7 @@ func TestProduceProtoFileWithoutProtoImportPathIntegration(t *testing.T) {
 
 	pbTopic := testutil.CreateTopic(t, "produce-topic-pb")
 
-	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+	protoPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata")
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
@@ -579,7 +579,7 @@ func TestProduceProtosetFileIntegration(t *testing.T) {
 
 	pbTopic := testutil.CreateTopic(t, "produce-topic-pb")
 
-	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata", "msg.protoset")
+	protoPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata", "msg.protoset")
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
@@ -644,7 +644,7 @@ func TestProduceProtoFileBadJSONIntegration(t *testing.T) {
 
 	pbTopic := testutil.CreateTopic(t, "produce-topic-pb")
 
-	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+	protoPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata")
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
@@ -664,7 +664,7 @@ func TestProduceProtoFileErrNoMessageIntegration(t *testing.T) {
 
 	pbTopic := testutil.CreateTopic(t, "produce-topic-pb")
 
-	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+	protoPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata")
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 

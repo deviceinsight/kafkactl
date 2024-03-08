@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deviceinsight/kafkactl/cmd"
-	"github.com/deviceinsight/kafkactl/testutil"
+	"github.com/deviceinsight/kafkactl/v5/cmd"
+	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 )
 
 func TestVersionCommand(t *testing.T) {

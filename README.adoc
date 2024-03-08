@@ -114,14 +114,21 @@ contexts:
       kubeConfig: ~/.kube/config #optional
       kubeContext: my-cluster
       namespace: my-namespace
-      # optional: docker image to use (tag will be added by kafkactl based on the current version)
+      # optional: docker image to use (the tag of the image will be suffixed by `-scratch` or `-ubuntu` depending on command)
       image: private.registry.com/deviceinsight/kafkactl
       # optional: secret for private docker registry
       imagePullSecret: registry-secret
-      # optional: extra args to be passed into the kubectl run command
-      extra:
-        - --overrides
-        - '{"spec": { "nodeSelector": {"kubernetes.io/hostname": "eks-staging-4"}}}'
+      # optional: serviceAccount to use for the pod
+      serviceAccount: my-service-account
+      # optional: labels to add to the pod
+      labels:
+        key: value
+      # optional: annotations to add to the pod
+      annotations:
+        key: value
+      # optional: nodeSelector to add to the pod
+      nodeSelector:
+        key: value
     # optional: clientID config (defaults to kafkactl-{username})
     clientID: my-client-id
 
@@ -163,20 +170,47 @@ contexts:
       # optional: isolationLevel (defaults to ReadCommitted)
       isolationLevel: ReadUncommitted
 
+# optional for project config files
 current-context: default
 ----
 
+[#_config_file_read_order]
 The config file location is resolved by
 
 . checking for a provided commandline argument: `--config-file=$PATH_TO_CONFIG`
 . evaluating the environment variable: `export KAFKA_CTL_CONFIG=$PATH_TO_CONFIG`
-. checking for a config file in the working directory i.e. `$PWD/kafkactl.yml`
+. checking for a project config file in the working directory (see <<_project_config_files>>)
 . as default the config file is looked up from one of the following locations:
  ** `$HOME/.config/kafkactl/config.yml`
  ** `$HOME/.kafkactl/config.yml`
  ** `$SNAP_REAL_HOME/.kafkactl/config.yml`
  ** `$SNAP_DATA/kafkactl/config.yml`
  ** `/etc/kafkactl/config.yml`
+
+[#_project_config_files]
+==== Project config files
+
+In addition to the config file locations above, _kafkactl_ allows to create a config file on project level.
+A project config file is meant to be placed at the root level of a git repo and declares the kafka configuration
+for this repository/project.
+
+In order to identify the config file as belonging to _kafkactl_ the following names can be used:
+
+* `kafkactl.yml`
+* `.kafkactl.yml`
+
+During initialization _kafkactl_ starts from the current working directory and recursively looks for a project level
+config file. The recursive lookup ends at the boundary of a git repository (i.e. if a `.git` folder is found).
+This way, _kafkactl_ can be used conveniently anywhere in the git repository.
+
+Additionally, project config files have a special feature to use them read-only. Topically, if you configure more than
+one context in a config file, and you switch the context with `kafkactl config use-context xy` this will lead to a write
+operation on the config file to save the _current context_.
+
+In order to avoid this for project config files, one can just omit the `current-context` parameter from the config file.
+In this case _kafkactl_ will delegate read and write operations for the _current context_ to the next configuration file
+according to <<_config_file_read_order, the config file read order>>.
+
 
 === Auto completion
 
@@ -542,6 +576,57 @@ Producing protobuf message converted from JSON:
 [,bash]
 ----
 kafkactl produce my-topic --key='{"keyField":123}' --key-proto-type MyKeyMessage --value='{"valueField":"value"}' --value-proto-type MyValueMessage --proto-file kafkamsg.proto
+----
+
+A more complex protobuf message converted from a multi-line JSON string can be produced using a file input with custom separators. 
+
+For example, if you have the following protobuf definition (`complex.proto`):
+
+[,protobuf]
+----
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+message ComplexMessage {
+  CustomerInfo customer_info = 1;
+  DeviceInfo device_info = 2;
+}
+
+message CustomerInfo {
+  string customer_id = 1;
+  string name = 2;
+}
+
+message DeviceInfo {
+  string serial = 1;
+  google.protobuf.Timestamp last_update  = 2;
+}
+----
+
+And you have the following file (`complex-msg.txt`) that contains the key and value of the message:
+
+[,text]
+----
+msg-key##
+{
+    "customer_info": {
+        "customer_id": "12345",
+        "name": "Bob"
+    },
+    "device_info": {
+        "serial": "abcde",
+        "last_update": "2024-03-02T07:01:02.000Z"
+    }
+}
++++
+----
+
+The command to produce the protobuf message using sample protobuf definition and input file would be:
+
+[,bash]
+----
+kafkactl produce my-topic --value-proto-type=ComplexMessage --proto-file=complex.proto --lineSeparator='+++' --separator='##' --file=complex-msg.txt
 ----
 
 === Avro support

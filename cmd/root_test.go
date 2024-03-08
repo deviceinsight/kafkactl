@@ -1,12 +1,13 @@
 package cmd_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
-	"github.com/deviceinsight/kafkactl/internal/env"
+	"github.com/deviceinsight/kafkactl/v5/internal/global"
 
-	"github.com/deviceinsight/kafkactl/testutil"
+	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 	"github.com/spf13/viper"
 )
 
@@ -42,29 +43,31 @@ func TestEnvironmentVariableLoadingAliases(t *testing.T) {
 
 	testutil.StartUnitTest(t)
 
-	_ = os.Setenv(env.RequestTimeout, "30")
-	_ = os.Setenv(env.Brokers, "broker1:9092 broker2:9092")
-	_ = os.Setenv(env.TLSEnabled, "true")
-	_ = os.Setenv(env.TLSCa, "my-ca")
-	_ = os.Setenv(env.TLSCert, "my-cert")
-	_ = os.Setenv(env.TLSCertKey, "my-cert-key")
-	_ = os.Setenv(env.TLSInsecure, "true")
-	_ = os.Setenv(env.SaslEnabled, "true")
-	_ = os.Setenv(env.SaslUsername, "user")
-	_ = os.Setenv(env.SaslPassword, "pass")
-	_ = os.Setenv(env.SaslMechanism, "scram-sha512")
-	_ = os.Setenv(env.ClientID, "my-client")
-	_ = os.Setenv(env.KafkaVersion, "2.0.1")
-	_ = os.Setenv(env.AvroSchemaRegistry, "registry:8888")
-	_ = os.Setenv(env.AvroJSONCodec, "avro")
-	_ = os.Setenv(env.ProtobufProtoSetFiles, "/usr/include/protosets/ps1.protoset /usr/lib/ps2.protoset")
-	_ = os.Setenv(env.ProtobufImportPaths, "/usr/include/protobuf /usr/lib/protobuf")
-	_ = os.Setenv(env.ProtobufProtoFiles, "message.proto other.proto")
-	_ = os.Setenv(env.ProducerPartitioner, "hash")
-	_ = os.Setenv(env.ProducerRequiredAcks, "WaitForAll")
-	_ = os.Setenv(env.ProducerMaxMessageBytes, "1234")
+	_ = os.Setenv(global.RequestTimeout, "30")
+	_ = os.Setenv(global.Brokers, "broker1:9092 broker2:9092")
+	_ = os.Setenv(global.TLSEnabled, "true")
+	_ = os.Setenv(global.TLSCa, "my-ca")
+	_ = os.Setenv(global.TLSCert, "my-cert")
+	_ = os.Setenv(global.TLSCertKey, "my-cert-key")
+	_ = os.Setenv(global.TLSInsecure, "true")
+	_ = os.Setenv(global.SaslEnabled, "true")
+	_ = os.Setenv(global.SaslUsername, "user")
+	_ = os.Setenv(global.SaslPassword, "pass")
+	_ = os.Setenv(global.SaslMechanism, "oauth")
+	_ = os.Setenv(global.SaslTokenProviderPlugin, "azure")
+	_ = os.Setenv(global.SaslTokenProviderOptions, `{"tenantid": "azure-tenant-id", "int-key": 12}`)
+	_ = os.Setenv(global.ClientID, "my-client")
+	_ = os.Setenv(global.KafkaVersion, "2.0.1")
+	_ = os.Setenv(global.AvroSchemaRegistry, "registry:8888")
+	_ = os.Setenv(global.AvroJSONCodec, "avro")
+	_ = os.Setenv(global.ProtobufProtoSetFiles, "/usr/include/protosets/ps1.protoset /usr/lib/ps2.protoset")
+	_ = os.Setenv(global.ProtobufImportPaths, "/usr/include/protobuf /usr/lib/protobuf")
+	_ = os.Setenv(global.ProtobufProtoFiles, "message.proto other.proto")
+	_ = os.Setenv(global.ProducerPartitioner, "hash")
+	_ = os.Setenv(global.ProducerRequiredAcks, "WaitForAll")
+	_ = os.Setenv(global.ProducerMaxMessageBytes, "1234")
 
-	for _, key := range env.Variables {
+	for _, key := range global.EnvVariables {
 		if os.Getenv(key) == "" {
 			t.Fatalf("missing test case for env variable: %s", key)
 		}
@@ -91,7 +94,10 @@ func TestEnvironmentVariableLoadingAliases(t *testing.T) {
 	testutil.AssertEquals(t, "true", viper.GetString("contexts.default.sasl.enabled"))
 	testutil.AssertEquals(t, "user", viper.GetString("contexts.default.sasl.username"))
 	testutil.AssertEquals(t, "pass", viper.GetString("contexts.default.sasl.password"))
-	testutil.AssertEquals(t, "scram-sha512", viper.GetString("contexts.default.sasl.mechanism"))
+	testutil.AssertEquals(t, "oauth", viper.GetString("contexts.default.sasl.mechanism"))
+	testutil.AssertEquals(t, "azure", viper.GetString("contexts.default.sasl.tokenProvider.plugin"))
+	testutil.AssertEquals(t, "azure-tenant-id", viper.GetStringMap("contexts.default.sasl.tokenProvider.options")["tenantid"].(string))
+	testutil.AssertEquals(t, "12", fmt.Sprint(viper.GetStringMap("contexts.default.sasl.tokenProvider.options")["int-key"].(float64)))
 	testutil.AssertEquals(t, "my-client", viper.GetString("contexts.default.clientID"))
 	testutil.AssertEquals(t, "2.0.1", viper.GetString("contexts.default.kafkaVersion"))
 	testutil.AssertEquals(t, "registry:8888", viper.GetString("contexts.default.avro.schemaRegistry"))

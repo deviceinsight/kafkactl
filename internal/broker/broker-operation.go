@@ -8,8 +8,8 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/IBM/sarama"
-	"github.com/deviceinsight/kafkactl/internal"
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -200,7 +200,7 @@ func (operation *Operation) DescribeBroker(id int32, flags DescribeBrokerFlags) 
 	return nil
 }
 
-func (operation *Operation) listBrokerIds() ([]string, error) {
+func (operation *Operation) listBrokerIDs() ([]string, error) {
 
 	var (
 		err     error
@@ -216,28 +216,28 @@ func (operation *Operation) listBrokerIds() ([]string, error) {
 		return nil, errors.Wrap(err, "failed to create client")
 	}
 
-	var brokerIds = make([]string, 0)
+	var brokerIDs = make([]string, 0)
 
 	for _, broker := range client.Brokers() {
-		brokerIds = append(brokerIds, fmt.Sprint(broker.ID()))
+		brokerIDs = append(brokerIDs, fmt.Sprint(broker.ID()))
 	}
 
-	return brokerIds, nil
+	return brokerIDs, nil
 }
 
-func CompleteBrokerIds(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+func CompleteBrokerIDs(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
 
 	if len(args) != 0 {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	brokerIds, err := (&Operation{}).listBrokerIds()
+	brokerIDs, err := (&Operation{}).listBrokerIDs()
 
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	return brokerIds, cobra.ShellCompDirectiveNoFileComp
+	return brokerIDs, cobra.ShellCompDirectiveNoFileComp
 }
 
 func FromYaml(yamlString string) (Broker, error) {

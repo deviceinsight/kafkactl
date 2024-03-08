@@ -9,7 +9,7 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/pkg/errors"
 )
 

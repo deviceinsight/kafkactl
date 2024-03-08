@@ -10,8 +10,8 @@ import (
 	"github.com/Rican7/retry"
 	"github.com/Rican7/retry/backoff"
 	"github.com/Rican7/retry/strategy"
-	"github.com/deviceinsight/kafkactl/testutil"
-	"github.com/deviceinsight/kafkactl/util"
+	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
+	"github.com/deviceinsight/kafkactl/v5/internal/util"
 )
 
 func TestDeleteSingleConsumerGroupIntegration(t *testing.T) {
@@ -83,7 +83,7 @@ func TestDeleteConsumerGroupAutoCompletionIntegration(t *testing.T) {
 
 func verifyConsumerGroupDeleted(t *testing.T, kafkaCtl testutil.KafkaCtlTestCommand, groupName string) {
 
-	checkConsumerGrouDeleted := func(attempt uint) error {
+	checkConsumerGrouDeleted := func(_ uint) error {
 		_, err := kafkaCtl.Execute("get", "consumer-groups", "-o", "compact")
 
 		if err != nil {

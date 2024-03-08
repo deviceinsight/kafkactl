@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
-	"github.com/deviceinsight/kafkactl/internal"
-	"github.com/deviceinsight/kafkactl/output"
-	"github.com/deviceinsight/kafkactl/util"
+	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -537,30 +537,30 @@ func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int
 		brokerReplicaCount[lastReplica]--
 	}
 
-	var unusedBrokerIds []int32
+	var unusedBrokerIDs []int32
 
 	if len(replicas) < int(targetReplicationFactor) {
 		for brokerID := range brokerReplicaCount {
 			if !util.ContainsInt32(replicas, brokerID) {
-				unusedBrokerIds = append(unusedBrokerIds, brokerID)
+				unusedBrokerIDs = append(unusedBrokerIDs, brokerID)
 			}
 		}
-		if len(unusedBrokerIds) < (int(targetReplicationFactor) - len(replicas)) {
+		if len(unusedBrokerIDs) < (int(targetReplicationFactor) - len(replicas)) {
 			return nil, errors.New("not enough brokers")
 		}
 	}
 
 	for len(replicas) < int(targetReplicationFactor) {
 
-		sort.Slice(unusedBrokerIds, func(i, j int) bool {
-			brokerI := unusedBrokerIds[i]
-			brokerJ := unusedBrokerIds[j]
+		sort.Slice(unusedBrokerIDs, func(i, j int) bool {
+			brokerI := unusedBrokerIDs[i]
+			brokerJ := unusedBrokerIDs[j]
 			return brokerReplicaCount[brokerI] < brokerReplicaCount[brokerJ] || (brokerReplicaCount[brokerI] == brokerReplicaCount[brokerJ] && brokerI > brokerJ)
 		})
 
-		replicas = append(replicas, unusedBrokerIds[0])
-		brokerReplicaCount[unusedBrokerIds[0]]++
-		unusedBrokerIds = unusedBrokerIds[1:]
+		replicas = append(replicas, unusedBrokerIDs[0])
+		brokerReplicaCount[unusedBrokerIDs[0]]++
+		unusedBrokerIDs = unusedBrokerIDs[1:]
 	}
 
 	return replicas, nil
@@ -623,10 +623,9 @@ func (operation *Operation) GetTopics(flags GetTopicsFlags) error {
 		go func(topic string) {
 			t, err := readTopic(&client, &admin, topic, requestedFields)
 			if err != nil {
-				errChannel <- errors.Errorf("unable to read topic %s: %v", topic, err)
-			} else {
-				topicChannel <- t
+				output.Debugf("failed to read topic %q: %v", topic, err)
 			}
+			topicChannel <- t
 		}(topic)
 	}
 

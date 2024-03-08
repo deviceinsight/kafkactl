@@ -1,10 +1,10 @@
 package describe
 
 import (
-	"github.com/deviceinsight/kafkactl/internal/consumergroups"
-	"github.com/deviceinsight/kafkactl/internal/k8s"
-	"github.com/deviceinsight/kafkactl/internal/topic"
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/consumergroups"
+	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/topic"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +24,7 @@ func newDescribeConsumerGroupCmd() *cobra.Command {
 				}
 			}
 		},
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		ValidArgsFunction: func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 			return consumergroups.CompleteConsumerGroupsFiltered(flags)
 		},
 	}

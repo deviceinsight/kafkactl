@@ -3,7 +3,7 @@ package config
 import (
 	"os"
 
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -15,7 +15,7 @@ func newViewCmd() *cobra.Command {
 		Use:   "view",
 		Short: "show contents of config file",
 		Long:  `Shows the contents of the config file that is currently used`,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 
 			yamlFile, err := os.ReadFile(viper.ConfigFileUsed())
 			if err != nil {

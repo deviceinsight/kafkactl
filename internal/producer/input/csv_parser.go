@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deviceinsight/kafkactl/output"
-	"github.com/deviceinsight/kafkactl/util"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/util"
 	"github.com/pkg/errors"
 )
 

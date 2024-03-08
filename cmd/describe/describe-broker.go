@@ -3,9 +3,9 @@ package describe
 import (
 	"strconv"
 
-	"github.com/deviceinsight/kafkactl/internal/broker"
-	"github.com/deviceinsight/kafkactl/internal/k8s"
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/broker"
+	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +30,7 @@ func newDescribeBrokerCmd() *cobra.Command {
 				}
 			}
 		},
-		ValidArgsFunction: broker.CompleteBrokerIds,
+		ValidArgsFunction: broker.CompleteBrokerIDs,
 	}
 
 	cmdDescribeBroker.Flags().StringVarP(&flags.OutputFormat, "output", "o", flags.OutputFormat, "output format. One of: json|yaml|wide")

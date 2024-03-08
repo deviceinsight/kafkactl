@@ -11,8 +11,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var DebugLogger StdLogger = log.New(io.Discard, "[kafkactl] ", log.LstdFlags)
-var TestLogger StdLogger = log.New(io.Discard, "[test    ] ", log.LstdFlags)
+var DebugLogger StdLogger = CreateLogger(io.Discard, "kafkactl")
+var TestLogger StdLogger = CreateLogger(io.Discard, "test")
 
 // StdLogger is used to log error messages.
 type StdLogger interface {
@@ -23,6 +23,11 @@ type StdLogger interface {
 
 var Fail = func(err error) {
 	_, _ = fmt.Fprintf(IoStreams.ErrOut, "%s\n", err.Error())
+	os.Exit(1)
+}
+
+var Failf = func(msg string, args ...interface{}) {
+	_, _ = fmt.Fprintf(IoStreams.ErrOut, msg+"\n", args...)
 	os.Exit(1)
 }
 
@@ -69,4 +74,20 @@ func PrintStrings(args ...string) {
 	for _, arg := range args {
 		_, _ = fmt.Fprintln(IoStreams.Out, arg)
 	}
+}
+
+func CreateLogger(out io.Writer, prefix string) *log.Logger {
+
+	// make sure prefix has a fixed length
+	prefix = fmt.Sprintf("%-8s", prefix)[0:8]
+
+	return log.New(out, fmt.Sprintf("[%s] ", prefix), log.LstdFlags)
+}
+
+func CreateVerboseLogger(prefix string, verbose bool) *log.Logger {
+	logWriter := io.Discard
+	if verbose {
+		logWriter = os.Stderr
+	}
+	return CreateLogger(logWriter, prefix)
 }

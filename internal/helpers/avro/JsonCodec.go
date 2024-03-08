@@ -3,7 +3,7 @@ package avro
 import (
 	"strings"
 
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 )
 
 type JSONCodec int

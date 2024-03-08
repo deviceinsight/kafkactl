@@ -10,8 +10,8 @@ import (
 	"github.com/Rican7/retry/strategy"
 	"gopkg.in/errgo.v2/fmt/errors"
 
-	"github.com/deviceinsight/kafkactl/internal/topic"
-	"github.com/deviceinsight/kafkactl/testutil"
+	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
+	"github.com/deviceinsight/kafkactl/v5/internal/topic"
 )
 
 func TestCloneTopicIntegration(t *testing.T) {
@@ -29,7 +29,7 @@ func TestCloneTopicIntegration(t *testing.T) {
 
 	testutil.AssertEquals(t, fmt.Sprintf("topic %s cloned to %s", srcTopic, targetTopic), kafkaCtl.GetStdOut())
 
-	getTopic := func(attempt uint) error {
+	getTopic := func(_ uint) error {
 		_, err := kafkaCtl.Execute("describe", "topic", targetTopic, "-o", "yaml")
 
 		if err != nil {

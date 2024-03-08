@@ -10,8 +10,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/deviceinsight/kafkactl/internal"
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 )
 
 type Version struct {
@@ -29,8 +29,11 @@ type executor struct {
 	clientID        string
 	kubeConfig      string
 	kubeContext     string
+	serviceAccount  string
 	namespace       string
-	extra           []string
+	labels          map[string]string
+	annotations     map[string]string
+	nodeSelector    map[string]string
 }
 
 const letterBytes = "abcdefghijklmnpqrstuvwxyz123456789"
@@ -100,13 +103,12 @@ func newExecutor(context internal.ClientContext, runner Runner) *executor {
 		kubeConfig:      context.Kubernetes.KubeConfig,
 		kubeContext:     context.Kubernetes.KubeContext,
 		namespace:       context.Kubernetes.Namespace,
-		extra:           context.Kubernetes.Extra,
+		serviceAccount:  context.Kubernetes.ServiceAccount,
+		labels:          context.Kubernetes.Labels,
+		annotations:     context.Kubernetes.Annotations,
+		nodeSelector:    context.Kubernetes.NodeSelector,
 		runner:          runner,
 	}
-}
-
-func (kubectl *executor) SetExtraArgs(args ...string) {
-	kubectl.extra = args
 }
 
 func (kubectl *executor) SetKubectlBinary(bin string) {
@@ -115,10 +117,7 @@ func (kubectl *executor) SetKubectlBinary(bin string) {
 
 func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []string, podEnvironment []string) error {
 
-	dockerImage, err := getDockerImage(kubectl.image, dockerImageType)
-	if err != nil {
-		return err
-	}
+	dockerImage := getDockerImage(kubectl.image, dockerImageType)
 
 	podName := fmt.Sprintf("kafkactl-%s-%s", strings.ToLower(kubectl.clientID), randomString(4))
 
@@ -131,11 +130,11 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 		kubectlArgs = append(kubectlArgs, "--kubeconfig", kubectl.kubeConfig)
 	}
 
-	if kubectl.imagePullSecret != "" {
-		podOverride := createPodOverrideForImagePullSecret(kubectl.imagePullSecret)
+	podOverride := kubectl.createPodOverride()
+	if !podOverride.IsEmpty() {
 		podOverrideJSON, err := json.Marshal(podOverride)
 		if err != nil {
-			return errors.Wrap(err, "unable to create override for imagePullSecret")
+			return errors.Wrap(err, "unable to create override")
 		}
 
 		kubectlArgs = append(kubectlArgs, "--overrides", string(podOverrideJSON))
@@ -146,10 +145,6 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 
 	for _, env := range podEnvironment {
 		kubectlArgs = append(kubectlArgs, "--env", env)
-	}
-
-	if len(kubectl.extra) > 0 {
-		kubectlArgs = append(kubectlArgs, kubectl.extra...)
 	}
 
 	kubectlArgs = append(kubectlArgs, "--command", "--", entryPoint)
@@ -163,7 +158,7 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 	return kubectl.exec(kubectlArgs)
 }
 
-func getDockerImage(image string, imageType string) (string, error) {
+func getDockerImage(image string, imageType string) string {
 
 	if KafkaCtlVersion == "" {
 		KafkaCtlVersion = "latest"
@@ -171,13 +166,12 @@ func getDockerImage(image string, imageType string) (string, error) {
 
 	if image == "" {
 		image = "deviceinsight/kafkactl"
-	} else {
-		if strings.Contains(image, ":") {
-			return "", errors.Errorf("image must not contain a tag: %s", image)
-		}
 	}
 
-	return image + ":" + KafkaCtlVersion + "-" + imageType, nil
+	if strings.Contains(image, ":") {
+		return image + "-" + imageType
+	}
+	return image + ":" + KafkaCtlVersion + "-" + imageType
 }
 
 func filter(slice []string, predicate func(string) bool) (ret []string) {

@@ -8,7 +8,7 @@ import (
 	"github.com/Rican7/retry"
 	"github.com/Rican7/retry/backoff"
 	"github.com/Rican7/retry/strategy"
-	"github.com/deviceinsight/kafkactl/testutil"
+	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 )
 
 func TestCreateTopicWithoutFlagsIntegration(t *testing.T) {
@@ -110,7 +110,7 @@ partitions:
 }
 
 func describeTopic(t *testing.T, kafkaCtl testutil.KafkaCtlTestCommand, topicName string) {
-	describeTopic := func(attempt uint) error {
+	describeTopic := func(_ uint) error {
 		_, err := kafkaCtl.Execute("describe", "topic", topicName, "-o", "yaml")
 		return err
 	}

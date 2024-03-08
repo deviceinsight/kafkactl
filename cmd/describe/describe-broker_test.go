@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deviceinsight/kafkactl/internal/broker"
+	"github.com/deviceinsight/kafkactl/v5/internal/broker"
 
-	"github.com/deviceinsight/kafkactl/testutil"
+	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 )
 
 func TestDescribeBrokerIntegration(t *testing.T) {
