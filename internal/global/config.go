@@ -122,7 +122,18 @@ func (c *config) Init() {
 		// assuming the provided configFile is read-only
 		c.writableConfig = viper.New()
 		if err := c.loadConfig(c.writableConfig, nil); err != nil {
-			output.Fail(err)
+			if isUnknownError(err) {
+				output.Failf("Error reading config file: %s (%v)", c.writableConfig.ConfigFileUsed(), err.Error())
+			}
+			err = generateDefaultConfig()
+			if err != nil {
+				output.Failf("Error generating default config file: %v", err.Error())
+			}
+
+			// We read generated config now
+			if err = c.loadConfig(c.writableConfig, configFile); err != nil {
+				output.Failf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err.Error())
+			}
 		}
 	} else {
 		c.writableConfig = viper.GetViper()
