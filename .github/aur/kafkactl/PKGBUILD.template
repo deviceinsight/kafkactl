@@ -22,7 +22,8 @@ sha256sums=(
 build() {
   cd "${pkgname}-${pkgver}"
   export CGO_LDFLAGS="$LDFLAGS"
-  go build -ldflags "-linkmode=external -X github.com/deviceinsight/kafkactl/cmd.Version=v${pkgver}" -o ${pkgname} .
+  export module=$(go list -m)
+  go build -ldflags "-linkmode=external -X ${module}/cmd.Version=v${pkgver}" -o ${pkgname} .
 }
 
 check() {
