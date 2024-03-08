@@ -5,7 +5,7 @@ builds:
   - env:
       - CGO_ENABLED=0
     ldflags:
-      - -s -w -X github.com/deviceinsight/kafkactl/cmd.Version={{.Tag}} -X github.com/deviceinsight/kafkactl/cmd.GitCommit={{.ShortCommit}} -X github.com/deviceinsight/kafkactl/cmd.BuildTime={{.Date}}
+      - -s -w -X {{ .ModulePath }}/cmd.Version={{.Tag}} -X {{ .ModulePath }}/cmd.GitCommit={{.ShortCommit}} -X {{ .ModulePath }}/cmd.BuildTime={{.Date}}
     goos:
       - darwin
       - linux
@@ -63,7 +63,7 @@ snapcrafts:
           - $HOME/.config/kafkactl/config.yml
 brews:
   -
-    tap:
+    repository:
       owner: deviceinsight
       name: homebrew-packages
 

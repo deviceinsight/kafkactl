@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Version string
+var Version = "latest"
 var BuildTime string
 var GitCommit string
 
