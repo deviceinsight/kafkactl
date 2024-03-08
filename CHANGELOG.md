@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 5.0.0 - 2024-03-08
+
 ### Added
 - [#190](https://github.com/deviceinsight/kafkactl/pull/190) Improve handling of project config files
 - [#192](https://github.com/deviceinsight/kafkactl/pull/192) Plugin infrastructure for tokenProviders
