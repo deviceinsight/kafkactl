@@ -118,6 +118,8 @@ contexts:
       image: private.registry.com/deviceinsight/kafkactl
       # optional: secret for private docker registry
       imagePullSecret: registry-secret
+      # optional: serviceAccount to use for the pod
+      serviceAccount: my-service-account
       # optional: extra args to be passed into the kubectl run command
       extra:
         - --overrides

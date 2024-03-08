@@ -58,6 +58,7 @@ type K8sConfig struct {
 	Namespace       string
 	Image           string
 	ImagePullSecret string
+	ServiceAccount  string
 }
 
 type ConsumerConfig struct {
@@ -147,6 +148,7 @@ func CreateClientContext() (ClientContext, error) {
 	context.Kubernetes.Extra = viper.GetStringSlice("contexts." + context.Name + ".kubernetes.extra")
 	context.Kubernetes.Image = viper.GetString("contexts." + context.Name + ".kubernetes.image")
 	context.Kubernetes.ImagePullSecret = viper.GetString("contexts." + context.Name + ".kubernetes.imagePullSecret")
+	context.Kubernetes.ServiceAccount = viper.GetString("contexts." + context.Name + ".kubernetes.serviceAccount")
 
 	return context, nil
 }

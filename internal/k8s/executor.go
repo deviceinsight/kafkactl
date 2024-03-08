@@ -29,6 +29,7 @@ type executor struct {
 	clientID        string
 	kubeConfig      string
 	kubeContext     string
+	serviceAccount  string
 	namespace       string
 	extra           []string
 }
@@ -100,6 +101,7 @@ func newExecutor(context internal.ClientContext, runner Runner) *executor {
 		kubeConfig:      context.Kubernetes.KubeConfig,
 		kubeContext:     context.Kubernetes.KubeContext,
 		namespace:       context.Kubernetes.Namespace,
+		serviceAccount:  context.Kubernetes.ServiceAccount,
 		extra:           context.Kubernetes.Extra,
 		runner:          runner,
 	}
@@ -131,11 +133,11 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 		kubectlArgs = append(kubectlArgs, "--kubeconfig", kubectl.kubeConfig)
 	}
 
-	if kubectl.imagePullSecret != "" {
-		podOverride := createPodOverrideForImagePullSecret(kubectl.imagePullSecret)
+	if kubectl.imagePullSecret != "" || kubectl.serviceAccount != "" {
+		podOverride := createPodOverride(kubectl.imagePullSecret, kubectl.serviceAccount)
 		podOverrideJSON, err := json.Marshal(podOverride)
 		if err != nil {
-			return errors.Wrap(err, "unable to create override for imagePullSecret")
+			return errors.Wrap(err, "unable to create override")
 		}
 
 		kubectlArgs = append(kubectlArgs, "--overrides", string(podOverrideJSON))

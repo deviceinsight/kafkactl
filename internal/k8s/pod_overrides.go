@@ -5,7 +5,8 @@ type imagePullSecretType struct {
 }
 
 type specType struct {
-	ImagePullSecrets []imagePullSecretType `json:"imagePullSecrets"`
+	ImagePullSecrets   []imagePullSecretType `json:"imagePullSecrets"`
+	ServiceAccountName *string               `json:"serviceAccountName"`
 }
 
 type PodOverrideType struct {
@@ -13,10 +14,18 @@ type PodOverrideType struct {
 	Spec       specType `json:"spec"`
 }
 
-func createPodOverrideForImagePullSecret(imagePullSecret string) PodOverrideType {
+func createPodOverride(imagePullSecret string, serviceAccount string) PodOverrideType {
 	var override PodOverrideType
 	override.APIVersion = "v1"
-	override.Spec.ImagePullSecrets = make([]imagePullSecretType, 1)
-	override.Spec.ImagePullSecrets[0].Name = imagePullSecret
+
+	if imagePullSecret != "" {
+		override.Spec.ImagePullSecrets = make([]imagePullSecretType, 1)
+		override.Spec.ImagePullSecrets[0].Name = imagePullSecret
+	}
+
+	if serviceAccount != "" {
+		override.Spec.ServiceAccountName = &serviceAccount
+	}
+
 	return override
 }
