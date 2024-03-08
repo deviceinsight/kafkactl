@@ -31,7 +31,9 @@ type executor struct {
 	kubeContext     string
 	serviceAccount  string
 	namespace       string
-	extra           []string
+	labels          map[string]string
+	annotations     map[string]string
+	nodeSelector    map[string]string
 }
 
 const letterBytes = "abcdefghijklmnpqrstuvwxyz123456789"
@@ -102,13 +104,11 @@ func newExecutor(context internal.ClientContext, runner Runner) *executor {
 		kubeContext:     context.Kubernetes.KubeContext,
 		namespace:       context.Kubernetes.Namespace,
 		serviceAccount:  context.Kubernetes.ServiceAccount,
-		extra:           context.Kubernetes.Extra,
+		labels:          context.Kubernetes.Labels,
+		annotations:     context.Kubernetes.Annotations,
+		nodeSelector:    context.Kubernetes.NodeSelector,
 		runner:          runner,
 	}
-}
-
-func (kubectl *executor) SetExtraArgs(args ...string) {
-	kubectl.extra = args
 }
 
 func (kubectl *executor) SetKubectlBinary(bin string) {
@@ -117,10 +117,7 @@ func (kubectl *executor) SetKubectlBinary(bin string) {
 
 func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []string, podEnvironment []string) error {
 
-	dockerImage, err := getDockerImage(kubectl.image, dockerImageType)
-	if err != nil {
-		return err
-	}
+	dockerImage := getDockerImage(kubectl.image, dockerImageType)
 
 	podName := fmt.Sprintf("kafkactl-%s-%s", strings.ToLower(kubectl.clientID), randomString(4))
 
@@ -133,8 +130,8 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 		kubectlArgs = append(kubectlArgs, "--kubeconfig", kubectl.kubeConfig)
 	}
 
-	if kubectl.imagePullSecret != "" || kubectl.serviceAccount != "" {
-		podOverride := createPodOverride(kubectl.imagePullSecret, kubectl.serviceAccount)
+	podOverride := kubectl.createPodOverride()
+	if !podOverride.IsEmpty() {
 		podOverrideJSON, err := json.Marshal(podOverride)
 		if err != nil {
 			return errors.Wrap(err, "unable to create override")
@@ -150,10 +147,6 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 		kubectlArgs = append(kubectlArgs, "--env", env)
 	}
 
-	if len(kubectl.extra) > 0 {
-		kubectlArgs = append(kubectlArgs, kubectl.extra...)
-	}
-
 	kubectlArgs = append(kubectlArgs, "--command", "--", entryPoint)
 
 	// Keep only kafkactl arguments that are relevant in k8s context
@@ -165,7 +158,7 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 	return kubectl.exec(kubectlArgs)
 }
 
-func getDockerImage(image string, imageType string) (string, error) {
+func getDockerImage(image string, imageType string) string {
 
 	if KafkaCtlVersion == "" {
 		KafkaCtlVersion = "latest"
@@ -173,13 +166,12 @@ func getDockerImage(image string, imageType string) (string, error) {
 
 	if image == "" {
 		image = "deviceinsight/kafkactl"
-	} else {
-		if strings.Contains(image, ":") {
-			return "", errors.Errorf("image must not contain a tag: %s", image)
-		}
 	}
 
-	return image + ":" + KafkaCtlVersion + "-" + imageType, nil
+	if strings.Contains(image, ":") {
+		return image + "-" + imageType
+	}
+	return image + ":" + KafkaCtlVersion + "-" + imageType
 }
 
 func filter(slice []string, predicate func(string) bool) (ret []string) {
