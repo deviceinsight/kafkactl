@@ -210,6 +210,16 @@ func mapEnvVariables() {
 			_ = os.Setenv(long, os.Getenv(short))
 		}
 	}
+
+	for _, envVar := range os.Environ() {
+		if strings.HasPrefix(envVar, SaslTokenProviderOptions) {
+
+			envKey := strings.SplitN(envVar, "=", 2)
+
+			long := defaultContextPrefix + envKey[0]
+			_ = os.Setenv(long, envKey[1])
+		}
+	}
 }
 
 // generateDefaultConfig generates default config in case there is no config

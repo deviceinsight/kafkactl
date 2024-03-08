@@ -28,7 +28,11 @@ func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {
 	context.Sasl.Enabled = true
 	context.Sasl.Username = "user"
 	context.Sasl.Password = "pass"
-	context.Sasl.Mechanism = "scram-sha512"
+	context.Sasl.Mechanism = "oauth"
+	context.Sasl.TokenProvider.PluginName = "azure"
+	context.Sasl.TokenProvider.Options = make(map[string]any)
+	context.Sasl.TokenProvider.Options["tenantid"] = "azure-tenant-id"
+	context.Sasl.TokenProvider.Options["int-key"] = 12
 	context.ClientID = "my-client"
 	context.KafkaVersion = sarama.V2_0_1_0
 	context.AvroSchemaRegistry = "registry:8888"
@@ -65,7 +69,9 @@ func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {
 	testutil.AssertEquals(t, "true", envMap[global.SaslEnabled])
 	testutil.AssertEquals(t, "user", envMap[global.SaslUsername])
 	testutil.AssertEquals(t, "pass", envMap[global.SaslPassword])
-	testutil.AssertEquals(t, "scram-sha512", envMap[global.SaslMechanism])
+	testutil.AssertEquals(t, "oauth", envMap[global.SaslMechanism])
+	testutil.AssertEquals(t, "azure", envMap[global.SaslTokenProviderPlugin])
+	testutil.AssertEquals(t, `"{\"int-key\":12,\"tenantid\":\"azure-tenant-id\"}"`, envMap[global.SaslTokenProviderOptions])
 	testutil.AssertEquals(t, "my-client", envMap[global.ClientID])
 	testutil.AssertEquals(t, "2.0.1", envMap[global.KafkaVersion])
 	testutil.AssertEquals(t, "registry:8888", envMap[global.AvroSchemaRegistry])

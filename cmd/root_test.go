@@ -1,6 +1,7 @@
 package cmd_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -52,7 +53,9 @@ func TestEnvironmentVariableLoadingAliases(t *testing.T) {
 	_ = os.Setenv(global.SaslEnabled, "true")
 	_ = os.Setenv(global.SaslUsername, "user")
 	_ = os.Setenv(global.SaslPassword, "pass")
-	_ = os.Setenv(global.SaslMechanism, "scram-sha512")
+	_ = os.Setenv(global.SaslMechanism, "oauth")
+	_ = os.Setenv(global.SaslTokenProviderPlugin, "azure")
+	_ = os.Setenv(global.SaslTokenProviderOptions, `{"tenantid": "azure-tenant-id", "int-key": 12}`)
 	_ = os.Setenv(global.ClientID, "my-client")
 	_ = os.Setenv(global.KafkaVersion, "2.0.1")
 	_ = os.Setenv(global.AvroSchemaRegistry, "registry:8888")
@@ -91,7 +94,10 @@ func TestEnvironmentVariableLoadingAliases(t *testing.T) {
 	testutil.AssertEquals(t, "true", viper.GetString("contexts.default.sasl.enabled"))
 	testutil.AssertEquals(t, "user", viper.GetString("contexts.default.sasl.username"))
 	testutil.AssertEquals(t, "pass", viper.GetString("contexts.default.sasl.password"))
-	testutil.AssertEquals(t, "scram-sha512", viper.GetString("contexts.default.sasl.mechanism"))
+	testutil.AssertEquals(t, "oauth", viper.GetString("contexts.default.sasl.mechanism"))
+	testutil.AssertEquals(t, "azure", viper.GetString("contexts.default.sasl.tokenProvider.plugin"))
+	testutil.AssertEquals(t, "azure-tenant-id", viper.GetStringMap("contexts.default.sasl.tokenProvider.options")["tenantid"].(string))
+	testutil.AssertEquals(t, "12", fmt.Sprint(viper.GetStringMap("contexts.default.sasl.tokenProvider.options")["int-key"].(float64)))
 	testutil.AssertEquals(t, "my-client", viper.GetString("contexts.default.clientID"))
 	testutil.AssertEquals(t, "2.0.1", viper.GetString("contexts.default.kafkaVersion"))
 	testutil.AssertEquals(t, "registry:8888", viper.GetString("contexts.default.avro.schemaRegistry"))
