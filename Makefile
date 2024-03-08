@@ -1,13 +1,13 @@
 BUILD_TS := $(shell date -Iseconds --utc)
 COMMIT_SHA := $(shell git rev-parse HEAD)
-VERSION := $(shell git describe --abbrev=0 --tags)
+VERSION := $(shell git describe --abbrev=0 --tags || echo "latest")
 
 export CGO_ENABLED=0
 export GOOS=linux
 export GO111MODULE=on
 
-project=github.com/deviceinsight/kafkactl
-ld_flags := "-X $(project)/cmd.Version=$(VERSION) -X $(project)/cmd.GitCommit=$(COMMIT_SHA) -X $(project)/cmd.BuildTime=$(BUILD_TS)"
+module=$(shell go list -m)
+ld_flags := "-X $(module)/cmd.Version=$(VERSION) -X $(module)/cmd.GitCommit=$(COMMIT_SHA) -X $(module)/cmd.BuildTime=$(BUILD_TS)"
 
 FILES    := $(shell find . -name '*.go' -type f -not -name '*.pb.go' -not -name '*_generated.go' -not -name '*_test.go')
 TESTS    := $(shell find . -name '*.go' -type f -not -name '*.pb.go' -not -name '*_generated.go' -name '*_test.go')
