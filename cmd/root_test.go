@@ -6,7 +6,7 @@ import (
 
 	"github.com/deviceinsight/kafkactl/internal/global"
 
-	"github.com/deviceinsight/kafkactl/testutil"
+	"github.com/deviceinsight/kafkactl/internal/testutil"
 	"github.com/spf13/viper"
 )
 

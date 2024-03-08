@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/deviceinsight/kafkactl/cmd"
-	"github.com/deviceinsight/kafkactl/testutil"
+	"github.com/deviceinsight/kafkactl/internal/testutil"
 )
 
 func TestVersionCommand(t *testing.T) {

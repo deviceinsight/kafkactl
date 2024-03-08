@@ -7,7 +7,7 @@ import (
 	"github.com/deviceinsight/kafkactl/internal/global"
 
 	"github.com/deviceinsight/kafkactl/internal"
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/internal/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"

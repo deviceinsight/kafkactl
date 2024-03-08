@@ -5,7 +5,7 @@ import (
 
 	"github.com/deviceinsight/kafkactl/internal/global"
 
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/internal/output"
 	"github.com/pkg/errors"
 
 	"strings"

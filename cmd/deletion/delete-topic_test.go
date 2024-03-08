@@ -10,8 +10,8 @@ import (
 	"github.com/Rican7/retry"
 	"github.com/Rican7/retry/backoff"
 	"github.com/Rican7/retry/strategy"
-	"github.com/deviceinsight/kafkactl/testutil"
-	"github.com/deviceinsight/kafkactl/util"
+	"github.com/deviceinsight/kafkactl/internal/testutil"
+	"github.com/deviceinsight/kafkactl/internal/util"
 )
 
 func TestDeleteSingleTopicIntegration(t *testing.T) {

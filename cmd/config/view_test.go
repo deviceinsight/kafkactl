@@ -5,8 +5,8 @@ import (
 	"path"
 	"testing"
 
-	"github.com/deviceinsight/kafkactl/output"
-	"github.com/deviceinsight/kafkactl/testutil"
+	"github.com/deviceinsight/kafkactl/internal/output"
+	"github.com/deviceinsight/kafkactl/internal/testutil"
 )
 
 func TestViewConfigWithEnvVariablesInGeneratedConfigSet(t *testing.T) {

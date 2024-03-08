@@ -12,7 +12,7 @@ import (
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/internal"
 	"github.com/deviceinsight/kafkactl/internal/k8s"
-	"github.com/deviceinsight/kafkactl/testutil"
+	"github.com/deviceinsight/kafkactl/internal/testutil"
 )
 
 func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/internal/output"
 )
 
 func CreateTerminalContext() context.Context {

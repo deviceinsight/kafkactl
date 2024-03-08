@@ -8,7 +8,7 @@ import (
 	"runtime"
 
 	"github.com/deviceinsight/kafkactl/internal/global"
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/internal/output"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
 	"github.com/pkg/errors"

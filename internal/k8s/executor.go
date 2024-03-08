@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/deviceinsight/kafkactl/internal"
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/internal/output"
 )
 
 type Version struct {

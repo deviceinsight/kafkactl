@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
-	"github.com/deviceinsight/kafkactl/output"
-	"github.com/deviceinsight/kafkactl/util"
+	"github.com/deviceinsight/kafkactl/internal/output"
+	"github.com/deviceinsight/kafkactl/internal/util"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )

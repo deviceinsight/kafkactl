@@ -7,7 +7,7 @@ import (
 	"github.com/deviceinsight/kafkactl/internal"
 	"github.com/deviceinsight/kafkactl/internal/topic"
 
-	"github.com/deviceinsight/kafkactl/testutil"
+	"github.com/deviceinsight/kafkactl/internal/testutil"
 )
 
 func TestDescribeTopicConfigsIntegration(t *testing.T) {
