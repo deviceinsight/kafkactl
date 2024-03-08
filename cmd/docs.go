@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/deviceinsight/kafkactl/internal"
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/internal/output"
 	"github.com/spf13/cobra"
 )
 

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/IBM/sarama"
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/internal/output"
 	"golang.org/x/sync/errgroup"
 )
 

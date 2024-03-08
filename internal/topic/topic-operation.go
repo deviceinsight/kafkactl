@@ -9,8 +9,8 @@ import (
 
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/internal"
-	"github.com/deviceinsight/kafkactl/output"
-	"github.com/deviceinsight/kafkactl/util"
+	"github.com/deviceinsight/kafkactl/internal/output"
+	"github.com/deviceinsight/kafkactl/internal/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -623,10 +623,9 @@ func (operation *Operation) GetTopics(flags GetTopicsFlags) error {
 		go func(topic string) {
 			t, err := readTopic(&client, &admin, topic, requestedFields)
 			if err != nil {
-				errChannel <- errors.Errorf("unable to read topic %s: %v", topic, err)
-			} else {
-				topicChannel <- t
+				output.Debugf("failed to read topic %q: %v", topic, err)
 			}
+			topicChannel <- t
 		}(topic)
 	}
 

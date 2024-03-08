@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deviceinsight/kafkactl/internal/auth"
+
 	"github.com/deviceinsight/kafkactl/internal/global"
 
 	"github.com/deviceinsight/kafkactl/internal/helpers/avro"
@@ -17,7 +19,7 @@ import (
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/internal/helpers"
 	"github.com/deviceinsight/kafkactl/internal/helpers/protobuf"
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/internal/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 )
@@ -26,11 +28,17 @@ var (
 	invalidClientIDCharactersRegExp = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
 )
 
+type TokenProvider struct {
+	PluginName string
+	Options    map[string]any
+}
+
 type SaslConfig struct {
-	Enabled   bool
-	Username  string
-	Password  string
-	Mechanism string
+	Enabled       bool
+	Username      string
+	Password      string
+	Mechanism     string
+	TokenProvider TokenProvider
 }
 
 type TLSConfig struct {
@@ -44,12 +52,15 @@ type TLSConfig struct {
 type K8sConfig struct {
 	Enabled         bool
 	Binary          string
-	Extra           []string
 	KubeConfig      string
 	KubeContext     string
 	Namespace       string
 	Image           string
 	ImagePullSecret string
+	ServiceAccount  string
+	Labels          map[string]string
+	Annotations     map[string]string
+	NodeSelector    map[string]string
 }
 
 type ConsumerConfig struct {
@@ -127,6 +138,8 @@ func CreateClientContext() (ClientContext, error) {
 	context.Sasl.Username = viper.GetString("contexts." + context.Name + ".sasl.username")
 	context.Sasl.Password = viper.GetString("contexts." + context.Name + ".sasl.password")
 	context.Sasl.Mechanism = viper.GetString("contexts." + context.Name + ".sasl.mechanism")
+	context.Sasl.TokenProvider.PluginName = viper.GetString("contexts." + context.Name + ".sasl.tokenProvider.plugin")
+	context.Sasl.TokenProvider.Options = viper.GetStringMap("contexts." + context.Name + ".sasl.tokenProvider.options")
 
 	viper.SetDefault("contexts."+context.Name+".kubernetes.binary", "kubectl")
 	context.Kubernetes.Enabled = viper.GetBool("contexts." + context.Name + ".kubernetes.enabled")
@@ -134,9 +147,12 @@ func CreateClientContext() (ClientContext, error) {
 	context.Kubernetes.KubeConfig = viper.GetString("contexts." + context.Name + ".kubernetes.kubeConfig")
 	context.Kubernetes.KubeContext = viper.GetString("contexts." + context.Name + ".kubernetes.kubeContext")
 	context.Kubernetes.Namespace = viper.GetString("contexts." + context.Name + ".kubernetes.namespace")
-	context.Kubernetes.Extra = viper.GetStringSlice("contexts." + context.Name + ".kubernetes.extra")
 	context.Kubernetes.Image = viper.GetString("contexts." + context.Name + ".kubernetes.image")
 	context.Kubernetes.ImagePullSecret = viper.GetString("contexts." + context.Name + ".kubernetes.imagePullSecret")
+	context.Kubernetes.ServiceAccount = viper.GetString("contexts." + context.Name + ".kubernetes.serviceAccount")
+	context.Kubernetes.Labels = viper.GetStringMapString("contexts." + context.Name + ".kubernetes.labels")
+	context.Kubernetes.Annotations = viper.GetStringMapString("contexts." + context.Name + ".kubernetes.annotations")
+	context.Kubernetes.NodeSelector = viper.GetStringMapString("contexts." + context.Name + ".kubernetes.nodeSelector")
 
 	return context, nil
 }
@@ -182,7 +198,11 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 	}
 
 	if context.Sasl.Enabled {
-		output.Debugf("SASL is enabled (username = %s).", context.Sasl.Username)
+		if context.Sasl.Username != "" {
+			output.Debugf("SASL is enabled (username = %s)", context.Sasl.Username)
+		} else {
+			output.Debugf("SASL is enabled")
+		}
 		config.Net.SASL.Enable = true
 		config.Net.SASL.User = context.Sasl.Username
 		config.Net.SASL.Password = context.Sasl.Password
@@ -197,6 +217,8 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 			config.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
 				return &helpers.XDGSCRAMClient{HashGeneratorFcn: helpers.SHA256}
 			}
+		case "oauth":
+			config.Net.SASL.Mechanism = sarama.SASLTypeOAuth
 		case "plaintext":
 			fallthrough
 		case "":
@@ -204,6 +226,14 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 		default:
 			return nil, errors.Errorf("Unknown sasl mechanism: %s", context.Sasl.Mechanism)
 		}
+	}
+
+	if config.Net.SASL.Mechanism == sarama.SASLTypeOAuth {
+		tokenProvider, err := auth.LoadTokenProviderPlugin(context.Sasl.TokenProvider.PluginName, context.Sasl.TokenProvider.Options, context.Brokers)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load tokenProvider")
+		}
+		config.Net.SASL.TokenProvider = tokenProvider
 	}
 
 	return config, nil

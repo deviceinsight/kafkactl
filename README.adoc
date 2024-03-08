@@ -114,14 +114,21 @@ contexts:
       kubeConfig: ~/.kube/config #optional
       kubeContext: my-cluster
       namespace: my-namespace
-      # optional: docker image to use (tag will be added by kafkactl based on the current version)
+      # optional: docker image to use (the tag of the image will be suffixed by `-scratch` or `-ubuntu` depending on command)
       image: private.registry.com/deviceinsight/kafkactl
       # optional: secret for private docker registry
       imagePullSecret: registry-secret
-      # optional: extra args to be passed into the kubectl run command
-      extra:
-        - --overrides
-        - '{"spec": { "nodeSelector": {"kubernetes.io/hostname": "eks-staging-4"}}}'
+      # optional: serviceAccount to use for the pod
+      serviceAccount: my-service-account
+      # optional: labels to add to the pod
+      labels:
+        key: value
+      # optional: annotations to add to the pod
+      annotations:
+        key: value
+      # optional: nodeSelector to add to the pod
+      nodeSelector:
+        key: value
     # optional: clientID config (defaults to kafkactl-{username})
     clientID: my-client-id
 

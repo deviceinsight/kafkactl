@@ -8,7 +8,7 @@ import (
 	"github.com/Rican7/retry"
 	"github.com/Rican7/retry/backoff"
 	"github.com/Rican7/retry/strategy"
-	"github.com/deviceinsight/kafkactl/testutil"
+	"github.com/deviceinsight/kafkactl/internal/testutil"
 )
 
 func TestCreateTopicWithoutFlagsIntegration(t *testing.T) {

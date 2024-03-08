@@ -5,11 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/internal/output"
 
 	"github.com/deviceinsight/kafkactl/internal"
 	"github.com/deviceinsight/kafkactl/internal/k8s"
-	"github.com/deviceinsight/kafkactl/testutil"
 )
 
 type TestRunner struct {
@@ -62,7 +61,27 @@ func TestExecWithImageAndImagePullSecretProvided(t *testing.T) {
 	}
 }
 
-func TestExecWithImageAndTagFails(t *testing.T) {
+func TestExecWithoutPodOverridesProvided(t *testing.T) {
+
+	var context internal.ClientContext
+	context.Kubernetes.Image = "private.registry.com/deviceinsight/kafkactl"
+
+	var testRunner = TestRunner{}
+	var runner k8s.Runner = &testRunner
+
+	exec := k8s.NewExecutor(context, runner)
+
+	err := exec.Run("scratch", "/kafkactl", []string{"version"}, []string{"ENV_A=1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if indexOf("--overrides", testRunner.args) > -1 {
+		t.Fatalf("unexpected arg: %s", testRunner.args)
+	}
+}
+
+func TestExecWithImageAndTagAddsSuffix(t *testing.T) {
 
 	var context internal.ClientContext
 	context.Kubernetes.Image = "private.registry.com/deviceinsight/kafkactl:latest"
@@ -72,8 +91,12 @@ func TestExecWithImageAndTagFails(t *testing.T) {
 
 	exec := k8s.NewExecutor(context, runner)
 
-	err := exec.Run("scratch", "/kafkactl", []string{"version"}, []string{"ENV_A=1"})
-	testutil.AssertErrorContains(t, "image must not contain a tag", err)
+	_ = exec.Run("scratch", "/kafkactl", []string{"version"}, []string{"ENV_A=1"})
+
+	image := extractParam(t, testRunner.args, "--image")
+	if image != context.Kubernetes.Image+"-scratch" {
+		t.Fatalf("wrong image: %s", image)
+	}
 }
 
 //nolint:gocognit

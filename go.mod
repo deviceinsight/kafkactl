@@ -6,6 +6,7 @@ require (
 	github.com/IBM/sarama v1.42.1
 	github.com/Rican7/retry v0.3.1
 	github.com/golang/protobuf v1.5.3
+	github.com/hashicorp/go-plugin v1.6.0
 	github.com/jhump/protoreflect v1.15.4
 	github.com/landoop/schema-registry v0.0.0-20190327143759-50a5701c1891
 	github.com/linkedin/goavro/v2 v2.12.0
@@ -29,12 +30,15 @@ require (
 	github.com/eapache/go-resiliency v1.5.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
+	github.com/fatih/color v1.14.1 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
+	github.com/hashicorp/go-hclog v1.5.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/hashicorp/yamux v0.1.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
 	github.com/jcmturner/dnsutils/v2 v2.0.0 // indirect
@@ -43,7 +47,11 @@ require (
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/klauspost/compress v1.17.4 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mitchellh/go-testing-interface v0.0.0-20171004221916-a61a99592b77 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/oklog/run v1.0.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
@@ -64,7 +72,6 @@ require (
 	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	google.golang.org/genproto v0.0.0-20240102182953-50ed04b92917 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240116215550-a9fa1716bcac // indirect
 	google.golang.org/grpc v1.60.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect

@@ -7,7 +7,7 @@ import (
 
 	"github.com/deviceinsight/kafkactl/internal/broker"
 
-	"github.com/deviceinsight/kafkactl/testutil"
+	"github.com/deviceinsight/kafkactl/internal/testutil"
 )
 
 func TestDescribeBrokerIntegration(t *testing.T) {

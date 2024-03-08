@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"log"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -19,8 +18,8 @@ import (
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/cmd"
 	"github.com/deviceinsight/kafkactl/internal"
-	"github.com/deviceinsight/kafkactl/output"
-	"github.com/deviceinsight/kafkactl/util"
+	"github.com/deviceinsight/kafkactl/internal/output"
+	"github.com/deviceinsight/kafkactl/internal/util"
 	"github.com/spf13/cobra"
 )
 
@@ -160,7 +159,7 @@ func startTest(t *testing.T, logFilename string) {
 	}
 
 	testIoStreams = output.NewTestIOStreams(logFile)
-	output.TestLogger = log.New(testIoStreams.DebugOut, "[test    ] ", log.LstdFlags)
+	output.TestLogger = output.CreateLogger(testIoStreams.DebugOut, "test")
 
 	output.TestLogf("---")
 	output.TestLogf("--- Starting: %s", t.Name())

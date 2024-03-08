@@ -1,13 +1,14 @@
 package k8s
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/deviceinsight/kafkactl/internal/global"
 
 	"github.com/deviceinsight/kafkactl/internal"
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/internal/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -184,6 +185,8 @@ func parsePodEnvironment(context internal.ClientContext) []string {
 	envVariables = appendStringIfDefined(envVariables, global.SaslUsername, context.Sasl.Username)
 	envVariables = appendStringIfDefined(envVariables, global.SaslPassword, context.Sasl.Password)
 	envVariables = appendStringIfDefined(envVariables, global.SaslMechanism, context.Sasl.Mechanism)
+	envVariables = appendStringIfDefined(envVariables, global.SaslTokenProviderPlugin, context.Sasl.TokenProvider.PluginName)
+	envVariables = appendMapIfDefined(envVariables, global.SaslTokenProviderOptions, context.Sasl.TokenProvider.Options)
 	envVariables = appendStringIfDefined(envVariables, global.RequestTimeout, context.RequestTimeout.String())
 	envVariables = appendStringIfDefined(envVariables, global.ClientID, context.ClientID)
 	envVariables = appendStringIfDefined(envVariables, global.KafkaVersion, context.KafkaVersion.String())
@@ -223,6 +226,17 @@ func appendStringIfDefined(env []string, key string, value string) []string {
 func appendIntIfGreaterZero(env []string, key string, value int) []string {
 	if value > 0 {
 		return append(env, fmt.Sprintf("%s=%d", key, value))
+	}
+	return env
+}
+
+func appendMapIfDefined(env []string, key string, value map[string]any) []string {
+	if len(value) > 0 {
+		jsonMap, err := json.Marshal(value)
+		if err != nil {
+			panic(err)
+		}
+		return append(env, fmt.Sprintf("%s=%q", key, jsonMap))
 	}
 	return env
 }

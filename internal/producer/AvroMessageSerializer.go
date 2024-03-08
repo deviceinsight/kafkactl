@@ -6,7 +6,7 @@ import (
 	"github.com/deviceinsight/kafkactl/internal/helpers/avro"
 
 	"github.com/IBM/sarama"
-	"github.com/deviceinsight/kafkactl/util"
+	"github.com/deviceinsight/kafkactl/internal/util"
 	schemaregistry "github.com/landoop/schema-registry"
 	"github.com/linkedin/goavro/v2"
 	"github.com/pkg/errors"

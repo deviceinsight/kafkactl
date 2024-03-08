@@ -10,7 +10,7 @@ import (
 
 	"github.com/deviceinsight/kafkactl/internal/helpers/protobuf"
 
-	"github.com/deviceinsight/kafkactl/testutil"
+	"github.com/deviceinsight/kafkactl/internal/testutil"
 	"github.com/jhump/protoreflect/dynamic"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -330,7 +330,7 @@ func TestProtobufConsumeProtoFileIntegration(t *testing.T) {
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+	protoPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata")
 	now := time.Date(2021, time.December, 1, 14, 10, 12, 0, time.UTC)
 	pbMessageDesc := protobuf.ResolveMessageType(protobuf.SearchContext{
 		ProtoImportPaths: []string{protoPath},
@@ -366,7 +366,7 @@ func TestProtobufConsumeProtoFileWithoutProtoImportPathIntegration(t *testing.T)
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+	protoPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata")
 	now := time.Date(2021, time.December, 1, 14, 10, 12, 0, time.UTC)
 	pbMessageDesc := protobuf.ResolveMessageType(protobuf.SearchContext{
 		ProtoImportPaths: []string{protoPath},
@@ -399,7 +399,7 @@ func TestConsumeTombstoneWithProtoFileIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
 	pbTopic := testutil.CreateTopic(t, "proto-file")
-	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+	protoPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata")
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
@@ -422,7 +422,7 @@ func TestProtobufConsumeProtosetFileIntegration(t *testing.T) {
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata", "msg.protoset")
+	protoPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata", "msg.protoset")
 	now := time.Date(2021, time.December, 1, 14, 10, 12, 0, time.UTC)
 	pbMessageDesc := protobuf.ResolveMessageType(protobuf.SearchContext{
 		ProtosetFiles: []string{protoPath},
@@ -457,7 +457,7 @@ func TestProtobufConsumeProtoFileErrNoMessageIntegration(t *testing.T) {
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata", "msg.protoset")
+	protoPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata", "msg.protoset")
 
 	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "--proto-import-path", protoPath, "--proto-file", "msg.proto", "--value-proto-type", "NonExisting"); err != nil {
 		testutil.AssertErrorContains(t, "not found in provided files", err)
@@ -473,7 +473,7 @@ func TestProtobufConsumeProtoFileErrDecodeIntegration(t *testing.T) {
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	protoPath := filepath.Join(testutil.RootDir, "testutil", "testdata")
+	protoPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata")
 
 	// produce invalid pb message
 	if _, err := kafkaCtl.Execute("produce", pbTopic, "--key", "test-key", "--value", "nonpb"); err != nil {

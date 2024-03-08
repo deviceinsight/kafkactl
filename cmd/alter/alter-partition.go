@@ -5,9 +5,9 @@ import (
 
 	"github.com/deviceinsight/kafkactl/cmd/validation"
 	"github.com/deviceinsight/kafkactl/internal/k8s"
+	"github.com/deviceinsight/kafkactl/internal/output"
 	"github.com/deviceinsight/kafkactl/internal/partition"
 	"github.com/deviceinsight/kafkactl/internal/topic"
-	"github.com/deviceinsight/kafkactl/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )

@@ -4,19 +4,59 @@ type imagePullSecretType struct {
 	Name string `json:"name"`
 }
 
+type metadataType struct {
+	Labels      *map[string]string `json:"labels,omitempty"`
+	Annotations *map[string]string `json:"annotations,omitempty"`
+}
+
 type specType struct {
-	ImagePullSecrets []imagePullSecretType `json:"imagePullSecrets"`
+	ImagePullSecrets   []imagePullSecretType `json:"imagePullSecrets,omitempty"`
+	ServiceAccountName *string               `json:"serviceAccountName,omitempty"`
+	NodeSelector       *map[string]string    `json:"nodeSelector,omitempty"`
 }
 
 type PodOverrideType struct {
-	APIVersion string   `json:"apiVersion"`
-	Spec       specType `json:"spec"`
+	APIVersion string        `json:"apiVersion"`
+	Metadata   *metadataType `json:"metadata,omitempty"`
+	Spec       *specType     `json:"spec,omitempty"`
 }
 
-func createPodOverrideForImagePullSecret(imagePullSecret string) PodOverrideType {
+func (o *PodOverrideType) IsEmpty() bool {
+	return o.Metadata == nil && o.Spec == nil
+}
+
+func (kubectl *executor) createPodOverride() PodOverrideType {
 	var override PodOverrideType
 	override.APIVersion = "v1"
-	override.Spec.ImagePullSecrets = make([]imagePullSecretType, 1)
-	override.Spec.ImagePullSecrets[0].Name = imagePullSecret
+
+	if kubectl.serviceAccount != "" || kubectl.imagePullSecret != "" || len(kubectl.nodeSelector) > 0 {
+		override.Spec = &specType{}
+
+		if kubectl.serviceAccount != "" {
+			override.Spec.ServiceAccountName = &kubectl.serviceAccount
+		}
+
+		if kubectl.imagePullSecret != "" {
+			override.Spec.ImagePullSecrets = make([]imagePullSecretType, 1)
+			override.Spec.ImagePullSecrets[0].Name = kubectl.imagePullSecret
+		}
+
+		if len(kubectl.nodeSelector) > 0 {
+			override.Spec.NodeSelector = &kubectl.nodeSelector
+		}
+	}
+
+	if len(kubectl.labels) > 0 || len(kubectl.annotations) > 0 {
+		override.Metadata = &metadataType{}
+
+		if len(kubectl.labels) > 0 {
+			override.Metadata.Labels = &kubectl.labels
+		}
+
+		if len(kubectl.annotations) > 0 {
+			override.Metadata.Annotations = &kubectl.annotations
+		}
+	}
+
 	return override
 }

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/deviceinsight/kafkactl/output"
+	"github.com/deviceinsight/kafkactl/internal/output"
 	"github.com/spf13/viper"
 )
 
@@ -43,6 +43,10 @@ func NewConfig() Config {
 		flags: Flags{},
 	}
 	return configInstance
+}
+
+func GetFlags() Flags {
+	return configInstance.flags
 }
 
 func GetCurrentContext() string {
@@ -204,6 +208,16 @@ func mapEnvVariables() {
 		long := defaultContextPrefix + short
 		if os.Getenv(short) != "" && os.Getenv(long) == "" {
 			_ = os.Setenv(long, os.Getenv(short))
+		}
+	}
+
+	for _, envVar := range os.Environ() {
+		if strings.HasPrefix(envVar, SaslTokenProviderOptions) {
+
+			envKey := strings.SplitN(envVar, "=", 2)
+
+			long := defaultContextPrefix + envKey[0]
+			_ = os.Setenv(long, envKey[1])
 		}
 	}
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/Rican7/retry"
 	"github.com/Rican7/retry/backoff"
 	"github.com/Rican7/retry/strategy"
-	"github.com/deviceinsight/kafkactl/util"
+	"github.com/deviceinsight/kafkactl/internal/util"
 	schemaregistry "github.com/landoop/schema-registry"
 )
 

@@ -3,7 +3,7 @@ package get_test
 import (
 	"testing"
 
-	"github.com/deviceinsight/kafkactl/testutil"
+	"github.com/deviceinsight/kafkactl/internal/testutil"
 )
 
 func TestGetBrokersIntegration(t *testing.T) {

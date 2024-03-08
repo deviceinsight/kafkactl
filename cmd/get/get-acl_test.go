@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deviceinsight/kafkactl/testutil"
+	"github.com/deviceinsight/kafkactl/internal/testutil"
 )
 
 func TestGetTopicReadAclIntegration(t *testing.T) {

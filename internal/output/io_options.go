@@ -3,7 +3,6 @@ package output
 import (
 	"bytes"
 	"io"
-	"log"
 	"os"
 
 	"github.com/IBM/sarama"
@@ -41,6 +40,6 @@ type IOStreams struct {
 }
 
 func (streams *IOStreams) EnableDebug() {
-	sarama.Logger = log.New(streams.DebugOut, "[sarama  ] ", log.LstdFlags)
-	DebugLogger = log.New(streams.DebugOut, "[kafkactl] ", log.LstdFlags)
+	sarama.Logger = CreateLogger(streams.DebugOut, "sarama")
+	DebugLogger = CreateLogger(streams.DebugOut, "kafkactl")
 }
