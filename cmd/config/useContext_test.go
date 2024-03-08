@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deviceinsight/kafkactl/internal/testutil"
+	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 )
 
 func TestUseContextAutoCompletionIntegration(t *testing.T) {

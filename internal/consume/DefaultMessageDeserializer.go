@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
-	"github.com/deviceinsight/kafkactl/internal/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 )
 
 type DefaultMessageDeserializer struct {

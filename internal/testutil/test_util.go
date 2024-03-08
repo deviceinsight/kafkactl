@@ -13,13 +13,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deviceinsight/kafkactl/internal/global"
+	"github.com/deviceinsight/kafkactl/v5/internal/global"
 
 	"github.com/IBM/sarama"
-	"github.com/deviceinsight/kafkactl/cmd"
-	"github.com/deviceinsight/kafkactl/internal"
-	"github.com/deviceinsight/kafkactl/internal/output"
-	"github.com/deviceinsight/kafkactl/internal/util"
+	"github.com/deviceinsight/kafkactl/v5/cmd"
+	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/util"
 	"github.com/spf13/cobra"
 )
 

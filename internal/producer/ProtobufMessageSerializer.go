@@ -2,7 +2,7 @@ package producer
 
 import (
 	"github.com/IBM/sarama"
-	"github.com/deviceinsight/kafkactl/internal/helpers/protobuf"
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"

@@ -9,10 +9,10 @@ import (
 	"syscall"
 
 	"github.com/IBM/sarama"
-	"github.com/deviceinsight/kafkactl/internal"
-	"github.com/deviceinsight/kafkactl/internal/output"
-	"github.com/deviceinsight/kafkactl/internal/producer/input"
-	"github.com/deviceinsight/kafkactl/internal/util"
+	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/producer/input"
+	"github.com/deviceinsight/kafkactl/v5/internal/util"
 	"github.com/pkg/errors"
 	"go.uber.org/ratelimit"
 )

@@ -1,9 +1,9 @@
 package get
 
 import (
-	"github.com/deviceinsight/kafkactl/internal/acl"
-	"github.com/deviceinsight/kafkactl/internal/k8s"
-	"github.com/deviceinsight/kafkactl/internal/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/acl"
+	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/spf13/cobra"
 )
 

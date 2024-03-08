@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"github.com/deviceinsight/kafkactl/pkg/plugins"
+	"github.com/deviceinsight/kafkactl/v5/pkg/plugins"
 	"github.com/hashicorp/go-plugin"
 )
 

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deviceinsight/kafkactl/internal/util"
+	"github.com/deviceinsight/kafkactl/v5/internal/util"
 )
 
 func TestParseOffsets(t *testing.T) {

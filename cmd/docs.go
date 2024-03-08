@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/deviceinsight/kafkactl/internal"
-	"github.com/deviceinsight/kafkactl/internal/output"
+	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/spf13/cobra"
 )
 

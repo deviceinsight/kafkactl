@@ -10,8 +10,8 @@ import (
 	"github.com/Rican7/retry/strategy"
 	"gopkg.in/errgo.v2/fmt/errors"
 
-	"github.com/deviceinsight/kafkactl/internal/testutil"
-	"github.com/deviceinsight/kafkactl/internal/topic"
+	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
+	"github.com/deviceinsight/kafkactl/v5/internal/topic"
 )
 
 func TestCloneTopicIntegration(t *testing.T) {

@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deviceinsight/kafkactl/internal/helpers/protobuf"
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 
-	"github.com/deviceinsight/kafkactl/internal/testutil"
+	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 	"github.com/jhump/protoreflect/dynamic"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )

@@ -5,14 +5,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deviceinsight/kafkactl/internal/global"
+	"github.com/deviceinsight/kafkactl/v5/internal/global"
 
-	"github.com/deviceinsight/kafkactl/internal/helpers/avro"
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
 
 	"github.com/IBM/sarama"
-	"github.com/deviceinsight/kafkactl/internal"
-	"github.com/deviceinsight/kafkactl/internal/k8s"
-	"github.com/deviceinsight/kafkactl/internal/testutil"
+	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
+	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 )
 
 func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {

@@ -1,8 +1,8 @@
 package config
 
 import (
-	"github.com/deviceinsight/kafkactl/internal/global"
-	"github.com/deviceinsight/kafkactl/internal/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/global"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/spf13/cobra"
 )
 

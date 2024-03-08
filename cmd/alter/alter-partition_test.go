@@ -8,8 +8,8 @@ import (
 	"github.com/Rican7/retry"
 	"github.com/Rican7/retry/backoff"
 	"github.com/Rican7/retry/strategy"
-	"github.com/deviceinsight/kafkactl/internal/testutil"
-	"github.com/deviceinsight/kafkactl/internal/topic"
+	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
+	"github.com/deviceinsight/kafkactl/v5/internal/topic"
 	"gopkg.in/errgo.v2/fmt/errors"
 )
 

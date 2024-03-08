@@ -2,8 +2,8 @@ package auth
 
 import (
 	"github.com/IBM/sarama"
-	"github.com/deviceinsight/kafkactl/pkg/plugins"
-	"github.com/deviceinsight/kafkactl/pkg/plugins/auth"
+	"github.com/deviceinsight/kafkactl/v5/pkg/plugins"
+	"github.com/deviceinsight/kafkactl/v5/pkg/plugins/auth"
 )
 
 var loadedPlugins = make(map[string]auth.AccessTokenProvider)

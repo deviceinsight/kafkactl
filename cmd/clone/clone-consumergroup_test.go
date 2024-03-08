@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/deviceinsight/kafkactl/internal/testutil"
+	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 )
 
 func TestCloneConsumerGroupIntegration(t *testing.T) {

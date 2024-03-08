@@ -3,7 +3,7 @@ package cmd
 import (
 	"os"
 
-	"github.com/deviceinsight/kafkactl/internal/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )

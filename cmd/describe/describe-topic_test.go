@@ -4,10 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deviceinsight/kafkactl/internal"
-	"github.com/deviceinsight/kafkactl/internal/topic"
+	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/topic"
 
-	"github.com/deviceinsight/kafkactl/internal/testutil"
+	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 )
 
 func TestDescribeTopicConfigsIntegration(t *testing.T) {

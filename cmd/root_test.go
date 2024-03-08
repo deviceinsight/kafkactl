@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/deviceinsight/kafkactl/internal/global"
+	"github.com/deviceinsight/kafkactl/v5/internal/global"
 
-	"github.com/deviceinsight/kafkactl/internal/testutil"
+	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 	"github.com/spf13/viper"
 )
 

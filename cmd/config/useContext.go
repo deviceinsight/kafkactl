@@ -3,9 +3,9 @@ package config
 import (
 	"sort"
 
-	"github.com/deviceinsight/kafkactl/internal/global"
+	"github.com/deviceinsight/kafkactl/v5/internal/global"
 
-	"github.com/deviceinsight/kafkactl/internal/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/pkg/errors"
 
 	"strings"

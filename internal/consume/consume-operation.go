@@ -6,13 +6,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deviceinsight/kafkactl/internal/helpers"
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers"
 
 	"golang.org/x/sync/errgroup"
 
 	"github.com/IBM/sarama"
-	"github.com/deviceinsight/kafkactl/internal"
-	"github.com/deviceinsight/kafkactl/internal/output"
+	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/pkg/errors"
 )
 
