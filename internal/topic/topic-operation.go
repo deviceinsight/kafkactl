@@ -623,10 +623,9 @@ func (operation *Operation) GetTopics(flags GetTopicsFlags) error {
 		go func(topic string) {
 			t, err := readTopic(&client, &admin, topic, requestedFields)
 			if err != nil {
-				errChannel <- errors.Errorf("unable to read topic %s: %v", topic, err)
-			} else {
-				topicChannel <- t
+				output.Debugf("failed to read topic %q: %v", topic, err)
 			}
+			topicChannel <- t
 		}(topic)
 	}
 
