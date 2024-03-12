@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -30,6 +31,7 @@ type executor struct {
 	kubeConfig      string
 	kubeContext     string
 	serviceAccount  string
+	keepPod         bool
 	namespace       string
 	labels          map[string]string
 	annotations     map[string]string
@@ -104,6 +106,7 @@ func newExecutor(context internal.ClientContext, runner Runner) *executor {
 		kubeContext:     context.Kubernetes.KubeContext,
 		namespace:       context.Kubernetes.Namespace,
 		serviceAccount:  context.Kubernetes.ServiceAccount,
+		keepPod:         context.Kubernetes.KeepPod,
 		labels:          context.Kubernetes.Labels,
 		annotations:     context.Kubernetes.Annotations,
 		nodeSelector:    context.Kubernetes.NodeSelector,
@@ -122,8 +125,12 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 	podName := fmt.Sprintf("kafkactl-%s-%s", strings.ToLower(kubectl.clientID), randomString(4))
 
 	kubectlArgs := []string{
-		"run", "--rm", "-i", "--tty", "--restart=Never", podName,
+		"run", "-i", "--tty", "--restart=Never", podName,
 		"--image", dockerImage,
+	}
+
+	if !kubectl.keepPod {
+		kubectlArgs = slices.Insert(kubectlArgs, 1, "--rm")
 	}
 
 	if kubectl.kubeConfig != "" {
