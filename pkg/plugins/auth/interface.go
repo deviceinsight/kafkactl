@@ -11,7 +11,8 @@ type AccessTokenProvider interface {
 }
 
 var TokenProviderPluginSpec = plugins.PluginSpec[*TokenProviderPlugin, AccessTokenProvider]{
-	PluginImpl: &TokenProviderPlugin{},
+	PluginImpl:          &TokenProviderPlugin{},
+	InterfaceIdentifier: "tokenProvider",
 	Handshake: plugin.HandshakeConfig{
 		ProtocolVersion:  1,
 		MagicCookieKey:   "KAFKACTL_PLUGIN",

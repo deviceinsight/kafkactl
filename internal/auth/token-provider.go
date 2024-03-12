@@ -2,7 +2,7 @@ package auth
 
 import (
 	"github.com/IBM/sarama"
-	"github.com/deviceinsight/kafkactl/v5/pkg/plugins"
+	"github.com/deviceinsight/kafkactl/v5/internal/util"
 	"github.com/deviceinsight/kafkactl/v5/pkg/plugins/auth"
 )
 
@@ -22,7 +22,7 @@ func LoadTokenProviderPlugin(pluginName string, options map[string]any, brokers 
 	loadedPlugin, ok := loadedPlugins[pluginName]
 	if !ok {
 		var err error
-		loadedPlugin, err = plugins.LoadPlugin(pluginName, auth.TokenProviderPluginSpec)
+		loadedPlugin, err = util.LoadPlugin(pluginName, auth.TokenProviderPluginSpec)
 		if err != nil {
 			return nil, err
 		}

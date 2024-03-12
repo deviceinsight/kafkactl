@@ -1,4 +1,4 @@
-package plugins
+package util
 
 import (
 	"fmt"
@@ -9,25 +9,13 @@ import (
 
 	"github.com/deviceinsight/kafkactl/v5/internal/global"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
+	"github.com/deviceinsight/kafkactl/v5/pkg/plugins"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
 	"github.com/pkg/errors"
 )
 
-const GenericInterfaceIdentifier = "generic"
-
-type PluginSpec[P plugin.Plugin, I any] struct {
-	PluginImpl P
-	Handshake  plugin.HandshakeConfig
-}
-
-func (s *PluginSpec[P, I]) GetMap() map[string]plugin.Plugin {
-	return map[string]plugin.Plugin{
-		GenericInterfaceIdentifier: s.PluginImpl,
-	}
-}
-
-func LoadPlugin[P plugin.Plugin, I any](pluginName string, pluginSpec PluginSpec[P, I]) (impl I, err error) {
+func LoadPlugin[P plugin.Plugin, I any](pluginName string, pluginSpec plugins.PluginSpec[P, I]) (impl I, err error) {
 
 	pluginPath, err := resolvePluginPath(pluginName)
 	if err != nil {
@@ -59,7 +47,7 @@ func LoadPlugin[P plugin.Plugin, I any](pluginName string, pluginSpec PluginSpec
 	}
 
 	// Request the plugin
-	raw, err := rpcClient.Dispense(GenericInterfaceIdentifier)
+	raw, err := rpcClient.Dispense(pluginSpec.InterfaceIdentifier)
 	if err != nil {
 		client.Kill()
 		return impl, err
