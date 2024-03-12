@@ -18,6 +18,7 @@ require (
 	github.com/xdg-go/scram v1.1.2
 	go.uber.org/ratelimit v0.3.1
 	golang.org/x/sync v0.6.0
+	golang.org/x/term v0.18.0
 	google.golang.org/protobuf v1.33.0
 	gopkg.in/errgo.v2 v2.1.0
 	gopkg.in/yaml.v2 v2.4.0

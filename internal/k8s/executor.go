@@ -13,6 +13,7 @@ import (
 
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
+	"golang.org/x/term"
 )
 
 type Version struct {
@@ -154,6 +155,8 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 		kubectlArgs = append(kubectlArgs, "--env", env)
 	}
 
+	kubectlArgs = addTerminalSizeEnv(kubectlArgs)
+
 	kubectlArgs = append(kubectlArgs, "--command", "--", entryPoint)
 
 	// Keep only kafkactl arguments that are relevant in k8s context
@@ -163,6 +166,24 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 	kubectlArgs = append(kubectlArgs, filter(kafkactlArgs, allExceptConfigFileFilter)...)
 
 	return kubectl.exec(kubectlArgs)
+}
+
+func addTerminalSizeEnv(args []string) []string {
+
+	if !term.IsTerminal(0) {
+		output.Debugf("no terminal detected")
+		return args
+	}
+
+	width, height, err := term.GetSize(0)
+	if err != nil {
+		output.Debugf("unable to determine terminal size: %v", err)
+		return args
+	}
+
+	args = append(args, "--env", fmt.Sprintf("TERM_WIDTH=%d", width))
+	args = append(args, "--env", fmt.Sprintf("TERM_HEIGHT=%d", height))
+	return args
 }
 
 func getDockerImage(image string, imageType string) string {
