@@ -62,7 +62,7 @@ clean:
 # export AUR_SSH_PRIVATE_KEY=$(cat /path/to/id_aur)
 # snapcraft login
 # docker login
-# goreleaser --rm-dist (--skip-validate)
+# goreleaser --clean (--skip-validate)
 #
 .PHONY: release
 release:

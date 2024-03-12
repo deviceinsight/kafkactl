@@ -24,5 +24,8 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /home/kafkactl
 RUN chown -R kafkactl:kafkactl /home/kafkactl
 
+# try to set correct terminal-size
+RUN echo "[[ -n $TERM_HEIGHT ]] && stty rows $TERM_HEIGHT cols $TERM_WIDTH" >> /home/kafkactl/.bashrc
+
 USER kafkactl
 ENTRYPOINT ["kafkactl"]

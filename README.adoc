@@ -120,6 +120,8 @@ contexts:
       imagePullSecret: registry-secret
       # optional: serviceAccount to use for the pod
       serviceAccount: my-service-account
+      # optional: keep pod after exit (can be set to true for debugging)
+      keepPod: true
       # optional: labels to add to the pod
       labels:
         key: value
