@@ -16,6 +16,9 @@ RUN useradd -r -g kafkactl -d /home/kafkactl -s /sbin/nologin -c "Docker image u
 RUN echo "source /etc/bash_completion" > /home/kafkactl/.bashrc
 RUN echo "source /etc/bash_completion.d/kafkactl " >> /home/kafkactl/.bashrc
 
+# try to set correct terminal-size
+RUN echo '[[ -n $TERM_HEIGHT ]] && stty rows $TERM_HEIGHT cols $TERM_WIDTH' >> /home/kafkactl/.bashrc
+
 # Install CA certificates
 RUN apt-get update && apt-get install -y \
     ca-certificates \
@@ -23,9 +26,6 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /home/kafkactl
 RUN chown -R kafkactl:kafkactl /home/kafkactl
-
-# try to set correct terminal-size
-RUN echo "[[ -n $TERM_HEIGHT ]] && stty rows $TERM_HEIGHT cols $TERM_WIDTH" >> /home/kafkactl/.bashrc
 
 USER kafkactl
 ENTRYPOINT ["kafkactl"]
