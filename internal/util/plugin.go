@@ -22,6 +22,8 @@ func LoadPlugin[P plugin.Plugin, I any](pluginName string, pluginSpec plugins.Pl
 		return impl, err
 	}
 
+	output.Debugf("using plugin=%s location=%s", pluginName, pluginPath)
+
 	pluginLogger := output.CreateVerboseLogger(pluginName, global.GetFlags().Verbose)
 
 	logger := hclog.FromStandardLogger(pluginLogger, &hclog.LoggerOptions{
@@ -69,7 +71,7 @@ func resolvePluginPath(pluginName string) (string, error) {
 	pluginExecutable := fmt.Sprintf("kafkactl-%s-plugin%s", pluginName, extension)
 
 	// search in path
-	if _, err := os.Stat(pluginExecutable); err == nil {
+	if _, err := exec.LookPath(pluginExecutable); err == nil {
 		return pluginExecutable, nil
 	}
 
@@ -95,7 +97,7 @@ func resolvePluginPath(pluginName string) (string, error) {
 	pluginPath := filepath.Join(workingDir, "../kafkactl-plugins/"+pluginName)
 	pluginLocationWorkingDir := filepath.Join(pluginPath, pluginExecutable)
 
-	if _, err := os.Stat(pluginLocationWorkingDir); err == nil {
+	if _, err = os.Stat(pluginLocationWorkingDir); err == nil {
 		return pluginLocationWorkingDir, nil
 	}
 
