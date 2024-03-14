@@ -1,13 +1,13 @@
 BUILD_TS := $(shell date -Iseconds --utc)
 COMMIT_SHA := $(shell git rev-parse HEAD)
 VERSION := $(shell git describe --abbrev=0 --tags || echo "latest")
-GOOS ?= linux
+OS ?= linux
 
 export CGO_ENABLED=0
-export GOOS=$(GOOS)
+export GOOS=$(OS)
 export GO111MODULE=on
 
-binary := $(if $(filter-out windows,$(GOOS)),kafkactl,kafkactl.exe)
+binary := $(if $(filter-out windows,$(OS)),kafkactl,kafkactl.exe)
 
 module=$(shell go list -m)
 ld_flags := "-X $(module)/cmd.Version=$(VERSION) -X $(module)/cmd.GitCommit=$(COMMIT_SHA) -X $(module)/cmd.BuildTime=$(BUILD_TS)"
