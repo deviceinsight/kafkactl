@@ -1,10 +1,13 @@
 BUILD_TS := $(shell date -Iseconds --utc)
 COMMIT_SHA := $(shell git rev-parse HEAD)
 VERSION := $(shell git describe --abbrev=0 --tags || echo "latest")
+GOOS ?= linux
 
 export CGO_ENABLED=0
-export GOOS=linux
+export GOOS=$(GOOS)
 export GO111MODULE=on
+
+binary := $(if $(filter-out windows,$(GOOS)),kafkactl,kafkactl.exe)
 
 module=$(shell go list -m)
 ld_flags := "-X $(module)/cmd.Version=$(VERSION) -X $(module)/cmd.GitCommit=$(COMMIT_SHA) -X $(module)/cmd.BuildTime=$(BUILD_TS)"
@@ -43,7 +46,7 @@ integration_test:
 
 .PHONY: build
 build:
-	go build -ldflags $(ld_flags) -o kafkactl
+	go build -ldflags $(ld_flags) -o $(binary)
 
 .PHONY: docs
 docs: build
@@ -52,7 +55,7 @@ docs: build
 
 .PHONY: clean
 clean:
-	rm -f kafkactl
+	rm -f $(binary)
 	go clean -testcache
 
 # usage make version=2.5.0 release
