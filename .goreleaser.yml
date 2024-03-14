@@ -82,6 +82,25 @@ brews:
 
     skip_upload: false
 
+winget:
+  - name: kafkactl
+    publisher: Device Insight GmbH
+    short_description: A command-line interface for interaction with Apache Kafka
+    license: Apache-2.0
+    publisher_support_url: https://github.com/deviceinsight/kafkactl/issues
+    package_identifier: deviceinsight.kafkactl
+    homepage: https://www.device-insight.com/
+    repository:
+      owner: deviceinsight
+      name: winget-pkgs
+      branch: "kafkactl-{{.Version}}"
+      pull_request:
+        enabled: true
+        base:
+          owner: microsoft
+          name: winget-pkgs
+          branch: master
+
 dockers:
   -
     skip_push: false

@@ -12,6 +12,7 @@
 docs
 dist
 kafkactl
+kafkactl.exe
 
 ### Configs
 .kafkactl.yml

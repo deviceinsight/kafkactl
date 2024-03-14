@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
@@ -23,6 +24,7 @@ var projectConfigNames = []string{"kafkactl.yml", ".kafkactl.yml"}
 var configPaths = []string{
 	"$HOME/.config/kafkactl",
 	"$HOME/.kafkactl",
+	"$APPDATA/kafkactl",
 	"$SNAP_REAL_HOME/.config/kafkactl",
 	"$SNAP_DATA/kafkactl",
 	"/etc/kafkactl",
@@ -83,6 +85,10 @@ func (c *config) Init() {
 
 	viper.Reset()
 
+	if c.flags.Verbose {
+		output.IoStreams.EnableDebug()
+	}
+
 	configFile := resolveProjectConfigFileFromWorkingDir()
 
 	switch {
@@ -91,10 +97,6 @@ func (c *config) Init() {
 	case os.Getenv("KAFKA_CTL_CONFIG") != "":
 		envConfig := os.Getenv("KAFKA_CTL_CONFIG")
 		configFile = &envConfig
-	}
-
-	if c.flags.Verbose {
-		output.IoStreams.EnableDebug()
 	}
 
 	if c.flags.Verbose && os.Getenv("SNAP_NAME") != "" {
@@ -177,13 +179,16 @@ func (c *config) loadConfig(viperInstance *viper.Viper, configFile *string) erro
 
 func resolveProjectConfigFileFromWorkingDir() *string {
 
-	path, err := os.Getwd()
+	workDir, err := os.Getwd()
 	if err != nil {
 		output.Debugf("cannot find project config file. unable to get working dir")
 		return nil
 	}
 
 	for _, projectConfigName := range projectConfigNames {
+
+		path := workDir
+
 		_, err = os.Stat(filepath.Join(path, projectConfigName))
 		found := true
 
@@ -245,6 +250,14 @@ func generateDefaultConfig() error {
 		// use different configFile when running in snap
 		for _, configPath := range configPaths {
 			if strings.Contains(configPath, "$SNAP_REAL_HOME") {
+				cfgFile = filepath.Join(os.ExpandEnv(configPath), "config.yml")
+				break
+			}
+		}
+	} else if runtime.GOOS == "windows" {
+		// use different configFile when running on windows
+		for _, configPath := range configPaths {
+			if strings.Contains(configPath, "$APPDATA") {
 				cfgFile = filepath.Join(os.ExpandEnv(configPath), "config.yml")
 				break
 			}
