@@ -15,6 +15,9 @@ builds:
 
 archives:
   - id: default
+    format_overrides:
+      - goos: windows
+        format: zip
     files:
       - LICENSE.md
       - CHANGELOG.md
