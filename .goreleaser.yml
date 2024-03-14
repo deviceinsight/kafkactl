@@ -87,7 +87,7 @@ brews:
 
 winget:
   - name: kafkactl
-    publisher: Device Insight GmbH
+    publisher: deviceinsight
     short_description: A command-line interface for interaction with Apache Kafka
     license: Apache-2.0
     publisher_support_url: https://github.com/deviceinsight/kafkactl/issues
