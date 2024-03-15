@@ -64,7 +64,7 @@ Download the pre-compiled binaries from the https://github.com/deviceinsight/kaf
 
 [,bash]
 ----
-go get -u github.com/deviceinsight/kafkactl
+go get -u github.com/deviceinsight/kafkactl/v5
 ----
 
 *NOTE:* make sure that `kafkactl` is on PATH otherwise auto-completion won't work.
