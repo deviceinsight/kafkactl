@@ -24,13 +24,6 @@ You can install the pre-compiled binary or compile from source.
 
 === Install the pre-compiled binary
 
-*snap*:
-
-[,bash]
-----
-snap install kafkactl
-----
-
 *homebrew*:
 
 [,bash]
@@ -43,6 +36,12 @@ brew install deviceinsight/packages/kafkactl
 brew upgrade deviceinsight/packages/kafkactl
 ----
 
+*winget*:
+[,bash]
+----
+winget install kafkactl
+----
+
 *deb/rpm*:
 
 Download the .deb or .rpm from the https://github.com/deviceinsight/kafkactl/releases[releases page] and install with dpkg -i and rpm -i respectively.
@@ -50,6 +49,13 @@ Download the .deb or .rpm from the https://github.com/deviceinsight/kafkactl/rel
 *yay (AUR)*
 
 There's a kafkactl https://aur.archlinux.org/packages/kafkactl/[AUR package] available for Arch. Install it with your AUR helper of choice (e.g. https://github.com/Jguer/yay[yay]):
+
+*snap*:
+
+[,bash]
+----
+snap install kafkactl
+----
 
 [,bash]
 ----
