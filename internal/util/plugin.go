@@ -70,6 +70,19 @@ func resolvePluginPath(pluginName string) (string, error) {
 
 	pluginExecutable := fmt.Sprintf("kafkactl-%s-plugin%s", pluginName, extension)
 
+	// search relative to working dir
+	workingDir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	pluginPath := filepath.Join(workingDir, "../kafkactl-plugins/"+pluginName)
+	pluginLocationWorkingDir := filepath.Join(pluginPath, pluginExecutable)
+
+	if _, err = os.Stat(pluginLocationWorkingDir); err == nil {
+		return pluginLocationWorkingDir, nil
+	}
+
 	// search in path
 	if _, err := exec.LookPath(pluginExecutable); err == nil {
 		return pluginExecutable, nil
@@ -86,19 +99,6 @@ func resolvePluginPath(pluginName string) (string, error) {
 
 	if _, err := os.Stat(pluginLocationExe); err == nil {
 		return pluginLocationExe, nil
-	}
-
-	// search relative to working dir
-	workingDir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	pluginPath := filepath.Join(workingDir, "../kafkactl-plugins/"+pluginName)
-	pluginLocationWorkingDir := filepath.Join(pluginPath, pluginExecutable)
-
-	if _, err = os.Stat(pluginLocationWorkingDir); err == nil {
-		return pluginLocationWorkingDir, nil
 	}
 
 	return "", errors.Wrapf(err, "plugin not found: %q", []string{pluginExecutable, pluginLocationExe, pluginLocationWorkingDir})
