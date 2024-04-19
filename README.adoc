@@ -822,7 +822,7 @@ The assigned replicas of a partition can directly be altered with:
 [,bash]
 ----
 # set brokers 102,103 as replicas for partition 3 of topic my-topic
-kafkactl alter topic my-topic 3 -r 102,103
+kafkactl alter partition my-topic 3 -r 102,103
 ----
 
 === Clone topic
