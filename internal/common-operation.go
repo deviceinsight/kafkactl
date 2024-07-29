@@ -3,6 +3,7 @@ package internal
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -74,6 +75,8 @@ type K8sConfig struct {
 	Labels          map[string]string
 	Annotations     map[string]string
 	NodeSelector    map[string]string
+	Affinity        map[string]any
+	Tolerations     []map[string]any
 }
 
 type ConsumerConfig struct {
@@ -174,6 +177,14 @@ func CreateClientContext() (ClientContext, error) {
 	context.Kubernetes.Labels = viper.GetStringMapString("contexts." + context.Name + ".kubernetes.labels")
 	context.Kubernetes.Annotations = viper.GetStringMapString("contexts." + context.Name + ".kubernetes.annotations")
 	context.Kubernetes.NodeSelector = viper.GetStringMapString("contexts." + context.Name + ".kubernetes.nodeSelector")
+	context.Kubernetes.Affinity = viper.GetStringMap("contexts." + context.Name + ".kubernetes.affinity")
+
+	var tolerations []map[string]any
+	err := json.Unmarshal([]byte(viper.GetString("contexts."+context.Name+".kubernetes.tolerations")), &tolerations)
+	if err != nil {
+		return context, err
+	}
+	context.Kubernetes.Tolerations = tolerations
 
 	return context, nil
 }

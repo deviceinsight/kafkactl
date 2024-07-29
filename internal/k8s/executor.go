@@ -37,6 +37,8 @@ type executor struct {
 	labels          map[string]string
 	annotations     map[string]string
 	nodeSelector    map[string]string
+	affinity        map[string]any
+	tolerations     []map[string]any
 }
 
 const letterBytes = "abcdefghijklmnpqrstuvwxyz123456789"
@@ -111,6 +113,8 @@ func newExecutor(context internal.ClientContext, runner Runner) *executor {
 		labels:          context.Kubernetes.Labels,
 		annotations:     context.Kubernetes.Annotations,
 		nodeSelector:    context.Kubernetes.NodeSelector,
+		affinity:        context.Kubernetes.Affinity,
+		tolerations:     context.Kubernetes.Tolerations,
 		runner:          runner,
 	}
 }
