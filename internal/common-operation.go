@@ -178,16 +178,28 @@ func CreateClientContext() (ClientContext, error) {
 	context.Kubernetes.Annotations = viper.GetStringMapString("contexts." + context.Name + ".kubernetes.annotations")
 	context.Kubernetes.NodeSelector = viper.GetStringMapString("contexts." + context.Name + ".kubernetes.nodeSelector")
 	context.Kubernetes.Affinity = viper.GetStringMap("contexts." + context.Name + ".kubernetes.affinity")
-
-	var tolerations []map[string]any
-	err := json.Unmarshal([]byte(viper.GetString("contexts."+context.Name+".kubernetes.tolerations")), &tolerations)
-	if err != nil {
-		return context, err
-	}
-	context.Kubernetes.Tolerations = tolerations
-
+  
+  t, err := convertJsonToListMap("tolerations", viper.GetString("contexts."+context.Name+".kubernetes.tolerations"))
+  context.Kubernetes.Tolerations = t
+  if err != nil {
+    return context, err 
+  } 
 	return context, nil
 }
+
+func convertJsonToListMap(fieldName string, jsonStr string) ([]map[string]any, error){
+  var listMap []map[string]any
+  if (jsonStr == "") {
+    return listMap, nil
+  }
+  err := json.Unmarshal([]byte(jsonStr), &listMap)
+  if err != nil {
+    fmt.Errorf("Error parsing %s field", fieldName)
+    return listMap, err
+  }
+  return listMap, nil 
+} 
+
 
 func CreateClient(context *ClientContext) (sarama.Client, error) {
 	config, err := CreateClientConfig(context)
