@@ -1,7 +1,6 @@
 package consume
 
 import (
-	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
 	"github.com/riferrei/srclient"
 )
 
@@ -11,14 +10,8 @@ type CachingSchemaRegistry struct {
 	client   srclient.ISchemaRegistryClient
 }
 
-func CreateCachingSchemaRegistry(avroSchemaRegistry string) (*CachingSchemaRegistry, error) {
-
-	registry := &CachingSchemaRegistry{}
-
-	registry.schemas = make(map[int]string)
-	registry.client = avro.CreateSchemaRegistryClient(avroSchemaRegistry)
-
-	return registry, nil
+func CreateCachingSchemaRegistry(client srclient.ISchemaRegistryClient) *CachingSchemaRegistry {
+	return &CachingSchemaRegistry{client: client, schemas: make(map[int]string)}
 }
 
 func (registry *CachingSchemaRegistry) Subjects() ([]string, error) {

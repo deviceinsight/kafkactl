@@ -160,6 +160,18 @@ contexts:
       # see: https://github.com/deviceinsight/kafkactl/issues/123
       jsonCodec: avro
 
+      # optional: timeout for requests (defaults to 5s)
+      requestTimeout: 10s
+
+      # optional: tls config for avro
+      tls:
+        enabled: true
+        ca: my-ca
+        cert: my-cert
+        certKey: my-key
+        # set insecure to true to ignore all tls verification (defaults to false)
+        insecure: false
+
     # optional: default protobuf messages search paths
     protobuf:
       importPaths:

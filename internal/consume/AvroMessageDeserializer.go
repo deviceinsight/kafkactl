@@ -16,25 +16,9 @@ import (
 )
 
 type AvroMessageDeserializer struct {
-	topic              string
-	avroSchemaRegistry string
-	jsonCodec          avro.JSONCodec
-	registry           *CachingSchemaRegistry
-}
-
-func CreateAvroMessageDeserializer(topic string, avroSchemaRegistry string, jsonCodec avro.JSONCodec) (AvroMessageDeserializer, error) {
-
-	var err error
-
-	deserializer := AvroMessageDeserializer{topic: topic, avroSchemaRegistry: avroSchemaRegistry, jsonCodec: jsonCodec}
-
-	deserializer.registry, err = CreateCachingSchemaRegistry(deserializer.avroSchemaRegistry)
-
-	if err != nil {
-		return deserializer, errors.Wrap(err, "failed to create schema registry client: ")
-	}
-
-	return deserializer, nil
+	topic     string
+	jsonCodec avro.JSONCodec
+	registry  *CachingSchemaRegistry
 }
 
 type avroMessage struct {

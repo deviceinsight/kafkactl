@@ -13,19 +13,9 @@ import (
 )
 
 type AvroMessageSerializer struct {
-	topic              string
-	avroSchemaRegistry string
-	jsonCodec          avro.JSONCodec
-	client             srclient.ISchemaRegistryClient
-}
-
-func CreateAvroMessageSerializer(topic string, avroSchemaRegistry string, jsonCodec avro.JSONCodec) (AvroMessageSerializer, error) {
-
-	serializer := AvroMessageSerializer{topic: topic, avroSchemaRegistry: avroSchemaRegistry, jsonCodec: jsonCodec}
-
-	serializer.client = avro.CreateSchemaRegistryClient(serializer.avroSchemaRegistry)
-
-	return serializer, nil
+	topic     string
+	jsonCodec avro.JSONCodec
+	client    srclient.ISchemaRegistryClient
 }
 
 func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int, avroSchemaType string) ([]byte, error) {

@@ -2,17 +2,10 @@ package avro
 
 import (
 	"strings"
-
-	"github.com/riferrei/srclient"
 )
 
-func CreateSchemaRegistryClient(baseURL string) srclient.ISchemaRegistryClient {
-	baseURL = formatBaseURL(baseURL)
-	return srclient.CreateSchemaRegistryClient(baseURL)
-}
-
-// formatBaseURL will try to make sure that the schema:host:port pattern is followed on the `baseURL` field.
-func formatBaseURL(baseURL string) string {
+// FormatBaseURL will try to make sure that the schema:host:port pattern is followed on the `baseURL` field.
+func FormatBaseURL(baseURL string) string {
 	if baseURL == "" {
 		return ""
 	}
