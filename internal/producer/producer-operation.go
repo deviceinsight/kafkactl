@@ -80,10 +80,11 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 	serializers := MessageSerializerChain{topic: topic}
 
 	if clientContext.AvroSchemaRegistry != "" {
-		serializer, err := CreateAvroMessageSerializer(topic, clientContext.AvroSchemaRegistry, clientContext.AvroJSONCodec)
+		client, err := internal.CreateAvroSchemaRegistryClient(&clientContext)
 		if err != nil {
 			return err
 		}
+		serializer := AvroMessageSerializer{topic: topic, client: client, jsonCodec: clientContext.AvroJSONCodec}
 
 		serializers.serializers = append(serializers.serializers, serializer)
 	}
