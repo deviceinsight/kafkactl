@@ -39,7 +39,7 @@ func CreateAvroTopic(t *testing.T, topicPrefix, keySchema, valueSchema string, f
 
 	topicName := CreateTopic(t, topicPrefix, flags...)
 
-	schemaRegistry := srclient.CreateSchemaRegistryClient("localhost:18081")
+	schemaRegistry := srclient.CreateSchemaRegistryClient("http://localhost:18081")
 
 	if keySchema != "" {
 		if _, err := schemaRegistry.CreateSchema(topicName+"-key", keySchema, srclient.Avro); err != nil {
