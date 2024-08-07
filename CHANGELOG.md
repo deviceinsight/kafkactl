@@ -6,11 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- Updated several dependencies and replaced abandoned avro schema registry lib with a new library
-
 ### Added
 - [#207](https://github.com/deviceinsight/kafkactl/pull/207) Allow configuring TLS for avro schema registry
+- [#193](https://github.com/deviceinsight/kafkactl/pull/193) Print group instance IDs in `describe consumer-group` command
 
 ## 5.0.6 - 2024-03-14
 
