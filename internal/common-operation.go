@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/proxy"
+
 	"github.com/deviceinsight/kafkactl/v5/internal/auth"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/global"
@@ -236,6 +238,11 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 			return nil, errors.Wrap(err, "failed to load tokenProvider")
 		}
 		config.Net.SASL.TokenProvider = tokenProvider
+	}
+
+	if _proxy := os.Getenv("ALL_PROXY"); _proxy != "" {
+		config.Net.Proxy.Enable = true
+		config.Net.Proxy.Dialer = proxy.FromEnvironment()
 	}
 
 	return config, nil
