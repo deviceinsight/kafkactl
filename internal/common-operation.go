@@ -4,11 +4,14 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"net/http"
 	"os"
 	"os/user"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/riferrei/srclient"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/auth"
 
@@ -85,6 +88,8 @@ type ClientContext struct {
 	KafkaVersion       sarama.KafkaVersion
 	AvroSchemaRegistry string
 	AvroJSONCodec      avro.JSONCodec
+	AvroRequestTimeout time.Duration
+	AvroTLS            TLSConfig
 	Protobuf           protobuf.SearchContext
 	Producer           ProducerConfig
 	Consumer           ConsumerConfig
@@ -128,6 +133,12 @@ func CreateClientContext() (ClientContext, error) {
 	}
 	context.AvroSchemaRegistry = viper.GetString("contexts." + context.Name + ".avro.schemaRegistry")
 	context.AvroJSONCodec = avro.ParseJSONCodec(viper.GetString("contexts." + context.Name + ".avro.jsonCodec"))
+	context.AvroRequestTimeout = viper.GetDuration("contexts." + context.Name + ".avro.requestTimeout")
+	context.AvroTLS.Enabled = viper.GetBool("contexts." + context.Name + ".avro.tls.enabled")
+	context.AvroTLS.CA = viper.GetString("contexts." + context.Name + ".avro.tls.ca")
+	context.AvroTLS.Cert = viper.GetString("contexts." + context.Name + ".avro.tls.cert")
+	context.AvroTLS.CertKey = viper.GetString("contexts." + context.Name + ".avro.tls.certKey")
+	context.AvroTLS.Insecure = viper.GetBool("contexts." + context.Name + ".avro.tls.insecure")
 	context.Protobuf.ProtosetFiles = viper.GetStringSlice("contexts." + context.Name + ".protobuf.protosetFiles")
 	context.Protobuf.ProtoImportPaths = viper.GetStringSlice("contexts." + context.Name + ".protobuf.importPaths")
 	context.Protobuf.ProtoFiles = viper.GetStringSlice("contexts." + context.Name + ".protobuf.protoFiles")
@@ -239,6 +250,33 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 	}
 
 	return config, nil
+}
+
+func CreateAvroSchemaRegistryClient(context *ClientContext) (srclient.ISchemaRegistryClient, error) {
+
+	timeout := context.AvroRequestTimeout
+
+	if context.AvroRequestTimeout <= 0 {
+		timeout = 5 * time.Second
+	}
+
+	client := &http.Client{Timeout: timeout}
+
+	if context.AvroTLS.Enabled {
+		output.Debugf("avro TLS is enabled.")
+
+		tlsConfig, err := setupTLSConfig(context.AvroTLS)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to setup avro tls config")
+		}
+
+		client.Transport = &http.Transport{
+			TLSClientConfig: tlsConfig,
+		}
+	}
+
+	baseURL := avro.FormatBaseURL(context.AvroSchemaRegistry)
+	return srclient.CreateSchemaRegistryClientWithOptions(baseURL, client, 16), nil
 }
 
 func GetClientID(context *ClientContext, defaultPrefix string) string {

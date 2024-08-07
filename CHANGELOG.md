@@ -6,25 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## 5.0.6 - 2024-03-14
+## 5.1.0 - 2024-08-07
+
+### Added
+- [#207](https://github.com/deviceinsight/kafkactl/pull/207) Allow configuring TLS for avro schema registry
+- [#193](https://github.com/deviceinsight/kafkactl/pull/193) Print group instance IDs in `describe consumer-group` command
 
 ## 5.0.6 - 2024-03-14
-
-## 5.0.6 - 2024-03-14
-
-## 5.0.6 - 2024-03-14
-
-## 5.0.5 - 2024-03-12
-
-## 5.0.4 - 2024-03-12
-
-## 5.0.3 - 2024-03-12
-
-## 5.0.2 - 2024-03-08
-
-## 5.0.1 - 2024-03-08
-
-## 5.0.0 - 2024-03-08
 
 ### Added
 - [#190](https://github.com/deviceinsight/kafkactl/pull/190) Improve handling of project config files

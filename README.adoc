@@ -24,13 +24,6 @@ You can install the pre-compiled binary or compile from source.
 
 === Install the pre-compiled binary
 
-*snap*:
-
-[,bash]
-----
-snap install kafkactl
-----
-
 *homebrew*:
 
 [,bash]
@@ -43,6 +36,12 @@ brew install deviceinsight/packages/kafkactl
 brew upgrade deviceinsight/packages/kafkactl
 ----
 
+*winget*:
+[,bash]
+----
+winget install kafkactl
+----
+
 *deb/rpm*:
 
 Download the .deb or .rpm from the https://github.com/deviceinsight/kafkactl/releases[releases page] and install with dpkg -i and rpm -i respectively.
@@ -50,6 +49,13 @@ Download the .deb or .rpm from the https://github.com/deviceinsight/kafkactl/rel
 *yay (AUR)*
 
 There's a kafkactl https://aur.archlinux.org/packages/kafkactl/[AUR package] available for Arch. Install it with your AUR helper of choice (e.g. https://github.com/Jguer/yay[yay]):
+
+*snap*:
+
+[,bash]
+----
+snap install kafkactl
+----
 
 [,bash]
 ----
@@ -64,7 +70,7 @@ Download the pre-compiled binaries from the https://github.com/deviceinsight/kaf
 
 [,bash]
 ----
-go get -u github.com/deviceinsight/kafkactl
+go get -u github.com/deviceinsight/kafkactl/v5
 ----
 
 *NOTE:* make sure that `kafkactl` is on PATH otherwise auto-completion won't work.
@@ -104,8 +110,15 @@ contexts:
       enabled: true
       username: admin
       password: admin
-      # optional configure sasl mechanism as plaintext, scram-sha256, scram-sha512 (defaults to plaintext)
-      mechanism: scram-sha512
+      # optional configure sasl mechanism as plaintext, scram-sha256, scram-sha512, oauth (defaults to plaintext)
+      mechanism: oauth
+      # optional tokenProvider configuration (only used for 'sasl.mechanism=oauth')
+      tokenprovider:
+        # plugin to use as token provider implementation (see plugin section)
+        plugin: azure
+        # optional: additional options passed to the plugin
+        options:
+          key: value
 
     # optional: access clusters running kubernetes
     kubernetes:
@@ -147,6 +160,18 @@ contexts:
       # see: https://github.com/deviceinsight/kafkactl/issues/123
       jsonCodec: avro
 
+      # optional: timeout for requests (defaults to 5s)
+      requestTimeout: 10s
+
+      # optional: tls config for avro
+      tls:
+        enabled: true
+        ca: my-ca
+        cert: my-cert
+        certKey: my-key
+        # set insecure to true to ignore all tls verification (defaults to false)
+        insecure: false
+
     # optional: default protobuf messages search paths
     protobuf:
       importPaths:
@@ -185,6 +210,7 @@ The config file location is resolved by
 . as default the config file is looked up from one of the following locations:
  ** `$HOME/.config/kafkactl/config.yml`
  ** `$HOME/.kafkactl/config.yml`
+ ** `$APPDATA/kafkactl/config.yml`
  ** `$SNAP_REAL_HOME/.kafkactl/config.yml`
  ** `$SNAP_DATA/kafkactl/config.yml`
  ** `/etc/kafkactl/config.yml`
@@ -358,6 +384,19 @@ e.g. the key `contexts.default.tls.certKey` has the corresponding environment va
 If environment variables for the `default` context should be set, the prefix `CONTEXTS_DEFAULT_` can be omitted.
 So, instead of `CONTEXTS_DEFAULT_TLS_CERTKEY` one can also set `TLS_CERTKEY`.
 See *root_test.go* for more examples.
+
+== Plugins
+
+_kafkactl_ supports plugins to cope with specifics when using Kafka-compatible clusters available from cloud providers such as Azure or AWS.
+
+At the moment, plugins can only be used to implement a `tokenProvider` for _oauth_ authentication.
+In the future, plugins might implement additional commands to query data or configuration which is not part of the Kafka-API. One example would be Eventhub consumer groups/offsets for Azure.
+
+See the plugin documentation for additional documentation and usage examples.
+
+Available plugins:
+
+* https://github.com/deviceinsight/kafkactl-plugins/blob/main/azure/README.adoc[azure plugin]
 
 == Examples
 
@@ -795,7 +834,7 @@ The assigned replicas of a partition can directly be altered with:
 [,bash]
 ----
 # set brokers 102,103 as replicas for partition 3 of topic my-topic
-kafkactl alter topic my-topic 3 -r 102,103
+kafkactl alter partition my-topic 3 -r 102,103
 ----
 
 === Clone topic
