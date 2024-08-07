@@ -91,10 +91,13 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 	var deserializers MessageDeserializerChain
 
 	if clientContext.AvroSchemaRegistry != "" {
-		deserializer, err := CreateAvroMessageDeserializer(topic, clientContext.AvroSchemaRegistry, clientContext.AvroJSONCodec)
+		client, err := internal.CreateAvroSchemaRegistryClient(&clientContext)
 		if err != nil {
 			return err
 		}
+
+		deserializer := AvroMessageDeserializer{topic: topic, registry: CreateCachingSchemaRegistry(client),
+			jsonCodec: clientContext.AvroJSONCodec}
 
 		deserializers = append(deserializers, deserializer)
 	}

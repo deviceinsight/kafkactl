@@ -1,37 +1,24 @@
 package consume
 
 import (
-	schemaregistry "github.com/landoop/schema-registry"
-	"github.com/pkg/errors"
+	"github.com/riferrei/srclient"
 )
 
 type CachingSchemaRegistry struct {
 	subjects []string
 	schemas  map[int]string
-	client   *schemaregistry.Client
+	client   srclient.ISchemaRegistryClient
 }
 
-func CreateCachingSchemaRegistry(avroSchemaRegistry string) (*CachingSchemaRegistry, error) {
-
-	var err error
-
-	registry := &CachingSchemaRegistry{}
-
-	registry.schemas = make(map[int]string)
-	registry.client, err = schemaregistry.NewClient(avroSchemaRegistry)
-
-	if err != nil {
-		return registry, errors.Wrap(err, "failed to create schema registry registry: ")
-	}
-
-	return registry, nil
+func CreateCachingSchemaRegistry(client srclient.ISchemaRegistryClient) *CachingSchemaRegistry {
+	return &CachingSchemaRegistry{client: client, schemas: make(map[int]string)}
 }
 
 func (registry *CachingSchemaRegistry) Subjects() ([]string, error) {
 	var err error
 
 	if len(registry.subjects) == 0 {
-		registry.subjects, err = registry.client.Subjects()
+		registry.subjects, err = registry.client.GetSubjects()
 	}
 
 	return registry.subjects, err
@@ -41,10 +28,10 @@ func (registry *CachingSchemaRegistry) GetSchemaByID(id int) (string, error) {
 	var err error
 
 	if _, ok := registry.schemas[id]; !ok {
-		var schema string
-		schema, err = registry.client.GetSchemaByID(id)
-		if err == nil && schema != "" {
-			registry.schemas[id] = schema
+		var schema *srclient.Schema
+		schema, err = registry.client.GetSchema(id)
+		if err == nil {
+			registry.schemas[id] = schema.Schema()
 		}
 	}
 

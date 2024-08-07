@@ -41,7 +41,7 @@ In order to develop integration tests locally, you just have to start the kafka 
 
 ```shell
 cd docker
-docker-compose up -d
+docker compose up -d
 ```
 
 This will start 3 kafka brokers, one zookeeper, an avro schema-registry.
