@@ -70,3 +70,4 @@ jobs:
         with:
           name: it-logs
           path: integration-test.log
+          overwrite: true
