@@ -9,11 +9,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/riferrei/srclient"
+
 	"github.com/Rican7/retry"
 	"github.com/Rican7/retry/backoff"
 	"github.com/Rican7/retry/strategy"
 	"github.com/deviceinsight/kafkactl/v5/internal/util"
-	schemaregistry "github.com/landoop/schema-registry"
 )
 
 func CreateTopic(t *testing.T, topicPrefix string, flags ...string) string {
@@ -38,20 +39,16 @@ func CreateAvroTopic(t *testing.T, topicPrefix, keySchema, valueSchema string, f
 
 	topicName := CreateTopic(t, topicPrefix, flags...)
 
-	schemaRegistry, err := schemaregistry.NewClient("localhost:18081")
-
-	if err != nil {
-		t.Fatalf("failed to create schema registry client: %v", err)
-	}
+	schemaRegistry := srclient.CreateSchemaRegistryClient("localhost:18081")
 
 	if keySchema != "" {
-		if _, err := schemaRegistry.RegisterNewSchema(topicName+"-key", keySchema); err != nil {
+		if _, err := schemaRegistry.CreateSchema(topicName+"-key", keySchema, srclient.Avro); err != nil {
 			t.Fatalf("unable to register schema for key: %v", err)
 		}
 	}
 
 	if valueSchema != "" {
-		if _, err := schemaRegistry.RegisterNewSchema(topicName+"-value", valueSchema); err != nil {
+		if _, err := schemaRegistry.CreateSchema(topicName+"-value", valueSchema, srclient.Avro); err != nil {
 			t.Fatalf("unable to register schema for value: %v", err)
 		}
 	}
