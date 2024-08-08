@@ -13,6 +13,8 @@ type specType struct {
 	ImagePullSecrets   []imagePullSecretType `json:"imagePullSecrets,omitempty"`
 	ServiceAccountName *string               `json:"serviceAccountName,omitempty"`
 	NodeSelector       *map[string]string    `json:"nodeSelector,omitempty"`
+	Affinity           *map[string]any       `json:"affinity,omitempty"`
+	Tolerations        *[]map[string]any     `json:"tolerations,omitempty"`
 }
 
 type PodOverrideType struct {
@@ -29,7 +31,7 @@ func (kubectl *executor) createPodOverride() PodOverrideType {
 	var override PodOverrideType
 	override.APIVersion = "v1"
 
-	if kubectl.serviceAccount != "" || kubectl.imagePullSecret != "" || len(kubectl.nodeSelector) > 0 {
+	if kubectl.serviceAccount != "" || kubectl.imagePullSecret != "" || len(kubectl.nodeSelector) > 0 || len(kubectl.affinity) > 0 || len(kubectl.tolerations) > 0 {
 		override.Spec = &specType{}
 
 		if kubectl.serviceAccount != "" {
@@ -43,6 +45,14 @@ func (kubectl *executor) createPodOverride() PodOverrideType {
 
 		if len(kubectl.nodeSelector) > 0 {
 			override.Spec.NodeSelector = &kubectl.nodeSelector
+		}
+
+		if len(kubectl.affinity) > 0 {
+			override.Spec.Affinity = &kubectl.affinity
+		}
+
+		if len(kubectl.tolerations) > 0 {
+			override.Spec.Tolerations = &kubectl.tolerations
 		}
 	}
 

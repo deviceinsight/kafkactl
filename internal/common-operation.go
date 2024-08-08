@@ -3,6 +3,7 @@ package internal
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -74,6 +75,8 @@ type K8sConfig struct {
 	Labels          map[string]string
 	Annotations     map[string]string
 	NodeSelector    map[string]string
+	Affinity        map[string]any
+	Tolerations     []map[string]any
 }
 
 type ConsumerConfig struct {
@@ -174,9 +177,29 @@ func CreateClientContext() (ClientContext, error) {
 	context.Kubernetes.Labels = viper.GetStringMapString("contexts." + context.Name + ".kubernetes.labels")
 	context.Kubernetes.Annotations = viper.GetStringMapString("contexts." + context.Name + ".kubernetes.annotations")
 	context.Kubernetes.NodeSelector = viper.GetStringMapString("contexts." + context.Name + ".kubernetes.nodeSelector")
-
+	context.Kubernetes.Affinity = viper.GetStringMap("contexts." + context.Name + ".kubernetes.affinity")
+  
+  t, err := convertJsonToListMap("tolerations", viper.GetString("contexts."+context.Name+".kubernetes.tolerations"))
+  context.Kubernetes.Tolerations = t
+  if err != nil {
+    return context, err 
+  } 
 	return context, nil
 }
+
+func convertJsonToListMap(fieldName string, jsonStr string) ([]map[string]any, error){
+  var listMap []map[string]any
+  if (jsonStr == "") {
+    return listMap, nil
+  }
+  err := json.Unmarshal([]byte(jsonStr), &listMap)
+  if err != nil {
+    fmt.Errorf("Error parsing %s field", fieldName)
+    return listMap, err
+  }
+  return listMap, nil 
+} 
+
 
 func CreateClient(context *ClientContext) (sarama.Client, error) {
 	config, err := CreateClientConfig(context)

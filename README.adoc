@@ -144,6 +144,10 @@ contexts:
       # optional: nodeSelector to add to the pod
       nodeSelector:
         key: value
+      # optional: affinity to add to the pod
+      affnity: '{"nodeAffinity": "requiredDuringSchedulingIgnoredDuringExecution": {nodeSelectorTerms: [{"matchExpressions":[{"key":"<key>", "operator":"<operator>", "values":["<value>"]}]}]}}'
+      # optional: tolerations to add to the pod
+      tolerations: '[{"effect":"<effect>","key":"<key>","operator":"<operator>","value":"<value>"}]'
     # optional: clientID config (defaults to kafkactl-{username})
     clientID: my-client-id
 
