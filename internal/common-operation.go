@@ -44,6 +44,15 @@ type SaslConfig struct {
 	TokenProvider TokenProvider
 }
 
+type AvroConfig struct {
+	SchemaRegistry string
+	JSONCodec      avro.JSONCodec
+	RequestTimeout time.Duration
+	TLS            TLSConfig
+	Username       string
+	Password       string
+}
+
 type TLSConfig struct {
 	Enabled  bool
 	CA       string
@@ -78,21 +87,18 @@ type ProducerConfig struct {
 }
 
 type ClientContext struct {
-	Name               string
-	Brokers            []string
-	TLS                TLSConfig
-	Sasl               SaslConfig
-	Kubernetes         K8sConfig
-	RequestTimeout     time.Duration
-	ClientID           string
-	KafkaVersion       sarama.KafkaVersion
-	AvroSchemaRegistry string
-	AvroJSONCodec      avro.JSONCodec
-	AvroRequestTimeout time.Duration
-	AvroTLS            TLSConfig
-	Protobuf           protobuf.SearchContext
-	Producer           ProducerConfig
-	Consumer           ConsumerConfig
+	Name           string
+	Brokers        []string
+	TLS            TLSConfig
+	Sasl           SaslConfig
+	Kubernetes     K8sConfig
+	RequestTimeout time.Duration
+	ClientID       string
+	KafkaVersion   sarama.KafkaVersion
+	Avro           AvroConfig
+	Protobuf       protobuf.SearchContext
+	Producer       ProducerConfig
+	Consumer       ConsumerConfig
 }
 
 type Config struct {
@@ -131,14 +137,16 @@ func CreateClientContext() (ClientContext, error) {
 	} else {
 		return context, err
 	}
-	context.AvroSchemaRegistry = viper.GetString("contexts." + context.Name + ".avro.schemaRegistry")
-	context.AvroJSONCodec = avro.ParseJSONCodec(viper.GetString("contexts." + context.Name + ".avro.jsonCodec"))
-	context.AvroRequestTimeout = viper.GetDuration("contexts." + context.Name + ".avro.requestTimeout")
-	context.AvroTLS.Enabled = viper.GetBool("contexts." + context.Name + ".avro.tls.enabled")
-	context.AvroTLS.CA = viper.GetString("contexts." + context.Name + ".avro.tls.ca")
-	context.AvroTLS.Cert = viper.GetString("contexts." + context.Name + ".avro.tls.cert")
-	context.AvroTLS.CertKey = viper.GetString("contexts." + context.Name + ".avro.tls.certKey")
-	context.AvroTLS.Insecure = viper.GetBool("contexts." + context.Name + ".avro.tls.insecure")
+	context.Avro.SchemaRegistry = viper.GetString("contexts." + context.Name + ".avro.schemaRegistry")
+	context.Avro.JSONCodec = avro.ParseJSONCodec(viper.GetString("contexts." + context.Name + ".avro.jsonCodec"))
+	context.Avro.RequestTimeout = viper.GetDuration("contexts." + context.Name + ".avro.requestTimeout")
+	context.Avro.TLS.Enabled = viper.GetBool("contexts." + context.Name + ".avro.tls.enabled")
+	context.Avro.TLS.CA = viper.GetString("contexts." + context.Name + ".avro.tls.ca")
+	context.Avro.TLS.Cert = viper.GetString("contexts." + context.Name + ".avro.tls.cert")
+	context.Avro.TLS.CertKey = viper.GetString("contexts." + context.Name + ".avro.tls.certKey")
+	context.Avro.TLS.Insecure = viper.GetBool("contexts." + context.Name + ".avro.tls.insecure")
+	context.Avro.Username = viper.GetString("contexts." + context.Name + ".avro.username")
+	context.Avro.Password = viper.GetString("contexts." + context.Name + ".avro.password")
 	context.Protobuf.ProtosetFiles = viper.GetStringSlice("contexts." + context.Name + ".protobuf.protosetFiles")
 	context.Protobuf.ProtoImportPaths = viper.GetStringSlice("contexts." + context.Name + ".protobuf.importPaths")
 	context.Protobuf.ProtoFiles = viper.GetStringSlice("contexts." + context.Name + ".protobuf.protoFiles")
@@ -254,29 +262,36 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 
 func CreateAvroSchemaRegistryClient(context *ClientContext) (srclient.ISchemaRegistryClient, error) {
 
-	timeout := context.AvroRequestTimeout
+	timeout := context.Avro.RequestTimeout
 
-	if context.AvroRequestTimeout <= 0 {
+	if context.Avro.RequestTimeout <= 0 {
 		timeout = 5 * time.Second
 	}
 
-	client := &http.Client{Timeout: timeout}
+	httpClient := &http.Client{Timeout: timeout}
 
-	if context.AvroTLS.Enabled {
+	if context.Avro.TLS.Enabled {
 		output.Debugf("avro TLS is enabled.")
 
-		tlsConfig, err := setupTLSConfig(context.AvroTLS)
+		tlsConfig, err := setupTLSConfig(context.Avro.TLS)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to setup avro tls config")
 		}
 
-		client.Transport = &http.Transport{
+		httpClient.Transport = &http.Transport{
 			TLSClientConfig: tlsConfig,
 		}
 	}
 
-	baseURL := avro.FormatBaseURL(context.AvroSchemaRegistry)
-	return srclient.CreateSchemaRegistryClientWithOptions(baseURL, client, 16), nil
+	baseURL := avro.FormatBaseURL(context.Avro.SchemaRegistry)
+	client := srclient.CreateSchemaRegistryClientWithOptions(baseURL, httpClient, 16)
+
+	if context.Avro.Username != "" {
+		output.Debugf("avro BasicAuth is enabled.")
+		client.SetCredentials(context.Avro.Username, context.Avro.Password)
+	}
+
+	return client, nil
 }
 
 func GetClientID(context *ClientContext, defaultPrefix string) string {
