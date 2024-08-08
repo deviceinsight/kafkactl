@@ -18,6 +18,14 @@ const (
 	KafkaVersion             = "KAFKAVERSION"
 	AvroSchemaRegistry       = "AVRO_SCHEMAREGISTRY"
 	AvroJSONCodec            = "AVRO_JSONCODEC"
+	AvroRequestTimeout       = "AVRO_REQUESTTIMEOUT"
+	AvroTLSEnabled           = "AVRO_TLS_ENABLED"
+	AvroTLSCa                = "AVRO_TLS_CA"
+	AvroTLSCert              = "AVRO_TLS_CERT"
+	AvroTLSCertKey           = "AVRO_TLS_CERTKEY"
+	AvroTLSInsecure          = "AVRO_TLS_INSECURE"
+	AvroUsername             = "AVRO_USERNAME"
+	AvroPassword             = "AVRO_PASSWORD"
 	ProtobufProtoSetFiles    = "PROTOBUF_PROTOSETFILES"
 	ProtobufImportPaths      = "PROTOBUF_IMPORTPATHS"
 	ProtobufProtoFiles       = "PROTOBUF_PROTOFILES"
@@ -44,6 +52,14 @@ var EnvVariables = []string{
 	KafkaVersion,
 	AvroSchemaRegistry,
 	AvroJSONCodec,
+	AvroRequestTimeout,
+	AvroTLSEnabled,
+	AvroTLSCa,
+	AvroTLSCert,
+	AvroTLSCertKey,
+	AvroTLSInsecure,
+	AvroUsername,
+	AvroPassword,
 	ProtobufProtoSetFiles,
 	ProtobufImportPaths,
 	ProtobufProtoFiles,

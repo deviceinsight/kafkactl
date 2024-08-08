@@ -163,6 +163,10 @@ contexts:
       # optional: timeout for requests (defaults to 5s)
       requestTimeout: 10s
 
+      # optional: basic auth credentials
+      username: admin
+      password: admin
+
       # optional: tls config for avro
       tls:
         enabled: true
