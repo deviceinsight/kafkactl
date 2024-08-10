@@ -27,6 +27,7 @@ func newCreateTopicCmd() *cobra.Command {
 	cmdCreateTopic.Flags().Int32VarP(&flags.Partitions, "partitions", "p", 1, "number of partitions")
 	cmdCreateTopic.Flags().Int16VarP(&flags.ReplicationFactor, "replication-factor", "r", -1, "replication factor")
 	cmdCreateTopic.Flags().BoolVarP(&flags.ValidateOnly, "validate-only", "v", false, "validate only")
+	cmdCreateTopic.Flags().StringVarP(&flags.File, "file", "f", "", "file with topic description")
 	cmdCreateTopic.Flags().StringArrayVarP(&flags.Configs, "config", "c", flags.Configs, "configs in format `key=value`")
 
 	return cmdCreateTopic

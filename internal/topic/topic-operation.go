@@ -1,7 +1,10 @@
 package topic
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -53,7 +56,24 @@ type CreateTopicFlags struct {
 	Partitions        int32
 	ReplicationFactor int16
 	ValidateOnly      bool
+	File              string
 	Configs           []string
+}
+
+type CreateTopicConfig struct {
+	Name       string `json:"Name"`
+	Partitions []struct {
+		ID             int    `json:"ID"`
+		OldestOffset   int    `json:"oldestOffset"`
+		NewestOffset   int    `json:"newestOffset"`
+		Leader         string `json:"Leader"`
+		Replicas       []int  `json:"Replicas"`
+		InSyncReplicas []int  `json:"inSyncReplicas"`
+	} `json:"Partitions"`
+	Configs []struct {
+		Name  string `json:"Name"`
+		Value string `json:"Value"`
+	} `json:"Configs"`
 }
 
 type AlterTopicFlags struct {
@@ -109,6 +129,34 @@ func (operation *Operation) CreateTopics(topics []string, flags CreateTopicFlags
 	for _, config := range flags.Configs {
 		configParts := strings.Split(config, "=")
 		topicDetails.ConfigEntries[configParts[0]] = &configParts[1]
+	}
+
+	if flags.File != "" {
+		fileContent, err := os.ReadFile(flags.File)
+		if err != nil {
+			return errors.Wrap(err, "could not read topic description file")
+		}
+
+		createTopicConfig := CreateTopicConfig{}
+		ext := path.Ext(flags.File)
+		var unmarshalErr error
+		switch ext {
+		case ".yml", ".yaml":
+			unmarshalErr = yaml.Unmarshal(fileContent, &createTopicConfig)
+		case ".json":
+			unmarshalErr = json.Unmarshal(fileContent, &createTopicConfig)
+		default:
+			return errors.Wrapf(err, "unsupported file format '%s'", ext)
+		}
+		if unmarshalErr != nil {
+			return errors.Wrap(err, "could not umarshal config file")
+		}
+
+		topicDetails.NumPartitions = int32(len(createTopicConfig.Partitions))
+		topicDetails.ReplicationFactor = int16(len(createTopicConfig.Partitions[0].Replicas))
+		for _, v := range createTopicConfig.Configs {
+			topicDetails.ConfigEntries[v.Name] = &v.Value
+		}
 	}
 
 	for _, topic := range topics {
