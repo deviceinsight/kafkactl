@@ -384,6 +384,7 @@ See the plugin documentation for additional documentation and usage examples.
 
 Available plugins:
 
+* https://github.com/deviceinsight/kafkactl-plugins/blob/main/aws/README.adoc[aws plugin]
 * https://github.com/deviceinsight/kafkactl-plugins/blob/main/azure/README.adoc[azure plugin]
 
 == Examples
