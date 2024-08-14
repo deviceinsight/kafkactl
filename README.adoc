@@ -144,6 +144,25 @@ contexts:
       # optional: nodeSelector to add to the pod
       nodeSelector:
         key: value
+
+      # optional: affinity to add to the pod
+      affinity:
+        # note: other types of affinity also supported
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: "<key>"
+                    operator: "<operator>"
+                    values: [ "<value>" ]
+
+      # optional: tolerations to add to the pod
+      tolerations:
+        - key: "<key>"
+          operator: "<operator>"
+          value: "<value>"
+          effect: "<effect>"
+
     # optional: clientID config (defaults to kafkactl-{username})
     clientID: my-client-id
 
@@ -400,6 +419,7 @@ See the plugin documentation for additional documentation and usage examples.
 
 Available plugins:
 
+* https://github.com/deviceinsight/kafkactl-plugins/blob/main/aws/README.adoc[aws plugin]
 * https://github.com/deviceinsight/kafkactl-plugins/blob/main/azure/README.adoc[azure plugin]
 
 == Examples
@@ -623,7 +643,7 @@ Producing protobuf message converted from JSON:
 kafkactl produce my-topic --key='{"keyField":123}' --key-proto-type MyKeyMessage --value='{"valueField":"value"}' --value-proto-type MyValueMessage --proto-file kafkamsg.proto
 ----
 
-A more complex protobuf message converted from a multi-line JSON string can be produced using a file input with custom separators. 
+A more complex protobuf message converted from a multi-line JSON string can be produced using a file input with custom separators.
 
 For example, if you have the following protobuf definition (`complex.proto`):
 
@@ -795,6 +815,42 @@ or with protoset
 ----
 kafkactl consume <topic> --key-proto-type TopicKey --value-proto-type TopicValue --protoset-file kafkamsg.protoset
 ----
+
+=== Create topics
+
+The `create topic` allows you to create one or multiple topics.
+
+Basic usage:
+[,bash]
+----
+kafkactl create topic my-topic
+----
+
+The partition count can be specified with:
+[,bash]
+----
+kafkactl create topic my-topic --partitions 32
+----
+
+The replication factor can be specified with:
+[,bash]
+----
+kafkactl create topic my-topic --replication-factor 3
+----
+
+Configs can also be provided:
+[,bash]
+----
+kafkactl create topic my-topic --config retention.ms=3600000 --config=cleanup.policy=compact
+----
+
+The topic configuration can also be taken from an existing topic using the following:
+[,bash]
+----
+kafkactl describe topic my-topic -o json > my-topic-config.json
+kafkactl create topic my-topic-clone --file my-topic-config.json
+----
+
 
 === Altering topics
 

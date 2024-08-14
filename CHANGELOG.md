@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 5.3.0 - 2024-08-14
+### Added
+- [#203](https://github.com/deviceinsight/kafkactl/pull/203) Add pod override fields affinity and tolerations
+- [#210](https://github.com/deviceinsight/kafkactl/pull/210) Create topic from file
+
 ## 5.2.0 - 2024-08-08
 
 ## 5.1.0 - 2024-08-07

@@ -29,7 +29,7 @@ type ConsumerGroupOffsetOperation struct {
 
 func (operation *ConsumerGroupOffsetOperation) ResetConsumerGroupOffset(flags ResetConsumerGroupOffsetFlags, groupName string) error {
 
-	if (flags.Topic == nil || len(flags.Topic) == 0) && (!flags.AllTopics) {
+	if (len(flags.Topic) == 0) && (!flags.AllTopics) {
 		return errors.New("no topic specified")
 	}
 

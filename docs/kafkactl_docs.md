@@ -571,6 +571,7 @@ kafkactl create topic TOPIC [flags]
 
 ```
   -c, --config key=value           configs in format key=value
+  -f, --file string                file with topic description
   -h, --help                       help for topic
   -p, --partitions int32           number of partitions (default 1)
   -r, --replication-factor int16   replication factor (default -1)
