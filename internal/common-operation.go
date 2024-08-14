@@ -61,6 +61,13 @@ type TLSConfig struct {
 	Insecure bool
 }
 
+type K8sToleration struct {
+	Key      string `json:"key" yaml:"key"`
+	Operator string `json:"operator" yaml:"operator"`
+	Value    string `json:"value" yaml:"value"`
+	Effect   string `json:"effect" yaml:"effect"`
+}
+
 type K8sConfig struct {
 	Enabled         bool
 	Binary          string
@@ -74,6 +81,8 @@ type K8sConfig struct {
 	Labels          map[string]string
 	Annotations     map[string]string
 	NodeSelector    map[string]string
+	Affinity        map[string]any
+	Tolerations     []K8sToleration
 }
 
 type ConsumerConfig struct {
@@ -174,6 +183,11 @@ func CreateClientContext() (ClientContext, error) {
 	context.Kubernetes.Labels = viper.GetStringMapString("contexts." + context.Name + ".kubernetes.labels")
 	context.Kubernetes.Annotations = viper.GetStringMapString("contexts." + context.Name + ".kubernetes.annotations")
 	context.Kubernetes.NodeSelector = viper.GetStringMapString("contexts." + context.Name + ".kubernetes.nodeSelector")
+	context.Kubernetes.Affinity = viper.GetStringMap("contexts." + context.Name + ".kubernetes.affinity")
+
+	if err := viper.UnmarshalKey("contexts."+context.Name+".kubernetes.tolerations", &context.Kubernetes.Tolerations); err != nil {
+		return context, err
+	}
 
 	return context, nil
 }
