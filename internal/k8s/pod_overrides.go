@@ -1,5 +1,7 @@
 package k8s
 
+import "github.com/deviceinsight/kafkactl/v5/internal"
+
 type imagePullSecretType struct {
 	Name string `json:"name"`
 }
@@ -10,11 +12,11 @@ type metadataType struct {
 }
 
 type specType struct {
-	ImagePullSecrets   []imagePullSecretType `json:"imagePullSecrets,omitempty"`
-	ServiceAccountName *string               `json:"serviceAccountName,omitempty"`
-	NodeSelector       *map[string]string    `json:"nodeSelector,omitempty"`
-	Affinity           *map[string]any       `json:"affinity,omitempty"`
-	Tolerations        *[]map[string]any     `json:"tolerations,omitempty"`
+	ImagePullSecrets   []imagePullSecretType     `json:"imagePullSecrets,omitempty"`
+	ServiceAccountName *string                   `json:"serviceAccountName,omitempty"`
+	NodeSelector       *map[string]string        `json:"nodeSelector,omitempty"`
+	Affinity           *map[string]any           `json:"affinity,omitempty"`
+	Tolerations        *[]internal.K8sToleration `json:"tolerations,omitempty"`
 }
 
 type PodOverrideType struct {

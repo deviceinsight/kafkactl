@@ -38,7 +38,7 @@ type executor struct {
 	annotations     map[string]string
 	nodeSelector    map[string]string
 	affinity        map[string]any
-	tolerations     []map[string]any
+	tolerations     []internal.K8sToleration
 }
 
 const letterBytes = "abcdefghijklmnpqrstuvwxyz123456789"

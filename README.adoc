@@ -144,10 +144,25 @@ contexts:
       # optional: nodeSelector to add to the pod
       nodeSelector:
         key: value
+
       # optional: affinity to add to the pod
-      affnity: '{"nodeAffinity": "requiredDuringSchedulingIgnoredDuringExecution": {nodeSelectorTerms: [{"matchExpressions":[{"key":"<key>", "operator":"<operator>", "values":["<value>"]}]}]}}'
+      affinity:
+        # note: other types of affinity also supported
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: "<key>"
+                    operator: "<operator>"
+                    values: [ "<value>" ]
+
       # optional: tolerations to add to the pod
-      tolerations: '[{"effect":"<effect>","key":"<key>","operator":"<operator>","value":"<value>"}]'
+      tolerations:
+        - key: "<key>"
+          operator: "<operator>"
+          value: "<value>"
+          effect: "<effect>"
+
     # optional: clientID config (defaults to kafkactl-{username})
     clientID: my-client-id
 
@@ -628,7 +643,7 @@ Producing protobuf message converted from JSON:
 kafkactl produce my-topic --key='{"keyField":123}' --key-proto-type MyKeyMessage --value='{"valueField":"value"}' --value-proto-type MyValueMessage --proto-file kafkamsg.proto
 ----
 
-A more complex protobuf message converted from a multi-line JSON string can be produced using a file input with custom separators. 
+A more complex protobuf message converted from a multi-line JSON string can be produced using a file input with custom separators.
 
 For example, if you have the following protobuf definition (`complex.proto`):
 
