@@ -1,7 +1,10 @@
 package topic
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -53,6 +56,7 @@ type CreateTopicFlags struct {
 	Partitions        int32
 	ReplicationFactor int16
 	ValidateOnly      bool
+	File              string
 	Configs           []string
 }
 
@@ -109,6 +113,49 @@ func (operation *Operation) CreateTopics(topics []string, flags CreateTopicFlags
 	for _, config := range flags.Configs {
 		configParts := strings.Split(config, "=")
 		topicDetails.ConfigEntries[configParts[0]] = &configParts[1]
+	}
+
+	if flags.File != "" {
+		fileContent, err := os.ReadFile(flags.File)
+		if err != nil {
+			return errors.Wrap(err, "could not read topic description file")
+		}
+
+		fileTopicConfig := Topic{}
+		ext := path.Ext(flags.File)
+		var unmarshalErr error
+		switch ext {
+		case ".yml", ".yaml":
+			unmarshalErr = yaml.Unmarshal(fileContent, &fileTopicConfig)
+		case ".json":
+			unmarshalErr = json.Unmarshal(fileContent, &fileTopicConfig)
+		default:
+			return errors.Wrapf(err, "unsupported file format '%s'", ext)
+		}
+		if unmarshalErr != nil {
+			return errors.Wrap(err, "could not unmarshal config file")
+		}
+
+		numPartitions := int32(len(fileTopicConfig.Partitions))
+		if flags.Partitions == 1 {
+			topicDetails.NumPartitions = numPartitions
+		}
+
+		replicationFactors := map[int16]struct{}{}
+		for _, partition := range fileTopicConfig.Partitions {
+			replicationFactors[int16(len(partition.Replicas))] = struct{}{}
+		}
+		if flags.ReplicationFactor == -1 && len(replicationFactors) == 1 {
+			topicDetails.ReplicationFactor = int16(len(fileTopicConfig.Partitions[0].Replicas))
+		} else if flags.ReplicationFactor == -1 && len(replicationFactors) != 1 {
+			output.Warnf("replication factor from file ignored. partitions have different replicaCounts.")
+		}
+
+		for _, v := range fileTopicConfig.Configs {
+			if _, ok := topicDetails.ConfigEntries[v.Name]; !ok {
+				topicDetails.ConfigEntries[v.Name] = &v.Value
+			}
+		}
 	}
 
 	for _, topic := range topics {
