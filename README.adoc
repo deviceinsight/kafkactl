@@ -816,6 +816,42 @@ or with protoset
 kafkactl consume <topic> --key-proto-type TopicKey --value-proto-type TopicValue --protoset-file kafkamsg.protoset
 ----
 
+=== Create topics
+
+The `create topic` allows you to create one or multiple topics.
+
+Basic usage:
+[,bash]
+----
+kafkactl create topic my-topic
+----
+
+The partition count can be specified with:
+[,bash]
+----
+kafkactl create topic my-topic --partitions 32
+----
+
+The replication factor can be specified with:
+[,bash]
+----
+kafkactl create topic my-topic --replication-factor 3
+----
+
+Configs can also be provided:
+[,bash]
+----
+kafkactl create topic my-topic --config retention.ms=3600000 --config=cleanup.policy=compact
+----
+
+The topic configuration can also be taken from an existing topic using the following:
+[,bash]
+----
+kafkactl describe topic my-topic -o json > my-topic-config.json
+kafkactl create topic my-topic-clone --file my-topic-config.json
+----
+
+
 === Altering topics
 
 Using the `alter topic` command allows you to change the partition count, replication factor and topic-level
