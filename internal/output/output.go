@@ -64,6 +64,12 @@ func PrintObject(object interface{}, format string) error {
 			return errors.Wrap(err, "unable to format json")
 		}
 		_, _ = fmt.Fprintln(IoStreams.Out, string(jsonString))
+	} else if format == "json-raw" {
+		jsonString, err := json.Marshal(object)
+		if err != nil {
+			return errors.Wrap(err, "unable to format json")
+		}
+		_, _ = fmt.Fprintln(IoStreams.Out, string(jsonString))
 	} else if format != "none" {
 		return errors.Errorf("unknown format: %v", format)
 	}
