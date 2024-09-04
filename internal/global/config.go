@@ -2,6 +2,7 @@ package global
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -13,6 +14,7 @@ import (
 
 type Flags struct {
 	ConfigFile string
+	Context    string
 	Verbose    bool
 }
 
@@ -52,7 +54,20 @@ func GetFlags() Flags {
 }
 
 func GetCurrentContext() string {
-	return configInstance.currentContext()
+	var context = configInstance.Flags().Context
+	if context != "" {
+		contexts := viper.GetStringMap("contexts")
+
+		// check if it is an existing context
+		if _, ok := contexts[context]; !ok {
+			output.Fail(fmt.Errorf("not a valid context: %s", context))
+		}
+
+		return context
+	} else {
+		return configInstance.currentContext()
+	}
+
 }
 
 func SetCurrentContext(contextName string) error {
