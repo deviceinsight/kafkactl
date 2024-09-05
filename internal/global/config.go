@@ -64,10 +64,9 @@ func GetCurrentContext() string {
 		}
 
 		return context
-	} else {
-		return configInstance.currentContext()
 	}
 
+	return configInstance.currentContext()
 }
 
 func SetCurrentContext(contextName string) error {

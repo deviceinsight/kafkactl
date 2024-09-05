@@ -58,7 +58,7 @@ func NewKafkactlCommand(streams output.IOStreams) *cobra.Command {
 	rootCmd.PersistentFlags().BoolVarP(&globalFlags.Verbose, "verbose", "V", false, "verbose output")
 	rootCmd.PersistentFlags().StringVar(&globalFlags.Context, "context", "", "The name of the context to use")
 
-	err := rootCmd.RegisterFlagCompletionFunc("context", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := rootCmd.RegisterFlagCompletionFunc("context", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 		var contexts []string
 		for k := range viper.GetStringMap("contexts") {
 			contexts = append(contexts, k)
