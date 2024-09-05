@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- [#214](https://github.com/deviceinsight/kafkactl/pull/214) Add `--context` option to set command's context
+- [#215](https://github.com/deviceinsight/kafkactl/pull/215) Add `--context` option to set command's context
 
 ## 5.3.0 - 2024-08-14
 ### Added
