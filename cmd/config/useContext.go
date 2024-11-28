@@ -1,10 +1,7 @@
 package config
 
 import (
-	"sort"
-
 	"github.com/deviceinsight/kafkactl/v5/internal/global"
-
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/pkg/errors"
 
@@ -42,15 +39,7 @@ func newUseContextCmd() *cobra.Command {
 				return nil, cobra.ShellCompDirectiveNoFileComp
 			}
 
-			contextMap := viper.GetStringMap("contexts")
-			contexts := make([]string, 0, len(contextMap))
-			for k := range contextMap {
-				contexts = append(contexts, k)
-			}
-
-			sort.Strings(contexts)
-
-			return contexts, cobra.ShellCompDirectiveNoFileComp
+			return global.ListAvailableContexts(), cobra.ShellCompDirectiveNoFileComp
 		},
 	}
 

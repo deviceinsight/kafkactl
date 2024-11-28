@@ -3,7 +3,10 @@ package cmd_test
 import (
 	"fmt"
 	"os"
+	"strings"
 	"testing"
+
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/global"
 
@@ -124,4 +127,54 @@ func TestEnvironmentVariableLoadingAliases(t *testing.T) {
 	testutil.AssertEquals(t, "hash", viper.GetString("contexts.default.producer.partitioner"))
 	testutil.AssertEquals(t, "WaitForAll", viper.GetString("contexts.default.producer.requiredAcks"))
 	testutil.AssertEquals(t, "1234", viper.GetString("contexts.default.producer.maxMessageBytes"))
+}
+
+func TestContextFlag(t *testing.T) {
+
+	testutil.StartUnitTest(t)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("version", "--context", "sasl-user"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "sasl-user", global.GetCurrentContext())
+}
+
+func TestContextFlagProvidesUnknownContext(t *testing.T) {
+
+	testutil.StartUnitTest(t)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("version", "--context", "unknown-context"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	var failError error
+
+	output.Fail = func(err error) {
+		failError = err
+	}
+
+	global.GetCurrentContext()
+
+	testutil.AssertErrorContains(t, "not a valid context: unknown-context", failError)
+}
+
+func TestContextFlagAutoCompletion(t *testing.T) {
+
+	testutil.StartUnitTest(t)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	kafkaCtl.Verbose = false
+
+	if _, err := kafkaCtl.Execute("__complete", "--context", ""); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	outputLines := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+
+	testutil.AssertArraysEquals(t, []string{"default", "k8s-mock", "no-avro", "sasl-admin", "sasl-user"}, outputLines[:len(outputLines)-1])
 }
