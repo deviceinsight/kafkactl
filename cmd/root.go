@@ -54,6 +54,14 @@ func NewKafkactlCommand(streams output.IOStreams) *cobra.Command {
 	rootCmd.PersistentFlags().StringVarP(&globalFlags.ConfigFile, "config-file", "C", "",
 		fmt.Sprintf("config file. default locations: %v", globalConfig.DefaultPaths()))
 	rootCmd.PersistentFlags().BoolVarP(&globalFlags.Verbose, "verbose", "V", false, "verbose output")
+	rootCmd.PersistentFlags().StringVar(&globalFlags.Context, "context", "", "The name of the context to use")
+
+	err := rootCmd.RegisterFlagCompletionFunc("context", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return global.ListAvailableContexts(), cobra.ShellCompDirectiveNoFileComp
+	})
+	if err != nil {
+		panic(err)
+	}
 
 	k8s.KafkaCtlVersion = Version
 

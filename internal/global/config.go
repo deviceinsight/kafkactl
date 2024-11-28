@@ -2,9 +2,11 @@ package global
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
@@ -13,6 +15,7 @@ import (
 
 type Flags struct {
 	ConfigFile string
+	Context    string
 	Verbose    bool
 }
 
@@ -51,7 +54,30 @@ func GetFlags() Flags {
 	return configInstance.flags
 }
 
+func ListAvailableContexts() []string {
+
+	var contexts []string
+	for k := range viper.GetStringMap("contexts") {
+		contexts = append(contexts, k)
+	}
+
+	sort.Strings(contexts)
+	return contexts
+}
+
 func GetCurrentContext() string {
+	var context = configInstance.Flags().Context
+	if context != "" {
+		contexts := viper.GetStringMap("contexts")
+
+		// check if it is an existing context
+		if _, ok := contexts[context]; !ok {
+			output.Fail(fmt.Errorf("not a valid context: %s", context))
+		}
+
+		return context
+	}
+
 	return configInstance.currentContext()
 }
 

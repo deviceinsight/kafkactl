@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 5.4.0 - 2024-11-28
+### Added
+- [#215](https://github.com/deviceinsight/kafkactl/pull/215) Add `--context` option to set command's context
+
 ## 5.3.0 - 2024-08-14
 ### Added
 - [#203](https://github.com/deviceinsight/kafkactl/pull/203) Add pod override fields affinity and tolerations

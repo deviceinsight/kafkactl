@@ -10,6 +10,7 @@ A command-line interface the simplifies interaction with Kafka.
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -h, --help                 help for kafkactl
   -V, --verbose              verbose output
 ```
@@ -45,6 +46,7 @@ alter topics, partitions
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -75,6 +77,7 @@ kafkactl alter partition TOPIC PARTITION [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -105,6 +108,7 @@ kafkactl alter topic TOPIC [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -131,6 +135,7 @@ kafkactl attach [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -153,6 +158,7 @@ clone topics, consumerGroups
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -181,6 +187,7 @@ kafkactl clone consumer-group SOURCE_GROUP TARGET_GROUP [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -207,6 +214,7 @@ kafkactl clone topic SOURCE_TOPIC TARGET_TOPIC [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -262,6 +270,7 @@ kafkactl completion [bash|zsh|fish|powershell]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -284,6 +293,7 @@ show and edit configurations
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -318,6 +328,7 @@ kafkactl config current-context [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -349,6 +360,7 @@ kafkactl config get-contexts [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -379,6 +391,7 @@ kafkactl config use-context [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -409,6 +422,7 @@ kafkactl config view [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -459,6 +473,7 @@ kafkactl consume TOPIC [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -481,6 +496,7 @@ create topics, consumerGroups, acls
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -520,6 +536,7 @@ kafkactl create access-control-list [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -551,6 +568,7 @@ kafkactl create consumer-group GROUP [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -582,6 +600,7 @@ kafkactl create topic TOPIC [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -604,6 +623,7 @@ delete topics, consumerGroups, consumer-group-offset, acls, records
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -643,6 +663,7 @@ kafkactl delete access-control-list [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -671,6 +692,7 @@ kafkactl delete consumer-group-offset CONSUMER-GROUP --topic=TOPIC --partition=P
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -697,6 +719,7 @@ kafkactl delete consumer-group CONSUMER-GROUP [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -724,6 +747,7 @@ kafkactl delete records TOPIC [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -750,6 +774,7 @@ kafkactl delete topic TOPIC [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -772,6 +797,7 @@ describe topics, consumerGroups, brokers
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -802,6 +828,7 @@ kafkactl describe broker ID [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -833,6 +860,7 @@ kafkactl describe consumer-group GROUP [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -862,6 +890,7 @@ kafkactl describe topic TOPIC [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -884,6 +913,7 @@ get info about topics, consumerGroups, acls, brokers
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -922,6 +952,7 @@ kafkactl get access-control-list [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -949,6 +980,7 @@ kafkactl get brokers [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -977,6 +1009,7 @@ kafkactl get consumer-groups [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -1004,6 +1037,7 @@ kafkactl get topics [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -1053,6 +1087,7 @@ kafkactl produce TOPIC [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -1075,6 +1110,7 @@ reset consumerGroupsOffset
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -1111,6 +1147,7 @@ kafkactl reset consumer-group-offset GROUP [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
@@ -1137,6 +1174,7 @@ kafkactl version [flags]
 
 ```
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl $SNAP_REAL_HOME/.config/kafkactl $SNAP_DATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
   -V, --verbose              verbose output
 ```
 
