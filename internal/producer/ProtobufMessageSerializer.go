@@ -71,6 +71,10 @@ func encodeProtobuf(data []byte, messageDescriptor *desc.MessageDescriptor, enco
 	}
 
 	message := dynamic.NewMessage(messageDescriptor)
+
+	// can probably be replaced by:
+	// umar := protojson.UnmarshalOptions{DiscardUnknown: true}
+
 	if err = message.UnmarshalJSONPB(&jsonpb.Unmarshaler{AllowUnknownFields: true}, data); err != nil {
 		return nil, errors.Wrap(err, "invalid json")
 	}
