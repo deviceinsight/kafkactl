@@ -41,5 +41,5 @@ jobs:
           # create personal access token: https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
           AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
-          # snapcraft export-login --snaps kafkactl --channels edge,beta,candidate,stable -
+          # docker run --rm -it snapcore/snapcraft snapcraft export-login --snaps kafkactl --channels edge,beta,candidate,stable -
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_TOKEN }}
