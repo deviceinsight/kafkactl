@@ -3,8 +3,6 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/viper"
-
 	"github.com/deviceinsight/kafkactl/v5/internal/global"
 
 	"github.com/deviceinsight/kafkactl/v5/cmd/alter"
@@ -59,11 +57,7 @@ func NewKafkactlCommand(streams output.IOStreams) *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&globalFlags.Context, "context", "", "The name of the context to use")
 
 	err := rootCmd.RegisterFlagCompletionFunc("context", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		var contexts []string
-		for k := range viper.GetStringMap("contexts") {
-			contexts = append(contexts, k)
-		}
-		return contexts, cobra.ShellCompDirectiveDefault
+		return global.ListAvailableContexts(), cobra.ShellCompDirectiveNoFileComp
 	})
 	if err != nil {
 		panic(err)

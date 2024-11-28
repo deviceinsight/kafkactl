@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
@@ -51,6 +52,17 @@ func NewConfig() Config {
 
 func GetFlags() Flags {
 	return configInstance.flags
+}
+
+func ListAvailableContexts() []string {
+
+	var contexts []string
+	for k := range viper.GetStringMap("contexts") {
+		contexts = append(contexts, k)
+	}
+
+	sort.Strings(contexts)
+	return contexts
 }
 
 func GetCurrentContext() string {
