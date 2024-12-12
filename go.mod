@@ -17,8 +17,8 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/xdg-go/scram v1.1.2
 	go.uber.org/ratelimit v0.3.1
-	golang.org/x/sync v0.9.0
-	golang.org/x/term v0.26.0
+	golang.org/x/sync v0.10.0
+	golang.org/x/term v0.27.0
 	google.golang.org/protobuf v1.35.2
 	gopkg.in/errgo.v2 v2.1.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -68,11 +68,11 @@ require (
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.29.0 // indirect
+	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f // indirect
 	golang.org/x/net v0.31.0 // indirect
-	golang.org/x/sys v0.27.0 // indirect
-	golang.org/x/text v0.20.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241118233622-e639e219e697 // indirect
 	google.golang.org/grpc v1.68.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
