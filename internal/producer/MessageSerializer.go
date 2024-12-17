@@ -63,27 +63,19 @@ func decodeBytes(data []byte, encoding string) ([]byte, error) {
 	switch encoding {
 	case HEX:
 		out = make([]byte, hex.DecodedLen(len(data)))
-		if _, err := hex.Decode(out, data); err != nil {
+		bytelen, err := hex.Decode(out, data)
+		if err != nil {
 			return nil, err
 		}
-		return out, nil
+		return out[:bytelen], nil
 	case BASE64:
 		out = make([]byte, base64.StdEncoding.DecodedLen(len(data)))
-		if _, err := base64.StdEncoding.Decode(out, data); err != nil {
+		bytelen, err := base64.StdEncoding.Decode(out, data)
+		if err != nil {
 			return nil, err
 		}
-		return out[:clen(out)], nil
+		return out[:bytelen], nil
 	default:
 		return data, nil
 	}
-}
-
-// https://stackoverflow.com/a/27834860/12143351
-func clen(n []byte) int {
-	for i := 0; i < len(n); i++ {
-		if n[i] == 0 {
-			return i
-		}
-	}
-	return len(n)
 }
