@@ -456,6 +456,30 @@ func TestProduceWithJSONFileIntegration(t *testing.T) {
 	testutil.AssertEquals(t, "1#a\n2#b\n3#c", kafkaCtl.GetStdOut())
 }
 
+func TestProduceWithJSONFileBase64ValuesIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+	topic := testutil.CreateTopic(t, "produce-topic-json-base64-values")
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	dataFilePath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata")
+
+	if _, err := kafkaCtl.Execute("produce", topic,
+		"--file", filepath.Join(dataFilePath, "msg-base64.json"),
+		"--value-encoding", "base64",
+		"--input-format", "json"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "3 messages produced", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topic, "--from-beginning", "--print-keys", "--value-encoding", "hex", "--exit"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "1#000000000001\n2#68656c6c6f\n3#6b61666b61", kafkaCtl.GetStdOut())
+}
+
 func TestProduceProtoFileWithOnlyKeyEncodedIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
