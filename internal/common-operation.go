@@ -4,14 +4,11 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"net/http"
 	"os"
 	"os/user"
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/riferrei/srclient"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/auth"
 
@@ -272,40 +269,6 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 	}
 
 	return config, nil
-}
-
-func CreateAvroSchemaRegistryClient(context *ClientContext) (srclient.ISchemaRegistryClient, error) {
-
-	timeout := context.Avro.RequestTimeout
-
-	if context.Avro.RequestTimeout <= 0 {
-		timeout = 5 * time.Second
-	}
-
-	httpClient := &http.Client{Timeout: timeout}
-
-	if context.Avro.TLS.Enabled {
-		output.Debugf("avro TLS is enabled.")
-
-		tlsConfig, err := setupTLSConfig(context.Avro.TLS)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to setup avro tls config")
-		}
-
-		httpClient.Transport = &http.Transport{
-			TLSClientConfig: tlsConfig,
-		}
-	}
-
-	baseURL := avro.FormatBaseURL(context.Avro.SchemaRegistry)
-	client := srclient.CreateSchemaRegistryClientWithOptions(baseURL, httpClient, 16)
-
-	if context.Avro.Username != "" {
-		output.Debugf("avro BasicAuth is enabled.")
-		client.SetCredentials(context.Avro.Username, context.Avro.Password)
-	}
-
-	return client, nil
 }
 
 func GetClientID(context *ClientContext, defaultPrefix string) string {

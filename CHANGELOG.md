@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- [#234](https://github.com/deviceinsight/kafkactl/pull/234) caching to arvo client when producing messages
 
 ## 5.4.0 - 2024-11-28
 ### Added

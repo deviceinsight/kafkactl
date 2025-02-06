@@ -9,12 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/riferrei/srclient"
-
 	"github.com/Rican7/retry"
 	"github.com/Rican7/retry/backoff"
 	"github.com/Rican7/retry/strategy"
 	"github.com/deviceinsight/kafkactl/v5/internal/util"
+	"github.com/riferrei/srclient"
 )
 
 func CreateTopic(t *testing.T, topicPrefix string, flags ...string) string {

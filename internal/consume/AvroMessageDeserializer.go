@@ -9,6 +9,7 @@ import (
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
 
 	"github.com/IBM/sarama"
+	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/deviceinsight/kafkactl/v5/internal/util"
 	"github.com/linkedin/goavro/v2"
@@ -18,7 +19,7 @@ import (
 type AvroMessageDeserializer struct {
 	topic     string
 	jsonCodec avro.JSONCodec
-	registry  *CachingSchemaRegistry
+	registry  *internal.CachingSchemaRegistry
 }
 
 type avroMessage struct {
