@@ -3,6 +3,7 @@ package producer
 import (
 	"encoding/binary"
 
+	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
 	"github.com/riferrei/srclient"
 
@@ -15,14 +16,14 @@ import (
 type AvroMessageSerializer struct {
 	topic     string
 	jsonCodec avro.JSONCodec
-	client    srclient.ISchemaRegistryClient
+	client    *internal.CachingSchemaRegistry
 }
 
 func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int, avroSchemaType string) ([]byte, error) {
 
 	subject := serializer.topic + "-" + avroSchemaType
 
-	subjects, err := serializer.client.GetSubjects()
+	subjects, err := serializer.client.Subjects()
 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list available avro schemas")
@@ -80,7 +81,7 @@ func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int
 
 func (serializer AvroMessageSerializer) CanSerialize(topic string) (bool, error) {
 
-	subjects, err := serializer.client.GetSubjects()
+	subjects, err := serializer.client.Subjects()
 
 	if err != nil {
 		return false, errors.Wrap(err, "failed to list available avro schemas")
