@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- [#231](https://github.com/deviceinsight/kafkactl/issues/231) Remove support for installing kafkactl via snap.
+
 ## 5.4.0 - 2024-11-28
 ### Added
 - [#215](https://github.com/deviceinsight/kafkactl/pull/215) Add `--context` option to set command's context

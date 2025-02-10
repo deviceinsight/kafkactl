@@ -28,8 +28,6 @@ var configPaths = []string{
 	"$HOME/.config/kafkactl",
 	"$HOME/.kafkactl",
 	"$APPDATA/kafkactl",
-	"$SNAP_REAL_HOME/.config/kafkactl",
-	"$SNAP_DATA/kafkactl",
 	"/etc/kafkactl",
 }
 
@@ -123,10 +121,6 @@ func (c *config) Init() {
 	case os.Getenv("KAFKA_CTL_CONFIG") != "":
 		envConfig := os.Getenv("KAFKA_CTL_CONFIG")
 		configFile = &envConfig
-	}
-
-	if c.flags.Verbose && os.Getenv("SNAP_NAME") != "" {
-		output.Debugf("Running snap version %s on %s", os.Getenv("SNAP_VERSION"), os.Getenv("SNAP_ARCH"))
 	}
 
 	mapEnvVariables()
@@ -272,14 +266,6 @@ func generateDefaultConfig() error {
 	if os.Getenv("KAFKA_CTL_CONFIG") != "" {
 		// use config file provided via env
 		cfgFile = os.Getenv("KAFKA_CTL_CONFIG")
-	} else if os.Getenv("SNAP_REAL_HOME") != "" {
-		// use different configFile when running in snap
-		for _, configPath := range configPaths {
-			if strings.Contains(configPath, "$SNAP_REAL_HOME") {
-				cfgFile = filepath.Join(os.ExpandEnv(configPath), "config.yml")
-				break
-			}
-		}
 	} else if runtime.GOOS == "windows" {
 		// use different configFile when running on windows
 		for _, configPath := range configPaths {
