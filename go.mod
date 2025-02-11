@@ -1,6 +1,6 @@
 module github.com/deviceinsight/kafkactl/v5
 
-go 1.23.3
+go 1.23.6
 
 require (
 	github.com/IBM/sarama v1.45.0
