@@ -86,7 +86,7 @@ func getKubectlVersion(kubectlBinary string, runner Runner) Version {
 		output.Fail(err)
 	}
 
-	minor, err := strconv.Atoi(jsonOutput.ClientVersion.Minor)
+	minor, err := strconv.Atoi(strings.ReplaceAll(jsonOutput.ClientVersion.Minor, "+", ""))
 	if err != nil {
 		output.Fail(err)
 	}
