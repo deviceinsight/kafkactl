@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -138,6 +139,13 @@ func (c *config) Init() {
 		if err = c.loadConfig(viper.GetViper(), configFile); err != nil {
 			output.Failf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err.Error())
 		}
+	}
+
+	// switch working dir
+	workingDir := path.Dir(viper.ConfigFileUsed())
+	output.Debugf("Using working dir: %s", workingDir)
+	if err := os.Chdir(workingDir); err != nil {
+		output.Failf("Error changing working directory to %s: %v", workingDir, err)
 	}
 
 	if configFile != nil && viper.GetString("current-context") == "" {

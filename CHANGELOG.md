@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [#234](https://github.com/deviceinsight/kafkactl/pull/234) caching to arvo client when producing messages
+- [#236](https://github.com/deviceinsight/kafkactl/issues/236) set working directory to path with first loaded config file.
 
 ### Removed
 - [#231](https://github.com/deviceinsight/kafkactl/issues/231) Remove support for installing kafkactl via snap.
