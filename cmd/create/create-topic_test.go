@@ -31,6 +31,7 @@ func TestCreateTopicWithoutFlagsIntegration(t *testing.T) {
 
 	expected := `
 name: %s
+replicationFactor: 1
 partitions:
 - id: 0
   oldestOffset: 0
@@ -62,6 +63,7 @@ func TestCreateTopicWithTwoPartitionsIntegration(t *testing.T) {
 
 	expected := `
 name: %s
+replicationFactor: 1
 partitions:
 - id: 0
   oldestOffset: 0
@@ -99,6 +101,7 @@ func TestCreateTopicWithReplicationFactorIntegration(t *testing.T) {
 
 	expected := `
 name: %s
+replicationFactor: 3
 partitions:
 - id: 0
   oldestOffset: 0
@@ -171,6 +174,7 @@ configs:
 
 	expected := `
 name: %s
+replicationFactor: 1
 partitions:
 - id: 0
   oldestOffset: 0

@@ -21,7 +21,7 @@ import (
 
 type Topic struct {
 	Name              string
-	ReplicationFactor int
+	ReplicationFactor int               `json:"replicationFactor" yaml:"replicationFactor"`
 	Partitions        []Partition       `json:",omitempty" yaml:",omitempty"`
 	Configs           []internal.Config `json:",omitempty" yaml:",omitempty"`
 }
