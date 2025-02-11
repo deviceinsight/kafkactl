@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -28,8 +29,6 @@ var configPaths = []string{
 	"$HOME/.config/kafkactl",
 	"$HOME/.kafkactl",
 	"$APPDATA/kafkactl",
-	"$SNAP_REAL_HOME/.config/kafkactl",
-	"$SNAP_DATA/kafkactl",
 	"/etc/kafkactl",
 }
 
@@ -125,10 +124,6 @@ func (c *config) Init() {
 		configFile = &envConfig
 	}
 
-	if c.flags.Verbose && os.Getenv("SNAP_NAME") != "" {
-		output.Debugf("Running snap version %s on %s", os.Getenv("SNAP_VERSION"), os.Getenv("SNAP_ARCH"))
-	}
-
 	mapEnvVariables()
 
 	if err := c.loadConfig(viper.GetViper(), configFile); err != nil {
@@ -144,6 +139,13 @@ func (c *config) Init() {
 		if err = c.loadConfig(viper.GetViper(), configFile); err != nil {
 			output.Failf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err.Error())
 		}
+	}
+
+	// switch working dir
+	workingDir := path.Dir(viper.ConfigFileUsed())
+	output.Debugf("Using working dir: %s", workingDir)
+	if err := os.Chdir(workingDir); err != nil {
+		output.Failf("Error changing working directory to %s: %v", workingDir, err)
 	}
 
 	if configFile != nil && viper.GetString("current-context") == "" {
@@ -272,14 +274,6 @@ func generateDefaultConfig() error {
 	if os.Getenv("KAFKA_CTL_CONFIG") != "" {
 		// use config file provided via env
 		cfgFile = os.Getenv("KAFKA_CTL_CONFIG")
-	} else if os.Getenv("SNAP_REAL_HOME") != "" {
-		// use different configFile when running in snap
-		for _, configPath := range configPaths {
-			if strings.Contains(configPath, "$SNAP_REAL_HOME") {
-				cfgFile = filepath.Join(os.ExpandEnv(configPath), "config.yml")
-				break
-			}
-		}
 	} else if runtime.GOOS == "windows" {
 		// use different configFile when running on windows
 		for _, configPath := range configPaths {

@@ -141,6 +141,29 @@ func TestParseKubectlVersion(t *testing.T) {
 				GitVersion: "v1.27.1",
 			},
 		},
+		{
+			description: "parse_gcloud_kubectl_output_succeeds",
+			kubectlOutput: `
+				{
+				  "ClientVersion": {
+					"major": "1",
+					"minor": "30+",
+					"gitVersion": "v1.30.6-dispatcher",
+					"gitCommit": "cab8b7130edcfb9d721071b8d9d606f6b4abe8d6",
+					"gitTreeState": "clean",
+					"buildDate": "2024-11-07T01:32:04Z",
+					"goVersion": "go1.22.8",
+					"compiler": "gc",
+					"platform": "darwin/arm64"
+				  },
+				  "kustomizeVersion": "v5.0.4-0.20230601165947-6ce0bf390ce3"
+				}`,
+			wantVersion: k8s.Version{
+				Major:      1,
+				Minor:      30,
+				GitVersion: "v1.30.6-dispatcher",
+			},
+		},
 	} {
 		t.Run(test.description, func(t *testing.T) {
 

@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 5.5.0 - 2025-02-11
+### Added
+- [#234](https://github.com/deviceinsight/kafkactl/pull/234) caching to arvo client when producing messages
+- [#236](https://github.com/deviceinsight/kafkactl/issues/236) set working directory to path with first loaded config file.
+- [#233](https://github.com/deviceinsight/kafkactl/issues/233) replication factor is now printed for most topic output formats.
+
+### Removed
+- [#231](https://github.com/deviceinsight/kafkactl/issues/231) Remove support for installing kafkactl via snap.
+
+### Fixed
+- [#227](https://github.com/deviceinsight/kafkactl/issues/227) Incorrect handling of Base64-encoded values when producing from JSON
+- [#228](https://github.com/deviceinsight/kafkactl/issues/228) Fix parsing version of gcloud kubectl.
+- [#217](https://github.com/deviceinsight/kafkactl/issues/217) Allow reset of consumer-group in dead state
+
 ## 5.4.0 - 2024-11-28
 ### Added
 - [#215](https://github.com/deviceinsight/kafkactl/pull/215) Add `--context` option to set command's context

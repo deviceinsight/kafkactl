@@ -20,9 +20,10 @@ import (
 )
 
 type Topic struct {
-	Name       string
-	Partitions []Partition       `json:",omitempty" yaml:",omitempty"`
-	Configs    []internal.Config `json:",omitempty" yaml:",omitempty"`
+	Name              string
+	ReplicationFactor int               `json:"replicationFactor" yaml:"replicationFactor"`
+	Partitions        []Partition       `json:",omitempty" yaml:",omitempty"`
+	Configs           []internal.Config `json:",omitempty" yaml:",omitempty"`
 }
 
 type Partition struct {
@@ -694,7 +695,7 @@ func (operation *Operation) GetTopics(flags GetTopicsFlags) error {
 		return output.PrintObject(topicList, flags.OutputFormat)
 	} else if flags.OutputFormat == "wide" {
 		for _, t := range topicList {
-			if err := tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions)), strconv.Itoa(replicationFactor(t)), getConfigString(t.Configs)); err != nil {
+			if err := tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions)), strconv.Itoa(t.ReplicationFactor), getConfigString(t.Configs)); err != nil {
 				return err
 			}
 		}
@@ -706,7 +707,7 @@ func (operation *Operation) GetTopics(flags GetTopicsFlags) error {
 		}
 	} else {
 		for _, t := range topicList {
-			if err := tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions)), strconv.Itoa(replicationFactor(t))); err != nil {
+			if err := tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions)), strconv.Itoa(t.ReplicationFactor)); err != nil {
 				return err
 			}
 		}
@@ -828,6 +829,8 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 			return top, err
 		}
 	}
+
+	top.ReplicationFactor = replicationFactor(top)
 
 	return top, nil
 }

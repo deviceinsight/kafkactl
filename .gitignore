@@ -18,9 +18,6 @@ kafkactl.exe
 .kafkactl.yml
 kafkactl.yml
 
-### Snap
-snap.login
-
 ### logs
 *.log
 /kafkactl-completion.bash

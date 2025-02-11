@@ -12,16 +12,15 @@ import (
 )
 
 type ResetConsumerGroupOffsetFlags struct {
-	Topic             []string
-	AllTopics         bool
-	Partition         int32
-	Offset            int64
-	OldestOffset      bool
-	NewestOffset      bool
-	Execute           bool
-	OutputFormat      string
-	allowedGroupState string
-	ToDatetime        string
+	Topic        []string
+	AllTopics    bool
+	Partition    int32
+	Offset       int64
+	OldestOffset bool
+	NewestOffset bool
+	Execute      bool
+	OutputFormat string
+	ToDatetime   string
 }
 
 type ConsumerGroupOffsetOperation struct {
@@ -91,20 +90,14 @@ func (operation *ConsumerGroupOffsetOperation) ResetConsumerGroupOffset(flags Re
 
 	output.Debugf("reset consumer-group offset for topics: %v", topics)
 
-	if flags.allowedGroupState == "" {
-		// a reset is only allowed if group is empty (no one in the group)
-		// for creation of the group state "Dead" is allowed
-		flags.allowedGroupState = "Empty"
-	}
-
 	if flags.Execute {
 		if descriptions, err = admin.DescribeConsumerGroups([]string{groupName}); err != nil {
 			return errors.Wrap(err, "failed to describe consumer group")
 		}
 
 		for _, description := range descriptions {
-			// https://stackoverflow.com/a/61745884/1115279
-			if description.State != flags.allowedGroupState {
+			// https://stackoverflow.com/a/61745884
+			if description.State != "Empty" && description.State != "Dead" {
 				return errors.Errorf("cannot reset offsets on consumer group %s. There are consumers assigned (state: %s)", groupName, description.State)
 			}
 		}
@@ -155,7 +148,6 @@ func (operation *ConsumerGroupOffsetOperation) ResetConsumerGroupOffset(flags Re
 
 func (operation *ConsumerGroupOffsetOperation) CreateConsumerGroup(flags ResetConsumerGroupOffsetFlags, group string) error {
 
-	flags.allowedGroupState = "Dead"
 	flags.Execute = true
 	flags.OutputFormat = "none"
 

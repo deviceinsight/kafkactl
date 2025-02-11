@@ -80,7 +80,7 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 	serializers := MessageSerializerChain{topic: topic}
 
 	if clientContext.Avro.SchemaRegistry != "" {
-		client, err := internal.CreateAvroSchemaRegistryClient(&clientContext)
+		client, err := internal.CreateCachingSchemaRegistry(&clientContext)
 		if err != nil {
 			return err
 		}
