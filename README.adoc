@@ -50,13 +50,6 @@ Download the .deb or .rpm from the https://github.com/deviceinsight/kafkactl/rel
 
 There's a kafkactl https://aur.archlinux.org/packages/kafkactl/[AUR package] available for Arch. Install it with your AUR helper of choice (e.g. https://github.com/Jguer/yay[yay]):
 
-*snap*:
-
-[,bash]
-----
-snap install kafkactl
-----
-
 [,bash]
 ----
 yay -S kafkactl
@@ -234,8 +227,6 @@ The config file location is resolved by
  ** `$HOME/.config/kafkactl/config.yml`
  ** `$HOME/.kafkactl/config.yml`
  ** `$APPDATA/kafkactl/config.yml`
- ** `$SNAP_REAL_HOME/.kafkactl/config.yml`
- ** `$SNAP_DATA/kafkactl/config.yml`
  ** `/etc/kafkactl/config.yml`
 
 [#_project_config_files]
@@ -266,8 +257,6 @@ according to <<_config_file_read_order, the config file read order>>.
 === Auto completion
 
 ==== bash
-
-*NOTE:* if you installed via snap, bash completion should work automatically.
 
 ----
 source <(kafkactl completion bash)
@@ -384,10 +373,6 @@ ____
 :bulb: The first option takes a bit longer to start up since an Ubuntu based docker image is used in order to have
 a bash available. The second option uses a docker image build from scratch and should therefore be quicker.
 Which option is more suitable, will depend on your use-case.
-____
-
-____
-:warning: currently _kafkactl_ must *NOT* be installed via _snap_ in order for the kubernetes feature to work. The snap runs in a sandbox and is therefore unable to access the `kubectl` binary.
 ____
 
 == Configuration via environment variables

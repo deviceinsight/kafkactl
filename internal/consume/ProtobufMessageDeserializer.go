@@ -25,7 +25,7 @@ func CreateProtobufMessageDeserializer(context protobuf.SearchContext, keyType, 
 	}
 
 	keyDescriptor := protobuf.ResolveMessageType(context, keyType)
-	if valueDescriptor == nil && keyType != "" {
+	if keyType != "" {
 		return nil, errors.Errorf("key message type %q not found in provided files", valueType)
 	}
 
