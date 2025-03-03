@@ -31,7 +31,7 @@ var configFile = "it-config.yml"
 
 var testIoStreams output.IOStreams
 
-func getRootDir() (string, error) {
+func GetRootDir() (string, error) {
 
 	path, err := os.Getwd()
 	if err != nil {
@@ -57,7 +57,7 @@ func getRootDir() (string, error) {
 
 func init() {
 
-	rootDir, err := getRootDir()
+	rootDir, err := GetRootDir()
 	if err != nil {
 		panic(err)
 	}
@@ -143,7 +143,7 @@ func SwitchContext(context string) {
 
 func startTest(t *testing.T, logFilename string) {
 
-	rootDir, err := getRootDir()
+	rootDir, err := GetRootDir()
 	if err != nil {
 		panic(err)
 	}
@@ -222,12 +222,6 @@ func AssertContainSubstring(t *testing.T, expected, actual string) {
 func AssertContains(t *testing.T, expected string, array []string) {
 	if !util.ContainsString(array, expected) {
 		t.Fatalf("expected array to contain: %s\narray: %v", expected, array)
-	}
-}
-
-func AssertContainsNot(t *testing.T, unexpected string, array []string) {
-	if util.ContainsString(array, unexpected) {
-		t.Fatalf("expected array to NOT contain: %s\narray: %v", unexpected, array)
 	}
 }
 

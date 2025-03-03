@@ -114,6 +114,7 @@ type Config struct {
 
 func CreateClientContext() (ClientContext, error) {
 	var context ClientContext
+	var err error
 
 	context.Name = global.GetCurrentContext()
 
@@ -130,9 +131,15 @@ func CreateClientContext() (ClientContext, error) {
 
 	context.Brokers = viper.GetStringSlice("contexts." + context.Name + ".brokers")
 	context.TLS.Enabled = viper.GetBool("contexts." + context.Name + ".tls.enabled")
-	context.TLS.CA = viper.GetString("contexts." + context.Name + ".tls.ca")
-	context.TLS.Cert = viper.GetString("contexts." + context.Name + ".tls.cert")
-	context.TLS.CertKey = viper.GetString("contexts." + context.Name + ".tls.certKey")
+	if context.TLS.CA, err = resolvePath("contexts." + context.Name + ".tls.ca"); err != nil {
+		return context, err
+	}
+	if context.TLS.Cert, err = resolvePath("contexts." + context.Name + ".tls.cert"); err != nil {
+		return context, err
+	}
+	if context.TLS.CertKey, err = resolvePath("contexts." + context.Name + ".tls.certKey"); err != nil {
+		return context, err
+	}
 	context.TLS.Insecure = viper.GetBool("contexts." + context.Name + ".tls.insecure")
 	context.ClientID = viper.GetString("contexts." + context.Name + ".clientID")
 
@@ -147,15 +154,27 @@ func CreateClientContext() (ClientContext, error) {
 	context.Avro.JSONCodec = avro.ParseJSONCodec(viper.GetString("contexts." + context.Name + ".avro.jsonCodec"))
 	context.Avro.RequestTimeout = viper.GetDuration("contexts." + context.Name + ".avro.requestTimeout")
 	context.Avro.TLS.Enabled = viper.GetBool("contexts." + context.Name + ".avro.tls.enabled")
-	context.Avro.TLS.CA = viper.GetString("contexts." + context.Name + ".avro.tls.ca")
-	context.Avro.TLS.Cert = viper.GetString("contexts." + context.Name + ".avro.tls.cert")
-	context.Avro.TLS.CertKey = viper.GetString("contexts." + context.Name + ".avro.tls.certKey")
+	if context.Avro.TLS.CA, err = resolvePath("contexts." + context.Name + ".avro.tls.ca"); err != nil {
+		return context, err
+	}
+	if context.Avro.TLS.Cert, err = resolvePath("contexts." + context.Name + ".avro.tls.cert"); err != nil {
+		return context, err
+	}
+	if context.Avro.TLS.CertKey, err = resolvePath("contexts." + context.Name + ".avro.tls.certKey"); err != nil {
+		return context, err
+	}
 	context.Avro.TLS.Insecure = viper.GetBool("contexts." + context.Name + ".avro.tls.insecure")
 	context.Avro.Username = viper.GetString("contexts." + context.Name + ".avro.username")
 	context.Avro.Password = viper.GetString("contexts." + context.Name + ".avro.password")
-	context.Protobuf.ProtosetFiles = viper.GetStringSlice("contexts." + context.Name + ".protobuf.protosetFiles")
-	context.Protobuf.ProtoImportPaths = viper.GetStringSlice("contexts." + context.Name + ".protobuf.importPaths")
-	context.Protobuf.ProtoFiles = viper.GetStringSlice("contexts." + context.Name + ".protobuf.protoFiles")
+	if context.Protobuf.ProtosetFiles, err = resolvePaths("contexts." + context.Name + ".protobuf.protosetFiles"); err != nil {
+		return context, err
+	}
+	if context.Protobuf.ProtoImportPaths, err = resolvePaths("contexts." + context.Name + ".protobuf.importPaths"); err != nil {
+		return context, err
+	}
+	if context.Protobuf.ProtoFiles, err = resolvePaths("contexts." + context.Name + ".protobuf.protoFiles"); err != nil {
+		return context, err
+	}
 	context.Producer.Partitioner = viper.GetString("contexts." + context.Name + ".producer.partitioner")
 	context.Producer.RequiredAcks = viper.GetString("contexts." + context.Name + ".producer.requiredAcks")
 	context.Producer.MaxMessageBytes = viper.GetInt("contexts." + context.Name + ".producer.maxMessageBytes")
@@ -169,8 +188,15 @@ func CreateClientContext() (ClientContext, error) {
 
 	viper.SetDefault("contexts."+context.Name+".kubernetes.binary", "kubectl")
 	context.Kubernetes.Enabled = viper.GetBool("contexts." + context.Name + ".kubernetes.enabled")
-	context.Kubernetes.Binary = viper.GetString("contexts." + context.Name + ".kubernetes.binary")
-	context.Kubernetes.KubeConfig = viper.GetString("contexts." + context.Name + ".kubernetes.kubeConfig")
+
+	if context.Kubernetes.Enabled {
+		if context.Kubernetes.Binary, err = resolvePath("contexts." + context.Name + ".kubernetes.binary"); err != nil {
+			return context, err
+		}
+		if context.Kubernetes.KubeConfig, err = resolvePath("contexts." + context.Name + ".kubernetes.kubeConfig"); err != nil {
+			return context, err
+		}
+	}
 	context.Kubernetes.KubeContext = viper.GetString("contexts." + context.Name + ".kubernetes.kubeContext")
 	context.Kubernetes.Namespace = viper.GetString("contexts." + context.Name + ".kubernetes.namespace")
 	context.Kubernetes.Image = viper.GetString("contexts." + context.Name + ".kubernetes.image")
@@ -285,6 +311,35 @@ func GetClientID(context *ClientContext, defaultPrefix string) string {
 		return strings.TrimSuffix(defaultPrefix, "-")
 	}
 	return defaultPrefix + sanitizeUsername(usr.Username)
+}
+
+func resolvePaths(key string) ([]string, error) {
+	filenames := viper.GetStringSlice(key)
+	resolved := make([]string, len(filenames))
+	var err error
+
+	for i, filename := range filenames {
+		resolved[i], err = global.ResolvePath(filename)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve path for key %q: %w", key, err)
+		}
+	}
+
+	return resolved, nil
+}
+
+func resolvePath(key string) (string, error) {
+	filename := viper.GetString(key)
+
+	if filename == "" {
+		return filename, nil
+	}
+
+	resolved, err := global.ResolvePath(filename)
+	if err != nil {
+		return resolved, fmt.Errorf("failed to resolve path for key %q: %w", key, err)
+	}
+	return resolved, nil
 }
 
 func sanitizeUsername(u string) string {

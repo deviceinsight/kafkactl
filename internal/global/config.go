@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -21,7 +22,6 @@ type Flags struct {
 }
 
 const defaultContextPrefix = "CONTEXTS_DEFAULT_"
-const GoContextKey = "global-config"
 
 var projectConfigNames = []string{"kafkactl.yml", ".kafkactl.yml"}
 
@@ -40,6 +40,7 @@ type Config interface {
 	Init()
 	currentContext() string
 	setCurrentContext(contextName string) error
+	SetWritableConfig(viper *viper.Viper)
 }
 
 func NewConfig() Config {
@@ -84,6 +85,54 @@ func SetCurrentContext(contextName string) error {
 	return configInstance.setCurrentContext(contextName)
 }
 
+func ResolvePath(filename string) (string, error) {
+
+	wd, _ := os.Getwd()
+	searchPaths := map[string]bool{wd: true}
+
+	if _, err := os.Stat(filename); err == nil {
+		return filename, err
+	} else if !errors.Is(err, os.ErrNotExist) || filepath.IsAbs(filename) {
+		return "", fmt.Errorf("unable to resolve path %q: %v", filename, err)
+	}
+
+	// relative to config file
+	configDir := path.Dir(viper.ConfigFileUsed())
+	if configDir != "." {
+		searchPaths[configDir] = true
+		cfgFilename := filepath.Join(path.Dir(viper.ConfigFileUsed()), filename)
+		if _, err := os.Stat(cfgFilename); err == nil {
+			return cfgFilename, err
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return "", fmt.Errorf("unable to resolve path %q: %v", cfgFilename, err)
+		}
+	}
+
+	if configInstance.writableConfig != viper.GetViper() {
+		// relative to writeable config file
+		writableConfigDir := path.Dir(configInstance.writableConfig.ConfigFileUsed())
+		searchPaths[writableConfigDir] = true
+		cfgFilename := filepath.Join(writableConfigDir, filename)
+		if _, err := os.Stat(cfgFilename); err == nil {
+			return cfgFilename, err
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return "", fmt.Errorf("unable to resolve path %q: %v", cfgFilename, err)
+		}
+	}
+
+	// check in path (e.g. for kubectl binary)
+	if _, err := exec.LookPath(filename); err == nil {
+		return filename, nil
+	}
+
+	locations := ""
+	for searchPath := range searchPaths {
+		locations += searchPath + ","
+	}
+
+	return "", fmt.Errorf("cannot find %q in locations: [%s]", filename, strings.Trim(locations, ","))
+}
+
 type config struct {
 	flags          Flags
 	writableConfig *viper.Viper
@@ -103,6 +152,10 @@ func (c *config) currentContext() string {
 func (c *config) setCurrentContext(contextName string) error {
 	c.writableConfig.Set("current-context", contextName)
 	return c.writableConfig.WriteConfig()
+}
+
+func (c *config) SetWritableConfig(viper *viper.Viper) {
+	c.writableConfig = viper
 }
 
 // Init reads in config file and ENV variables if set.
@@ -139,13 +192,6 @@ func (c *config) Init() {
 		if err = c.loadConfig(viper.GetViper(), configFile); err != nil {
 			output.Failf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err.Error())
 		}
-	}
-
-	// switch working dir
-	workingDir := path.Dir(viper.ConfigFileUsed())
-	output.Debugf("Using working dir: %s", workingDir)
-	if err := os.Chdir(workingDir); err != nil {
-		output.Failf("Error changing working directory to %s: %v", workingDir, err)
 	}
 
 	if configFile != nil && viper.GetString("current-context") == "" {
@@ -185,8 +231,8 @@ func (c *config) loadConfig(viperInstance *viper.Viper, configFile *string) erro
 	if configFile != nil {
 		viperInstance.SetConfigFile(*configFile)
 	} else {
-		for _, path := range configPaths {
-			viperInstance.AddConfigPath(os.ExpandEnv(path))
+		for _, p := range configPaths {
+			viperInstance.AddConfigPath(os.ExpandEnv(p))
 		}
 		viperInstance.SetConfigName("config")
 	}
@@ -215,31 +261,31 @@ func resolveProjectConfigFileFromWorkingDir() *string {
 
 	for _, projectConfigName := range projectConfigNames {
 
-		path := workDir
+		p := workDir
 
-		_, err = os.Stat(filepath.Join(path, projectConfigName))
+		_, err = os.Stat(filepath.Join(p, projectConfigName))
 		found := true
 
 		for os.IsNotExist(err) {
 
 			// stop when leaving a git repo
-			if gitDir, statErr := os.Stat(filepath.Join(path, ".git")); statErr == nil && gitDir.IsDir() {
+			if gitDir, statErr := os.Stat(filepath.Join(p, ".git")); statErr == nil && gitDir.IsDir() {
 				found = false
 				break
 			}
 
-			oldPath := path
+			oldPath := p
 
-			if path = filepath.Dir(oldPath); path == oldPath {
+			if p = filepath.Dir(oldPath); p == oldPath {
 				output.Debugf("cannot find project config file: %s", projectConfigName)
 				found = false
 				break
 			}
-			_, err = os.Stat(filepath.Join(path, projectConfigName))
+			_, err = os.Stat(filepath.Join(p, projectConfigName))
 		}
 
 		if found {
-			configFile := filepath.Join(path, projectConfigName)
+			configFile := filepath.Join(p, projectConfigName)
 			return &configFile
 		}
 	}
