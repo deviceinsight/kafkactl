@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -117,6 +118,11 @@ func ResolvePath(filename string) (string, error) {
 		} else if !errors.Is(err, os.ErrNotExist) {
 			return "", fmt.Errorf("unable to resolve path %q: %v", cfgFilename, err)
 		}
+	}
+
+	// check in path (e.g. for kubectl binary)
+	if _, err := exec.LookPath(filename); err == nil {
+		return filename, nil
 	}
 
 	locations := ""
