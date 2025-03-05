@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 5.5.1 - 2025-03-05
+
+### Fixed
+- [#237](https://github.com/deviceinsight/kafkactl/issues/237) Fix handling of relative paths.
+
 ## 5.5.0 - 2025-02-11
 ### Added
 - [#234](https://github.com/deviceinsight/kafkactl/pull/234) caching to arvo client when producing messages
