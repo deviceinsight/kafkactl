@@ -11,7 +11,6 @@ import (
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
-	"github.com/deviceinsight/kafkactl/v5/internal/util"
 	"github.com/linkedin/goavro/v2"
 	"github.com/pkg/errors"
 )
@@ -102,17 +101,6 @@ func (deserializer AvroMessageDeserializer) decode(rawData []byte, flags Flags, 
 
 	output.Debugf("decode %s and id %d", subject, schemaID)
 
-	subjects, err := deserializer.registry.Subjects()
-
-	if err != nil {
-		return decodedValue{}, errors.Wrap(err, "failed to list available avro schemas")
-	}
-
-	if !util.ContainsString(subjects, subject) {
-		// does not seem to be avro data
-		return decodedValue{value: encodeBytes(rawData, flags.EncodeValue)}, nil
-	}
-
 	schema, err := deserializer.registry.GetSchemaByID(schemaID)
 
 	if err != nil {
@@ -146,18 +134,9 @@ func (deserializer AvroMessageDeserializer) decode(rawData []byte, flags Flags, 
 }
 
 func (deserializer AvroMessageDeserializer) CanDeserialize(topic string) (bool, error) {
-	subjects, err := deserializer.registry.Subjects()
-
-	if err != nil {
-		return false, errors.Wrap(err, "failed to list available avro schemas")
-	}
-
-	if util.ContainsString(subjects, topic+"-key") {
-		return true, nil
-	} else if util.ContainsString(subjects, topic+"-value") {
-		return true, nil
-	}
-	return false, nil
+	/* no checks done here - checking whether deserialization is possible is done in
+	decode() where we actual data including schema id is available */
+	return true, nil
 }
 
 func (deserializer AvroMessageDeserializer) Deserialize(rawMsg *sarama.ConsumerMessage, flags Flags) error {
