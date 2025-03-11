@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
+
 	"github.com/deviceinsight/kafkactl/v5/internal/global"
 
 	"github.com/IBM/sarama"
@@ -33,6 +35,7 @@ func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {
 	context.Sasl.TokenProvider.Options["int-key"] = 12
 	context.ClientID = "my-client"
 	context.KafkaVersion = sarama.V2_0_1_0
+	context.Avro.JSONCodec = avro.Avro
 	context.SchemaRegistry.URL = "registry:8888"
 	context.SchemaRegistry.RequestTimeout = 10 * time.Second
 	context.SchemaRegistry.TLS.Enabled = true
@@ -79,6 +82,7 @@ func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {
 	testutil.AssertEquals(t, `"{\"int-key\":12,\"tenantid\":\"azure-tenant-id\"}"`, envMap[global.SaslTokenProviderOptions])
 	testutil.AssertEquals(t, "my-client", envMap[global.ClientID])
 	testutil.AssertEquals(t, "2.0.1", envMap[global.KafkaVersion])
+	testutil.AssertEquals(t, "avro", envMap[global.AvroJSONCodec])
 	testutil.AssertEquals(t, "registry:8888", envMap[global.SchemaRegistryURL])
 	testutil.AssertEquals(t, "10s", envMap[global.SchemaRegistryRequestTimeout])
 	testutil.AssertEquals(t, "true", envMap[global.SchemaRegistryTLSEnabled])

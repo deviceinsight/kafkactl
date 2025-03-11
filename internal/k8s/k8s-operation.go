@@ -190,6 +190,7 @@ func parsePodEnvironment(context internal.ClientContext) []string {
 	envVariables = appendStringIfDefined(envVariables, global.RequestTimeout, context.RequestTimeout.String())
 	envVariables = appendStringIfDefined(envVariables, global.ClientID, context.ClientID)
 	envVariables = appendStringIfDefined(envVariables, global.KafkaVersion, context.KafkaVersion.String())
+	envVariables = appendStringIfDefined(envVariables, global.AvroJSONCodec, context.Avro.JSONCodec.String())
 	envVariables = appendStringIfDefined(envVariables, global.SchemaRegistryURL, context.SchemaRegistry.URL)
 	envVariables = appendStringIfDefined(envVariables, global.SchemaRegistryRequestTimeout, context.SchemaRegistry.RequestTimeout.String())
 	envVariables = appendBool(envVariables, global.SchemaRegistryTLSEnabled, context.SchemaRegistry.TLS.Enabled)
