@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/riferrei/srclient"
+
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 
 	"github.com/jhump/protoreflect/dynamic"
@@ -75,7 +77,7 @@ func TestProduceAvroMessageWithHeadersIntegration(t *testing.T) {
 }`
 	value := `{"name":"Peter Mueller"}`
 
-	topicName := testutil.CreateAvroTopic(t, "produce-topic", "", valueSchema)
+	topicName := testutil.CreateTopicWithSchema(t, "produce-topic", "", valueSchema, srclient.Avro)
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
@@ -109,7 +111,7 @@ func TestProduceAvroMessageOmitDefaultValue(t *testing.T) {
 	 "CurrencyCode": "EUR"
 	}`
 
-	topicName := testutil.CreateAvroTopic(t, "produce-avro-topic", "", valueSchema)
+	topicName := testutil.CreateTopicWithSchema(t, "produce-avro-topic", "", valueSchema, srclient.Avro)
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
@@ -147,7 +149,7 @@ func TestProduceAvroMessageWithUnionStandardJson(t *testing.T) {
 	 "ExpiresOn": "2022-12-12"
 	}`
 
-	topicName := testutil.CreateAvroTopic(t, "produce-topic", "", valueSchema)
+	topicName := testutil.CreateTopicWithSchema(t, "produce-topic", "", valueSchema, srclient.Avro)
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
@@ -164,6 +166,52 @@ func TestProduceAvroMessageWithUnionStandardJson(t *testing.T) {
 	stdout := kafkaCtl.GetStdOut()
 	testutil.AssertContainSubstring(t, `"CurrencyCode":"EUR"`, stdout)
 	testutil.AssertContainSubstring(t, `"ExpiresOn":"2022-12-12"`, stdout)
+}
+
+func TestProduceJsonMessageWithSchema(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	valueSchema := `{
+	  "$schema": "http://json-schema.org/draft-04/schema#",
+	  "type": "object",
+	  "properties": {
+		"CurrencyCode": {
+		  "type": "string"
+		},
+		"ExpiresOn": {
+		  "type": "string",
+		  "format": "date"
+		}
+	  },
+	  "required": [
+		"CurrencyCode",
+		"ExpiresOn"
+	  ]
+	}`
+
+	value := `{
+	 "CurrencyCode": "EUR",
+	 "ExpiresOn": "2022-12-12"
+	}`
+
+	topicName := testutil.CreateTopicWithSchema(t, "produce-topic", "", valueSchema, srclient.Json)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", topicName, "--value", value); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	stdout := kafkaCtl.GetStdOut()
+	testutil.AssertContainSubstring(t, `"CurrencyCode": "EUR"`, stdout)
+	testutil.AssertContainSubstring(t, `"ExpiresOn": "2022-12-12"`, stdout)
 }
 
 func TestProduceAvroMessageWithUnionAvroJson(t *testing.T) {
@@ -189,7 +237,7 @@ func TestProduceAvroMessageWithUnionAvroJson(t *testing.T) {
 		t.Fatalf("unable to set env variable: %v", err)
 	}
 
-	topicName := testutil.CreateAvroTopic(t, "produce-topic", "", valueSchema)
+	topicName := testutil.CreateTopicWithSchema(t, "produce-topic", "", valueSchema, srclient.Avro)
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 

@@ -1,40 +1,56 @@
 package consume
 
 import (
+	"fmt"
+
 	"github.com/IBM/sarama"
-	"github.com/pkg/errors"
 )
 
 type MessageDeserializerChain []MessageDeserializer
 
-func (deserializer MessageDeserializerChain) Deserialize(msg *sarama.ConsumerMessage, flags Flags) error {
-	for _, d := range deserializer {
-		canDeserialize, err := d.CanDeserialize(msg.Topic)
-		if err != nil {
-			return err
+func (deserializer *MessageDeserializerChain) Deserialize(consumerMsg *sarama.ConsumerMessage, flags Flags) error {
+
+	var key, value *DeserializedData
+	var err error
+
+	// deserialize key
+	if flags.PrintKeys {
+		for _, d := range *deserializer {
+
+			if !d.CanDeserializeKey(consumerMsg, flags) {
+				continue
+			}
+
+			key, err = d.DeserializeKey(consumerMsg)
+			if err != nil {
+				return fmt.Errorf("failed to deserialize key: %w", err)
+			}
+			break
 		}
 
-		if !canDeserialize {
+		if key == nil {
+			return fmt.Errorf("can't find suitable deserializer for key")
+		}
+	}
+
+	// deserialize value
+	for _, d := range *deserializer {
+		if !d.CanDeserializeValue(consumerMsg, flags) {
 			continue
 		}
 
-		return d.Deserialize(msg, flags)
-	}
-
-	return errors.Errorf("can't find suitable deserializer")
-}
-
-func (deserializer MessageDeserializerChain) CanDeserialize(topic string) (bool, error) {
-	for _, d := range deserializer {
-		canDeserialize, err := d.CanDeserialize(topic)
+		value, err = d.DeserializeValue(consumerMsg)
 		if err != nil {
-			return false, err
+			return fmt.Errorf("failed to deserialize value: %w", err)
 		}
-
-		if canDeserialize {
-			return true, nil
-		}
+		break
 	}
 
-	return false, nil
+	if value == nil {
+		return fmt.Errorf("can't find suitable deserializer for value")
+	}
+
+	// print message
+	msg := newMessage(consumerMsg, flags, key, value)
+	return printMessage(msg, flags)
 }

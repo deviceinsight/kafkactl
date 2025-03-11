@@ -50,6 +50,11 @@ func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int
 		}
 	}
 
+	if schema.SchemaType() != nil && *schema.SchemaType() != srclient.Avro {
+		// does not seem to be avro data
+		return rawData, nil
+	}
+
 	var avroCodec *goavro.Codec
 
 	if serializer.jsonCodec == avro.Avro {
@@ -87,6 +92,8 @@ func (serializer AvroMessageSerializer) CanSerialize(topic string) (bool, error)
 		return false, errors.Wrap(err, "failed to list available avro schemas")
 	}
 
+	// we currently only implement the TopicNameStrategy to map from a message to the corresponding schema
+	// in this strategy the name of the schema subject is derived from topic name i.e. `topic+"-key"`, `topic+"-value"`
 	if util.ContainsString(subjects, topic+"-key") {
 		return true, nil
 	} else if util.ContainsString(subjects, topic+"-value") {

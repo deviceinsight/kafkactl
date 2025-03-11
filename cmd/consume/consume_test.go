@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/riferrei/srclient"
+
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
@@ -275,7 +277,7 @@ func TestAvroDeserializationErrorHandlingIntegration(t *testing.T) {
 	value := `{"name":"Peter Mueller"}`
 	value2 := `{"name":"Peter Pan"}`
 
-	topicName := testutil.CreateAvroTopic(t, "avro-topic", "", valueSchema)
+	topicName := testutil.CreateTopicWithSchema(t, "avro-topic", "", valueSchema, srclient.Avro)
 
 	group := testutil.CreateConsumerGroup(t, "avro-topic-consumer-group", topicName)
 
@@ -307,19 +309,23 @@ func TestAvroDeserializationErrorHandlingIntegration(t *testing.T) {
 	testutil.AssertEquals(t, "message produced (partition=0\toffset=2)", kafkaCtl.GetStdOut())
 
 	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit"); err != nil {
-		testutil.AssertErrorContains(t, "failed to find avro schema", err)
-		testutil.AssertEquals(t, value, kafkaCtl.GetStdOut())
+		t.Fatalf("failed to execute command: %v", err)
 	} else {
-		t.Fatalf("expected consumer to fail")
+		results := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+		testutil.AssertContains(t, value, results)
+		testutil.AssertContains(t, "no-avro", results)
+		testutil.AssertContains(t, value2, results)
 	}
 
 	kafkaCtl = testutil.CreateKafkaCtlCommand()
 
 	if _, err := kafkaCtl.Execute("consume", topicName, "--group", group, "--max-messages", "3"); err != nil {
-		testutil.AssertErrorContains(t, "failed to find avro schema", err)
-		testutil.AssertEquals(t, value, kafkaCtl.GetStdOut())
+		t.Fatalf("failed to execute command: %v", err)
 	} else {
-		t.Fatalf("expected consumer to fail")
+		results := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+		testutil.AssertContains(t, value, results)
+		testutil.AssertContains(t, "no-avro", results)
+		testutil.AssertContains(t, value2, results)
 	}
 }
 
@@ -458,6 +464,25 @@ func TestProtobufConsumeProtoFileErrNoMessageIntegration(t *testing.T) {
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	protoPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata", "msg.protoset")
+	now := time.Date(2021, time.December, 1, 14, 10, 12, 0, time.UTC)
+	pbMessageDesc := protobuf.ResolveMessageType(protobuf.SearchContext{
+		ProtosetFiles: []string{protoPath},
+	}, "TopicMessage")
+	pbMessage := dynamic.NewMessage(pbMessageDesc)
+	pbMessage.SetFieldByNumber(1, timestamppb.New(now))
+	pbMessage.SetFieldByNumber(2, int64(1))
+
+	value, err := pbMessage.Marshal()
+	if err != nil {
+		t.Fatalf("Failed to marshal proto message: %s", err)
+	}
+
+	// produce valid pb message
+	if _, err := kafkaCtl.Execute("produce", pbTopic, "--key", "test-key", "--value", hex.EncodeToString(value), "--value-encoding", "hex"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
 
 	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "--proto-import-path", protoPath, "--proto-file", "msg.proto", "--value-proto-type", "NonExisting"); err != nil {
 		testutil.AssertErrorContains(t, "not found in provided files", err)
@@ -483,7 +508,7 @@ func TestProtobufConsumeProtoFileErrDecodeIntegration(t *testing.T) {
 	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
 
 	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "--proto-import-path", protoPath, "--proto-file", "msg.proto", "--value-proto-type", "TopicMessage"); err != nil {
-		testutil.AssertErrorContains(t, "value decode failed: proto: bad wiretype", err)
+		testutil.AssertErrorContains(t, "failed to deserialize value: proto: bad wiretype", err)
 	} else {
 		t.Fatal("Expected consumer to fail")
 	}

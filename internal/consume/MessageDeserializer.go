@@ -10,8 +10,10 @@ import (
 )
 
 type MessageDeserializer interface {
-	CanDeserialize(topic string) (bool, error)
-	Deserialize(msg *sarama.ConsumerMessage, flags Flags) error
+	CanDeserializeKey(msg *sarama.ConsumerMessage, flags Flags) bool
+	CanDeserializeValue(msg *sarama.ConsumerMessage, flags Flags) bool
+	DeserializeKey(msg *sarama.ConsumerMessage) (*DeserializedData, error)
+	DeserializeValue(msg *sarama.ConsumerMessage) (*DeserializedData, error)
 }
 
 const (
