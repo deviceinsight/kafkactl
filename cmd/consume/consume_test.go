@@ -2,6 +2,7 @@ package consume_test
 
 import (
 	"encoding/hex"
+	"github.com/riferrei/srclient"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -275,7 +276,7 @@ func TestAvroDeserializationErrorHandlingIntegration(t *testing.T) {
 	value := `{"name":"Peter Mueller"}`
 	value2 := `{"name":"Peter Pan"}`
 
-	topicName := testutil.CreateAvroTopic(t, "avro-topic", "", valueSchema)
+	topicName := testutil.CreateTopicWithSchema(t, "avro-topic", "", valueSchema, srclient.Avro)
 
 	group := testutil.CreateConsumerGroup(t, "avro-topic-consumer-group", topicName)
 

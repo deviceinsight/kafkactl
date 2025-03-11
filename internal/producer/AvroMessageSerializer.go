@@ -50,6 +50,11 @@ func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int
 		}
 	}
 
+	if schema.SchemaType() != nil && *schema.SchemaType() != srclient.Avro {
+		// does not seem to be avro data
+		return rawData, nil
+	}
+
 	var avroCodec *goavro.Codec
 
 	if strings.ToLower(serializer.jsonCodec) == "avro" {
