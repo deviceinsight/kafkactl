@@ -176,9 +176,7 @@ func CreateClientContext() (ClientContext, error) {
 	if context.Protobuf.ProtoImportPaths, err = resolvePaths("contexts." + context.Name + ".protobuf.importPaths"); err != nil {
 		return context, err
 	}
-	if context.Protobuf.ProtoFiles, err = resolvePaths("contexts." + context.Name + ".protobuf.protoFiles"); err != nil {
-		return context, err
-	}
+	context.Protobuf.ProtoFiles = viper.GetStringSlice("contexts." + context.Name + ".protobuf.protoFiles")
 	context.Producer.Partitioner = viper.GetString("contexts." + context.Name + ".producer.partitioner")
 	context.Producer.RequiredAcks = viper.GetString("contexts." + context.Name + ".producer.requiredAcks")
 	context.Producer.MaxMessageBytes = viper.GetInt("contexts." + context.Name + ".producer.maxMessageBytes")
