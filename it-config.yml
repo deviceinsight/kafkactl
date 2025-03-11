@@ -6,8 +6,8 @@ contexts:
       - localhost:29093
       - localhost:39093
     requestTimeout: 15s
-    avro:
-      schemaRegistry: localhost:18081
+    schemaRegistry:
+      url: localhost:18081
     kafkaversion: 2.6.0
 
   # context without avro
@@ -30,8 +30,8 @@ contexts:
       enabled: true
       username: admin
       password: admin-secret
-    avro:
-      schemaRegistry: localhost:18081
+    schemaRegistry:
+      url: localhost:18081
     kafkaversion: 2.6.0
 
   # sasl context as user
@@ -45,8 +45,8 @@ contexts:
       enabled: true
       username: user
       password: user-secret
-    avro:
-      schemaRegistry: localhost:18081
+    schemaRegistry:
+      url: localhost:18081
     kafkaversion: 2.6.0
 
   # k8s-mock context with mocked kubectl

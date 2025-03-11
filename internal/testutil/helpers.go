@@ -3,6 +3,7 @@ package testutil
 import (
 	"errors"
 	"fmt"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"regexp"
 	"strconv"
 	"strings"
@@ -38,17 +39,21 @@ func CreateAvroTopic(t *testing.T, topicPrefix, keySchema, valueSchema string, f
 
 	topicName := CreateTopic(t, topicPrefix, flags...)
 
-	schemaRegistry := srclient.CreateSchemaRegistryClient("http://localhost:18081")
+	schemaRegistry := srclient.NewSchemaRegistryClient("http://localhost:18081")
 
 	if keySchema != "" {
-		if _, err := schemaRegistry.CreateSchema(topicName+"-key", keySchema, srclient.Avro); err != nil {
+		if schema, err := schemaRegistry.CreateSchema(topicName+"-key", keySchema, srclient.Avro); err != nil {
 			t.Fatalf("unable to register schema for key: %v", err)
+		} else {
+			output.TestLogf("registered schema %q with ID=%d", topicName+"-key", schema.ID())
 		}
 	}
 
 	if valueSchema != "" {
-		if _, err := schemaRegistry.CreateSchema(topicName+"-value", valueSchema, srclient.Avro); err != nil {
+		if schema, err := schemaRegistry.CreateSchema(topicName+"-value", valueSchema, srclient.Avro); err != nil {
 			t.Fatalf("unable to register schema for value: %v", err)
+		} else {
+			output.TestLogf("registered schema %q with ID=%d", topicName+"-value", schema.ID())
 		}
 	}
 

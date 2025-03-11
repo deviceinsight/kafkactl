@@ -20,7 +20,7 @@ type Flags struct {
 	PrintPartitions  bool
 	PrintKeys        bool
 	PrintTimestamps  bool
-	PrintAvroSchema  bool
+	PrintSchema      bool
 	PrintHeaders     bool
 	OutputFormat     string
 	Separator        string
@@ -88,35 +88,34 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 		return errors.Errorf("topic '%s' does not exist", topic)
 	}
 
+	var schemaRegistryClient *internal.CachingSchemaRegistry
+
+	if clientContext.SchemaRegistry.URL != "" {
+		schemaRegistryClient, err = internal.CreateCachingSchemaRegistry(&clientContext)
+		if err != nil {
+			return err
+		}
+	}
+
 	var deserializers MessageDeserializerChain
 
-	if clientContext.Avro.SchemaRegistry != "" {
-		client, err := internal.CreateCachingSchemaRegistry(&clientContext)
-		if err != nil {
-			return err
-		}
-
-		deserializer := AvroMessageDeserializer{topic: topic, registry: client,
-			jsonCodec: clientContext.Avro.JSONCodec}
-
-		deserializers = append(deserializers, deserializer)
+	if schemaRegistryClient != nil {
+		deserializer := AvroMessageDeserializer{topic: topic, registry: schemaRegistryClient}
+		deserializers = append(deserializers, &deserializer)
 	}
 
-	if flags.ValueProtoType != "" {
-		searchCtx := clientContext.Protobuf
-		searchCtx.ProtosetFiles = append(flags.ProtosetFiles, searchCtx.ProtosetFiles...)
-		searchCtx.ProtoFiles = append(flags.ProtoFiles, searchCtx.ProtoFiles...)
-		searchCtx.ProtoImportPaths = append(flags.ProtoImportPaths, searchCtx.ProtoImportPaths...)
+	searchCtx := clientContext.Protobuf
+	searchCtx.ProtosetFiles = append(flags.ProtosetFiles, searchCtx.ProtosetFiles...)
+	searchCtx.ProtoFiles = append(flags.ProtoFiles, searchCtx.ProtoFiles...)
+	searchCtx.ProtoImportPaths = append(flags.ProtoImportPaths, searchCtx.ProtoImportPaths...)
 
-		deserializer, err := CreateProtobufMessageDeserializer(searchCtx, flags.KeyProtoType, flags.ValueProtoType)
-		if err != nil {
-			return err
-		}
-
-		deserializers = append(deserializers, deserializer)
+	deserializer, err := CreateProtobufMessageDeserializer(searchCtx, flags.KeyProtoType, flags.ValueProtoType)
+	if err != nil {
+		return err
 	}
 
-	deserializers = append(deserializers, DefaultMessageDeserializer{})
+	deserializers = append(deserializers, deserializer)
+	deserializers = append(deserializers, &DefaultMessageDeserializer{})
 
 	if flags.Group != "" {
 		if flags.Exit {
@@ -211,7 +210,8 @@ func parseIsolationLevel(isolationLevel string) (sarama.IsolationLevel, error) {
 	}
 }
 
-func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sarama.ConsumerMessage, stopConsumers chan<- bool, deserializers MessageDeserializerChain) *errgroup.Group {
+func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sarama.ConsumerMessage,
+	stopConsumers chan<- bool, deserializers MessageDeserializerChain) *errgroup.Group {
 
 	errorGroup, _ := errgroup.WithContext(ctx)
 

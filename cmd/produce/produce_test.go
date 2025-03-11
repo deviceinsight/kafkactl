@@ -185,10 +185,6 @@ func TestProduceAvroMessageWithUnionAvroJson(t *testing.T) {
 	 "ExpiresOn": {"string": "2022-12-12"}
 	}`
 
-	if err := os.Setenv("AVRO_JSONCODEC", "avro"); err != nil {
-		t.Fatalf("unable to set env variable: %v", err)
-	}
-
 	topicName := testutil.CreateAvroTopic(t, "produce-topic", "", valueSchema)
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()

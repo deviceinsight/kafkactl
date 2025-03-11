@@ -7,8 +7,6 @@ import (
 
 	"github.com/deviceinsight/kafkactl/v5/internal/global"
 
-	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
-
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
@@ -35,16 +33,15 @@ func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {
 	context.Sasl.TokenProvider.Options["int-key"] = 12
 	context.ClientID = "my-client"
 	context.KafkaVersion = sarama.V2_0_1_0
-	context.Avro.SchemaRegistry = "registry:8888"
-	context.Avro.JSONCodec = avro.Avro
-	context.Avro.RequestTimeout = 10 * time.Second
-	context.Avro.TLS.Enabled = true
-	context.Avro.TLS.CA = "my-avro-ca"
-	context.Avro.TLS.Cert = "my-avro-cert"
-	context.Avro.TLS.CertKey = "my-avro-cert-key"
-	context.Avro.TLS.Insecure = true
-	context.Avro.Username = "avro-user"
-	context.Avro.Password = "avro-pass"
+	context.SchemaRegistry.URL = "registry:8888"
+	context.SchemaRegistry.RequestTimeout = 10 * time.Second
+	context.SchemaRegistry.TLS.Enabled = true
+	context.SchemaRegistry.TLS.CA = "my-avro-ca"
+	context.SchemaRegistry.TLS.Cert = "my-avro-cert"
+	context.SchemaRegistry.TLS.CertKey = "my-avro-cert-key"
+	context.SchemaRegistry.TLS.Insecure = true
+	context.SchemaRegistry.Username = "avro-user"
+	context.SchemaRegistry.Password = "avro-pass"
 	context.Protobuf.ProtosetFiles = []string{"/usr/include/protosets/ps1.protoset", "/usr/lib/ps2.protoset"}
 	context.Protobuf.ProtoImportPaths = []string{"/usr/include/protobuf", "/usr/lib/protobuf"}
 	context.Protobuf.ProtoFiles = []string{"message.proto", "other.proto"}
@@ -82,16 +79,15 @@ func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {
 	testutil.AssertEquals(t, `"{\"int-key\":12,\"tenantid\":\"azure-tenant-id\"}"`, envMap[global.SaslTokenProviderOptions])
 	testutil.AssertEquals(t, "my-client", envMap[global.ClientID])
 	testutil.AssertEquals(t, "2.0.1", envMap[global.KafkaVersion])
-	testutil.AssertEquals(t, "registry:8888", envMap[global.AvroSchemaRegistry])
-	testutil.AssertEquals(t, "avro", envMap[global.AvroJSONCodec])
-	testutil.AssertEquals(t, "10s", envMap[global.AvroRequestTimeout])
-	testutil.AssertEquals(t, "true", envMap[global.AvroTLSEnabled])
-	testutil.AssertEquals(t, "my-avro-ca", envMap[global.AvroTLSCa])
-	testutil.AssertEquals(t, "my-avro-cert", envMap[global.AvroTLSCert])
-	testutil.AssertEquals(t, "my-avro-cert-key", envMap[global.AvroTLSCertKey])
-	testutil.AssertEquals(t, "true", envMap[global.AvroTLSInsecure])
-	testutil.AssertEquals(t, "avro-user", envMap[global.AvroUsername])
-	testutil.AssertEquals(t, "avro-pass", envMap[global.AvroPassword])
+	testutil.AssertEquals(t, "registry:8888", envMap[global.SchemaRegistryURL])
+	testutil.AssertEquals(t, "10s", envMap[global.SchemaRegistryRequestTimeout])
+	testutil.AssertEquals(t, "true", envMap[global.SchemaRegistryTLSEnabled])
+	testutil.AssertEquals(t, "my-avro-ca", envMap[global.SchemaRegistryTLSCa])
+	testutil.AssertEquals(t, "my-avro-cert", envMap[global.SchemaRegistryTLSCert])
+	testutil.AssertEquals(t, "my-avro-cert-key", envMap[global.SchemaRegistryTLSCertKey])
+	testutil.AssertEquals(t, "true", envMap[global.SchemaRegistryTLSInsecure])
+	testutil.AssertEquals(t, "avro-user", envMap[global.SchemaRegistryUsername])
+	testutil.AssertEquals(t, "avro-pass", envMap[global.SchemaRegistryPassword])
 	testutil.AssertEquals(t, "/usr/include/protosets/ps1.protoset /usr/lib/ps2.protoset", envMap[global.ProtobufProtoSetFiles])
 	testutil.AssertEquals(t, "/usr/include/protobuf /usr/lib/protobuf", envMap[global.ProtobufImportPaths])
 	testutil.AssertEquals(t, "message.proto other.proto", envMap[global.ProtobufProtoFiles])

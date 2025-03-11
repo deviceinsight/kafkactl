@@ -2,9 +2,9 @@ package producer
 
 import (
 	"encoding/binary"
+	"strings"
 
 	"github.com/deviceinsight/kafkactl/v5/internal"
-	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
 	"github.com/riferrei/srclient"
 
 	"github.com/IBM/sarama"
@@ -15,7 +15,7 @@ import (
 
 type AvroMessageSerializer struct {
 	topic     string
-	jsonCodec avro.JSONCodec
+	jsonCodec string
 	client    *internal.CachingSchemaRegistry
 }
 
@@ -52,7 +52,7 @@ func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int
 
 	var avroCodec *goavro.Codec
 
-	if serializer.jsonCodec == avro.Avro {
+	if strings.ToLower(serializer.jsonCodec) == "avro" {
 		avroCodec, err = goavro.NewCodec(schema.Schema())
 	} else {
 		avroCodec, err = goavro.NewCodecForStandardJSONFull(schema.Schema())
@@ -87,6 +87,8 @@ func (serializer AvroMessageSerializer) CanSerialize(topic string) (bool, error)
 		return false, errors.Wrap(err, "failed to list available avro schemas")
 	}
 
+	// we currently only implement the TopicNameStrategy to map from a message to the corresponding schema
+	// in this strategy the name of the schema subject is derived from topic name i.e. `topic+"-key"`, `topic+"-value"`
 	if util.ContainsString(subjects, topic+"-key") {
 		return true, nil
 	} else if util.ContainsString(subjects, topic+"-value") {
