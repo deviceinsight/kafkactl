@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"encoding/hex"
 	"fmt"
-	"github.com/riferrei/srclient"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/riferrei/srclient"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 

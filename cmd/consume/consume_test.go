@@ -2,12 +2,13 @@ package consume_test
 
 import (
 	"encoding/hex"
-	"github.com/riferrei/srclient"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/riferrei/srclient"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 

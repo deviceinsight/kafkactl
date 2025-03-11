@@ -3,14 +3,17 @@ package consume
 import (
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
+	"github.com/linkedin/goavro/v2"
 	"github.com/pkg/errors"
 	"github.com/riferrei/srclient"
 )
 
 type AvroMessageDeserializer struct {
-	topic    string
-	registry *internal.CachingSchemaRegistry
+	topic     string
+	jsonCodec avro.JSONCodec
+	registry  *internal.CachingSchemaRegistry
 }
 
 func (deserializer *AvroMessageDeserializer) canDeserialize(consumerMsg *sarama.ConsumerMessage, data []byte) bool {
@@ -56,14 +59,26 @@ func (deserializer *AvroMessageDeserializer) deserialize(data []byte) (*Deserial
 
 	payload := deserializer.registry.ExtractPayload(data)
 
-	output.Debugf("decode with schema id %d", schemaID)
+	var avroCodec *goavro.Codec
 
-	native, _, err := schema.Codec().NativeFromBinary(payload)
+	if deserializer.jsonCodec == avro.Avro {
+		avroCodec, err = goavro.NewCodec(schema.Schema())
+	} else {
+		avroCodec, err = goavro.NewCodecForStandardJSONFull(schema.Schema())
+	}
+
+	if avroCodec == nil {
+		return nil, errors.Wrap(err, "failed to initialize avro codec")
+	}
+
+	output.Debugf("decode with avro schema id=%d codec=%s", schemaID, deserializer.jsonCodec)
+
+	native, _, err := avroCodec.NativeFromBinary(payload)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse avro data")
 	}
 
-	textual, err := schema.Codec().TextualFromNative(nil, native)
+	textual, err := avroCodec.TextualFromNative(nil, native)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert data to avro data")
 	}

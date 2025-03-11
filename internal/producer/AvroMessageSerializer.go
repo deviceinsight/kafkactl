@@ -2,9 +2,9 @@ package producer
 
 import (
 	"encoding/binary"
-	"strings"
 
 	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
 	"github.com/riferrei/srclient"
 
 	"github.com/IBM/sarama"
@@ -15,7 +15,7 @@ import (
 
 type AvroMessageSerializer struct {
 	topic     string
-	jsonCodec string
+	jsonCodec avro.JSONCodec
 	client    *internal.CachingSchemaRegistry
 }
 
@@ -57,7 +57,7 @@ func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int
 
 	var avroCodec *goavro.Codec
 
-	if strings.ToLower(serializer.jsonCodec) == "avro" {
+	if serializer.jsonCodec == avro.Avro {
 		avroCodec, err = goavro.NewCodec(schema.Schema())
 	} else {
 		avroCodec, err = goavro.NewCodecForStandardJSONFull(schema.Schema())

@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
+
 	"github.com/deviceinsight/kafkactl/v5/internal/auth"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/global"
@@ -45,6 +47,10 @@ type SchemaRegistryConfig struct {
 	TLS            TLSConfig
 	Username       string
 	Password       string
+}
+
+type AvroConfig struct {
+	JSONCodec avro.JSONCodec
 }
 
 type TLSConfig struct {
@@ -99,6 +105,7 @@ type ClientContext struct {
 	ClientID       string
 	KafkaVersion   sarama.KafkaVersion
 	SchemaRegistry SchemaRegistryConfig
+	Avro           AvroConfig
 	Protobuf       protobuf.SearchContext
 	Producer       ProducerConfig
 	Consumer       ConsumerConfig
@@ -147,6 +154,7 @@ func CreateClientContext() (ClientContext, error) {
 	} else {
 		return context, err
 	}
+	context.Avro.JSONCodec = avro.ParseJSONCodec(viper.GetString("contexts." + context.Name + ".avro.jsonCodec"))
 	context.SchemaRegistry.URL = viper.GetString("contexts." + context.Name + ".schemaRegistry.url")
 	context.SchemaRegistry.RequestTimeout = viper.GetDuration("contexts." + context.Name + ".schemaRegistry.requestTimeout")
 	context.SchemaRegistry.TLS.Enabled = viper.GetBool("contexts." + context.Name + ".schemaRegistry.tls.enabled")

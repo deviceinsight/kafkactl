@@ -100,7 +100,7 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 	var deserializers MessageDeserializerChain
 
 	if schemaRegistryClient != nil {
-		deserializer := AvroMessageDeserializer{topic: topic, registry: schemaRegistryClient}
+		deserializer := AvroMessageDeserializer{topic: topic, registry: schemaRegistryClient, jsonCodec: clientContext.Avro.JSONCodec}
 		deserializers = append(deserializers, &deserializer)
 	}
 

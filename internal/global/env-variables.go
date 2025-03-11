@@ -16,6 +16,7 @@ const (
 	SaslTokenProviderOptions     = "SASL_TOKENPROVIDER_OPTIONS"
 	ClientID                     = "CLIENTID"
 	KafkaVersion                 = "KAFKAVERSION"
+	AvroJSONCodec                = "AVRO_JSONCODEC"
 	SchemaRegistryURL            = "SCHEMAREGISTRY_URL"
 	SchemaRegistryRequestTimeout = "SCHEMAREGISTRY_REQUESTTIMEOUT"
 	SchemaRegistryTLSEnabled     = "SCHEMAREGISTRY_TLS_ENABLED"
@@ -49,6 +50,7 @@ var EnvVariables = []string{
 	SaslTokenProviderOptions,
 	ClientID,
 	KafkaVersion,
+	AvroJSONCodec,
 	SchemaRegistryURL,
 	SchemaRegistryRequestTimeout,
 	SchemaRegistryTLSEnabled,

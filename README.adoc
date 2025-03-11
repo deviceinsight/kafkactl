@@ -165,6 +165,12 @@ contexts:
     # optional: timeout for admin requests (defaults to 3s)
     requestTimeout: 10s
 
+    # optional: avro configuration
+    avro:
+      # optional: configure codec for (de)serialization as standard,avro (defaults to standard)
+      # see: https://github.com/deviceinsight/kafkactl/issues/123
+      jsonCodec: avro
+
     # optional: schema registry
     schemaRegistry:
       url: localhost:8081

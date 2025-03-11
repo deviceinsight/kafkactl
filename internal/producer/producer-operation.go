@@ -32,7 +32,6 @@ type Flags struct {
 	Headers            []string
 	KeySchemaVersion   int
 	ValueSchemaVersion int
-	AvroCodec          string
 	KeyEncoding        string
 	ValueEncoding      string
 	Silent             bool
@@ -85,7 +84,7 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 		if err != nil {
 			return err
 		}
-		serializer := AvroMessageSerializer{topic: topic, client: client, jsonCodec: flags.AvroCodec}
+		serializer := AvroMessageSerializer{topic: topic, client: client, jsonCodec: clientContext.Avro.JSONCodec}
 
 		serializers.serializers = append(serializers.serializers, serializer)
 	}
