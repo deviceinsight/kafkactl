@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
+
 	"github.com/Rican7/retry"
 	"github.com/Rican7/retry/backoff"
 	"github.com/Rican7/retry/strategy"
@@ -34,21 +36,26 @@ func CreateTopic(t *testing.T, topicPrefix string, flags ...string) string {
 	return topicName
 }
 
-func CreateAvroTopic(t *testing.T, topicPrefix, keySchema, valueSchema string, flags ...string) string {
+func CreateTopicWithSchema(t *testing.T, topicPrefix, keySchema, valueSchema string, schemaType srclient.SchemaType,
+	flags ...string) string {
 
 	topicName := CreateTopic(t, topicPrefix, flags...)
 
-	schemaRegistry := srclient.CreateSchemaRegistryClient("http://localhost:18081")
+	schemaRegistry := srclient.NewSchemaRegistryClient("http://localhost:18081")
 
 	if keySchema != "" {
-		if _, err := schemaRegistry.CreateSchema(topicName+"-key", keySchema, srclient.Avro); err != nil {
+		if schema, err := schemaRegistry.CreateSchema(topicName+"-key", keySchema, schemaType); err != nil {
 			t.Fatalf("unable to register schema for key: %v", err)
+		} else {
+			output.TestLogf("registered schema %q with ID=%d", topicName+"-key", schema.ID())
 		}
 	}
 
 	if valueSchema != "" {
-		if _, err := schemaRegistry.CreateSchema(topicName+"-value", valueSchema, srclient.Avro); err != nil {
+		if schema, err := schemaRegistry.CreateSchema(topicName+"-value", valueSchema, schemaType); err != nil {
 			t.Fatalf("unable to register schema for value: %v", err)
+		} else {
+			output.TestLogf("registered schema %q with ID=%d", topicName+"-value", schema.ID())
 		}
 	}
 

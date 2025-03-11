@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
+
 	"github.com/deviceinsight/kafkactl/v5/internal/auth"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/global"
-
-	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
 
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers"
@@ -41,13 +41,16 @@ type SaslConfig struct {
 	TokenProvider TokenProvider
 }
 
-type AvroConfig struct {
-	SchemaRegistry string
-	JSONCodec      avro.JSONCodec
+type SchemaRegistryConfig struct {
+	URL            string
 	RequestTimeout time.Duration
 	TLS            TLSConfig
 	Username       string
 	Password       string
+}
+
+type AvroConfig struct {
+	JSONCodec avro.JSONCodec
 }
 
 type TLSConfig struct {
@@ -101,6 +104,7 @@ type ClientContext struct {
 	RequestTimeout time.Duration
 	ClientID       string
 	KafkaVersion   sarama.KafkaVersion
+	SchemaRegistry SchemaRegistryConfig
 	Avro           AvroConfig
 	Protobuf       protobuf.SearchContext
 	Producer       ProducerConfig
@@ -150,31 +154,29 @@ func CreateClientContext() (ClientContext, error) {
 	} else {
 		return context, err
 	}
-	context.Avro.SchemaRegistry = viper.GetString("contexts." + context.Name + ".avro.schemaRegistry")
 	context.Avro.JSONCodec = avro.ParseJSONCodec(viper.GetString("contexts." + context.Name + ".avro.jsonCodec"))
-	context.Avro.RequestTimeout = viper.GetDuration("contexts." + context.Name + ".avro.requestTimeout")
-	context.Avro.TLS.Enabled = viper.GetBool("contexts." + context.Name + ".avro.tls.enabled")
-	if context.Avro.TLS.CA, err = resolvePath("contexts." + context.Name + ".avro.tls.ca"); err != nil {
+	context.SchemaRegistry.URL = viper.GetString("contexts." + context.Name + ".schemaRegistry.url")
+	context.SchemaRegistry.RequestTimeout = viper.GetDuration("contexts." + context.Name + ".schemaRegistry.requestTimeout")
+	context.SchemaRegistry.TLS.Enabled = viper.GetBool("contexts." + context.Name + ".schemaRegistry.tls.enabled")
+	if context.SchemaRegistry.TLS.CA, err = resolvePath("contexts." + context.Name + ".schemaRegistry.tls.ca"); err != nil {
 		return context, err
 	}
-	if context.Avro.TLS.Cert, err = resolvePath("contexts." + context.Name + ".avro.tls.cert"); err != nil {
+	if context.SchemaRegistry.TLS.Cert, err = resolvePath("contexts." + context.Name + ".schemaRegistry.tls.cert"); err != nil {
 		return context, err
 	}
-	if context.Avro.TLS.CertKey, err = resolvePath("contexts." + context.Name + ".avro.tls.certKey"); err != nil {
+	if context.SchemaRegistry.TLS.CertKey, err = resolvePath("contexts." + context.Name + ".schemaRegistry.tls.certKey"); err != nil {
 		return context, err
 	}
-	context.Avro.TLS.Insecure = viper.GetBool("contexts." + context.Name + ".avro.tls.insecure")
-	context.Avro.Username = viper.GetString("contexts." + context.Name + ".avro.username")
-	context.Avro.Password = viper.GetString("contexts." + context.Name + ".avro.password")
+	context.SchemaRegistry.TLS.Insecure = viper.GetBool("contexts." + context.Name + ".schemaRegistry.tls.insecure")
+	context.SchemaRegistry.Username = viper.GetString("contexts." + context.Name + ".schemaRegistry.username")
+	context.SchemaRegistry.Password = viper.GetString("contexts." + context.Name + ".schemaRegistry.password")
 	if context.Protobuf.ProtosetFiles, err = resolvePaths("contexts." + context.Name + ".protobuf.protosetFiles"); err != nil {
 		return context, err
 	}
 	if context.Protobuf.ProtoImportPaths, err = resolvePaths("contexts." + context.Name + ".protobuf.importPaths"); err != nil {
 		return context, err
 	}
-	if context.Protobuf.ProtoFiles, err = resolvePaths("contexts." + context.Name + ".protobuf.protoFiles"); err != nil {
-		return context, err
-	}
+	context.Protobuf.ProtoFiles = viper.GetStringSlice("contexts." + context.Name + ".protobuf.protoFiles")
 	context.Producer.Partitioner = viper.GetString("contexts." + context.Name + ".producer.partitioner")
 	context.Producer.RequiredAcks = viper.GetString("contexts." + context.Name + ".producer.requiredAcks")
 	context.Producer.MaxMessageBytes = viper.GetInt("contexts." + context.Name + ".producer.maxMessageBytes")

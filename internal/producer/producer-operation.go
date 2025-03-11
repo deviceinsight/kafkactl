@@ -79,7 +79,7 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 
 	serializers := MessageSerializerChain{topic: topic}
 
-	if clientContext.Avro.SchemaRegistry != "" {
+	if clientContext.SchemaRegistry.URL != "" {
 		client, err := internal.CreateCachingSchemaRegistry(&clientContext)
 		if err != nil {
 			return err
@@ -112,7 +112,7 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 	}
 	defer func() {
 		if err := producer.Close(); err != nil {
-			output.Warnf("Failed to close Kafka producer cleanly:", err)
+			output.Warnf("Failed to close Kafka producer cleanly: %v", err)
 		}
 	}()
 

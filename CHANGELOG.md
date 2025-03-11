@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 5.6.0 - 2025-03-11
+
+### Changed
+- [#240](https://github.com/deviceinsight/kafkactl/pull/240) deserialization has been changed to generalize the usage
+  of the schemaRegistry. Note that the configuration of the schemaRegistry changed with this.
+
 ## 5.5.1 - 2025-03-05
 
 ### Fixed
