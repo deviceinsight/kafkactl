@@ -1,7 +1,15 @@
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
 BUILD_TS := $(shell date -Iseconds --utc)
+OS ?= linux
+endif
+ifeq ($(UNAME_S),Darwin)
+BUILD_TS := $(shell TZ=Europe/London date -Iseconds)
+OS ?= darwin
+endif
+
 COMMIT_SHA := $(shell git rev-parse HEAD)
 VERSION := $(shell git describe --abbrev=0 --tags || echo "latest")
-OS ?= linux
 
 export CGO_ENABLED=0
 export GOOS=$(OS)
