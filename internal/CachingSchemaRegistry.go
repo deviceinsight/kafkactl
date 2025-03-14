@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/schemaregistry"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/pkg/errors"
 	"github.com/riferrei/srclient"
@@ -44,7 +44,7 @@ func CreateCachingSchemaRegistry(context *ClientContext) (*CachingSchemaRegistry
 		}
 	}
 
-	baseURL := avro.FormatBaseURL(context.SchemaRegistry.URL)
+	baseURL := schemaregistry.FormatBaseURL(context.SchemaRegistry.URL)
 	client := srclient.NewSchemaRegistryClient(baseURL, srclient.WithClient(httpClient),
 		srclient.WithSemaphoreWeight(int64(16)))
 
