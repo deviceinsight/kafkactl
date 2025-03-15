@@ -15,14 +15,11 @@ import (
 const WireFormatBytes = 5
 
 type CachingSchemaRegistry struct {
-	subjects      []string
-	schemas       map[int]*srclient.Schema
-	latestSchemas map[string]*srclient.Schema
-	client        srclient.ISchemaRegistryClient
+	srclient.ISchemaRegistryClient
+	subjects []string
 }
 
 func CreateCachingSchemaRegistry(context *ClientContext) (*CachingSchemaRegistry, error) {
-
 	timeout := context.SchemaRegistry.RequestTimeout
 
 	if context.SchemaRegistry.RequestTimeout <= 0 {
@@ -53,53 +50,18 @@ func CreateCachingSchemaRegistry(context *ClientContext) (*CachingSchemaRegistry
 		client.SetCredentials(context.SchemaRegistry.Username, context.SchemaRegistry.Password)
 	}
 	return &CachingSchemaRegistry{
-		client:        client,
-		schemas:       make(map[int]*srclient.Schema),
-		latestSchemas: make(map[string]*srclient.Schema),
+		ISchemaRegistryClient: client,
 	}, nil
-
 }
 
-func (registry *CachingSchemaRegistry) GetSchemaByVersion(subject string, schemaVersion int) (*srclient.Schema, error) {
-	return registry.client.GetSchemaByVersion(subject, schemaVersion)
-}
-
-func (registry *CachingSchemaRegistry) GetLatestSchema(subject string) (*srclient.Schema, error) {
-	var err error
-
-	if _, ok := registry.latestSchemas[subject]; !ok {
-		var schema *srclient.Schema
-		schema, err = registry.client.GetLatestSchema(subject)
-		if err == nil {
-			registry.latestSchemas[subject] = schema
-		}
-	}
-
-	return registry.latestSchemas[subject], err
-}
-
-func (registry *CachingSchemaRegistry) Subjects() ([]string, error) {
+func (registry *CachingSchemaRegistry) GetSubjects() ([]string, error) {
 	var err error
 
 	if len(registry.subjects) == 0 {
-		registry.subjects, err = registry.client.GetSubjects()
+		registry.subjects, err = registry.ISchemaRegistryClient.GetSubjects()
 	}
 
 	return registry.subjects, err
-}
-
-func (registry *CachingSchemaRegistry) GetSchemaByID(id int) (*srclient.Schema, error) {
-	var err error
-
-	if _, ok := registry.schemas[id]; !ok {
-		var schema *srclient.Schema
-		schema, err = registry.client.GetSchema(id)
-		if err == nil {
-			registry.schemas[id] = schema
-		}
-	}
-
-	return registry.schemas[id], err
 }
 
 func (registry *CachingSchemaRegistry) ExtractSchemaID(data []byte) (int, error) {
