@@ -23,8 +23,7 @@ func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int
 
 	subject := serializer.topic + "-" + avroSchemaType
 
-	subjects, err := serializer.client.Subjects()
-
+	subjects, err := serializer.client.GetSubjects()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list available avro schemas")
 	}
@@ -86,8 +85,7 @@ func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int
 
 func (serializer AvroMessageSerializer) CanSerialize(topic string) (bool, error) {
 
-	subjects, err := serializer.client.Subjects()
-
+	subjects, err := serializer.client.GetSubjects()
 	if err != nil {
 		return false, errors.Wrap(err, "failed to list available avro schemas")
 	}
