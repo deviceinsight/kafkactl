@@ -24,22 +24,22 @@ func FormatBaseURL(baseURL string) string {
 		baseURL = fmt.Sprintf("http://%s", baseURL)
 	}
 
-	parsedURL, err := url.Parse(baseURL)
+	parsedUrl, err := url.Parse(baseURL)
 	if err != nil {
 		panic("Schema registry url invalid")
 	}
 
-	if injectSchema && parsedURL.Port() == "443" {
-		parsedURL.Scheme = "https"
+	if injectSchema && parsedUrl.Port() == "443" {
+		parsedUrl.Scheme = "https"
 	}
 
-	if parsedURL.Port() == "" {
-		if parsedURL.Scheme == "https" {
-			parsedURL.Host = fmt.Sprintf("%s:%s", parsedURL.Hostname(), "443")
+	if parsedUrl.Port() == "" {
+		if parsedUrl.Scheme == "https" {
+			parsedUrl.Host = fmt.Sprintf("%s:%s", parsedUrl.Hostname(), "443")
 		} else {
-			parsedURL.Host = fmt.Sprintf("%s:%s", parsedURL.Hostname(), "80")
+			parsedUrl.Host = fmt.Sprintf("%s:%s", parsedUrl.Hostname(), "80")
 		}
 	}
 
-	return parsedURL.String()
+	return parsedUrl.String()
 }

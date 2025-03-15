@@ -690,8 +690,8 @@ In order to enable avro support you just have to add the schema registry to your
 ----
 contexts:
   localhost:
-    avro:
-      schemaRegistry: localhost:8081
+    schemaRegistry:
+      url: localhost:8081
 ----
 
 ==== Producing to an avro topic

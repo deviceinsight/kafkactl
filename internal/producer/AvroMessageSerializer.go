@@ -3,11 +3,11 @@ package producer
 import (
 	"encoding/binary"
 
+	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
 	"github.com/riferrei/srclient"
 
-	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal/util"
 	"github.com/linkedin/goavro/v2"
 	"github.com/pkg/errors"
@@ -19,8 +19,23 @@ type AvroMessageSerializer struct {
 	client    *internal.CachingSchemaRegistry
 }
 
-func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int, avroSchemaType string) ([]byte, error) {
+func (serializer AvroMessageSerializer) CanSerializeValue(topic string) (bool, error) {
+	return serializer.client.SubjectOfTypeExists(topic+"-value", srclient.Avro)
+}
 
+func (serializer AvroMessageSerializer) CanSerializeKey(topic string) (bool, error) {
+	return serializer.client.SubjectOfTypeExists(topic+"-key", srclient.Avro)
+}
+
+func (serializer AvroMessageSerializer) SerializeValue(value []byte, flags Flags) ([]byte, error) {
+	return serializer.encode(value, flags.ValueSchemaVersion, "value")
+}
+
+func (serializer AvroMessageSerializer) SerializeKey(key []byte, flags Flags) ([]byte, error) {
+	return serializer.encode(key, flags.KeySchemaVersion, "key")
+}
+
+func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int, avroSchemaType string) ([]byte, error) {
 	subject := serializer.topic + "-" + avroSchemaType
 
 	subjects, err := serializer.client.GetSubjects()
@@ -37,21 +52,14 @@ func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int
 
 	if schemaVersion == -1 {
 		schema, err = serializer.client.GetLatestSchema(subject)
-
 		if err != nil {
 			return nil, errors.Errorf("failed to find latest avro schema for subject: %s (%v)", subject, err)
 		}
 	} else {
 		schema, err = serializer.client.GetSchemaByVersion(subject, schemaVersion)
-
 		if err != nil {
 			return nil, errors.Errorf("failed to find avro schema for subject: %s id: %d (%v)", subject, schemaVersion, err)
 		}
-	}
-
-	if schema.SchemaType() != nil && *schema.SchemaType() != srclient.Avro {
-		// does not seem to be avro data
-		return rawData, nil
 	}
 
 	var avroCodec *goavro.Codec
@@ -84,7 +92,6 @@ func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int
 }
 
 func (serializer AvroMessageSerializer) CanSerialize(topic string) (bool, error) {
-
 	subjects, err := serializer.client.GetSubjects()
 	if err != nil {
 		return false, errors.Wrap(err, "failed to list available avro schemas")
@@ -101,7 +108,6 @@ func (serializer AvroMessageSerializer) CanSerialize(topic string) (bool, error)
 }
 
 func (serializer AvroMessageSerializer) Serialize(key, value []byte, flags Flags) (*sarama.ProducerMessage, error) {
-
 	recordHeaders, err := createRecordHeaders(flags)
 	if err != nil {
 		return nil, err

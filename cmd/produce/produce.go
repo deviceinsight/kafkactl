@@ -11,10 +11,9 @@ import (
 )
 
 func NewProduceCmd() *cobra.Command {
-
 	var flags producer.Flags
 
-	var cmdProduce = &cobra.Command{
+	cmdProduce := &cobra.Command{
 		Use:   "produce TOPIC",
 		Short: "produce messages to a topic",
 		Args:  cobra.ExactArgs(1),
