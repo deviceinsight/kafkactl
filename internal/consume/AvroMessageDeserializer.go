@@ -20,7 +20,7 @@ func (deserializer *AvroMessageDeserializer) canDeserialize(consumerMsg *sarama.
 
 	schemaID, err := deserializer.registry.ExtractSchemaID(data)
 	if err == nil {
-		schema, schemaErr := deserializer.registry.GetSchemaByID(schemaID)
+		schema, schemaErr := deserializer.registry.GetSchema(schemaID)
 		if schemaErr != nil {
 			output.Debugf("schema not found. id=%d partition=%d, offset=%d error=%v", schemaID,
 				consumerMsg.Partition, consumerMsg.Offset, err)
@@ -52,7 +52,7 @@ func (deserializer *AvroMessageDeserializer) deserialize(data []byte) (*Deserial
 		return nil, err
 	}
 
-	schema, err := deserializer.registry.GetSchemaByID(schemaID)
+	schema, err := deserializer.registry.GetSchema(schemaID)
 	if err != nil {
 		return nil, err
 	}
