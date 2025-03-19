@@ -38,11 +38,11 @@ func (deserializer RegistryProtobufMessageDeserializer) canDeserialize(consumerM
 	return false
 }
 
-func (deserializer RegistryProtobufMessageDeserializer) CanDeserializeValue(msg *sarama.ConsumerMessage, flags Flags) bool {
+func (deserializer RegistryProtobufMessageDeserializer) CanDeserializeValue(msg *sarama.ConsumerMessage, _ Flags) bool {
 	return deserializer.canDeserialize(msg, msg.Value)
 }
 
-func (deserializer RegistryProtobufMessageDeserializer) CanDeserializeKey(msg *sarama.ConsumerMessage, flags Flags) bool {
+func (deserializer RegistryProtobufMessageDeserializer) CanDeserializeKey(msg *sarama.ConsumerMessage, _ Flags) bool {
 	return deserializer.canDeserialize(msg, msg.Key)
 }
 
@@ -56,6 +56,9 @@ func (deserializer RegistryProtobufMessageDeserializer) DeserializeKey(msg *sara
 
 func (deserializer RegistryProtobufMessageDeserializer) deserialize(rawData []byte) (*DeserializedData, error) {
 	schemaID, err := deserializer.registry.ExtractSchemaID(rawData)
+	if err != nil {
+		return nil, err
+	}
 	schema, err := deserializer.registry.GetSchema(schemaID)
 	if err != nil {
 		return nil, err
@@ -84,7 +87,7 @@ func (deserializer RegistryProtobufMessageDeserializer) deserialize(rawData []by
 		return nil, err
 	}
 
-	asJsonBytes, err := protojson.MarshalOptions{
+	asJSONBytes, err := protojson.MarshalOptions{
 		Multiline:       false,
 		EmitUnpopulated: true,
 		AllowPartial:    true,
@@ -97,7 +100,7 @@ func (deserializer RegistryProtobufMessageDeserializer) deserialize(rawData []by
 	schemaString := schema.Schema()
 
 	return &DeserializedData{
-		data:     asJsonBytes,
+		data:     asJSONBytes,
 		schema:   schemaString,
 		schemaID: &schemaID,
 	}, nil
@@ -129,9 +132,8 @@ func findMessageDescriptor(indexes []int64, descriptors []*desc.MessageDescripto
 		return nil, errors.New("indexes can't be empty")
 	} else if len(indexes) == 1 {
 		return descriptors[indexes[0]], nil
-	} else {
-		return findMessageDescriptor(indexes[1:], descriptors)
 	}
+	return findMessageDescriptor(indexes[1:], descriptors)
 }
 
 func (deserializer RegistryProtobufMessageDeserializer) schemaToFileDescriptor(schema *srclient.Schema) (*desc.FileDescriptor, error) {

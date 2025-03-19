@@ -34,11 +34,11 @@ func CreateProtobufMessageSerializer(topic string, context internal.ProtobufConf
 	}, nil
 }
 
-func (serializer ProtobufMessageSerializer) CanSerializeValue(topic string) (bool, error) {
+func (serializer ProtobufMessageSerializer) CanSerializeValue(_ string) (bool, error) {
 	return serializer.valueDescriptor != nil, nil
 }
 
-func (serializer ProtobufMessageSerializer) CanSerializeKey(topic string) (bool, error) {
+func (serializer ProtobufMessageSerializer) CanSerializeKey(_ string) (bool, error) {
 	return serializer.keyDescriptor != nil, nil
 }
 
