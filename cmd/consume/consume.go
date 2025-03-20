@@ -10,10 +10,9 @@ import (
 )
 
 func NewConsumeCmd() *cobra.Command {
-
 	var flags consume.Flags
 
-	var cmdConsume = &cobra.Command{
+	cmdConsume := &cobra.Command{
 		Use:   "consume TOPIC",
 		Short: "consume messages from a topic",
 		Args:  cobra.ExactArgs(1),
@@ -30,7 +29,7 @@ func NewConsumeCmd() *cobra.Command {
 	cmdConsume.Flags().BoolVarP(&flags.PrintPartitions, "print-partitions", "", false, "print message partitions")
 	cmdConsume.Flags().BoolVarP(&flags.PrintKeys, "print-keys", "k", false, "print message keys")
 	cmdConsume.Flags().BoolVarP(&flags.PrintTimestamps, "print-timestamps", "t", false, "print message timestamps")
-	cmdConsume.Flags().BoolVarP(&flags.PrintSchema, "print-schema", "a", false, "print details about avro schema used for decoding")
+	cmdConsume.Flags().BoolVarP(&flags.PrintSchema, "print-schema", "a", false, "print details about schema used for decoding")
 	cmdConsume.Flags().BoolVarP(&flags.PrintHeaders, "print-headers", "", false, "print message headers")
 	cmdConsume.Flags().IntVarP(&flags.Tail, "tail", "", -1, "show only the last n messages on the topic")
 	cmdConsume.Flags().StringVarP(&flags.FromTimestamp, "from-timestamp", "", "", "consume data from offset of given timestamp")
