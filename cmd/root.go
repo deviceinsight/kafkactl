@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/global"
+	"github.com/hashicorp/go-plugin"
 
 	"github.com/deviceinsight/kafkactl/v5/cmd/alter"
 	"github.com/deviceinsight/kafkactl/v5/cmd/attach"
@@ -32,6 +33,7 @@ func NewKafkactlCommand(streams output.IOStreams) *cobra.Command {
 	globalConfig := global.NewConfig()
 
 	cobra.OnInitialize(globalConfig.Init)
+	cobra.OnFinalize(plugin.CleanupClients)
 
 	rootCmd.AddCommand(config.NewConfigCmd())
 	rootCmd.AddCommand(consume.NewConsumeCmd())
