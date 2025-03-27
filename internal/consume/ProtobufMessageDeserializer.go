@@ -2,6 +2,7 @@ package consume
 
 import (
 	"github.com/IBM/sarama"
+	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/jhump/protoreflect/desc"
@@ -16,9 +17,7 @@ type ProtobufMessageDeserializer struct {
 	valueDescriptor *desc.MessageDescriptor
 }
 
-func CreateProtobufMessageDeserializer(context protobuf.SearchContext,
-	keyType, valueType string) (*ProtobufMessageDeserializer, error) {
-
+func CreateProtobufMessageDeserializer(context internal.ProtobufConfig, keyType, valueType string) (*ProtobufMessageDeserializer, error) {
 	return &ProtobufMessageDeserializer{
 		keyType:         keyType,
 		valueType:       valueType,

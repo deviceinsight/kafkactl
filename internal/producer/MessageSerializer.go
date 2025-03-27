@@ -9,9 +9,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-type MessageSerializer interface {
-	CanSerialize(topic string) (bool, error)
-	Serialize(key, value []byte, flags Flags) (*sarama.ProducerMessage, error)
+type messageSerializer interface {
+	CanSerializeValue(topic string) (bool, error)
+	CanSerializeKey(topic string) (bool, error)
+	SerializeValue(value []byte, flags Flags) ([]byte, error)
+	SerializeKey(key []byte, flags Flags) ([]byte, error)
 }
 
 const (
@@ -20,7 +22,6 @@ const (
 )
 
 func parseHeader(raw string) (key, value string, err error) {
-
 	// use a regex to split in order to handle escaped colons
 	re := regexp.MustCompile(`[^\\]:`)
 
