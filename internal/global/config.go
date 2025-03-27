@@ -37,7 +37,7 @@ var configInstance *config
 type Config interface {
 	Flags() *Flags
 	DefaultPaths() []string
-	Init()
+	Init() error
 	currentContext() string
 	setCurrentContext(contextName string) error
 	SetWritableConfig(viper *viper.Viper)
@@ -65,20 +65,20 @@ func ListAvailableContexts() []string {
 	return contexts
 }
 
-func GetCurrentContext() string {
+func GetCurrentContext() (string, error) {
 	var context = configInstance.Flags().Context
 	if context != "" {
 		contexts := viper.GetStringMap("contexts")
 
 		// check if it is an existing context
 		if _, ok := contexts[context]; !ok {
-			output.Fail(fmt.Errorf("not a valid context: %s", context))
+			return "", fmt.Errorf("not a valid context: %s", context)
 		}
 
-		return context
+		return context, nil
 	}
 
-	return configInstance.currentContext()
+	return configInstance.currentContext(), nil
 }
 
 func SetCurrentContext(contextName string) error {
@@ -159,7 +159,7 @@ func (c *config) SetWritableConfig(viper *viper.Viper) {
 }
 
 // Init reads in config file and ENV variables if set.
-func (c *config) Init() {
+func (c *config) Init() error {
 
 	viper.Reset()
 
@@ -181,16 +181,16 @@ func (c *config) Init() {
 
 	if err := c.loadConfig(viper.GetViper(), configFile); err != nil {
 		if isUnknownError(err) {
-			output.Failf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err.Error())
+			return fmt.Errorf("error reading config file: %s (%v)", viper.ConfigFileUsed(), err.Error())
 		}
 		err = generateDefaultConfig()
 		if err != nil {
-			output.Failf("Error generating default config file: %v", err.Error())
+			return fmt.Errorf("error generating default config file: %v", err.Error())
 		}
 
 		// We read generated config now
 		if err = c.loadConfig(viper.GetViper(), configFile); err != nil {
-			output.Failf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err.Error())
+			return fmt.Errorf("error reading config file: %s (%v)", viper.ConfigFileUsed(), err.Error())
 		}
 	}
 
@@ -199,21 +199,22 @@ func (c *config) Init() {
 		c.writableConfig = viper.New()
 		if err := c.loadConfig(c.writableConfig, nil); err != nil {
 			if isUnknownError(err) {
-				output.Failf("Error reading config file: %s (%v)", c.writableConfig.ConfigFileUsed(), err.Error())
+				return fmt.Errorf("error reading config file: %s (%v)", c.writableConfig.ConfigFileUsed(), err.Error())
 			}
 			err = generateDefaultConfig()
 			if err != nil {
-				output.Failf("Error generating default config file: %v", err.Error())
+				return fmt.Errorf("error generating default config file: %v", err.Error())
 			}
 
 			// We read generated config now
 			if err = c.loadConfig(c.writableConfig, configFile); err != nil {
-				output.Failf("Error reading config file: %s (%v)", viper.ConfigFileUsed(), err.Error())
+				return fmt.Errorf("error reading config file: %s (%v)", viper.ConfigFileUsed(), err.Error())
 			}
 		}
 	} else {
 		c.writableConfig = viper.GetViper()
 	}
+	return nil
 }
 
 func isUnknownError(err error) bool {

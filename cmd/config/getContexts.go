@@ -17,10 +17,12 @@ func newGetContextsCmd() *cobra.Command {
 		Aliases: []string{"getContexts"},
 		Short:   "list configured contexts",
 		Long:    `Output names of all configured contexts`,
-		Run: func(_ *cobra.Command, _ []string) {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			contexts := viper.GetStringMap("contexts")
-			currentContext := global.GetCurrentContext()
-
+			currentContext, err := global.GetCurrentContext()
+			if err != nil {
+				return err
+			}
 			if outputFormat == "compact" {
 				for name := range contexts {
 					output.Infof("%s", name)
@@ -29,24 +31,25 @@ func newGetContextsCmd() *cobra.Command {
 				writer := output.CreateTableWriter()
 
 				if err := writer.WriteHeader("ACTIVE", "NAME"); err != nil {
-					output.Fail(err)
+					return err
 				}
 				for context := range contexts {
 					if currentContext == context {
 						if err := writer.Write("*", context); err != nil {
-							output.Fail(err)
+							return err
 						}
 					} else {
 						if err := writer.Write("", context); err != nil {
-							output.Fail(err)
+							return err
 						}
 					}
 				}
 
 				if err := writer.Flush(); err != nil {
-					output.Fail(err)
+					return err
 				}
 			}
+			return nil
 		},
 	}
 

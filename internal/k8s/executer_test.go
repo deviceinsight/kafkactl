@@ -5,11 +5,25 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deviceinsight/kafkactl/v5/internal/output"
-
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
 )
+
+const sampleKubectlVersionOutput = `
+				{
+				  "ClientVersion": {
+					"major": "1",
+					"minor": "27",
+					"gitVersion": "v1.27.1",
+					"gitCommit": "4c9411232e10168d7b050c49a1b59f6df9d7ea4b",
+					"gitTreeState": "clean",
+					"buildDate": "2023-04-14T13:14:41Z",
+					"goVersion": "go1.20.3",
+					"compiler": "gc",
+					"platform": "linux/amd64"
+				  },
+				  "kustomizeVersion": "v5.0.1"
+				}`
 
 type TestRunner struct {
 	binary   string
@@ -36,11 +50,15 @@ func TestExecWithImageAndImagePullSecretProvided(t *testing.T) {
 	context.Kubernetes.ImagePullSecret = "registry-secret"
 
 	var testRunner = TestRunner{}
+	testRunner.response = []byte(sampleKubectlVersionOutput)
 	var runner k8s.Runner = &testRunner
 
-	exec := k8s.NewExecutor(context, runner)
+	exec, err := k8s.NewExecutor(context, runner)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	err := exec.Run("scratch", "/kafkactl", []string{"version"}, []string{"ENV_A=1"})
+	err = exec.Run("scratch", "/kafkactl", []string{"version"}, []string{"ENV_A=1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,11 +85,15 @@ func TestExecWithoutPodOverridesProvided(t *testing.T) {
 	context.Kubernetes.Image = "private.registry.com/deviceinsight/kafkactl"
 
 	var testRunner = TestRunner{}
+	testRunner.response = []byte(sampleKubectlVersionOutput)
 	var runner k8s.Runner = &testRunner
 
-	exec := k8s.NewExecutor(context, runner)
+	exec, err := k8s.NewExecutor(context, runner)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	err := exec.Run("scratch", "/kafkactl", []string{"version"}, []string{"ENV_A=1"})
+	err = exec.Run("scratch", "/kafkactl", []string{"version"}, []string{"ENV_A=1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,9 +109,13 @@ func TestExecWithImageAndTagAddsSuffix(t *testing.T) {
 	context.Kubernetes.Image = "private.registry.com/deviceinsight/kafkactl:latest"
 
 	var testRunner = TestRunner{}
+	testRunner.response = []byte(sampleKubectlVersionOutput)
 	var runner k8s.Runner = &testRunner
 
-	exec := k8s.NewExecutor(context, runner)
+	exec, err := k8s.NewExecutor(context, runner)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	_ = exec.Run("scratch", "/kafkactl", []string{"version"}, []string{"ENV_A=1"})
 
@@ -119,22 +145,8 @@ func TestParseKubectlVersion(t *testing.T) {
 			wantErr:       "unable to extract kubectl version",
 		},
 		{
-			description: "parse_valid_kubectl_output_succeeds",
-			kubectlOutput: `
-				{
-				  "ClientVersion": {
-					"major": "1",
-					"minor": "27",
-					"gitVersion": "v1.27.1",
-					"gitCommit": "4c9411232e10168d7b050c49a1b59f6df9d7ea4b",
-					"gitTreeState": "clean",
-					"buildDate": "2023-04-14T13:14:41Z",
-					"goVersion": "go1.20.3",
-					"compiler": "gc",
-					"platform": "linux/amd64"
-				  },
-				  "kustomizeVersion": "v5.0.1"
-				}`,
+			description:   "parse_valid_kubectl_output_succeeds",
+			kubectlOutput: sampleKubectlVersionOutput,
 			wantVersion: k8s.Version{
 				Major:      1,
 				Minor:      27,
@@ -167,15 +179,9 @@ func TestParseKubectlVersion(t *testing.T) {
 	} {
 		t.Run(test.description, func(t *testing.T) {
 
-			var err error
-
-			output.Fail = func(failError error) {
-				err = failError
-			}
-
 			testRunner.response = []byte(test.kubectlOutput)
 
-			version := k8s.GetKubectlVersion("kubectl", runner)
+			version, err := k8s.GetKubectlVersion("kubectl", runner)
 
 			if test.wantErr != "" {
 				if err == nil {

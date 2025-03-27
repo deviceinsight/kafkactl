@@ -264,21 +264,12 @@ func (kafkactl *KafkaCtlTestCommand) Execute(args ...string) (cmd *cobra.Command
 
 	kafkactl.Root.SetArgs(args)
 
-	var specificErr error
-
-	output.Fail = func(err error) {
-		specificErr = err
-	}
-
 	command, generalErr := kafkactl.Root.ExecuteC()
 
 	output.TestLogf("executed: kafkactl %s", strings.Join(args, " "))
 	output.TestLogf("response: %s %s", kafkactl.GetStdOut(), kafkactl.GetStdErr())
 
-	if generalErr != nil {
-		return command, generalErr
-	}
-	return command, specificErr
+	return command, generalErr
 }
 
 func (kafkactl *KafkaCtlTestCommand) GetStdOut() string {

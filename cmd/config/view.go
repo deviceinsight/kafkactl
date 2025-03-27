@@ -15,14 +15,15 @@ func newViewCmd() *cobra.Command {
 		Use:   "view",
 		Short: "show contents of config file",
 		Long:  `Shows the contents of the config file that is currently used`,
-		Run: func(_ *cobra.Command, _ []string) {
+		RunE: func(_ *cobra.Command, _ []string) error {
 
 			yamlFile, err := os.ReadFile(viper.ConfigFileUsed())
 			if err != nil {
-				output.Fail(errors.Wrap(err, "unable to read config"))
+				return errors.Wrap(err, "unable to read config")
 			}
 
 			output.Infof("%s", yamlFile)
+			return nil
 		},
 	}
 

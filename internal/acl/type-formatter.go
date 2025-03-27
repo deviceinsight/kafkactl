@@ -5,7 +5,6 @@ import (
 
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
-	"github.com/pkg/errors"
 )
 
 func permissionTypeToString(permissionType sarama.AclPermissionType) string {
@@ -19,7 +18,7 @@ func permissionTypeToString(permissionType sarama.AclPermissionType) string {
 	case sarama.AclPermissionAllow:
 		return "Allow"
 	default:
-		output.Fail(errors.Errorf("unknown permissionType: %v", permissionType))
+		output.Warnf("unknown permissionType: %v", permissionType)
 		return ""
 	}
 }
@@ -35,7 +34,7 @@ func permissionTypeFromString(permissionType string) sarama.AclPermissionType {
 	case "allow":
 		return sarama.AclPermissionAllow
 	default:
-		output.Fail(errors.Errorf("unknown permissionType: %v", permissionType))
+		output.Warnf("unknown permissionType: %v", permissionType)
 		return sarama.AclPermissionUnknown
 	}
 }
@@ -69,7 +68,7 @@ func operationToString(operation sarama.AclOperation) string {
 	case sarama.AclOperationIdempotentWrite:
 		return "IdempotentWrite"
 	default:
-		output.Fail(errors.Errorf("unknown operation: %v", operation))
+		output.Warnf("unknown operation: %v", operation)
 		return ""
 	}
 }
@@ -103,7 +102,7 @@ func operationFromString(operation string) sarama.AclOperation {
 	case "idempotentwrite":
 		return sarama.AclOperationIdempotentWrite
 	default:
-		output.Fail(errors.Errorf("unknown operation: %v", operation))
+		output.Warnf("unknown operation: %v", operation)
 		return sarama.AclOperationUnknown
 	}
 }
@@ -121,7 +120,7 @@ func patternTypeToString(patternType sarama.AclResourcePatternType) string {
 	case sarama.AclPatternPrefixed:
 		return "Prefixed"
 	default:
-		output.Fail(errors.Errorf("unknown pattern type: %v", patternType))
+		output.Warnf("unknown pattern type: %v", patternType)
 		return ""
 	}
 }
@@ -139,7 +138,7 @@ func patternTypeFromString(patternType string) sarama.AclResourcePatternType {
 	case "prefixed":
 		return sarama.AclPatternPrefixed
 	default:
-		output.Fail(errors.Errorf("unknown pattern type: %v", patternType))
+		output.Warnf("unknown pattern type: %v", patternType)
 		return sarama.AclPatternUnknown
 	}
 }
@@ -159,7 +158,7 @@ func resourceTypeToString(resourceType sarama.AclResourceType) string {
 	case sarama.AclResourceTransactionalID:
 		return "TransactionalID"
 	default:
-		output.Fail(errors.Errorf("unknown resource type: %v", resourceType))
+		output.Warnf("unknown resource type: %v", resourceType)
 		return ""
 	}
 }
@@ -179,7 +178,7 @@ func resourceTypeFromString(resourceType string) sarama.AclResourceType {
 	case "transactionalid":
 		return sarama.AclResourceTransactionalID
 	default:
-		output.Fail(errors.Errorf("unknown resource type: %v", resourceType))
+		output.Warnf("unknown resource type: %v", resourceType)
 		return sarama.AclResourceUnknown
 	}
 }
