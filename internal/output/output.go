@@ -21,16 +21,6 @@ type StdLogger interface {
 	Println(v ...interface{})
 }
 
-var Fail = func(err error) {
-	_, _ = fmt.Fprintf(IoStreams.ErrOut, "%s\n", err.Error())
-	os.Exit(1)
-}
-
-var Failf = func(msg string, args ...interface{}) {
-	_, _ = fmt.Fprintf(IoStreams.ErrOut, msg+"\n", args...)
-	os.Exit(1)
-}
-
 func Warnf(msg string, args ...interface{}) {
 	_, _ = fmt.Fprintf(IoStreams.ErrOut, msg+"\n", args...)
 }

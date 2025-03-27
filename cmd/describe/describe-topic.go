@@ -1,8 +1,8 @@
 package describe
 
 import (
+	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
-	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/deviceinsight/kafkactl/v5/internal/topic"
 	"github.com/spf13/cobra"
 )
@@ -15,12 +15,11 @@ func newDescribeTopicCmd() *cobra.Command {
 		Use:   "topic TOPIC",
 		Short: "describe a topic",
 		Args:  cobra.MinimumNArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			if !k8s.NewOperation().TryRun(cmd, args) {
-				if err := (&topic.Operation{}).DescribeTopic(args[0], flags); err != nil {
-					output.Fail(err)
-				}
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if internal.IsKubernetesEnabled() {
+				return k8s.NewOperation().Run(cmd, args)
 			}
+			return (&topic.Operation{}).DescribeTopic(args[0], flags)
 		},
 		ValidArgsFunction: topic.CompleteTopicNames,
 	}

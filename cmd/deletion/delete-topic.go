@@ -1,8 +1,8 @@
 package deletion
 
 import (
+	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
-	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/deviceinsight/kafkactl/v5/internal/topic"
 	"github.com/spf13/cobra"
 )
@@ -13,12 +13,11 @@ func newDeleteTopicCmd() *cobra.Command {
 		Use:   "topic TOPIC",
 		Short: "delete a topic",
 		Args:  cobra.MinimumNArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			if !k8s.NewOperation().TryRun(cmd, args) {
-				if err := (&topic.Operation{}).DeleteTopics(args); err != nil {
-					output.Fail(err)
-				}
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if internal.IsKubernetesEnabled() {
+				return k8s.NewOperation().Run(cmd, args)
 			}
+			return (&topic.Operation{}).DeleteTopics(args)
 		},
 		ValidArgsFunction: topic.CompleteTopicNames,
 	}

@@ -6,8 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deviceinsight/kafkactl/v5/internal/output"
-
 	"github.com/deviceinsight/kafkactl/v5/internal/global"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
@@ -139,7 +137,8 @@ func TestContextFlag(t *testing.T) {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	testutil.AssertEquals(t, "sasl-user", global.GetCurrentContext())
+	context, _ := global.GetCurrentContext()
+	testutil.AssertEquals(t, "sasl-user", context)
 }
 
 func TestContextFlagProvidesUnknownContext(t *testing.T) {
@@ -152,15 +151,9 @@ func TestContextFlagProvidesUnknownContext(t *testing.T) {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	var failError error
+	_, err := global.GetCurrentContext()
 
-	output.Fail = func(err error) {
-		failError = err
-	}
-
-	global.GetCurrentContext()
-
-	testutil.AssertErrorContains(t, "not a valid context: unknown-context", failError)
+	testutil.AssertErrorContains(t, "not a valid context: unknown-context", err)
 }
 
 func TestContextFlagAutoCompletion(t *testing.T) {

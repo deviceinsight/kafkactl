@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/global"
 	"github.com/hashicorp/go-plugin"
@@ -25,14 +26,21 @@ import (
 func NewKafkactlCommand(streams output.IOStreams) *cobra.Command {
 
 	var rootCmd = &cobra.Command{
-		Use:   "kafkactl",
-		Short: "command-line interface for Apache Kafka",
-		Long:  `A command-line interface the simplifies interaction with Kafka.`,
+		Use:           "kafkactl",
+		Short:         "command-line interface for Apache Kafka",
+		Long:          `A command-line interface the simplifies interaction with Kafka.`,
+		SilenceUsage:  true,
+		SilenceErrors: true,
 	}
 
 	globalConfig := global.NewConfig()
 
-	cobra.OnInitialize(globalConfig.Init)
+	cobra.OnInitialize(func() {
+		if err := globalConfig.Init(); err != nil {
+			output.Warnf("failed to initialize config: %v", err)
+			os.Exit(1)
+		}
+	})
 	cobra.OnFinalize(plugin.CleanupClients)
 
 	rootCmd.AddCommand(config.NewConfigCmd())

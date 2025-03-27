@@ -54,16 +54,15 @@ func randomString(n int) string {
 	return string(b)
 }
 
-func getKubectlVersion(kubectlBinary string, runner Runner) Version {
+func getKubectlVersion(kubectlBinary string, runner Runner) (Version, error) {
 
 	bytes, err := runner.ExecuteAndReturn(kubectlBinary, []string{"version", "--client", "-o", "json"})
 	if err != nil {
-		output.Fail(err)
-		return Version{}
+		return Version{}, err
 	}
 
 	if len(bytes) == 0 {
-		return Version{}
+		return Version{}, fmt.Errorf("version response empty")
 	}
 
 	type versionOutput struct {
@@ -77,31 +76,36 @@ func getKubectlVersion(kubectlBinary string, runner Runner) Version {
 	var jsonOutput versionOutput
 
 	if err := json.Unmarshal(bytes, &jsonOutput); err != nil {
-		output.Fail(fmt.Errorf("unable to extract kubectl version: %w", err))
-		return Version{}
+		return Version{}, fmt.Errorf("unable to extract kubectl version: %w", err)
 	}
 
 	major, err := strconv.Atoi(jsonOutput.ClientVersion.Major)
 	if err != nil {
-		output.Fail(err)
+		return Version{}, err
 	}
 
 	minor, err := strconv.Atoi(strings.ReplaceAll(jsonOutput.ClientVersion.Minor, "+", ""))
 	if err != nil {
-		output.Fail(err)
+		return Version{}, err
 	}
 
 	return Version{
 		Major:      major,
 		Minor:      minor,
 		GitVersion: jsonOutput.ClientVersion.GitVersion,
-	}
+	}, nil
 }
 
-func newExecutor(context internal.ClientContext, runner Runner) *executor {
+func newExecutor(context internal.ClientContext, runner Runner) (*executor, error) {
+
+	version, err := getKubectlVersion(context.Kubernetes.Binary, runner)
+	if err != nil {
+		return nil, err
+	}
+
 	return &executor{
 		kubectlBinary:   context.Kubernetes.Binary,
-		version:         getKubectlVersion(context.Kubernetes.Binary, runner),
+		version:         version,
 		image:           context.Kubernetes.Image,
 		imagePullSecret: context.Kubernetes.ImagePullSecret,
 		clientID:        internal.GetClientID(&context, ""),
@@ -116,7 +120,7 @@ func newExecutor(context internal.ClientContext, runner Runner) *executor {
 		affinity:        context.Kubernetes.Affinity,
 		tolerations:     context.Kubernetes.Tolerations,
 		runner:          runner,
-	}
+	}, nil
 }
 
 func (kubectl *executor) SetKubectlBinary(bin string) {

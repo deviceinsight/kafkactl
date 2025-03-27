@@ -3,7 +3,6 @@ package cmd
 import (
 	"os"
 
-	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -41,7 +40,7 @@ $ kafkactl completion fish > ~/.config/fish/completions/kafkactl.fish
 		DisableFlagsInUseLine: true,
 		ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
 		Args:                  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 
 			var err error
 
@@ -59,8 +58,9 @@ $ kafkactl completion fish > ~/.config/fish/completions/kafkactl.fish
 			}
 
 			if err != nil {
-				output.Fail(errors.Wrap(err, "unable to generate shell completion"))
+				return errors.Wrap(err, "unable to generate shell completion")
 			}
+			return nil
 		},
 	}
 

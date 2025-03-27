@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"github.com/deviceinsight/kafkactl/v5/internal"
-	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/spf13/cobra"
 )
 
@@ -22,10 +21,8 @@ func newDocsCmd() *cobra.Command {
 		Short:  "Generate documentation as markdown or man pages",
 		Long:   docsDesc,
 		Hidden: true,
-		Run: func(cmd *cobra.Command, _ []string) {
-			if err := (&internal.DocsOperation{}).GenerateDocs(cmd.Root(), flags); err != nil {
-				output.Fail(err)
-			}
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return (&internal.DocsOperation{}).GenerateDocs(cmd.Root(), flags)
 		},
 	}
 

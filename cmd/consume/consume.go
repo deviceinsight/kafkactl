@@ -1,10 +1,10 @@
 package consume
 
 import (
+	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/consume"
 	"github.com/deviceinsight/kafkactl/v5/internal/consumergroups"
 	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
-	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/deviceinsight/kafkactl/v5/internal/topic"
 	"github.com/spf13/cobra"
 )
@@ -17,12 +17,11 @@ func NewConsumeCmd() *cobra.Command {
 		Use:   "consume TOPIC",
 		Short: "consume messages from a topic",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			if !k8s.NewOperation().TryRun(cmd, args) {
-				if err := (&consume.Operation{}).Consume(args[0], flags); err != nil {
-					output.Fail(err)
-				}
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if internal.IsKubernetesEnabled() {
+				return k8s.NewOperation().Run(cmd, args)
 			}
+			return (&consume.Operation{}).Consume(args[0], flags)
 		},
 		ValidArgsFunction: topic.CompleteTopicNames,
 	}

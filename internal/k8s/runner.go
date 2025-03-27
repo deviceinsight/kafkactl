@@ -2,6 +2,8 @@ package k8s
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -10,7 +12,6 @@ import (
 	"syscall"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
-	"github.com/pkg/errors"
 )
 
 // Runner interface for shell commands
@@ -42,14 +43,15 @@ func (shell *ShellRunner) ExecuteAndReturn(binary string, args []string) ([]byte
 	err := cmd.Run()
 
 	if err != nil {
-		switch ee := err.(type) {
-		case *exec.ExitError:
+		var exitError *exec.ExitError
+		switch {
+		case errors.As(err, &exitError):
 			// Propagate any non-zero exit status from the external command
-			waitStatus := ee.Sys().(syscall.WaitStatus)
+			waitStatus := exitError.Sys().(syscall.WaitStatus)
 			exitStatus := waitStatus.ExitStatus()
-			err = newExitError(cmd.Path, cmd.Args, exitStatus, ee, stderr.String(), combined.String())
+			err = newExitError(cmd.Path, cmd.Args, exitStatus, exitError, stderr.String(), combined.String())
 		default:
-			output.Fail(errors.Wrap(err, "unexpected error"))
+			return nil, fmt.Errorf("unexpected error: %w", err)
 		}
 	}
 
@@ -71,31 +73,35 @@ func (shell *ShellRunner) Execute(binary string, args []string) error {
 
 	err := cmd.Start()
 	if err != nil {
-		output.Fail(err)
+		return err
 	}
 
 	var wg sync.WaitGroup
+	var writeErr error
 	wg.Add(1)
 	go func() {
-		if err := filterOutput(output.IoStreams.Out, stdoutIn); err != nil {
-			output.Fail(errors.Wrap(err, "unable to write std out"))
-		}
+		writeErr = filterOutput(output.IoStreams.Out, stdoutIn)
 		wg.Done()
 	}()
 
 	wg.Wait()
 
+	if writeErr != nil {
+		return fmt.Errorf("unable to write std out: %w", writeErr)
+	}
+
 	err = cmd.Wait()
 
 	if err != nil {
-		switch ee := err.(type) {
-		case *exec.ExitError:
+		var exitError *exec.ExitError
+		switch {
+		case errors.As(err, &exitError):
 			// Propagate any non-zero exit status from the external command
-			waitStatus := ee.Sys().(syscall.WaitStatus)
+			waitStatus := exitError.Sys().(syscall.WaitStatus)
 			exitStatus := waitStatus.ExitStatus()
-			err = newExitError(cmd.Path, cmd.Args, exitStatus, ee, "", "")
+			err = newExitError(cmd.Path, cmd.Args, exitStatus, exitError, "", "")
 		default:
-			output.Fail(errors.Wrap(err, "unexpected error"))
+			return fmt.Errorf("unexpected error: %w", err)
 		}
 	}
 

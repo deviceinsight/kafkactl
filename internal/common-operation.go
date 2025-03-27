@@ -120,7 +120,10 @@ func CreateClientContext() (ClientContext, error) {
 	var context ClientContext
 	var err error
 
-	context.Name = global.GetCurrentContext()
+	context.Name, err = global.GetCurrentContext()
+	if err != nil {
+		return context, err
+	}
 
 	if viper.Get("contexts."+context.Name) == nil {
 		return context, errors.Errorf("no context with name %s found", context.Name)
@@ -189,7 +192,7 @@ func CreateClientContext() (ClientContext, error) {
 	context.Sasl.TokenProvider.Options = viper.GetStringMap("contexts." + context.Name + ".sasl.tokenProvider.options")
 
 	viper.SetDefault("contexts."+context.Name+".kubernetes.binary", "kubectl")
-	context.Kubernetes.Enabled = viper.GetBool("contexts." + context.Name + ".kubernetes.enabled")
+	context.Kubernetes.Enabled = IsKubernetesEnabled()
 
 	if context.Kubernetes.Enabled {
 		if context.Kubernetes.Binary, err = resolvePath("contexts." + context.Name + ".kubernetes.binary"); err != nil {
@@ -215,6 +218,11 @@ func CreateClientContext() (ClientContext, error) {
 	}
 
 	return context, nil
+}
+
+func IsKubernetesEnabled() bool {
+	contextName, _ := global.GetCurrentContext()
+	return viper.GetBool("contexts." + contextName + ".kubernetes.enabled")
 }
 
 func CreateClient(context *ClientContext) (sarama.Client, error) {
