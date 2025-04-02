@@ -17,10 +17,9 @@ type AvroMessageDeserializer struct {
 }
 
 func (deserializer *AvroMessageDeserializer) canDeserialize(consumerMsg *sarama.ConsumerMessage, data []byte) bool {
-
 	schemaID, err := deserializer.registry.ExtractSchemaID(data)
 	if err == nil {
-		schema, schemaErr := deserializer.registry.GetSchemaByID(schemaID)
+		schema, schemaErr := deserializer.registry.GetSchema(schemaID)
 		if schemaErr != nil {
 			output.Debugf("schema not found. id=%d partition=%d, offset=%d error=%v", schemaID,
 				consumerMsg.Partition, consumerMsg.Offset, err)
@@ -36,23 +35,24 @@ func (deserializer *AvroMessageDeserializer) canDeserialize(consumerMsg *sarama.
 }
 
 func (deserializer *AvroMessageDeserializer) CanDeserializeKey(consumerMsg *sarama.ConsumerMessage,
-	flags Flags) bool {
+	flags Flags,
+) bool {
 	return flags.KeyProtoType == "" && deserializer.canDeserialize(consumerMsg, consumerMsg.Key)
 }
 
 func (deserializer *AvroMessageDeserializer) CanDeserializeValue(consumerMsg *sarama.ConsumerMessage,
-	flags Flags) bool {
+	flags Flags,
+) bool {
 	return flags.ValueProtoType == "" && deserializer.canDeserialize(consumerMsg, consumerMsg.Value)
 }
 
 func (deserializer *AvroMessageDeserializer) deserialize(data []byte) (*DeserializedData, error) {
-
 	schemaID, err := deserializer.registry.ExtractSchemaID(data)
 	if err != nil {
 		return nil, err
 	}
 
-	schema, err := deserializer.registry.GetSchemaByID(schemaID)
+	schema, err := deserializer.registry.GetSchema(schemaID)
 	if err != nil {
 		return nil, err
 	}

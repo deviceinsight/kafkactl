@@ -2,6 +2,7 @@ package producer
 
 import (
 	"github.com/IBM/sarama"
+	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/jhump/protoreflect/desc"
@@ -15,7 +16,7 @@ type ProtobufMessageSerializer struct {
 	valueDescriptor *desc.MessageDescriptor
 }
 
-func CreateProtobufMessageSerializer(topic string, context protobuf.SearchContext, keyType, valueType string) (*ProtobufMessageSerializer, error) {
+func CreateProtobufMessageSerializer(topic string, context internal.ProtobufConfig, keyType, valueType string) (*ProtobufMessageSerializer, error) {
 	valueDescriptor := protobuf.ResolveMessageType(context, valueType)
 	if valueDescriptor == nil && valueType != "" {
 		return nil, errors.Errorf("value message type %q not found in provided files", valueType)
@@ -33,39 +34,23 @@ func CreateProtobufMessageSerializer(topic string, context protobuf.SearchContex
 	}, nil
 }
 
-func (serializer ProtobufMessageSerializer) CanSerialize(string) (bool, error) {
-	return true, nil
+func (serializer ProtobufMessageSerializer) CanSerializeValue(_ string) (bool, error) {
+	return serializer.valueDescriptor != nil, nil
 }
 
-func (serializer ProtobufMessageSerializer) Serialize(key, value []byte, flags Flags) (*sarama.ProducerMessage, error) {
-	recordHeaders, err := createRecordHeaders(flags)
-	if err != nil {
-		return nil, err
-	}
-
-	message := &sarama.ProducerMessage{Topic: serializer.topic, Partition: flags.Partition, Headers: recordHeaders}
-
-	if key != nil {
-		message.Key, err = encodeProtobuf(key, serializer.keyDescriptor, flags.KeyEncoding)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	message.Value, err = encodeProtobuf(value, serializer.valueDescriptor, flags.ValueEncoding)
-	if err != nil {
-		return nil, err
-	}
-
-	return message, nil
+func (serializer ProtobufMessageSerializer) CanSerializeKey(_ string) (bool, error) {
+	return serializer.keyDescriptor != nil, nil
 }
 
-func encodeProtobuf(data []byte, messageDescriptor *desc.MessageDescriptor, encoding string) (sarama.ByteEncoder, error) {
-	data, err := decodeBytes(data, encoding)
-	if err != nil {
-		return nil, err
-	}
+func (serializer ProtobufMessageSerializer) SerializeValue(value []byte, _ Flags) ([]byte, error) {
+	return encodeProtobuf(value, serializer.valueDescriptor)
+}
 
+func (serializer ProtobufMessageSerializer) SerializeKey(key []byte, _ Flags) ([]byte, error) {
+	return encodeProtobuf(key, serializer.keyDescriptor)
+}
+
+func encodeProtobuf(data []byte, messageDescriptor *desc.MessageDescriptor) (sarama.ByteEncoder, error) {
 	if messageDescriptor == nil {
 		return data, nil
 	}
@@ -75,7 +60,7 @@ func encodeProtobuf(data []byte, messageDescriptor *desc.MessageDescriptor, enco
 	// can probably be replaced by:
 	// umar := protojson.UnmarshalOptions{DiscardUnknown: true}
 
-	if err = message.UnmarshalJSONPB(&jsonpb.Unmarshaler{AllowUnknownFields: true}, data); err != nil {
+	if err := message.UnmarshalJSONPB(&jsonpb.Unmarshaler{AllowUnknownFields: true}, data); err != nil {
 		return nil, errors.Wrap(err, "invalid json")
 	}
 

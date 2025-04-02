@@ -12,9 +12,13 @@ func newCurrentContextCmd() *cobra.Command {
 		Aliases: []string{"currentContext"},
 		Short:   "show current context",
 		Long:    `Displays the name of context that is currently active`,
-		Run: func(_ *cobra.Command, _ []string) {
-			context := global.GetCurrentContext()
+		RunE: func(_ *cobra.Command, _ []string) error {
+			context, err := global.GetCurrentContext()
+			if err != nil {
+				return err
+			}
 			output.Infof("%s", context)
+			return nil
 		},
 	}
 

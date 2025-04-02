@@ -3,27 +3,26 @@ package produce
 import (
 	"fmt"
 
+	"github.com/deviceinsight/kafkactl/v5/internal"
+
 	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
-	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/deviceinsight/kafkactl/v5/internal/producer"
 	"github.com/deviceinsight/kafkactl/v5/internal/topic"
 	"github.com/spf13/cobra"
 )
 
 func NewProduceCmd() *cobra.Command {
-
 	var flags producer.Flags
 
-	var cmdProduce = &cobra.Command{
+	cmdProduce := &cobra.Command{
 		Use:   "produce TOPIC",
 		Short: "produce messages to a topic",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			if !k8s.NewOperation().TryRun(cmd, args) {
-				if err := (&producer.Operation{}).Produce(args[0], flags); err != nil {
-					output.Fail(err)
-				}
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if internal.IsKubernetesEnabled() {
+				return k8s.NewOperation().Run(cmd, args)
 			}
+			return (&producer.Operation{}).Produce(args[0], flags)
 		},
 		ValidArgsFunction: topic.CompleteTopicNames,
 	}

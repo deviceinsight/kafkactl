@@ -18,15 +18,12 @@ import (
 
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers"
-	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 )
 
-var (
-	invalidClientIDCharactersRegExp = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
-)
+var invalidClientIDCharactersRegExp = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
 
 type TokenProvider struct {
 	PluginName string
@@ -47,6 +44,12 @@ type SchemaRegistryConfig struct {
 	TLS            TLSConfig
 	Username       string
 	Password       string
+}
+
+type ProtobufConfig struct {
+	ProtosetFiles    []string
+	ProtoFiles       []string
+	ProtoImportPaths []string
 }
 
 type AvroConfig struct {
@@ -93,6 +96,8 @@ type ProducerConfig struct {
 	Partitioner     string
 	RequiredAcks    string
 	MaxMessageBytes int
+	ValueSerializer string
+	KeySerializer   string
 }
 
 type ClientContext struct {
@@ -104,9 +109,9 @@ type ClientContext struct {
 	RequestTimeout time.Duration
 	ClientID       string
 	KafkaVersion   sarama.KafkaVersion
-	SchemaRegistry SchemaRegistryConfig
 	Avro           AvroConfig
-	Protobuf       protobuf.SearchContext
+	Protobuf       ProtobufConfig
+	SchemaRegistry SchemaRegistryConfig
 	Producer       ProducerConfig
 	Consumer       ConsumerConfig
 }
@@ -120,7 +125,10 @@ func CreateClientContext() (ClientContext, error) {
 	var context ClientContext
 	var err error
 
-	context.Name = global.GetCurrentContext()
+	context.Name, err = global.GetCurrentContext()
+	if err != nil {
+		return context, err
+	}
 
 	if viper.Get("contexts."+context.Name) == nil {
 		return context, errors.Errorf("no context with name %s found", context.Name)
@@ -180,6 +188,8 @@ func CreateClientContext() (ClientContext, error) {
 	context.Producer.Partitioner = viper.GetString("contexts." + context.Name + ".producer.partitioner")
 	context.Producer.RequiredAcks = viper.GetString("contexts." + context.Name + ".producer.requiredAcks")
 	context.Producer.MaxMessageBytes = viper.GetInt("contexts." + context.Name + ".producer.maxMessageBytes")
+	context.Producer.ValueSerializer = viper.GetString("contexts." + context.Name + ".producer.valueSerializer")
+	context.Producer.KeySerializer = viper.GetString("contexts." + context.Name + ".producer.keySerializer")
 	context.Consumer.IsolationLevel = viper.GetString("contexts." + context.Name + ".consumer.isolationLevel")
 	context.Sasl.Enabled = viper.GetBool("contexts." + context.Name + ".sasl.enabled")
 	context.Sasl.Username = viper.GetString("contexts." + context.Name + ".sasl.username")
@@ -189,7 +199,7 @@ func CreateClientContext() (ClientContext, error) {
 	context.Sasl.TokenProvider.Options = viper.GetStringMap("contexts." + context.Name + ".sasl.tokenProvider.options")
 
 	viper.SetDefault("contexts."+context.Name+".kubernetes.binary", "kubectl")
-	context.Kubernetes.Enabled = viper.GetBool("contexts." + context.Name + ".kubernetes.enabled")
+	context.Kubernetes.Enabled = IsKubernetesEnabled()
 
 	if context.Kubernetes.Enabled {
 		if context.Kubernetes.Binary, err = resolvePath("contexts." + context.Name + ".kubernetes.binary"); err != nil {
@@ -217,6 +227,11 @@ func CreateClientContext() (ClientContext, error) {
 	return context, nil
 }
 
+func IsKubernetesEnabled() bool {
+	contextName, _ := global.GetCurrentContext()
+	return viper.GetBool("contexts." + contextName + ".kubernetes.enabled")
+}
+
 func CreateClient(context *ClientContext) (sarama.Client, error) {
 	config, err := CreateClientConfig(context)
 	if err == nil {
@@ -234,8 +249,7 @@ func CreateClusterAdmin(context *ClientContext) (sarama.ClusterAdmin, error) {
 }
 
 func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
-
-	var config = sarama.NewConfig()
+	config := sarama.NewConfig()
 	config.Version = context.KafkaVersion
 	config.ClientID = GetClientID(context, "kafkactl-")
 
@@ -300,7 +314,6 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 }
 
 func GetClientID(context *ClientContext, defaultPrefix string) string {
-
 	var (
 		err error
 		usr *user.User
@@ -356,7 +369,6 @@ func sanitizeUsername(u string) string {
 // setupTlsConfig takes the paths to a tls certificate, CA, and certificate key in
 // a PEM format and returns a constructed tls.Config object.
 func setupTLSConfig(tlsConfig TLSConfig) (*tls.Config, error) {
-
 	if !tlsConfig.Enabled {
 		return nil, errors.Errorf("tls should be enabled at this point")
 	}
@@ -417,7 +429,6 @@ func kafkaVersion(s string) (sarama.KafkaVersion, error) {
 }
 
 func TopicExists(client *sarama.Client, name string) (bool, error) {
-
 	var (
 		err    error
 		topics []string
@@ -437,7 +448,6 @@ func TopicExists(client *sarama.Client, name string) (bool, error) {
 }
 
 func ListConfigs(admin *sarama.ClusterAdmin, resource sarama.ConfigResource, includeDefaults bool) ([]Config, error) {
-
 	var (
 		configEntries []sarama.ConfigEntry
 		err           error
@@ -451,10 +461,9 @@ func ListConfigs(admin *sarama.ClusterAdmin, resource sarama.ConfigResource, inc
 }
 
 func listConfigsFromEntries(configEntries []sarama.ConfigEntry, includeDefaults bool) []Config {
-	var configs = make([]Config, 0)
+	configs := make([]Config, 0)
 
 	for _, configEntry := range configEntries {
-
 		if includeDefaults || (!configEntry.Default && configEntry.Source != sarama.SourceDefault) {
 			entry := Config{Name: configEntry.Name, Value: configEntry.Value}
 			configs = append(configs, entry)

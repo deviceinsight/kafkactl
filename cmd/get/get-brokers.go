@@ -1,9 +1,9 @@
 package get
 
 import (
+	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/broker"
 	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
-	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/spf13/cobra"
 )
 
@@ -14,12 +14,11 @@ func newGetBrokersCmd() *cobra.Command {
 	var cmdGetBrokers = &cobra.Command{
 		Use:   "brokers",
 		Short: "list brokers",
-		Run: func(cmd *cobra.Command, args []string) {
-			if !k8s.NewOperation().TryRun(cmd, args) {
-				if err := (&broker.Operation{}).GetBrokers(flags); err != nil {
-					output.Fail(err)
-				}
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if internal.IsKubernetesEnabled() {
+				return k8s.NewOperation().Run(cmd, args)
 			}
+			return (&broker.Operation{}).GetBrokers(flags)
 		},
 	}
 

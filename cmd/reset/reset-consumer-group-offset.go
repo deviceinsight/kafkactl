@@ -1,10 +1,10 @@
 package reset
 
 import (
+	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/consumergroupoffsets"
 	"github.com/deviceinsight/kafkactl/v5/internal/consumergroups"
 	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
-	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/spf13/cobra"
 )
 
@@ -17,12 +17,11 @@ func newResetOffsetCmd() *cobra.Command {
 		Aliases: []string{"cgo", "offset"},
 		Short:   "reset a consumer group offset",
 		Args:    cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			if !k8s.NewOperation().TryRun(cmd, args) {
-				if err := (&consumergroupoffsets.ConsumerGroupOffsetOperation{}).ResetConsumerGroupOffset(offsetFlags, args[0]); err != nil {
-					output.Fail(err)
-				}
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if internal.IsKubernetesEnabled() {
+				return k8s.NewOperation().Run(cmd, args)
 			}
+			return (&consumergroupoffsets.ConsumerGroupOffsetOperation{}).ResetConsumerGroupOffset(offsetFlags, args[0])
 		},
 		ValidArgsFunction: consumergroups.CompleteConsumerGroups,
 	}

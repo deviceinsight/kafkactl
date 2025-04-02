@@ -8,7 +8,6 @@ import (
 	"github.com/deviceinsight/kafkactl/v5/internal/global"
 
 	"github.com/deviceinsight/kafkactl/v5/internal"
-	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -18,7 +17,7 @@ var KafkaCtlVersion string
 
 type Operation interface {
 	Attach() error
-	TryRun(cmd *cobra.Command, args []string) bool
+	Run(cmd *cobra.Command, args []string) error
 }
 
 type operation struct {
@@ -59,28 +58,28 @@ func (op *operation) Attach() error {
 		return err
 	}
 
-	exec := newExecutor(context, op.runner)
+	exec, err := newExecutor(context, op.runner)
+	if err != nil {
+		return err
+	}
 
 	podEnvironment := parsePodEnvironment(context)
 
 	return exec.Run("ubuntu", "bash", nil, podEnvironment)
 }
 
-func (op *operation) TryRun(cmd *cobra.Command, args []string) bool {
+func (op *operation) Run(cmd *cobra.Command, args []string) error {
 
 	context, err := internal.CreateClientContext()
 	if err != nil {
-		return false
+		return err
 	}
 
 	if !context.Kubernetes.Enabled {
-		return false
+		return fmt.Errorf("kubernetes not enabled")
 	}
 
-	if err := op.run(context, cmd, args); err != nil {
-		output.Fail(err)
-	}
-	return true
+	return op.run(context, cmd, args)
 }
 
 func (op *operation) run(context internal.ClientContext, cmd *cobra.Command, args []string) error {
@@ -89,7 +88,10 @@ func (op *operation) run(context internal.ClientContext, cmd *cobra.Command, arg
 		return err
 	}
 
-	exec := newExecutor(context, op.runner)
+	exec, err := newExecutor(context, op.runner)
+	if err != nil {
+		return err
+	}
 
 	kafkaCtlCommand := parseCompleteCommand(cmd, []string{})
 	kafkaCtlFlags, err := parseFlags(cmd)

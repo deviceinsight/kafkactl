@@ -1,13 +1,10 @@
-BUILD_TS := $(shell date -Iseconds --utc)
+BUILD_TS := $(shell date -Iseconds -u)
 COMMIT_SHA := $(shell git rev-parse HEAD)
 VERSION := $(shell git describe --abbrev=0 --tags || echo "latest")
-OS ?= linux
 
 export CGO_ENABLED=0
-export GOOS=$(OS)
-export GO111MODULE=on
 
-binary := $(if $(filter-out windows,$(OS)),kafkactl,kafkactl.exe)
+binary := kafkactl
 
 module=$(shell go list -m)
 ld_flags := "-X $(module)/cmd.Version=$(VERSION) -X $(module)/cmd.GitCommit=$(COMMIT_SHA) -X $(module)/cmd.BuildTime=$(BUILD_TS)"
@@ -28,16 +25,16 @@ update-dependencies: # update dependencies to latest MINOR.PATCH
 	go get -t -u ./...
 
 lint:
-	golangci-lint run
+	go tool golangci-lint run
 
 .PHONY: cve-check
 cve-check:
-	govulncheck ./...
+	go tool govulncheck ./...
 
 .PHONY: test
 test:
 	rm -f test.log
-	go test -v -short ./...
+	go tool gotestsum --format testname --hide-summary=skipped -- -v -short ./...
 
 .PHONY: integration_test
 integration_test:

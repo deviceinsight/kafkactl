@@ -45,11 +45,9 @@ type Flags struct {
 
 const DefaultMaxMessagesBytes = 1000000
 
-type Operation struct {
-}
+type Operation struct{}
 
 func (operation *Operation) Produce(topic string, flags Flags) error {
-
 	var (
 		clientContext internal.ClientContext
 		err           error
@@ -84,16 +82,17 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 		if err != nil {
 			return err
 		}
-		serializer := AvroMessageSerializer{topic: topic, client: client, jsonCodec: clientContext.Avro.JSONCodec}
+		avroSerializer := AvroMessageSerializer{topic: topic, client: client, jsonCodec: clientContext.Avro.JSONCodec}
+		protobufSerializer := RegistryProtobufMessageSerializer{topic: topic, client: client}
 
-		serializers.serializers = append(serializers.serializers, serializer)
+		serializers.serializers = append(serializers.serializers, avroSerializer, protobufSerializer)
 	}
+	context := clientContext.Protobuf
+	context.ProtosetFiles = append(flags.ProtosetFiles, context.ProtosetFiles...)
+	context.ProtoFiles = append(flags.ProtoFiles, context.ProtoFiles...)
+	context.ProtoImportPaths = append(flags.ProtoImportPaths, context.ProtoImportPaths...)
 
-	if flags.KeyProtoType != "" || flags.ValueProtoType != "" {
-		context := clientContext.Protobuf
-		context.ProtosetFiles = append(flags.ProtosetFiles, context.ProtosetFiles...)
-		context.ProtoFiles = append(flags.ProtoFiles, context.ProtoFiles...)
-		context.ProtoImportPaths = append(flags.ProtoImportPaths, context.ProtoImportPaths...)
+	if len(context.ProtoFiles) != 0 || len(context.ProtoImportPaths) != 0 || len(context.ProtosetFiles) != 0 {
 
 		serializer, err := CreateProtobufMessageSerializer(topic, context, flags.KeyProtoType, flags.ValueProtoType)
 		if err != nil {
@@ -213,7 +212,7 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 			}
 
 			if inputMessage, err = inputParser.ParseLine(line); err != nil {
-				return failWithMessageCount(messageCount, err.Error()) //nolint:govet
+				return failWithMessageCount(messageCount, "failed to parse line: %v", err.Error()) //nolint:govet
 			}
 
 			messageCount++
@@ -244,7 +243,6 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 }
 
 func applyProducerConfigs(config *sarama.Config, clientContext internal.ClientContext, flags Flags) error {
-
 	var err error
 
 	partitioner := clientContext.Producer.Partitioner
@@ -327,9 +325,7 @@ func stdinAvailable() bool {
 }
 
 func splitAt(delimiter string) func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-
 	return func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-
 		// Return nothing if at end of file and no data passed
 		if atEOF && len(data) == 0 {
 			return 0, nil, nil

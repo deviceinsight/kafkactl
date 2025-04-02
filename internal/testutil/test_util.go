@@ -84,6 +84,11 @@ func StartIntegrationTest(t *testing.T) {
 }
 
 func StartIntegrationTestWithContext(t *testing.T, context string) {
+
+	if !strings.HasSuffix(t.Name(), "Integration") {
+		t.Fatalf("integration tests have to be suffixed with 'Integration' to ensure they are executed")
+	}
+
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
@@ -172,13 +177,14 @@ func startTest(t *testing.T, logFilename string) {
 }
 
 func AssertEquals(t *testing.T, expected, actual string) {
-
+	t.Helper()
 	if strings.TrimSpace(actual) != strings.TrimSpace(expected) {
 		t.Fatalf("unexpected output:\nexpected:\n--\n%s\n--\nactual:\n--\n%s\n--", expected, strings.TrimSpace(actual))
 	}
 }
 
 func AssertArraysEquals(t *testing.T, expected, actual []string) {
+	t.Helper()
 	sort.Strings(expected)
 	sort.Strings(actual)
 
@@ -188,7 +194,7 @@ func AssertArraysEquals(t *testing.T, expected, actual []string) {
 }
 
 func AssertErrorContainsOneOf(t *testing.T, expected []string, err error) {
-
+	t.Helper()
 	if err == nil {
 		t.Fatalf("expected error to contain: %s\n: %v", expected, "nil")
 	}
@@ -203,7 +209,7 @@ func AssertErrorContainsOneOf(t *testing.T, expected []string, err error) {
 }
 
 func AssertErrorContains(t *testing.T, expected string, err error) {
-
+	t.Helper()
 	if err == nil {
 		t.Fatalf("expected error to contain: %s\n: %v", expected, "nil")
 	}
@@ -214,12 +220,14 @@ func AssertErrorContains(t *testing.T, expected string, err error) {
 }
 
 func AssertContainSubstring(t *testing.T, expected, actual string) {
+	t.Helper()
 	if !strings.Contains(actual, expected) {
 		t.Fatalf("expected string to contain: %s actual: %s", expected, actual)
 	}
 }
 
 func AssertContains(t *testing.T, expected string, array []string) {
+	t.Helper()
 	if !util.ContainsString(array, expected) {
 		t.Fatalf("expected array to contain: %s\narray: %v", expected, array)
 	}
@@ -264,21 +272,12 @@ func (kafkactl *KafkaCtlTestCommand) Execute(args ...string) (cmd *cobra.Command
 
 	kafkactl.Root.SetArgs(args)
 
-	var specificErr error
-
-	output.Fail = func(err error) {
-		specificErr = err
-	}
-
 	command, generalErr := kafkactl.Root.ExecuteC()
 
 	output.TestLogf("executed: kafkactl %s", strings.Join(args, " "))
 	output.TestLogf("response: %s %s", kafkactl.GetStdOut(), kafkactl.GetStdErr())
 
-	if generalErr != nil {
-		return command, generalErr
-	}
-	return command, specificErr
+	return command, generalErr
 }
 
 func (kafkactl *KafkaCtlTestCommand) GetStdOut() string {

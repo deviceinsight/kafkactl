@@ -1,9 +1,9 @@
 package get
 
 import (
+	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/acl"
 	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
-	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/spf13/cobra"
 )
 
@@ -16,12 +16,11 @@ func newGetACLCmd() *cobra.Command {
 		Aliases: []string{"acl"},
 		Short:   "list available acls",
 		Args:    cobra.MaximumNArgs(0),
-		Run: func(cmd *cobra.Command, args []string) {
-			if !k8s.NewOperation().TryRun(cmd, args) {
-				if err := (&acl.Operation{}).GetACL(flags); err != nil {
-					output.Fail(err)
-				}
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if internal.IsKubernetesEnabled() {
+				return k8s.NewOperation().Run(cmd, args)
 			}
+			return (&acl.Operation{}).GetACL(flags)
 		},
 	}
 

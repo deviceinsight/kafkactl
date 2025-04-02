@@ -1,24 +1,84 @@
 package protobuf
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 
+	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
+	"github.com/pkg/errors"
+	"github.com/riferrei/srclient"
 )
 
-type SearchContext struct {
-	ProtosetFiles    []string
-	ProtoFiles       []string
-	ProtoImportPaths []string
+func SchemaToFileDescriptor(registry srclient.ISchemaRegistryClient, schema *srclient.Schema) (*desc.FileDescriptor, error) {
+	dependencies, err := resolveDependencies(registry, schema.References())
+	if err != nil {
+		return nil, err
+	}
+	dependencies["."] = schema.Schema()
+
+	return ParseFileDescriptor(".", dependencies)
 }
 
-func ResolveMessageType(context SearchContext, typeName string) *desc.MessageDescriptor {
+func resolveDependencies(registry srclient.ISchemaRegistryClient, references []srclient.Reference) (map[string]string, error) {
+	resolved := map[string]string{}
+	for _, r := range references {
+		refSchema, err := registry.GetSchemaByVersion(r.Subject, r.Version)
+		if err != nil {
+			return map[string]string{}, errors.Wrap(err, fmt.Sprintf("couldn't fetch latest schema for subject %s", r.Subject))
+		}
+		resolved[r.Subject] = refSchema.Schema()
+	}
+
+	return resolved, nil
+}
+
+func ParseFileDescriptor(filename string, resolvedSchemas map[string]string) (*desc.FileDescriptor, error) {
+	parser := protoparse.Parser{Accessor: protoparse.FileContentsFromMap(resolvedSchemas)}
+	parsedFiles, err := parser.ParseFiles(filename)
+	if err != nil {
+		return nil, errors.Wrap(err, "couldn't parse file descriptor")
+	}
+	return parsedFiles[0], nil
+}
+
+func ComputeIndexes(fileDesc *desc.FileDescriptor, msgName string) ([]int64, error) {
+	result := make([]int64, 0, 16)
+	if len(fileDesc.GetMessageTypes()) > 0 && fileDesc.GetMessageTypes()[0].GetFullyQualifiedName() == msgName {
+		return result, nil
+	}
+
+	messages := fileDesc.GetMessageTypes()
+	found := false
+
+	for {
+		found = false
+		for i, message := range messages {
+			if message.GetFullyQualifiedName() == msgName {
+				return append(result, int64(i)), nil
+			}
+
+			if strings.Contains(msgName, message.GetFullyQualifiedName()+".") {
+				found = true
+				result = append(result, int64(i))
+				messages = message.GetNestedMessageTypes()
+				break
+			}
+		}
+		if !found {
+			return nil, errors.Errorf("can't compute indexes for %s", msgName)
+		}
+	}
+}
+
+func ResolveMessageType(context internal.ProtobufConfig, typeName string) *desc.MessageDescriptor {
 	for _, descriptor := range makeDescriptors(context) {
 		if msg := descriptor.FindMessage(typeName); msg != nil {
 			return msg
@@ -28,7 +88,7 @@ func ResolveMessageType(context SearchContext, typeName string) *desc.MessageDes
 	return nil
 }
 
-func makeDescriptors(context SearchContext) []*desc.FileDescriptor {
+func makeDescriptors(context internal.ProtobufConfig) []*desc.FileDescriptor {
 	var ret []*desc.FileDescriptor
 
 	ret = appendProtosets(ret, context.ProtosetFiles)

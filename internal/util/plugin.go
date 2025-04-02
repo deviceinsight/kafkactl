@@ -39,6 +39,7 @@ func LoadPlugin[P plugin.Plugin, I any](pluginName string, pluginSpec plugins.Pl
 		Plugins:         pluginSpec.GetMap(),
 		Cmd:             exec.Command(pluginPath),
 		Logger:          logger,
+		Managed:         true,
 	})
 
 	// Connect via RPC

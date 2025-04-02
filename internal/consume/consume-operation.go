@@ -51,11 +51,9 @@ type ConsumedMessage struct {
 	Timestamp *time.Time
 }
 
-type Operation struct {
-}
+type Operation struct{}
 
 func (operation *Operation) Consume(topic string, flags Flags) error {
-
 	var (
 		clientContext internal.ClientContext
 		err           error
@@ -100,8 +98,9 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 	var deserializers MessageDeserializerChain
 
 	if schemaRegistryClient != nil {
-		deserializer := AvroMessageDeserializer{topic: topic, registry: schemaRegistryClient, jsonCodec: clientContext.Avro.JSONCodec}
-		deserializers = append(deserializers, &deserializer)
+		avroDeserializer := AvroMessageDeserializer{topic: topic, registry: schemaRegistryClient, jsonCodec: clientContext.Avro.JSONCodec}
+		protobufDeserializer := RegistryProtobufMessageDeserializer{registry: schemaRegistryClient}
+		deserializers = append(deserializers, &avroDeserializer, &protobufDeserializer)
 	}
 
 	searchCtx := clientContext.Protobuf
@@ -180,7 +179,6 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 }
 
 func applyConsumerConfigs(config *sarama.Config, clientContext internal.ClientContext, flags Flags) error {
-
 	var err error
 
 	isolationLevel := clientContext.Consumer.IsolationLevel
@@ -211,12 +209,11 @@ func parseIsolationLevel(isolationLevel string) (sarama.IsolationLevel, error) {
 }
 
 func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sarama.ConsumerMessage,
-	stopConsumers chan<- bool, deserializers MessageDeserializerChain) *errgroup.Group {
-
+	stopConsumers chan<- bool, deserializers MessageDeserializerChain,
+) *errgroup.Group {
 	errorGroup, _ := errgroup.WithContext(ctx)
 
 	if flags.Tail > 0 {
-
 		errorGroup.Go(func() error {
 			sortedMessages := make([]*sarama.ConsumerMessage, 0)
 
@@ -236,9 +233,8 @@ func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sara
 
 			return nil
 		})
-
 	} else {
-		//just print the messages
+		// just print the messages
 		errorGroup.Go(func() error {
 			var messageCount int64
 			var err error
