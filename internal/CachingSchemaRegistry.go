@@ -71,7 +71,7 @@ func (registry *CachingSchemaRegistry) GetSubjects() ([]string, error) {
 func (registry *CachingSchemaRegistry) SubjectOfTypeExists(subject string, expectedSchemaType srclient.SchemaType) (bool, error) {
 	subjects, err := registry.GetSubjects()
 	if err != nil {
-		return false, errors.Wrap(err, "failed to list available avro schemas")
+		return false, errors.Wrap(err, "failed to list available schemas")
 	}
 
 	if !slices.Contains(subjects, subject) {
