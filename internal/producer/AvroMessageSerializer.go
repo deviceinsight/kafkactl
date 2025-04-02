@@ -28,27 +28,17 @@ func (serializer AvroMessageSerializer) CanSerializeKey(topic string) (bool, err
 }
 
 func (serializer AvroMessageSerializer) SerializeValue(value []byte, flags Flags) ([]byte, error) {
-	return serializer.encode(value, flags.ValueSchemaVersion, "value")
+	return serializer.encode(value, flags.ValueSchemaVersion, serializer.topic+"-value")
 }
 
 func (serializer AvroMessageSerializer) SerializeKey(key []byte, flags Flags) ([]byte, error) {
-	return serializer.encode(key, flags.KeySchemaVersion, "key")
+	return serializer.encode(key, flags.KeySchemaVersion, serializer.topic+"-key")
 }
 
-func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int, avroSchemaType string) ([]byte, error) {
-	subject := serializer.topic + "-" + avroSchemaType
-
-	subjects, err := serializer.client.GetSubjects()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to list available avro schemas")
-	}
-
-	if !util.ContainsString(subjects, subject) {
-		// does not seem to be avro data
-		return rawData, nil
-	}
+func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int, subject string) ([]byte, error) {
 
 	var schema *srclient.Schema
+	var err error
 
 	if schemaVersion == -1 {
 		schema, err = serializer.client.GetLatestSchema(subject)
