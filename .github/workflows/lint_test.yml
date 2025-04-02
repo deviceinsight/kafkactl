@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: $GO_VERSION
+          go-version: "$GO_VERSION"
       - name: Run Lint
         run: make lint
 
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: $GO_VERSION
+          go-version: "$GO_VERSION"
       - name: Run Unit tests
         run: make test
       - name: Upload logs
@@ -63,7 +63,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: $GO_VERSION
+          go-version: "$GO_VERSION"
       - name: Run integration tests
         uses: nick-fields/retry@v2
         with:
