@@ -212,7 +212,7 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 			}
 
 			if inputMessage, err = inputParser.ParseLine(line); err != nil {
-				return failWithMessageCount(messageCount, err.Error()) //nolint:govet
+				return failWithMessageCount(messageCount, "failed to parse line: %v", err.Error()) //nolint:govet
 			}
 
 			messageCount++
