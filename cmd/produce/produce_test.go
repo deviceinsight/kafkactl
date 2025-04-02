@@ -91,7 +91,7 @@ func TestProduceAvroMessageWithHeadersIntegration(t *testing.T) {
 	testutil.AssertEquals(t, fmt.Sprintf("key1:value1,key\\:2:value\\:2#test-key#%s", value), kafkaCtl.GetStdOut())
 }
 
-func TestProduceAvroMessageOmitDefaultValue(t *testing.T) {
+func TestProduceAvroMessageOmitDefaultValueIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
 	valueSchema := `{
@@ -126,7 +126,7 @@ func TestProduceAvroMessageOmitDefaultValue(t *testing.T) {
 	testutil.AssertContainSubstring(t, `"ExpiresOn":null`, stdout)
 }
 
-func TestProduceAvroMessageWithUnionStandardJson(t *testing.T) {
+func TestProduceAvroMessageWithUnionStandardJsonIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
 	valueSchema := `{
@@ -191,7 +191,7 @@ func TestProduceRegistryProtobufMessageWithHeadersIntegration(t *testing.T) {
 	testutil.AssertEquals(t, fmt.Sprintf("key1:value1,key\\:2:value\\:2#test-key#%s", value), kafkaCtl.GetStdOut())
 }
 
-func TestProduceRegistryProtobufMessageOmitDefaultValue(t *testing.T) {
+func TestProduceRegistryProtobufMessageOmitDefaultValueIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
 	valueSchema := `syntax = "proto3";
@@ -218,11 +218,11 @@ func TestProduceRegistryProtobufMessageOmitDefaultValue(t *testing.T) {
 	}
 
 	stdout := kafkaCtl.GetStdOut()
-	testutil.AssertContainSubstring(t, `"CurrencyCode":"EUR"`, stdout)
-	testutil.AssertContainSubstring(t, `"ExpiresOn":null`, stdout)
+	testutil.AssertContainSubstring(t, `"currentCode":"EUR"`, stdout)
+	testutil.AssertContainSubstring(t, `"expiresOn":""`, stdout)
 }
 
-func TestProduceJsonMessageWithSchema(t *testing.T) {
+func TestProduceJsonMessageWithSchemaIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
 	valueSchema := `{
@@ -267,7 +267,7 @@ func TestProduceJsonMessageWithSchema(t *testing.T) {
 	testutil.AssertContainSubstring(t, `"ExpiresOn": "2022-12-12"`, stdout)
 }
 
-func TestProduceAvroMessageWithUnionAvroJson(t *testing.T) {
+func TestProduceAvroMessageWithUnionAvroJsonIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
 	valueSchema := `{
