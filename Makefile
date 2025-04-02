@@ -25,16 +25,16 @@ update-dependencies: # update dependencies to latest MINOR.PATCH
 	go get -t -u ./...
 
 lint:
-	golangci-lint run
+	go tool golangci-lint run
 
 .PHONY: cve-check
 cve-check:
-	govulncheck ./...
+	go tool govulncheck ./...
 
 .PHONY: test
 test:
 	rm -f test.log
-	go test -v -short ./...
+	go tool gotestsum --format testname --hide-summary=skipped -- -v -short ./...
 
 .PHONY: integration_test
 integration_test:
