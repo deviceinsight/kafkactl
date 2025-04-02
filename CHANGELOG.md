@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- [#232](https://github.com/deviceinsight/kafkactl/pull/232) Protobufs serialization and deserialization now supports schemaRegistry
+
 ## 5.6.0 - 2025-03-11
 
 ### Changed

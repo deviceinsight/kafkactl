@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/riferrei/srclient"
-
+	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
+	"github.com/riferrei/srclient"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 	"github.com/jhump/protoreflect/dynamic"
@@ -18,7 +18,6 @@ import (
 )
 
 func TestConsumeWithKeyAndValueIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 
 	topicName := testutil.CreateTopic(t, "consume-topic")
@@ -35,7 +34,6 @@ func TestConsumeWithKeyAndValueIntegration(t *testing.T) {
 }
 
 func TestConsumeWithPartitionAndValueIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 
 	topicName := testutil.CreateTopic(t, "consume-topic", "--partitions", "2")
@@ -52,7 +50,6 @@ func TestConsumeWithPartitionAndValueIntegration(t *testing.T) {
 }
 
 func TestConsumeWithEmptyPartitionsIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 
 	topicName := testutil.CreateTopic(t, "consume-topic", "--partitions", "10")
@@ -69,7 +66,6 @@ func TestConsumeWithEmptyPartitionsIntegration(t *testing.T) {
 }
 
 func TestConsumeTailIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 
 	topicName := testutil.CreateTopic(t, "consume-topic", "--partitions", "10")
@@ -96,8 +92,7 @@ func TestConsumeTailIntegration(t *testing.T) {
 	testutil.AssertEquals(t, "test-key-2#test-value-2b", messages[2])
 }
 
-func TestConsumeFromTimestamp(t *testing.T) {
-
+func TestConsumeFromTimestampIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
 	topicName := testutil.CreateTopic(t, "consume-topic", "--partitions", "2")
@@ -119,25 +114,25 @@ func TestConsumeFromTimestamp(t *testing.T) {
 	testutil.ProduceMessageOnPartition(t, topicName, "key-2", "g", 1, 3)
 	testutil.ProduceMessageOnPartition(t, topicName, "key-1", "h", 0, 3)
 
-	//test --from-timestamp with --to-timestamp with formatted dates
+	// test --from-timestamp with --to-timestamp with formatted dates
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
-	t1Formatted := time.UnixMilli(t1).Format("2006-01-02T15:04:05.123Z")
-	t2Formatted := time.UnixMilli(t2).Format("2006-01-02T15:04:05.123Z")
+	t1Formatted := time.UnixMilli(t1).Format("2006-01-02T15:04:05.000Z")
+	t2Formatted := time.UnixMilli(t2).Format("2006-01-02T15:04:05.000Z")
 	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", t1Formatted, "--to-timestamp", t2Formatted); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 	messages := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
 	testutil.AssertArraysEquals(t, []string{"c", "d", "e", "f"}, messages)
 
-	//test --from-timestamp with --to-timestamp with unix epoch millis timestamps
+	// test --from-timestamp with --to-timestamp with unix epoch millis timestamps
 	kafkaCtl = testutil.CreateKafkaCtlCommand()
-	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", strconv.FormatInt(t2, 10), "--to-timestamp", strconv.FormatInt(t2, 10)); err != nil {
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", strconv.FormatInt(t1, 10), "--to-timestamp", strconv.FormatInt(t2, 10)); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 	messages = strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
 	testutil.AssertArraysEquals(t, []string{"c", "d", "e", "f"}, messages)
 
-	//test --from-timestamp with --max-messages (--partitions present for reproducibility)
+	// test --from-timestamp with --max-messages (--partitions present for reproducibility)
 	kafkaCtl = testutil.CreateKafkaCtlCommand()
 	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", strconv.FormatInt(t1, 10), "--max-messages", strconv.Itoa(2), "--partitions", strconv.Itoa(1)); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
@@ -145,7 +140,7 @@ func TestConsumeFromTimestamp(t *testing.T) {
 	messages = strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
 	testutil.AssertArraysEquals(t, []string{"c", "d"}, messages)
 
-	//test --from-timestamp with --exit
+	// test --from-timestamp with --exit
 	kafkaCtl = testutil.CreateKafkaCtlCommand()
 	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", strconv.FormatInt(t2, 10), "--exit"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
@@ -154,8 +149,7 @@ func TestConsumeFromTimestamp(t *testing.T) {
 	testutil.AssertArraysEquals(t, []string{"g", "h"}, messages)
 }
 
-func TestConsumeToTimestamp(t *testing.T) {
-
+func TestConsumeToTimestampIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
 	topicName := testutil.CreateTopic(t, "consume-topic", "--partitions", "2")
@@ -177,7 +171,7 @@ func TestConsumeToTimestamp(t *testing.T) {
 	testutil.ProduceMessageOnPartition(t, topicName, "key-2", "g", 1, 3)
 	testutil.ProduceMessageOnPartition(t, topicName, "key-1", "h", 0, 3)
 
-	//test --from-beginning with --to-timestamp
+	// test --from-beginning with --to-timestamp
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--to-timestamp", strconv.FormatInt(t1, 10)); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
@@ -185,7 +179,7 @@ func TestConsumeToTimestamp(t *testing.T) {
 	messages := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
 	testutil.AssertArraysEquals(t, []string{"a", "b"}, messages)
 
-	//test --to-timestamp with --tail
+	// test --to-timestamp with --tail
 	kafkaCtl = testutil.CreateKafkaCtlCommand()
 	if _, err := kafkaCtl.Execute("consume", topicName, "--to-timestamp", strconv.FormatInt(t2, 10), "--tail", strconv.Itoa(4)); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
@@ -195,7 +189,6 @@ func TestConsumeToTimestamp(t *testing.T) {
 }
 
 func TestConsumeWithKeyAndValueAsBase64Integration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 
 	topicName := testutil.CreateTopic(t, "consume-topic")
@@ -215,7 +208,6 @@ func TestConsumeWithKeyAndValueAsBase64Integration(t *testing.T) {
 }
 
 func TestConsumeWithKeyAndValueAsHexIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 
 	topicName := testutil.CreateTopic(t, "consume-topic")
@@ -235,7 +227,6 @@ func TestConsumeWithKeyAndValueAsHexIntegration(t *testing.T) {
 }
 
 func TestConsumeWithKeyAndValueAutoDetectBinaryValueIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 
 	topicName := testutil.CreateTopic(t, "consume-topic")
@@ -261,7 +252,6 @@ func TestConsumeWithKeyAndValueAutoDetectBinaryValueIntegration(t *testing.T) {
 }
 
 func TestAvroDeserializationErrorHandlingIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 
 	valueSchema := `{
@@ -338,7 +328,7 @@ func TestProtobufConsumeProtoFileIntegration(t *testing.T) {
 
 	protoPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata")
 	now := time.Date(2021, time.December, 1, 14, 10, 12, 0, time.UTC)
-	pbMessageDesc := protobuf.ResolveMessageType(protobuf.SearchContext{
+	pbMessageDesc := protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtoImportPaths: []string{protoPath},
 		ProtoFiles:       []string{"msg.proto"},
 	}, "TopicMessage")
@@ -374,7 +364,7 @@ func TestProtobufConsumeProtoFileWithoutProtoImportPathIntegration(t *testing.T)
 
 	protoPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata")
 	now := time.Date(2021, time.December, 1, 14, 10, 12, 0, time.UTC)
-	pbMessageDesc := protobuf.ResolveMessageType(protobuf.SearchContext{
+	pbMessageDesc := protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtoImportPaths: []string{protoPath},
 		ProtoFiles:       []string{"msg.proto"},
 	}, "TopicMessage")
@@ -430,7 +420,7 @@ func TestProtobufConsumeProtosetFileIntegration(t *testing.T) {
 
 	protoPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata", "msg.protoset")
 	now := time.Date(2021, time.December, 1, 14, 10, 12, 0, time.UTC)
-	pbMessageDesc := protobuf.ResolveMessageType(protobuf.SearchContext{
+	pbMessageDesc := protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtosetFiles: []string{protoPath},
 	}, "TopicMessage")
 	pbMessage := dynamic.NewMessage(pbMessageDesc)
@@ -465,7 +455,7 @@ func TestProtobufConsumeProtoFileErrNoMessageIntegration(t *testing.T) {
 
 	protoPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata", "msg.protoset")
 	now := time.Date(2021, time.December, 1, 14, 10, 12, 0, time.UTC)
-	pbMessageDesc := protobuf.ResolveMessageType(protobuf.SearchContext{
+	pbMessageDesc := protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtosetFiles: []string{protoPath},
 	}, "TopicMessage")
 	pbMessage := dynamic.NewMessage(pbMessageDesc)
@@ -515,7 +505,6 @@ func TestProtobufConsumeProtoFileErrDecodeIntegration(t *testing.T) {
 }
 
 func TestConsumeGroupIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 
 	prefix := "consume-group-"
@@ -549,7 +538,6 @@ func TestConsumeGroupIntegration(t *testing.T) {
 }
 
 func TestConsumeAutoCompletionIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 
 	prefix := "consume-complete-"
@@ -573,7 +561,6 @@ func TestConsumeAutoCompletionIntegration(t *testing.T) {
 }
 
 func TestConsumeGroupCompletionIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 
 	prefix := "consume-group-complete-"
@@ -599,7 +586,6 @@ func TestConsumeGroupCompletionIntegration(t *testing.T) {
 }
 
 func TestConsumePartitionsK8sIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTestWithContext(t, "k8s-mock")
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
@@ -628,7 +614,6 @@ func TestConsumePartitionsK8sIntegration(t *testing.T) {
 		},
 	} {
 		t.Run(test.description, func(t *testing.T) {
-
 			if _, err := kafkaCtl.Execute(test.args...); err != nil {
 				t.Fatalf("failed to execute command: %v", err)
 			}

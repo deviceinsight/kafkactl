@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/riferrei/srclient"
-
+	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
+	"github.com/riferrei/srclient"
 
 	"github.com/jhump/protoreflect/dynamic"
 
@@ -20,7 +20,6 @@ import (
 )
 
 func TestProduceWithKeyAndValueIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 
 	topicName := testutil.CreateTopic(t, "produce-topic")
@@ -41,7 +40,6 @@ func TestProduceWithKeyAndValueIntegration(t *testing.T) {
 }
 
 func TestProduceMessageWithHeadersIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 
 	topicName := testutil.CreateTopic(t, "produce-topic")
@@ -62,7 +60,6 @@ func TestProduceMessageWithHeadersIntegration(t *testing.T) {
 }
 
 func TestProduceAvroMessageWithHeadersIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 
 	valueSchema := `{
@@ -94,8 +91,7 @@ func TestProduceAvroMessageWithHeadersIntegration(t *testing.T) {
 	testutil.AssertEquals(t, fmt.Sprintf("key1:value1,key\\:2:value\\:2#test-key#%s", value), kafkaCtl.GetStdOut())
 }
 
-func TestProduceAvroMessageOmitDefaultValue(t *testing.T) {
-
+func TestProduceAvroMessageOmitDefaultValueIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
 	valueSchema := `{
@@ -130,8 +126,7 @@ func TestProduceAvroMessageOmitDefaultValue(t *testing.T) {
 	testutil.AssertContainSubstring(t, `"ExpiresOn":null`, stdout)
 }
 
-func TestProduceAvroMessageWithUnionStandardJson(t *testing.T) {
-
+func TestProduceAvroMessageWithUnionStandardJsonIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
 	valueSchema := `{
@@ -168,8 +163,66 @@ func TestProduceAvroMessageWithUnionStandardJson(t *testing.T) {
 	testutil.AssertContainSubstring(t, `"ExpiresOn":"2022-12-12"`, stdout)
 }
 
-func TestProduceJsonMessageWithSchema(t *testing.T) {
+func TestProduceRegistryProtobufMessageWithHeadersIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
 
+	valueSchema := `syntax = "proto3";
+  package foo.bar;
+
+  message Msg {
+    string name = 1;
+  }`
+	value := `{"name":"Peter Mueller"}`
+
+	topicName := testutil.CreateTopicWithSchema(t, "produce-protobuf-topic", "", valueSchema, srclient.Protobuf)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", value, "-H", "key1:value1", "-H", "key\\:2:value\\:2"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-keys", "--print-headers"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, fmt.Sprintf("key1:value1,key\\:2:value\\:2#test-key#%s", value), kafkaCtl.GetStdOut())
+}
+
+func TestProduceRegistryProtobufMessageOmitDefaultValueIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	valueSchema := `syntax = "proto3";
+  package foo.bar;
+
+  message Msg {
+    string current_code = 1;
+    string expires_on = 2;
+  }`
+	value := `{"currentCode":"EUR"}`
+
+	topicName := testutil.CreateTopicWithSchema(t, "produce-protobuf-topic", "", valueSchema, srclient.Protobuf)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", topicName, "--value", value); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	stdout := kafkaCtl.GetStdOut()
+	testutil.AssertContainSubstring(t, `"currentCode":"EUR"`, stdout)
+	testutil.AssertContainSubstring(t, `"expiresOn":""`, stdout)
+}
+
+func TestProduceJsonMessageWithSchemaIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
 	valueSchema := `{
@@ -214,8 +267,7 @@ func TestProduceJsonMessageWithSchema(t *testing.T) {
 	testutil.AssertContainSubstring(t, `"ExpiresOn": "2022-12-12"`, stdout)
 }
 
-func TestProduceAvroMessageWithUnionAvroJson(t *testing.T) {
-
+func TestProduceAvroMessageWithUnionAvroJsonIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
 	valueSchema := `{
@@ -257,7 +309,6 @@ func TestProduceAvroMessageWithUnionAvroJson(t *testing.T) {
 }
 
 func TestProduceTombstoneIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 
 	topicName := testutil.CreateTopic(t, "produce-topic")
@@ -279,7 +330,6 @@ func TestProduceTombstoneIntegration(t *testing.T) {
 }
 
 func TestProduceFromBase64Integration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 
 	topicName := testutil.CreateTopic(t, "produce-topic")
@@ -302,7 +352,6 @@ func TestProduceFromBase64Integration(t *testing.T) {
 }
 
 func TestProduceFromHexIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 
 	topicName := testutil.CreateTopic(t, "produce-topic")
@@ -325,7 +374,6 @@ func TestProduceFromHexIntegration(t *testing.T) {
 }
 
 func TestProduceAutoCompletionIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 
 	prefix := "produce-complete-"
@@ -385,11 +433,11 @@ func TestProduceProtoFileIntegration(t *testing.T) {
 		t.Fatalf("Failed to decode value: %s", err)
 	}
 
-	keyMessage := dynamic.NewMessage(protobuf.ResolveMessageType(protobuf.SearchContext{
+	keyMessage := dynamic.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtoImportPaths: []string{protoPath},
 		ProtoFiles:       []string{"msg.proto"},
 	}, "TopicKey"))
-	valueMessage := dynamic.NewMessage(protobuf.ResolveMessageType(protobuf.SearchContext{
+	valueMessage := dynamic.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtoImportPaths: []string{protoPath},
 		ProtoFiles:       []string{"msg.proto"},
 	}, "TopicMessage"))
@@ -416,7 +464,6 @@ func TestProduceProtoFileIntegration(t *testing.T) {
 }
 
 func TestProduceWithCSVFileIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 	topic := testutil.CreateTopic(t, "produce-topic-csv")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
@@ -438,7 +485,6 @@ func TestProduceWithCSVFileIntegration(t *testing.T) {
 }
 
 func TestProduceWithCSVFileWithTimestampsFirstColumnIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 	topic := testutil.CreateTopic(t, "produce-topic-csv")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
@@ -460,7 +506,6 @@ func TestProduceWithCSVFileWithTimestampsFirstColumnIntegration(t *testing.T) {
 }
 
 func TestProduceWithCSVFileWithTimestampsSecondColumnIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 	topic := testutil.CreateTopic(t, "produce-topic-csv")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
@@ -482,7 +527,6 @@ func TestProduceWithCSVFileWithTimestampsSecondColumnIntegration(t *testing.T) {
 }
 
 func TestProduceWithJSONFileIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 	topic := testutil.CreateTopic(t, "produce-topic-json")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
@@ -505,7 +549,6 @@ func TestProduceWithJSONFileIntegration(t *testing.T) {
 }
 
 func TestProduceWithJSONFileBase64ValuesIntegration(t *testing.T) {
-
 	testutil.StartIntegrationTest(t)
 	topic := testutil.CreateTopic(t, "produce-topic-json-base64-values")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
@@ -559,7 +602,7 @@ func TestProduceProtoFileWithOnlyKeyEncodedIntegration(t *testing.T) {
 		t.Fatalf("Failed to decode key: %s", err)
 	}
 
-	keyMessage := dynamic.NewMessage(protobuf.ResolveMessageType(protobuf.SearchContext{
+	keyMessage := dynamic.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtoImportPaths: []string{protoPath},
 		ProtoFiles:       []string{"msg.proto"},
 	}, "TopicKey"))
@@ -616,11 +659,11 @@ func TestProduceProtoFileWithoutProtoImportPathIntegration(t *testing.T) {
 		t.Fatalf("Failed to decode value: %s", err)
 	}
 
-	keyMessage := dynamic.NewMessage(protobuf.ResolveMessageType(protobuf.SearchContext{
+	keyMessage := dynamic.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtoImportPaths: []string{protoPath},
 		ProtoFiles:       []string{"msg.proto"},
 	}, "TopicKey"))
-	valueMessage := dynamic.NewMessage(protobuf.ResolveMessageType(protobuf.SearchContext{
+	valueMessage := dynamic.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtoImportPaths: []string{protoPath},
 		ProtoFiles:       []string{"msg.proto"},
 	}, "TopicMessage"))
@@ -683,10 +726,10 @@ func TestProduceProtosetFileIntegration(t *testing.T) {
 		t.Fatalf("Failed to decode value: %s", err)
 	}
 
-	keyMessage := dynamic.NewMessage(protobuf.ResolveMessageType(protobuf.SearchContext{
+	keyMessage := dynamic.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtosetFiles: []string{protoPath},
 	}, "TopicKey"))
-	valueMessage := dynamic.NewMessage(protobuf.ResolveMessageType(protobuf.SearchContext{
+	valueMessage := dynamic.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtosetFiles: []string{protoPath},
 	}, "TopicMessage"))
 

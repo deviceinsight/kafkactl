@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/schemaregistry"
@@ -12,7 +13,10 @@ import (
 	"github.com/riferrei/srclient"
 )
 
-const WireFormatBytes = 5
+const (
+	WireFormatBytes = 5
+	MagicByte       = 0
+)
 
 type CachingSchemaRegistry struct {
 	srclient.ISchemaRegistryClient
@@ -64,12 +68,41 @@ func (registry *CachingSchemaRegistry) GetSubjects() ([]string, error) {
 	return registry.subjects, err
 }
 
+func (registry *CachingSchemaRegistry) SubjectOfTypeExists(subject string, expectedSchemaType srclient.SchemaType) (bool, error) {
+	subjects, err := registry.GetSubjects()
+	if err != nil {
+		return false, errors.Wrap(err, "failed to list available schemas")
+	}
+
+	if !slices.Contains(subjects, subject) {
+		return false, nil
+	}
+
+	schema, err := registry.GetLatestSchema(subject)
+	if err != nil {
+		return false, errors.Wrap(err, fmt.Sprintf("failed to retrieve latest schema for subject %s", subject))
+	}
+
+	if schema.SchemaType() == nil && expectedSchemaType == srclient.Avro {
+		return true, nil
+	}
+
+	if schema.SchemaType() == nil {
+		return false, nil
+	}
+
+	if *schema.SchemaType() != expectedSchemaType {
+		return false, nil
+	}
+	return true, nil
+}
+
 func (registry *CachingSchemaRegistry) ExtractSchemaID(data []byte) (int, error) {
 	if len(data) < WireFormatBytes {
 		return 0, fmt.Errorf("data too short. cannot extra schema id from message (len = %d)", len(data))
 	}
 
-	if data[0] != 0 {
+	if data[0] != MagicByte {
 		return 0, fmt.Errorf("confluent serialization format version number was %d != 0", data[0])
 	}
 
