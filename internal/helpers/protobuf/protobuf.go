@@ -30,11 +30,11 @@ func SchemaToFileDescriptor(registry srclient.ISchemaRegistryClient, schema *src
 func resolveDependencies(registry srclient.ISchemaRegistryClient, references []srclient.Reference) (map[string]string, error) {
 	resolved := map[string]string{}
 	for _, r := range references {
-		latest, err := registry.GetLatestSchema(r.Subject)
+		refSchema, err := registry.GetSchemaByVersion(r.Subject, r.Version)
 		if err != nil {
 			return map[string]string{}, errors.Wrap(err, fmt.Sprintf("couldn't fetch latest schema for subject %s", r.Subject))
 		}
-		resolved[r.Subject] = latest.Schema()
+		resolved[r.Subject] = refSchema.Schema()
 	}
 
 	return resolved, nil
