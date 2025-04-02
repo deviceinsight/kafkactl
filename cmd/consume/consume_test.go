@@ -92,7 +92,7 @@ func TestConsumeTailIntegration(t *testing.T) {
 	testutil.AssertEquals(t, "test-key-2#test-value-2b", messages[2])
 }
 
-func TestConsumeFromTimestamp(t *testing.T) {
+func TestConsumeFromTimestampIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
 	topicName := testutil.CreateTopic(t, "consume-topic", "--partitions", "2")
@@ -116,8 +116,8 @@ func TestConsumeFromTimestamp(t *testing.T) {
 
 	// test --from-timestamp with --to-timestamp with formatted dates
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
-	t1Formatted := time.UnixMilli(t1).Format("2006-01-02T15:04:05.123Z")
-	t2Formatted := time.UnixMilli(t2).Format("2006-01-02T15:04:05.123Z")
+	t1Formatted := time.UnixMilli(t1).Format("2006-01-02T15:04:05.000Z")
+	t2Formatted := time.UnixMilli(t2).Format("2006-01-02T15:04:05.000Z")
 	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", t1Formatted, "--to-timestamp", t2Formatted); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
@@ -126,7 +126,7 @@ func TestConsumeFromTimestamp(t *testing.T) {
 
 	// test --from-timestamp with --to-timestamp with unix epoch millis timestamps
 	kafkaCtl = testutil.CreateKafkaCtlCommand()
-	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", strconv.FormatInt(t2, 10), "--to-timestamp", strconv.FormatInt(t2, 10)); err != nil {
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", strconv.FormatInt(t1, 10), "--to-timestamp", strconv.FormatInt(t2, 10)); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 	messages = strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
@@ -149,7 +149,7 @@ func TestConsumeFromTimestamp(t *testing.T) {
 	testutil.AssertArraysEquals(t, []string{"g", "h"}, messages)
 }
 
-func TestConsumeToTimestamp(t *testing.T) {
+func TestConsumeToTimestampIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
 	topicName := testutil.CreateTopic(t, "consume-topic", "--partitions", "2")
