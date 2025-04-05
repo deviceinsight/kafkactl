@@ -64,7 +64,8 @@ func (deserializer RegistryProtobufMessageDeserializer) deserialize(rawData []by
 		return nil, err
 	}
 	output.Debugf("fetched schema %d", schemaID)
-	resolvedSchemas, err := deserializer.resolveDependencies(schema.References())
+	resolvedSchemas := map[string]string{}
+	err = deserializer.resolveDependencies(resolvedSchemas, schema.References())
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +138,8 @@ func findMessageDescriptor(indexes []int64, descriptors []*desc.MessageDescripto
 }
 
 func (deserializer RegistryProtobufMessageDeserializer) schemaToFileDescriptor(schema *srclient.Schema) (*desc.FileDescriptor, error) {
-	dependencies, err := deserializer.resolveDependencies(schema.References())
+	dependencies := map[string]string{}
+	err := deserializer.resolveDependencies(dependencies, schema.References())
 	if err != nil {
 		return nil, err
 	}
@@ -146,17 +148,23 @@ func (deserializer RegistryProtobufMessageDeserializer) schemaToFileDescriptor(s
 	return parseFileDescriptor(".", dependencies)
 }
 
-func (deserializer RegistryProtobufMessageDeserializer) resolveDependencies(references []srclient.Reference) (map[string]string, error) {
-	resolved := map[string]string{}
+func (deserializer RegistryProtobufMessageDeserializer) resolveDependencies(resolved map[string]string, references []srclient.Reference) error {
 	for _, r := range references {
+		if _, ok := resolved[r.Name]; ok {
+			continue
+		}
 		latest, err := deserializer.registry.GetLatestSchema(r.Subject)
 		if err != nil {
-			return map[string]string{}, err
+			return err
 		}
-		resolved[r.Subject] = latest.Schema()
+		resolved[r.Name] = latest.Schema()
+		err = deserializer.resolveDependencies(resolved, latest.References())
+		if err != nil {
+			return err
+		}
 	}
 
-	return resolved, nil
+	return nil
 }
 
 func parseFileDescriptor(filename string, resolvedSchemas map[string]string) (*desc.FileDescriptor, error) {
