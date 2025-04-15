@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers"
+	"github.com/golang/protobuf/jsonpb"
 
 	"golang.org/x/sync/errgroup"
 
@@ -41,6 +42,9 @@ type Flags struct {
 	KeyProtoType     string
 	ValueProtoType   string
 	IsolationLevel   string
+
+	ProtoUseFieldNames  bool
+	ProtoUseEnumNumbers bool
 }
 
 type ConsumedMessage struct {
@@ -108,7 +112,11 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 	searchCtx.ProtoFiles = append(flags.ProtoFiles, searchCtx.ProtoFiles...)
 	searchCtx.ProtoImportPaths = append(flags.ProtoImportPaths, searchCtx.ProtoImportPaths...)
 
-	deserializer, err := CreateProtobufMessageDeserializer(searchCtx, flags.KeyProtoType, flags.ValueProtoType)
+	jsonMarshaler := &jsonpb.Marshaler{
+		OrigName:    flags.ProtoUseFieldNames,
+		EnumsAsInts: flags.ProtoUseEnumNumbers,
+	}
+	deserializer, err := CreateProtobufMessageDeserializer(searchCtx, flags.KeyProtoType, flags.ValueProtoType, jsonMarshaler)
 	if err != nil {
 		return err
 	}

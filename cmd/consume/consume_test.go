@@ -348,11 +348,11 @@ func TestProtobufConsumeProtoFileIntegration(t *testing.T) {
 
 	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
 
-	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "--proto-import-path", protoPath, "--proto-file", "msg.proto", "--value-proto-type", "TopicMessage"); err != nil {
+	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "--proto-import-path", protoPath, "--proto-file", "msg.proto", "--value-proto-type", "TopicMessage", "--proto-use-field-names"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, kafkaCtl.GetStdOut())
+	testutil.AssertEquals(t, `{"produced_at":"2021-12-01T14:10:12Z","num":"1"}`, kafkaCtl.GetStdOut())
 }
 
 func TestProtobufConsumeProtoFileWithoutProtoImportPathIntegration(t *testing.T) {

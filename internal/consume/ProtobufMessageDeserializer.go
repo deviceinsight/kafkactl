@@ -5,6 +5,7 @@ import (
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
 	"github.com/pkg/errors"
@@ -15,14 +16,16 @@ type ProtobufMessageDeserializer struct {
 	valueType       string
 	keyDescriptor   *desc.MessageDescriptor
 	valueDescriptor *desc.MessageDescriptor
+	jsonMarshaler   *jsonpb.Marshaler
 }
 
-func CreateProtobufMessageDeserializer(context internal.ProtobufConfig, keyType, valueType string) (*ProtobufMessageDeserializer, error) {
+func CreateProtobufMessageDeserializer(context internal.ProtobufConfig, keyType, valueType string, jsonMarshaler *jsonpb.Marshaler) (*ProtobufMessageDeserializer, error) {
 	return &ProtobufMessageDeserializer{
 		keyType:         keyType,
 		valueType:       valueType,
 		keyDescriptor:   protobuf.ResolveMessageType(context, keyType),
 		valueDescriptor: protobuf.ResolveMessageType(context, valueType),
+		jsonMarshaler:   jsonMarshaler,
 	}, nil
 }
 
@@ -41,7 +44,7 @@ func (deserializer *ProtobufMessageDeserializer) DeserializeKey(consumerMsg *sar
 		return nil, errors.Errorf("key message type %q not found in provided files", deserializer.keyType)
 	}
 
-	deserialized, err := decodeProtobuf(consumerMsg.Key, deserializer.keyDescriptor)
+	deserialized, err := decodeProtobuf(consumerMsg.Key, deserializer.keyDescriptor, deserializer.jsonMarshaler)
 	return &DeserializedData{data: deserialized}, err
 }
 
@@ -50,11 +53,11 @@ func (deserializer *ProtobufMessageDeserializer) DeserializeValue(consumerMsg *s
 	if deserializer.valueDescriptor == nil {
 		return nil, errors.Errorf("value message type %q not found in provided files", deserializer.valueType)
 	}
-	deserialized, err := decodeProtobuf(consumerMsg.Value, deserializer.valueDescriptor)
+	deserialized, err := decodeProtobuf(consumerMsg.Value, deserializer.valueDescriptor, deserializer.jsonMarshaler)
 	return &DeserializedData{data: deserialized}, err
 }
 
-func decodeProtobuf(b []byte, msgDesc *desc.MessageDescriptor) ([]byte, error) {
+func decodeProtobuf(b []byte, msgDesc *desc.MessageDescriptor, jsonMarshaler *jsonpb.Marshaler) ([]byte, error) {
 	if len(b) == 0 { // tombstone record, can't be unmarshalled as protobuf
 		return nil, nil
 	}
@@ -64,7 +67,7 @@ func decodeProtobuf(b []byte, msgDesc *desc.MessageDescriptor) ([]byte, error) {
 		return nil, err
 	}
 
-	j, err := msg.MarshalJSON()
+	j, err := msg.MarshalJSONPB(jsonMarshaler)
 	if err != nil {
 		return nil, err
 	}

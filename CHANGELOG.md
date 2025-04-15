@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- [#251](https://github.com/deviceinsight/kafkactl/pull/251) Adds `--proto-use-field-names` and `--proto-use-enum-numbers`
+  flags to `consume` command, allowing more control over the ProtoJSON output.
+
 ## 5.7.0 - 2025-04-02
 
 ### Added

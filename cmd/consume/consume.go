@@ -49,6 +49,8 @@ func NewConsumeCmd() *cobra.Command {
 	cmdConsume.Flags().StringVarP(&flags.KeyProtoType, "key-proto-type", "", flags.KeyProtoType, "key protobuf message type")
 	cmdConsume.Flags().StringVarP(&flags.ValueProtoType, "value-proto-type", "", flags.ValueProtoType, "value protobuf message type")
 	cmdConsume.Flags().StringVarP(&flags.IsolationLevel, "isolation-level", "i", "", "isolationLevel to use. One of: ReadUncommitted|ReadCommitted")
+	cmdConsume.Flags().BoolVar(&flags.ProtoUseFieldNames, "proto-use-field-names", false, "output protobuf JSON with field names rather than normalized lowerCamelCase")
+	cmdConsume.Flags().BoolVar(&flags.ProtoUseEnumNumbers, "proto-use-enum-numbers", false, "output protobuf enums as numeric values rather than names")
 
 	if err := cmdConsume.RegisterFlagCompletionFunc("group", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return consumergroups.CompleteConsumerGroups(cmd, args, toComplete)
