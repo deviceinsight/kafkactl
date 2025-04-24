@@ -3,15 +3,10 @@ package producer
 import (
 	"encoding/binary"
 	"fmt"
-
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/jhump/protoreflect/dynamic"
 	"github.com/pkg/errors"
 	"github.com/riferrei/srclient"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 type RegistryProtobufMessageSerializer struct {
@@ -62,15 +57,7 @@ func (serializer RegistryProtobufMessageSerializer) encode(rawData []byte, schem
 		msgName = messageDesc.GetFullyQualifiedName()
 	}
 
-	dynmsg := dynamicpb.NewMessage(messageDesc.UnwrapMessage())
-	_ = protojson.UnmarshalOptions{DiscardUnknown: true}.Unmarshal(rawData, dynmsg)
-	message := dynamic.NewMessage(messageDesc)
-
-	if err := message.UnmarshalJSONPB(&jsonpb.Unmarshaler{AllowUnknownFields: true}, rawData); err != nil {
-		return nil, errors.Wrap(err, "invalid json")
-	}
-
-	pb, err := message.Marshal()
+	pb, err := encodeProtobuf(rawData, messageDesc)
 	if err != nil {
 		return nil, err
 	}

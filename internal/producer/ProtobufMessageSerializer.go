@@ -1,13 +1,13 @@
 package producer
 
 import (
-	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/jhump/protoreflect/desc"
-	"github.com/jhump/protoreflect/dynamic"
 	"github.com/pkg/errors"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 type ProtobufMessageSerializer struct {
@@ -50,21 +50,20 @@ func (serializer ProtobufMessageSerializer) SerializeKey(key []byte, _ Flags) ([
 	return encodeProtobuf(key, serializer.keyDescriptor)
 }
 
-func encodeProtobuf(data []byte, messageDescriptor *desc.MessageDescriptor) (sarama.ByteEncoder, error) {
+func encodeProtobuf(data []byte, messageDescriptor *desc.MessageDescriptor) ([]byte, error) {
 	if messageDescriptor == nil {
 		return data, nil
 	}
 
-	message := dynamic.NewMessage(messageDescriptor)
+	message := dynamicpb.NewMessage(messageDescriptor.UnwrapMessage())
 
-	// can probably be replaced by:
-	// umar := protojson.UnmarshalOptions{DiscardUnknown: true}
+	unmarshaler := protojson.UnmarshalOptions{DiscardUnknown: true}
 
-	if err := message.UnmarshalJSONPB(&jsonpb.Unmarshaler{AllowUnknownFields: true}, data); err != nil {
+	if err := unmarshaler.Unmarshal(data, message); err != nil {
 		return nil, errors.Wrap(err, "invalid json")
 	}
 
-	pb, err := message.Marshal()
+	pb, err := proto.Marshal(message)
 	if err != nil {
 		return nil, err
 	}
