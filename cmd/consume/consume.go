@@ -1,6 +1,8 @@
 package consume
 
 import (
+	"strings"
+
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/consume"
 	"github.com/deviceinsight/kafkactl/v5/internal/consumergroups"
@@ -8,7 +10,6 @@ import (
 	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
 	"github.com/deviceinsight/kafkactl/v5/internal/topic"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 func NewConsumeCmd() *cobra.Command {

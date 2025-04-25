@@ -2,27 +2,25 @@ package protobuf
 
 import (
 	"fmt"
-	"github.com/deviceinsight/kafkactl/v5/internal"
 	"strconv"
 	"strings"
+
+	"github.com/deviceinsight/kafkactl/v5/internal"
 )
 
 const separator = "="
 
-const optionMultiline = "multiline"
-const optionIndent = "indent"
 const optionAllowPartial = "allowpartial"
 const optionUseProtoNames = "useprotonames"
 const optionUseEnumNumbers = "useenumnumbers"
 const optionEmitUnpopulated = "emitunpopulated"
 const optionEmitDefaultValues = "emitdefaultvalues"
 
-var AllMarshalOptions = []string{optionMultiline, optionIndent, optionAllowPartial, optionUseProtoNames,
+var AllMarshalOptions = []string{optionAllowPartial, optionUseProtoNames,
 	optionUseEnumNumbers, optionEmitDefaultValues, optionEmitDefaultValues}
 
-func ParseMarshalOptions(rawOptions []string) (internal.ProtobufMarshalOptions, error) {
+func ParseMarshalOptions(rawOptions []string, options internal.ProtobufMarshalOptions) (internal.ProtobufMarshalOptions, error) {
 
-	options := internal.ProtobufMarshalOptions{}
 	var err error
 
 	for _, optionFlag := range rawOptions {
@@ -30,14 +28,6 @@ func ParseMarshalOptions(rawOptions []string) (internal.ProtobufMarshalOptions, 
 		optionKey := strings.ReplaceAll(strings.ReplaceAll(strings.ToLower(optionParts[0]), "-", ""), "_", "")
 
 		switch optionKey {
-		case optionMultiline:
-			if options.Multiline, err = parseBooleanValue(optionParts); err != nil {
-				return options, err
-			}
-		case optionIndent:
-			if options.Indent, err = parseStringValue(optionParts); err != nil {
-				return options, err
-			}
 		case optionAllowPartial:
 			if options.AllowPartial, err = parseBooleanValue(optionParts); err != nil {
 				return options, err
@@ -64,15 +54,6 @@ func ParseMarshalOptions(rawOptions []string) (internal.ProtobufMarshalOptions, 
 	}
 
 	return options, nil
-}
-
-func parseStringValue(parts []string) (string, error) {
-
-	if len(parts) < 2 {
-		return "", fmt.Errorf("no value provided")
-	}
-
-	return parts[1], nil
 }
 
 func parseBooleanValue(parts []string) (bool, error) {
