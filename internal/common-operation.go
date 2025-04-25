@@ -50,6 +50,17 @@ type ProtobufConfig struct {
 	ProtosetFiles    []string
 	ProtoFiles       []string
 	ProtoImportPaths []string
+	MarshalOptions   ProtobufMarshalOptions
+}
+
+type ProtobufMarshalOptions struct {
+	Multiline         bool
+	Indent            string
+	AllowPartial      bool
+	UseProtoNames     bool
+	UseEnumNumbers    bool
+	EmitUnpopulated   bool
+	EmitDefaultValues bool
 }
 
 type AvroConfig struct {

@@ -11,17 +11,14 @@ import (
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/riferrei/srclient"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoregistry"
-	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 type RegistryProtobufMessageDeserializer struct {
+	config   internal.ProtobufConfig
 	registry *internal.CachingSchemaRegistry
 }
 
-func (deserializer RegistryProtobufMessageDeserializer) canDeserialize(consumerMsg *sarama.ConsumerMessage, data []byte) bool {
+func (deserializer *RegistryProtobufMessageDeserializer) canDeserialize(consumerMsg *sarama.ConsumerMessage, data []byte) bool {
 	schemaID, err := deserializer.registry.ExtractSchemaID(data)
 	if err == nil {
 		schema, schemaErr := deserializer.registry.GetSchema(schemaID)
@@ -38,23 +35,23 @@ func (deserializer RegistryProtobufMessageDeserializer) canDeserialize(consumerM
 	return false
 }
 
-func (deserializer RegistryProtobufMessageDeserializer) CanDeserializeValue(msg *sarama.ConsumerMessage, _ Flags) bool {
+func (deserializer *RegistryProtobufMessageDeserializer) CanDeserializeValue(msg *sarama.ConsumerMessage, _ Flags) bool {
 	return deserializer.canDeserialize(msg, msg.Value)
 }
 
-func (deserializer RegistryProtobufMessageDeserializer) CanDeserializeKey(msg *sarama.ConsumerMessage, _ Flags) bool {
+func (deserializer *RegistryProtobufMessageDeserializer) CanDeserializeKey(msg *sarama.ConsumerMessage, _ Flags) bool {
 	return deserializer.canDeserialize(msg, msg.Key)
 }
 
-func (deserializer RegistryProtobufMessageDeserializer) DeserializeValue(msg *sarama.ConsumerMessage) (*DeserializedData, error) {
+func (deserializer *RegistryProtobufMessageDeserializer) DeserializeValue(msg *sarama.ConsumerMessage) (*DeserializedData, error) {
 	return deserializer.deserialize(msg.Value)
 }
 
-func (deserializer RegistryProtobufMessageDeserializer) DeserializeKey(msg *sarama.ConsumerMessage) (*DeserializedData, error) {
+func (deserializer *RegistryProtobufMessageDeserializer) DeserializeKey(msg *sarama.ConsumerMessage) (*DeserializedData, error) {
 	return deserializer.deserialize(msg.Key)
 }
 
-func (deserializer RegistryProtobufMessageDeserializer) deserialize(rawData []byte) (*DeserializedData, error) {
+func (deserializer *RegistryProtobufMessageDeserializer) deserialize(rawData []byte) (*DeserializedData, error) {
 	schemaID, err := deserializer.registry.ExtractSchemaID(rawData)
 	if err != nil {
 		return nil, err
@@ -76,18 +73,8 @@ func (deserializer RegistryProtobufMessageDeserializer) deserialize(rawData []by
 	if err != nil {
 		return nil, err
 	}
-	dynmsg := dynamicpb.NewMessage(messageDescriptor.UnwrapMessage())
-	err = proto.Unmarshal(rawData[5+bytes:], dynmsg)
-	if err != nil {
-		return nil, err
-	}
 
-	asJSONBytes, err := protojson.MarshalOptions{
-		Multiline:       false,
-		EmitUnpopulated: true,
-		AllowPartial:    true,
-		Resolver:        &ignoreUnrecognizedAny{protoregistry.GlobalTypes},
-	}.Marshal(dynmsg)
+	jsonBytes, err := decodeProtobuf(rawData[5+bytes:], messageDescriptor, deserializer.config.MarshalOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +82,7 @@ func (deserializer RegistryProtobufMessageDeserializer) deserialize(rawData []by
 	schemaString := schema.Schema()
 
 	return &DeserializedData{
-		data:     asJSONBytes,
+		data:     jsonBytes,
 		schema:   schemaString,
 		schemaID: &schemaID,
 	}, nil

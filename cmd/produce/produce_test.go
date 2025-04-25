@@ -213,7 +213,8 @@ func TestProduceRegistryProtobufMessageOmitDefaultValueIntegration(t *testing.T)
 
 	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
 
-	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit"); err != nil {
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning",
+		"--proto-marshal-option", "emitDefaultValues", "--exit"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 

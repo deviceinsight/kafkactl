@@ -93,8 +93,8 @@ func ComputeIndexes(fileDesc *desc.FileDescriptor, msgName string) ([]int64, err
 	}
 }
 
-func ResolveMessageType(context internal.ProtobufConfig, typeName string) *desc.MessageDescriptor {
-	for _, descriptor := range makeDescriptors(context) {
+func ResolveMessageType(protobufConfig internal.ProtobufConfig, typeName string) *desc.MessageDescriptor {
+	for _, descriptor := range makeDescriptors(protobufConfig) {
 		if msg := descriptor.FindMessage(typeName); msg != nil {
 			return msg
 		}
@@ -103,19 +103,19 @@ func ResolveMessageType(context internal.ProtobufConfig, typeName string) *desc.
 	return nil
 }
 
-func makeDescriptors(context internal.ProtobufConfig) []*desc.FileDescriptor {
+func makeDescriptors(protobufConfig internal.ProtobufConfig) []*desc.FileDescriptor {
 	var ret []*desc.FileDescriptor
 
-	ret = appendProtosets(ret, context.ProtosetFiles)
-	importPaths := slices.Clone(context.ProtoImportPaths)
+	ret = appendProtosets(ret, protobufConfig.ProtosetFiles)
+	importPaths := slices.Clone(protobufConfig.ProtoImportPaths)
 
 	// extend import paths with existing files directories
 	// this allows to specify only proto file path
-	for _, existingFile := range getExistingFiles(context.ProtoFiles) {
+	for _, existingFile := range getExistingFiles(protobufConfig.ProtoFiles) {
 		importPaths = append(importPaths, filepath.Dir(existingFile))
 	}
 
-	resolvedFilenames, err := protoparse.ResolveFilenames(importPaths, context.ProtoFiles...)
+	resolvedFilenames, err := protoparse.ResolveFilenames(importPaths, protobufConfig.ProtoFiles...)
 	if err != nil {
 		output.Warnf("Resolve proto files failed: %s", err)
 		return ret
