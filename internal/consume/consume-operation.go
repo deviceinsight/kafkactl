@@ -3,10 +3,11 @@ package consume
 import (
 	"context"
 	"fmt"
-	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers"
 
@@ -187,20 +188,11 @@ func addFlagsToProtobufConfig(protobufConfig internal.ProtobufConfig, flags Flag
 	protobufConfig.ProtoFiles = append(flags.ProtoFiles, protobufConfig.ProtoFiles...)
 	protobufConfig.ProtoImportPaths = append(flags.ProtoImportPaths, protobufConfig.ProtoImportPaths...)
 
-	marshalOptions, err := protobuf.ParseMarshalOptions(flags.ProtoMarshalOptions)
+	var err error
+
+	protobufConfig.MarshalOptions, err = protobuf.ParseMarshalOptions(flags.ProtoMarshalOptions, protobufConfig.MarshalOptions)
 	if err != nil {
 		return protobufConfig, fmt.Errorf("error parsing protobuf marshal options: %w", err)
-	}
-
-	protobufConfig.MarshalOptions.Multiline = protobufConfig.MarshalOptions.Multiline || marshalOptions.Multiline
-	protobufConfig.MarshalOptions.AllowPartial = protobufConfig.MarshalOptions.AllowPartial || marshalOptions.AllowPartial
-	protobufConfig.MarshalOptions.UseProtoNames = protobufConfig.MarshalOptions.UseProtoNames || marshalOptions.UseProtoNames
-	protobufConfig.MarshalOptions.UseEnumNumbers = protobufConfig.MarshalOptions.UseEnumNumbers || marshalOptions.UseEnumNumbers
-	protobufConfig.MarshalOptions.EmitUnpopulated = protobufConfig.MarshalOptions.EmitUnpopulated || marshalOptions.EmitUnpopulated
-	protobufConfig.MarshalOptions.EmitDefaultValues = protobufConfig.MarshalOptions.EmitDefaultValues || marshalOptions.EmitDefaultValues
-
-	if marshalOptions.Indent != "" {
-		protobufConfig.MarshalOptions.Indent = marshalOptions.Indent
 	}
 
 	return protobufConfig, nil

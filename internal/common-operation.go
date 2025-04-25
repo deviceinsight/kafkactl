@@ -54,8 +54,6 @@ type ProtobufConfig struct {
 }
 
 type ProtobufMarshalOptions struct {
-	Multiline         bool
-	Indent            string
 	AllowPartial      bool
 	UseProtoNames     bool
 	UseEnumNumbers    bool

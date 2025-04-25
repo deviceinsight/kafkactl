@@ -70,8 +70,7 @@ func decodeProtobuf(rawData []byte, messageDescriptor *desc.MessageDescriptor, m
 	}
 
 	jsonBytes, err := protojson.MarshalOptions{
-		Multiline:         marshalOptions.Multiline,
-		Indent:            marshalOptions.Indent,
+		Multiline:         false,
 		AllowPartial:      marshalOptions.AllowPartial,
 		UseProtoNames:     marshalOptions.UseProtoNames,
 		UseEnumNumbers:    marshalOptions.UseEnumNumbers,

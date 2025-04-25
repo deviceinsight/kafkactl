@@ -1,28 +1,28 @@
 package protobuf_test
 
 import (
-	"github.com/deviceinsight/kafkactl/v5/internal"
-	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 )
 
 func TestParseMarshalOptions(t *testing.T) {
 
 	type testCases struct {
-		description string
-		input       []string
-		wantOptions internal.ProtobufMarshalOptions
-		wantErr     string
+		description     string
+		input           []string
+		existingOptions internal.ProtobufMarshalOptions
+		wantOptions     internal.ProtobufMarshalOptions
+		wantErr         string
 	}
 
 	for _, test := range []testCases{
 		{
 			description: "successful_parsing",
 			input: []string{
-				"multiline=true",
-				"indent=    ",
 				"allowPartial=true",
 				"useprotonames",
 				"useEnumNumbers=true",
@@ -30,8 +30,6 @@ func TestParseMarshalOptions(t *testing.T) {
 				"emitdefaultvalues=1",
 			},
 			wantOptions: internal.ProtobufMarshalOptions{
-				Multiline:         true,
-				Indent:            "    ",
 				AllowPartial:      true,
 				UseProtoNames:     true,
 				UseEnumNumbers:    true,
@@ -40,24 +38,37 @@ func TestParseMarshalOptions(t *testing.T) {
 			},
 		},
 		{
-			description: "wrong_separator_fails",
-			input:       []string{"multiline:true"},
-			wantErr:     "unknown option \"multiline:true\"",
+			description: "invalidate_existing_options",
+			input: []string{
+				"allowPartial=false",
+				"useprotonames=false",
+				"useEnumNumbers=0",
+				"EmitUnpopulated=false",
+				"emitdefaultvalues=0",
+			},
+			existingOptions: internal.ProtobufMarshalOptions{
+				AllowPartial:      true,
+				UseProtoNames:     true,
+				UseEnumNumbers:    true,
+				EmitUnpopulated:   true,
+				EmitDefaultValues: true,
+			},
+			wantOptions: internal.ProtobufMarshalOptions{},
 		},
 		{
-			description: "indent_without_value_fails",
-			input:       []string{"indent"},
-			wantErr:     "no value provided",
+			description: "wrong_separator_fails",
+			input:       []string{"allowpartial:true"},
+			wantErr:     "unknown option \"allowpartial:true\"",
 		},
 		{
 			description: "wrong_boolean_value_fails",
-			input:       []string{"multiline=not_a_bool"},
+			input:       []string{"allowPartial=not_a_bool"},
 			wantErr:     "parsing \"not_a_bool\": invalid syntax",
 		},
 	} {
 		t.Run(test.description, func(t *testing.T) {
 
-			options, err := protobuf.ParseMarshalOptions(test.input)
+			options, err := protobuf.ParseMarshalOptions(test.input, test.existingOptions)
 
 			if test.wantErr != "" {
 				if err == nil {
