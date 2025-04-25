@@ -3,6 +3,7 @@ package producer
 import (
 	"encoding/binary"
 	"fmt"
+
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"github.com/pkg/errors"
