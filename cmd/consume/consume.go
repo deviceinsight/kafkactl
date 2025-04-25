@@ -4,9 +4,11 @@ import (
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/consume"
 	"github.com/deviceinsight/kafkactl/v5/internal/consumergroups"
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
 	"github.com/deviceinsight/kafkactl/v5/internal/topic"
 	"github.com/spf13/cobra"
+	"strings"
 )
 
 func NewConsumeCmd() *cobra.Command {
@@ -46,6 +48,7 @@ func NewConsumeCmd() *cobra.Command {
 	cmdConsume.Flags().StringSliceVarP(&flags.ProtoFiles, "proto-file", "", flags.ProtoFiles, "additional protobuf description file for searching message description")
 	cmdConsume.Flags().StringSliceVarP(&flags.ProtoImportPaths, "proto-import-path", "", flags.ProtoImportPaths, "additional path to search files listed in proto 'import' directive")
 	cmdConsume.Flags().StringSliceVarP(&flags.ProtosetFiles, "protoset-file", "", flags.ProtosetFiles, "additional compiled protobuf description file for searching message description")
+	cmdConsume.Flags().StringSliceVarP(&flags.ProtoMarshalOptions, "proto-marshal-option", "", flags.ProtoMarshalOptions, "json marshall options to use for protobuf. Format is key=value. Valid keys are "+strings.Join(protobuf.AllMarshalOptions, ","))
 	cmdConsume.Flags().StringVarP(&flags.KeyProtoType, "key-proto-type", "", flags.KeyProtoType, "key protobuf message type")
 	cmdConsume.Flags().StringVarP(&flags.ValueProtoType, "value-proto-type", "", flags.ValueProtoType, "value protobuf message type")
 	cmdConsume.Flags().StringVarP(&flags.IsolationLevel, "isolation-level", "i", "", "isolationLevel to use. One of: ReadUncommitted|ReadCommitted")

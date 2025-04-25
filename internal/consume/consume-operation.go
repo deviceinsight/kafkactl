@@ -2,6 +2,8 @@ package consume
 
 import (
 	"context"
+	"fmt"
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"sort"
 	"strings"
 	"time"
@@ -17,30 +19,31 @@ import (
 )
 
 type Flags struct {
-	PrintPartitions  bool
-	PrintKeys        bool
-	PrintTimestamps  bool
-	PrintSchema      bool
-	PrintHeaders     bool
-	OutputFormat     string
-	Separator        string
-	Group            string
-	Partitions       []int
-	Offsets          []string
-	FromBeginning    bool
-	FromTimestamp    string
-	ToTimestamp      string
-	Tail             int
-	Exit             bool
-	MaxMessages      int64
-	EncodeValue      string
-	EncodeKey        string
-	ProtoFiles       []string
-	ProtoImportPaths []string
-	ProtosetFiles    []string
-	KeyProtoType     string
-	ValueProtoType   string
-	IsolationLevel   string
+	PrintPartitions     bool
+	PrintKeys           bool
+	PrintTimestamps     bool
+	PrintSchema         bool
+	PrintHeaders        bool
+	OutputFormat        string
+	Separator           string
+	Group               string
+	Partitions          []int
+	Offsets             []string
+	FromBeginning       bool
+	FromTimestamp       string
+	ToTimestamp         string
+	Tail                int
+	Exit                bool
+	MaxMessages         int64
+	EncodeValue         string
+	EncodeKey           string
+	ProtoFiles          []string
+	ProtoImportPaths    []string
+	ProtosetFiles       []string
+	ProtoMarshalOptions []string
+	KeyProtoType        string
+	ValueProtoType      string
+	IsolationLevel      string
 }
 
 type ConsumedMessage struct {
@@ -96,19 +99,19 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 	}
 
 	var deserializers MessageDeserializerChain
+	var protobufConfig internal.ProtobufConfig
+
+	if protobufConfig, err = addFlagsToProtobufConfig(clientContext.Protobuf, flags); err != nil {
+		return err
+	}
 
 	if schemaRegistryClient != nil {
 		avroDeserializer := AvroMessageDeserializer{topic: topic, registry: schemaRegistryClient, jsonCodec: clientContext.Avro.JSONCodec}
-		protobufDeserializer := RegistryProtobufMessageDeserializer{registry: schemaRegistryClient}
+		protobufDeserializer := RegistryProtobufMessageDeserializer{config: protobufConfig, registry: schemaRegistryClient}
 		deserializers = append(deserializers, &avroDeserializer, &protobufDeserializer)
 	}
 
-	searchCtx := clientContext.Protobuf
-	searchCtx.ProtosetFiles = append(flags.ProtosetFiles, searchCtx.ProtosetFiles...)
-	searchCtx.ProtoFiles = append(flags.ProtoFiles, searchCtx.ProtoFiles...)
-	searchCtx.ProtoImportPaths = append(flags.ProtoImportPaths, searchCtx.ProtoImportPaths...)
-
-	deserializer, err := CreateProtobufMessageDeserializer(searchCtx, flags.KeyProtoType, flags.ValueProtoType)
+	deserializer, err := CreateProtobufMessageDeserializer(protobufConfig, flags.KeyProtoType, flags.ValueProtoType)
 	if err != nil {
 		return err
 	}
@@ -176,6 +179,31 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 	}
 
 	return nil
+}
+
+func addFlagsToProtobufConfig(protobufConfig internal.ProtobufConfig, flags Flags) (internal.ProtobufConfig, error) {
+
+	protobufConfig.ProtosetFiles = append(flags.ProtosetFiles, protobufConfig.ProtosetFiles...)
+	protobufConfig.ProtoFiles = append(flags.ProtoFiles, protobufConfig.ProtoFiles...)
+	protobufConfig.ProtoImportPaths = append(flags.ProtoImportPaths, protobufConfig.ProtoImportPaths...)
+
+	marshalOptions, err := protobuf.ParseMarshalOptions(flags.ProtoMarshalOptions)
+	if err != nil {
+		return protobufConfig, fmt.Errorf("error parsing protobuf marshal options: %w", err)
+	}
+
+	protobufConfig.MarshalOptions.Multiline = protobufConfig.MarshalOptions.Multiline || marshalOptions.Multiline
+	protobufConfig.MarshalOptions.AllowPartial = protobufConfig.MarshalOptions.AllowPartial || marshalOptions.AllowPartial
+	protobufConfig.MarshalOptions.UseProtoNames = protobufConfig.MarshalOptions.UseProtoNames || marshalOptions.UseProtoNames
+	protobufConfig.MarshalOptions.UseEnumNumbers = protobufConfig.MarshalOptions.UseEnumNumbers || marshalOptions.UseEnumNumbers
+	protobufConfig.MarshalOptions.EmitUnpopulated = protobufConfig.MarshalOptions.EmitUnpopulated || marshalOptions.EmitUnpopulated
+	protobufConfig.MarshalOptions.EmitDefaultValues = protobufConfig.MarshalOptions.EmitDefaultValues || marshalOptions.EmitDefaultValues
+
+	if marshalOptions.Indent != "" {
+		protobufConfig.MarshalOptions.Indent = marshalOptions.Indent
+	}
+
+	return protobufConfig, nil
 }
 
 func applyConsumerConfigs(config *sarama.Config, clientContext internal.ClientContext, flags Flags) error {
