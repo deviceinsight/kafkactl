@@ -153,7 +153,7 @@ func (deserializer RegistryProtobufMessageDeserializer) resolveDependencies(reso
 		if _, ok := resolved[r.Name]; ok {
 			continue
 		}
-		latest, err := deserializer.registry.GetLatestSchema(r.Subject)
+		latest, err := deserializer.registry.GetSchemaByVersion(r.Subject, r.Version)
 		if err != nil {
 			return err
 		}

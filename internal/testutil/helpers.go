@@ -19,7 +19,6 @@ import (
 )
 
 func CreateTopic(t *testing.T, topicPrefix string, flags ...string) string {
-
 	kafkaCtl := CreateKafkaCtlCommand()
 	topicName := GetPrefixedName(topicPrefix)
 
@@ -36,9 +35,19 @@ func CreateTopic(t *testing.T, topicPrefix string, flags ...string) string {
 	return topicName
 }
 
-func CreateTopicWithSchema(t *testing.T, topicPrefix, keySchema, valueSchema string, schemaType srclient.SchemaType,
-	flags ...string) string {
+func RegisterSchema(t *testing.T, subjectName, schema string, schemaType srclient.SchemaType, references ...srclient.Reference) {
+	schemaRegistry := srclient.NewSchemaRegistryClient("http://localhost:18081")
 
+	if schema, err := schemaRegistry.CreateSchema(subjectName, schema, schemaType, references...); err != nil {
+		t.Fatalf("unable to register schema for value: %v", err)
+	} else {
+		output.TestLogf("registered schema %q with ID=%d", schema, schema.ID())
+	}
+}
+
+func CreateTopicWithSchema(t *testing.T, topicPrefix, keySchema, valueSchema string, schemaType srclient.SchemaType,
+	flags ...string,
+) string {
 	topicName := CreateTopic(t, topicPrefix, flags...)
 
 	schemaRegistry := srclient.NewSchemaRegistryClient("http://localhost:18081")
@@ -63,12 +72,10 @@ func CreateTopicWithSchema(t *testing.T, topicPrefix, keySchema, valueSchema str
 }
 
 func VerifyTopicExists(t *testing.T, topic string) {
-
 	kafkaCtl := CreateKafkaCtlCommand()
 
 	findTopic := func(_ uint) error {
 		_, err := kafkaCtl.Execute("get", "topics", "-o", "compact")
-
 		if err != nil {
 			return err
 		}
@@ -84,7 +91,6 @@ func VerifyTopicExists(t *testing.T, topic string) {
 		strategy.Limit(5),
 		strategy.Backoff(backoff.Linear(10*time.Millisecond)),
 	)
-
 	if err != nil {
 		t.Fatalf("could not find topic %s: %v", topic, err)
 	}
@@ -95,7 +101,6 @@ func VerifyTopicExists(t *testing.T, topic string) {
 }
 
 func CreateConsumerGroup(t *testing.T, groupPrefix string, topics ...string) string {
-
 	kafkaCtl := CreateKafkaCtlCommand()
 	groupName := GetPrefixedName(groupPrefix)
 
@@ -117,7 +122,6 @@ func CreateConsumerGroup(t *testing.T, groupPrefix string, topics ...string) str
 }
 
 func ProduceMessage(t *testing.T, topic, key, value string, expectedPartition, expectedOffset int64) {
-
 	kafkaCtl := CreateKafkaCtlCommand()
 
 	if _, err := kafkaCtl.Execute("produce", topic, "--key", key, "--value", value); err != nil {
@@ -128,7 +132,6 @@ func ProduceMessage(t *testing.T, topic, key, value string, expectedPartition, e
 }
 
 func ProduceMessageOnPartition(t *testing.T, topic, key, value string, partition int32, expectedOffset int64) {
-
 	kafkaCtl := CreateKafkaCtlCommand()
 
 	if _, err := kafkaCtl.Execute("produce", topic, "--key", key, "--value", value, "--partition", strconv.FormatInt(int64(partition), 10)); err != nil {
@@ -139,12 +142,10 @@ func ProduceMessageOnPartition(t *testing.T, topic, key, value string, partition
 }
 
 func VerifyGroupExists(t *testing.T, group string) {
-
 	kafkaCtl := CreateKafkaCtlCommand()
 
 	findConsumerGroup := func(_ uint) error {
 		_, err := kafkaCtl.Execute("get", "cg", "-o", "compact")
-
 		if err != nil {
 			return err
 		}
@@ -160,7 +161,6 @@ func VerifyGroupExists(t *testing.T, group string) {
 		strategy.Limit(5),
 		strategy.Backoff(backoff.Linear(10*time.Millisecond)),
 	)
-
 	if err != nil {
 		t.Fatalf("could not find group %s: %v", group, err)
 	}
@@ -171,14 +171,12 @@ func VerifyGroupExists(t *testing.T, group string) {
 }
 
 func VerifyConsumerGroupOffset(t *testing.T, group, topic string, expectedConsumerOffset int) {
-
 	kafkaCtl := CreateKafkaCtlCommand()
 
 	consumerOffsetRegex, _ := regexp.Compile(`consumerOffset: (\d)`)
 
 	verifyConsumerOffset := func(_ uint) error {
 		_, err := kafkaCtl.Execute("describe", "cg", group, "--topic", topic, "-o", "yaml")
-
 		if err != nil {
 			return err
 		}
@@ -200,21 +198,18 @@ func VerifyConsumerGroupOffset(t *testing.T, group, topic string, expectedConsum
 		strategy.Limit(5),
 		strategy.Backoff(backoff.Linear(10*time.Millisecond)),
 	)
-
 	if err != nil {
 		t.Fatalf("failed to verify offset for group=%s topic=%s: %v", group, topic, err)
 	}
 }
 
 func VerifyTopicNotInConsumerGroup(t *testing.T, group, topic string) {
-
 	kafkaCtl := CreateKafkaCtlCommand()
 
 	emptyTopicsRegex, _ := regexp.Compile(`topics: \[]`)
 
 	verifyTopicNotInGroup := func(_ uint) error {
 		_, err := kafkaCtl.Execute("describe", "cg", group, "--topic", topic, "-o", "yaml")
-
 		if err != nil {
 			return err
 		}
@@ -230,7 +225,6 @@ func VerifyTopicNotInConsumerGroup(t *testing.T, group, topic string) {
 		strategy.Limit(5),
 		strategy.Backoff(backoff.Linear(10*time.Millisecond)),
 	)
-
 	if err != nil {
 		t.Fatalf("failed to verify topic=%s not in group=%s: %v", topic, group, err)
 	}
