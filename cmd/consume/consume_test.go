@@ -2,6 +2,7 @@ package consume_test
 
 import (
 	"encoding/hex"
+	"fmt"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -147,6 +148,56 @@ func TestConsumeFromTimestampIntegration(t *testing.T) {
 	}
 	messages = strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
 	testutil.AssertArraysEquals(t, []string{"g", "h"}, messages)
+}
+
+func TestConsumeRegistryProtobufWithNestedDependenciesIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	bazMsg := `syntax = "proto3";
+  package baz;
+
+  message Baz {
+    string field = 1;
+  }
+  `
+
+	barMsg := `syntax = "proto3";
+  package bar;
+
+  import "baz/protobuf/baz.proto";
+
+  message Bar {
+    baz.Baz bazField = 1;
+  }
+  `
+
+	fooMsg := `syntax = "proto3";
+  package foo;
+
+  import "bar/protobuf/bar.proto";
+
+  message Foo {
+    bar.Bar barField = 1;
+  }`
+
+	value := `{"barField":{"bazField":{"field":"value"}}}`
+
+	testutil.RegisterSchema(t, "baz", bazMsg, srclient.Protobuf)
+	testutil.RegisterSchema(t, "bar", barMsg, srclient.Protobuf, srclient.Reference{Name: "baz/protobuf/baz.proto", Version: 1, Subject: "baz"})
+	topicName := testutil.CreateTopic(t, "consume-topic")
+	testutil.RegisterSchema(t, topicName+"-value", fooMsg, srclient.Protobuf, srclient.Reference{Name: "bar/protobuf/bar.proto", Version: 1, Subject: "bar"})
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", value); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-keys"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, fmt.Sprintf("test-key#%s", value), kafkaCtl.GetStdOut())
 }
 
 func TestConsumeToTimestampIntegration(t *testing.T) {
