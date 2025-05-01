@@ -150,7 +150,9 @@ func TestConsumeFromTimestampIntegration(t *testing.T) {
 	testutil.AssertArraysEquals(t, []string{"g", "h"}, messages)
 }
 
-func TestConsumeRegistryProtobufWithNestedDependencies(t *testing.T) {
+func TestConsumeRegistryProtobufWithNestedDependenciesIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
 	bazMsg := `syntax = "proto3";
   package baz;
 
@@ -172,13 +174,13 @@ func TestConsumeRegistryProtobufWithNestedDependencies(t *testing.T) {
 	fooMsg := `syntax = "proto3";
   package foo;
 
-  import "bar/protobuf/bar.proto"
+  import "bar/protobuf/bar.proto";
 
   message Foo {
     bar.Bar barField = 1;
   }`
 
-	value := `{"barField":{"bazField":{"field": "value"}}}`
+	value := `{"barField":{"bazField":{"field":"value"}}}`
 
 	testutil.RegisterSchema(t, "baz", bazMsg, srclient.Protobuf)
 	testutil.RegisterSchema(t, "bar", barMsg, srclient.Protobuf, srclient.Reference{Name: "baz/protobuf/baz.proto", Version: 1, Subject: "baz"})

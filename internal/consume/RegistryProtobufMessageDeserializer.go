@@ -7,9 +7,9 @@ import (
 
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/jhump/protoreflect/desc"
-	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/riferrei/srclient"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -64,13 +64,7 @@ func (deserializer RegistryProtobufMessageDeserializer) deserialize(rawData []by
 		return nil, err
 	}
 	output.Debugf("fetched schema %d", schemaID)
-	resolvedSchemas := map[string]string{}
-	err = deserializer.resolveDependencies(resolvedSchemas, schema.References())
-	if err != nil {
-		return nil, err
-	}
-	resolvedSchemas["."] = schema.Schema()
-	fileDesc, err := deserializer.schemaToFileDescriptor(schema)
+	fileDesc, err := protobuf.SchemaToFileDescriptor(deserializer.registry, schema)
 	if err != nil {
 		return nil, err
 	}
@@ -135,43 +129,4 @@ func findMessageDescriptor(indexes []int64, descriptors []*desc.MessageDescripto
 		return descriptors[indexes[0]], nil
 	}
 	return findMessageDescriptor(indexes[1:], descriptors)
-}
-
-func (deserializer RegistryProtobufMessageDeserializer) schemaToFileDescriptor(schema *srclient.Schema) (*desc.FileDescriptor, error) {
-	dependencies := map[string]string{}
-	err := deserializer.resolveDependencies(dependencies, schema.References())
-	if err != nil {
-		return nil, err
-	}
-	dependencies["."] = schema.Schema()
-
-	return parseFileDescriptor(".", dependencies)
-}
-
-func (deserializer RegistryProtobufMessageDeserializer) resolveDependencies(resolved map[string]string, references []srclient.Reference) error {
-	for _, r := range references {
-		if _, ok := resolved[r.Name]; ok {
-			continue
-		}
-		latest, err := deserializer.registry.GetSchemaByVersion(r.Subject, r.Version)
-		if err != nil {
-			return err
-		}
-		resolved[r.Name] = latest.Schema()
-		err = deserializer.resolveDependencies(resolved, latest.References())
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func parseFileDescriptor(filename string, resolvedSchemas map[string]string) (*desc.FileDescriptor, error) {
-	parser := protoparse.Parser{Accessor: protoparse.FileContentsFromMap(resolvedSchemas)}
-	parsedFiles, err := parser.ParseFiles(filename)
-	if err != nil {
-		return nil, err
-	}
-	return parsedFiles[0], nil
 }
