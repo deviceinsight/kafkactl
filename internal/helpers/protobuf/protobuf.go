@@ -1,9 +1,9 @@
 package protobuf
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"google.golang.org/protobuf/proto"
@@ -18,7 +18,7 @@ import (
 )
 
 func SchemaToFileDescriptor(registry srclient.ISchemaRegistryClient, schema *srclient.Schema) (*desc.FileDescriptor, error) {
-	dependencies, err := resolveDependencies(registry, schema.References())
+	dependencies, err := resolveSchemaDependencies(registry, schema)
 	if err != nil {
 		return nil, err
 	}
@@ -27,17 +27,32 @@ func SchemaToFileDescriptor(registry srclient.ISchemaRegistryClient, schema *src
 	return ParseFileDescriptor(".", dependencies)
 }
 
-func resolveDependencies(registry srclient.ISchemaRegistryClient, references []srclient.Reference) (map[string]string, error) {
-	resolved := map[string]string{}
+func resolveSchemaDependencies(registry srclient.ISchemaRegistryClient, schema *srclient.Schema) (map[string]string, error) {
+	dependencies := map[string]string{}
+	err := resolveRefsDependencies(registry, dependencies, schema.References())
+	if err != nil {
+		return nil, err
+	}
+	return dependencies, nil
+}
+
+func resolveRefsDependencies(registry srclient.ISchemaRegistryClient, resolved map[string]string, references []srclient.Reference) error {
 	for _, r := range references {
-		refSchema, err := registry.GetSchemaByVersion(r.Subject, r.Version)
-		if err != nil {
-			return map[string]string{}, errors.Wrap(err, fmt.Sprintf("couldn't fetch latest schema for subject %s", r.Subject))
+		if _, ok := resolved[r.Name]; ok {
+			continue
 		}
-		resolved[r.Subject] = refSchema.Schema()
+		latest, err := registry.GetSchemaByVersion(r.Subject, r.Version)
+		if err != nil {
+			return err
+		}
+		resolved[r.Name] = latest.Schema()
+		err = resolveRefsDependencies(registry, resolved, latest.References())
+		if err != nil {
+			return err
+		}
 	}
 
-	return resolved, nil
+	return nil
 }
 
 func ParseFileDescriptor(filename string, resolvedSchemas map[string]string) (*desc.FileDescriptor, error) {
@@ -92,7 +107,7 @@ func makeDescriptors(context internal.ProtobufConfig) []*desc.FileDescriptor {
 	var ret []*desc.FileDescriptor
 
 	ret = appendProtosets(ret, context.ProtosetFiles)
-	importPaths := append([]string{}, context.ProtoImportPaths...)
+	importPaths := slices.Clone(context.ProtoImportPaths)
 
 	// extend import paths with existing files directories
 	// this allows to specify only proto file path
