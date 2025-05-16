@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"fmt"
 
+	"google.golang.org/protobuf/reflect/protoreflect"
+
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"github.com/pkg/errors"
@@ -24,14 +26,14 @@ func (serializer RegistryProtobufMessageSerializer) CanSerializeKey(topic string
 }
 
 func (serializer RegistryProtobufMessageSerializer) SerializeValue(value []byte, flags Flags) ([]byte, error) {
-	return serializer.encode(value, flags.ValueSchemaVersion, flags.ValueProtoType, serializer.topic+"-value")
+	return serializer.encode(value, flags.ValueSchemaVersion, protoreflect.Name(flags.ValueProtoType), serializer.topic+"-value")
 }
 
 func (serializer RegistryProtobufMessageSerializer) SerializeKey(key []byte, flags Flags) ([]byte, error) {
-	return serializer.encode(key, flags.KeySchemaVersion, flags.KeyProtoType, serializer.topic+"-key")
+	return serializer.encode(key, flags.KeySchemaVersion, protoreflect.Name(flags.KeyProtoType), serializer.topic+"-key")
 }
 
-func (serializer RegistryProtobufMessageSerializer) encode(rawData []byte, schemaVersion int, msgName string, subject string) ([]byte, error) {
+func (serializer RegistryProtobufMessageSerializer) encode(rawData []byte, schemaVersion int, msgName protoreflect.Name, subject string) ([]byte, error) {
 	var schema *srclient.Schema
 	var err error
 
@@ -52,20 +54,26 @@ func (serializer RegistryProtobufMessageSerializer) encode(rawData []byte, schem
 		return nil, err
 	}
 
-	messageDesc := fileDesc.FindMessage(msgName)
-	if messageDesc == nil {
-		messageDesc = fileDesc.GetMessageTypes()[0]
-		msgName = messageDesc.GetFullyQualifiedName()
+	var messageDescriptor protoreflect.MessageDescriptor
+
+	if msgName == "" {
+		messageDescriptor = fileDesc.Messages().Get(0)
+		msgName = protoreflect.Name(messageDescriptor.FullName())
 	}
 
-	pb, err := encodeProtobuf(rawData, messageDesc)
+	messageDescriptor, err = protobuf.FindMessageDescriptor(fileDesc, protoreflect.FullName(msgName))
+	if err != nil {
+		return nil, err
+	}
+
+	pb, err := encodeProtobuf(rawData, messageDescriptor)
 	if err != nil {
 		return nil, err
 	}
 
 	result := []byte{internal.MagicByte}
 	result = binary.BigEndian.AppendUint32(result, uint32(schema.ID()))
-	indexes, err := protobuf.ComputeIndexes(fileDesc, msgName)
+	indexes, err := protobuf.ComputeIndexes(fileDesc, protoreflect.FullName(msgName))
 	if err != nil {
 		return nil, err
 	}

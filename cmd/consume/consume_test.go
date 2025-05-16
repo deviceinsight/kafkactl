@@ -9,12 +9,15 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/dynamicpb"
+
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"github.com/riferrei/srclient"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
-	"github.com/jhump/protoreflect/dynamic"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -458,11 +461,11 @@ func TestProtobufConsumeProtoFileIntegration(t *testing.T) {
 		ProtoImportPaths: []string{protoPath},
 		ProtoFiles:       []string{"msg.proto"},
 	}, "TopicMessage")
-	pbMessage := dynamic.NewMessage(pbMessageDesc)
-	pbMessage.SetFieldByNumber(1, timestamppb.New(now))
-	pbMessage.SetFieldByNumber(2, int64(1))
+	pbMessage := dynamicpb.NewMessage(pbMessageDesc)
+	pbMessage.Set(pbMessageDesc.Fields().Get(0), protoreflect.ValueOfMessage(timestamppb.New(now).ProtoReflect()))
+	pbMessage.Set(pbMessageDesc.Fields().Get(1), protoreflect.ValueOfInt64(1))
 
-	value, err := pbMessage.Marshal()
+	value, err := proto.Marshal(pbMessage)
 	if err != nil {
 		t.Fatalf("Failed to marshal proto message: %s", err)
 	}
@@ -494,11 +497,11 @@ func TestProtobufConsumeProtoFileWithoutProtoImportPathIntegration(t *testing.T)
 		ProtoImportPaths: []string{protoPath},
 		ProtoFiles:       []string{"msg.proto"},
 	}, "TopicMessage")
-	pbMessage := dynamic.NewMessage(pbMessageDesc)
-	pbMessage.SetFieldByNumber(1, timestamppb.New(now))
-	pbMessage.SetFieldByNumber(2, int64(1))
+	pbMessage := dynamicpb.NewMessage(pbMessageDesc)
+	pbMessage.Set(pbMessageDesc.Fields().Get(0), protoreflect.ValueOfMessage(timestamppb.New(now).ProtoReflect()))
+	pbMessage.Set(pbMessageDesc.Fields().Get(1), protoreflect.ValueOfInt64(1))
 
-	value, err := pbMessage.Marshal()
+	value, err := proto.Marshal(pbMessage)
 	if err != nil {
 		t.Fatalf("Failed to marshal proto message: %s", err)
 	}
@@ -549,11 +552,11 @@ func TestProtobufConsumeProtosetFileIntegration(t *testing.T) {
 	pbMessageDesc := protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtosetFiles: []string{protoPath},
 	}, "TopicMessage")
-	pbMessage := dynamic.NewMessage(pbMessageDesc)
-	pbMessage.SetFieldByNumber(1, timestamppb.New(now))
-	pbMessage.SetFieldByNumber(2, int64(1))
+	pbMessage := dynamicpb.NewMessage(pbMessageDesc)
+	pbMessage.Set(pbMessageDesc.Fields().Get(0), protoreflect.ValueOfMessage(timestamppb.New(now).ProtoReflect()))
+	pbMessage.Set(pbMessageDesc.Fields().Get(1), protoreflect.ValueOfInt64(1))
 
-	value, err := pbMessage.Marshal()
+	value, err := proto.Marshal(pbMessage)
 	if err != nil {
 		t.Fatalf("Failed to marshal proto message: %s", err)
 	}
@@ -584,11 +587,11 @@ func TestProtobufConsumeProtoFileErrNoMessageIntegration(t *testing.T) {
 	pbMessageDesc := protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtosetFiles: []string{protoPath},
 	}, "TopicMessage")
-	pbMessage := dynamic.NewMessage(pbMessageDesc)
-	pbMessage.SetFieldByNumber(1, timestamppb.New(now))
-	pbMessage.SetFieldByNumber(2, int64(1))
+	pbMessage := dynamicpb.NewMessage(pbMessageDesc)
+	pbMessage.Set(pbMessageDesc.Fields().Get(0), protoreflect.ValueOfMessage(timestamppb.New(now).ProtoReflect()))
+	pbMessage.Set(pbMessageDesc.Fields().Get(1), protoreflect.ValueOfInt64(1))
 
-	value, err := pbMessage.Marshal()
+	value, err := proto.Marshal(pbMessage)
 	if err != nil {
 		t.Fatalf("Failed to marshal proto message: %s", err)
 	}
@@ -624,7 +627,7 @@ func TestProtobufConsumeProtoFileErrDecodeIntegration(t *testing.T) {
 	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
 
 	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "--proto-import-path", protoPath, "--proto-file", "msg.proto", "--value-proto-type", "TopicMessage"); err != nil {
-		testutil.AssertErrorContains(t, "failed to deserialize value: proto: bad wiretype", err)
+		testutil.AssertErrorContains(t, "failed to deserialize value: proto: cannot parse invalid wire-format data", err)
 	} else {
 		t.Fatal("Expected consumer to fail")
 	}

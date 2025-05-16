@@ -11,9 +11,3 @@ linters:
     - goimports
     - revive
     - govet
-
-issues:
-  exclude-rules:
-    - linters:
-        - staticcheck
-      text: 'SA1019:.*github.com/jhump/protoreflect.*deprecated'
