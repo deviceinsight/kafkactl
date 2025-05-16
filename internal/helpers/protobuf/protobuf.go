@@ -7,9 +7,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/bufbuild/protocompile"
 	"github.com/jhump/protoreflect/desc"
-	"github.com/jhump/protoreflect/desc/protoparse"
+
+	"github.com/bufbuild/protocompile"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"google.golang.org/protobuf/proto"
@@ -66,7 +66,7 @@ func ParseFileDescriptor(filename string, resolvedSchemas map[string]string) (pr
 		Resolver: &resolver,
 	}
 
-	parsedFiles, err := compiler.Compile(context.TODO(), filename)
+	parsedFiles, err := compiler.Compile(context.Background(), filename)
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't parse file descriptor")
 	}
@@ -142,33 +142,32 @@ func makeDescriptors(protobufConfig internal.ProtobufConfig) []protoreflect.File
 
 	// extend import paths with existing files directories
 	// this allows to specify only proto file path
-	for _, existingFile := range getExistingFiles(protobufConfig.ProtoFiles) {
-		importPaths = append(importPaths, filepath.Dir(existingFile))
+	var protoFiles []string
+	for _, protoFile := range protobufConfig.ProtoFiles {
+		if existingFile := getExistingAbsoluteFile(protoFile); existingFile != "" {
+			filename := filepath.Base(existingFile)
+			path := filepath.Dir(existingFile)
+			importPaths = append(importPaths, path)
+			protoFiles = append(protoFiles, filename)
+		} else {
+			protoFiles = append(protoFiles, protoFile)
+		}
 	}
 
-	resolvedFilenames, err := protoparse.ResolveFilenames(importPaths, protobufConfig.ProtoFiles...)
+	resolver := protocompile.WithStandardImports(&protocompile.SourceResolver{ImportPaths: importPaths})
+
+	compiler := protocompile.Compiler{
+		Resolver: resolver,
+	}
+
+	parsedFiles, err := compiler.Compile(context.Background(), protoFiles...)
 	if err != nil {
-		output.Warnf("Resolve proto files failed: %s", err)
+		output.Warnf("Proto compile error: %v", err)
 		return ret
 	}
 
-	protoFiles, err := (&protoparse.Parser{
-		ImportPaths:      importPaths,
-		InferImportPaths: true,
-		ErrorReporter: func(err protoparse.ErrorWithPos) error {
-			output.Warnf("Proto parser error [%s]: %s", err.GetPosition(), err)
-			return nil
-		},
-		WarningReporter: func(err protoparse.ErrorWithPos) {
-			output.Warnf("Proto parse warning: %s", err)
-		},
-	}).ParseFiles(resolvedFilenames...)
-	if err != nil {
-		output.Warnf("Proto files parse error: %s", err)
-	}
-
-	for _, protoFile := range protoFiles {
-		ret = append(ret, protoFile.UnwrapFile())
+	for _, protoFile := range parsedFiles {
+		ret = append(ret, protoFile.ParentFile())
 	}
 
 	return ret
@@ -203,22 +202,16 @@ func appendProtosets(descs []protoreflect.FileDescriptor, protosetFiles []string
 	return descs
 }
 
-func getExistingFiles(protoFiles []string) []string {
-	var existing []string
-
-	for _, protoFile := range protoFiles {
-		_, err := os.Stat(protoFile)
-		if err != nil {
-			continue
-		}
-
-		abs, err := filepath.Abs(protoFile)
-		if err != nil {
-			continue
-		}
-
-		existing = append(existing, abs)
+func getExistingAbsoluteFile(protoFile string) string {
+	_, err := os.Stat(protoFile)
+	if err != nil {
+		return ""
 	}
 
-	return existing
+	abs, err := filepath.Abs(protoFile)
+	if err != nil {
+		return ""
+	}
+
+	return abs
 }
