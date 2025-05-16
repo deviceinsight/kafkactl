@@ -7,7 +7,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jhump/protoreflect/desc"
+	"google.golang.org/protobuf/reflect/protodesc"
 
 	"github.com/bufbuild/protocompile"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -137,7 +137,7 @@ func ResolveMessageType(protobufConfig internal.ProtobufConfig, typeName protore
 func makeDescriptors(protobufConfig internal.ProtobufConfig) []protoreflect.FileDescriptor {
 	var ret []protoreflect.FileDescriptor
 
-	ret = appendProtosets(ret, protobufConfig.ProtosetFiles)
+	ret = readFileDescriptors(protobufConfig.ProtosetFiles)
 	importPaths := slices.Clone(protobufConfig.ProtoImportPaths)
 
 	// extend import paths with existing files directories
@@ -173,33 +173,37 @@ func makeDescriptors(protobufConfig internal.ProtobufConfig) []protoreflect.File
 	return ret
 }
 
-func appendProtosets(descs []protoreflect.FileDescriptor, protosetFiles []string) []protoreflect.FileDescriptor {
-	for _, protosetFile := range protosetFiles {
+func readFileDescriptors(protoSetFiles []string) []protoreflect.FileDescriptor {
+
+	var descriptors []protoreflect.FileDescriptor
+
+	for _, protoSetFile := range protoSetFiles {
 		var files descriptorpb.FileDescriptorSet
 
-		b, err := os.ReadFile(protosetFile)
+		b, err := os.ReadFile(protoSetFile)
 		if err != nil {
-			output.Warnf("Read protoset file %s failed: %s", protosetFile, err)
+			output.Warnf("Read protoset file %s failed: %s", protoSetFile, err)
 			continue
 		}
 
 		if err = proto.Unmarshal(b, &files); err != nil {
-			output.Warnf("Parse protoset file %s failed: %s", protosetFile, err)
+			output.Warnf("Parse protoset file %s failed: %s", protoSetFile, err)
 			continue
 		}
 
-		fds, err := desc.CreateFileDescriptorsFromSet(&files)
+		ff, err := protodesc.NewFiles(&files)
 		if err != nil {
-			output.Warnf("Convert file %s to descriptors failed: %s", protosetFile, err)
+			output.Warnf("Process protoset file %s failed: %s", protoSetFile, err)
 			continue
 		}
 
-		for _, fd := range fds {
-			descs = append(descs, fd.UnwrapFile())
-		}
+		ff.RangeFiles(func(fd protoreflect.FileDescriptor) bool {
+			descriptors = append(descriptors, fd)
+			return true
+		})
 	}
 
-	return descs
+	return descriptors
 }
 
 func getExistingAbsoluteFile(protoFile string) string {
