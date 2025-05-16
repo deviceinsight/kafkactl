@@ -200,6 +200,81 @@ func TestConsumeRegistryProtobufWithNestedDependenciesIntegration(t *testing.T) 
 	testutil.AssertEquals(t, fmt.Sprintf("test-key#%s", value), kafkaCtl.GetStdOut())
 }
 
+func TestConsumeRegistryProtobufWithNestedProtoIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	// example from https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/index.html#wire-format
+	schema := `syntax = "proto3";
+		package test.package;
+		
+		message MessageA {
+			message MessageB {
+				message MessageC {
+					string fieldC = 1;
+				}
+			}
+			message MessageD {
+				string fieldD = 1;
+			}
+			message MessageE {
+				message MessageF {
+					string fieldF = 1;
+				}
+				message MessageG {
+					string fieldG = 1;
+				}
+			}
+		}
+		message MessageH {
+			message MessageI {
+				string fieldI = 1;
+			}
+			MessageI fieldH = 1;
+		}`
+
+	testCases := []struct {
+		name      string
+		value     string
+		protoType string
+	}{
+		{
+			name:      "test_MessageH",
+			value:     `{"fieldH":{"fieldI":"value"}}`,
+			protoType: "test.package.MessageH",
+		},
+		{
+			name:      "test_MessageI",
+			value:     `{"fieldI":"value"}`,
+			protoType: "test.package.MessageH.MessageI",
+		},
+		{
+			name:      "test_MessageG",
+			value:     `{"fieldG":"value"}`,
+			protoType: "test.package.MessageA.MessageE.MessageG",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+
+			topicName := testutil.CreateTopic(t, "consume-topic")
+			testutil.RegisterSchema(t, topicName+"-value", schema, srclient.Protobuf)
+
+			kafkaCtl := testutil.CreateKafkaCtlCommand()
+			if _, err := kafkaCtl.Execute("produce", topicName, "--value-proto-type", tc.protoType, "--value", tc.value); err != nil {
+				t.Fatalf("failed to execute command: %v", err)
+			}
+			testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+			if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit"); err != nil {
+				t.Fatalf("failed to execute command: %v", err)
+			}
+
+			testutil.AssertEquals(t, tc.value, kafkaCtl.GetStdOut())
+		})
+	}
+}
+
 func TestConsumeToTimestampIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 

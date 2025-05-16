@@ -125,8 +125,10 @@ func readIndexes(rawData []byte) ([]int64, int, error) {
 func findMessageDescriptor(indexes []int64, descriptors []*desc.MessageDescriptor) (*desc.MessageDescriptor, error) {
 	if len(indexes) == 0 {
 		return nil, errors.New("indexes can't be empty")
+	} else if len(descriptors) == 0 {
+		return nil, errors.New("descriptors can't be empty")
 	} else if len(indexes) == 1 {
 		return descriptors[indexes[0]], nil
 	}
-	return findMessageDescriptor(indexes[1:], descriptors)
+	return findMessageDescriptor(indexes[1:], descriptors[indexes[0]].GetNestedMessageTypes())
 }
