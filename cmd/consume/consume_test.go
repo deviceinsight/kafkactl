@@ -2,18 +2,22 @@ package consume_test
 
 import (
 	"encoding/hex"
+	"fmt"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/dynamicpb"
+
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"github.com/riferrei/srclient"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
-	"github.com/jhump/protoreflect/dynamic"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -147,6 +151,131 @@ func TestConsumeFromTimestampIntegration(t *testing.T) {
 	}
 	messages = strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
 	testutil.AssertArraysEquals(t, []string{"g", "h"}, messages)
+}
+
+func TestConsumeRegistryProtobufWithNestedDependenciesIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	bazMsg := `syntax = "proto3";
+  package baz;
+
+  message Baz {
+    string field = 1;
+  }
+  `
+
+	barMsg := `syntax = "proto3";
+  package bar;
+
+  import "baz/protobuf/baz.proto";
+
+  message Bar {
+    baz.Baz bazField = 1;
+  }
+  `
+
+	fooMsg := `syntax = "proto3";
+  package foo;
+
+  import "bar/protobuf/bar.proto";
+
+  message Foo {
+    bar.Bar barField = 1;
+  }`
+
+	value := `{"barField":{"bazField":{"field":"value"}}}`
+
+	testutil.RegisterSchema(t, "baz", bazMsg, srclient.Protobuf)
+	testutil.RegisterSchema(t, "bar", barMsg, srclient.Protobuf, srclient.Reference{Name: "baz/protobuf/baz.proto", Version: 1, Subject: "baz"})
+	topicName := testutil.CreateTopic(t, "consume-topic")
+	testutil.RegisterSchema(t, topicName+"-value", fooMsg, srclient.Protobuf, srclient.Reference{Name: "bar/protobuf/bar.proto", Version: 1, Subject: "bar"})
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", value); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-keys"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, fmt.Sprintf("test-key#%s", value), kafkaCtl.GetStdOut())
+}
+
+func TestConsumeRegistryProtobufWithNestedProtoIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	// example from https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/index.html#wire-format
+	schema := `syntax = "proto3";
+		package test.package;
+		
+		message MessageA {
+			message MessageB {
+				message MessageC {
+					string fieldC = 1;
+				}
+			}
+			message MessageD {
+				string fieldD = 1;
+			}
+			message MessageE {
+				message MessageF {
+					string fieldF = 1;
+				}
+				message MessageG {
+					string fieldG = 1;
+				}
+			}
+		}
+		message MessageH {
+			message MessageI {
+				string fieldI = 1;
+			}
+			MessageI fieldH = 1;
+		}`
+
+	testCases := []struct {
+		name      string
+		value     string
+		protoType string
+	}{
+		{
+			name:      "test_MessageH",
+			value:     `{"fieldH":{"fieldI":"value"}}`,
+			protoType: "test.package.MessageH",
+		},
+		{
+			name:      "test_MessageI",
+			value:     `{"fieldI":"value"}`,
+			protoType: "test.package.MessageH.MessageI",
+		},
+		{
+			name:      "test_MessageG",
+			value:     `{"fieldG":"value"}`,
+			protoType: "test.package.MessageA.MessageE.MessageG",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+
+			topicName := testutil.CreateTopic(t, "consume-topic")
+			testutil.RegisterSchema(t, topicName+"-value", schema, srclient.Protobuf)
+
+			kafkaCtl := testutil.CreateKafkaCtlCommand()
+			if _, err := kafkaCtl.Execute("produce", topicName, "--value-proto-type", tc.protoType, "--value", tc.value); err != nil {
+				t.Fatalf("failed to execute command: %v", err)
+			}
+			testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+			if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit"); err != nil {
+				t.Fatalf("failed to execute command: %v", err)
+			}
+
+			testutil.AssertEquals(t, tc.value, kafkaCtl.GetStdOut())
+		})
+	}
 }
 
 func TestConsumeToTimestampIntegration(t *testing.T) {
@@ -332,11 +461,11 @@ func TestProtobufConsumeProtoFileIntegration(t *testing.T) {
 		ProtoImportPaths: []string{protoPath},
 		ProtoFiles:       []string{"msg.proto"},
 	}, "TopicMessage")
-	pbMessage := dynamic.NewMessage(pbMessageDesc)
-	pbMessage.SetFieldByNumber(1, timestamppb.New(now))
-	pbMessage.SetFieldByNumber(2, int64(1))
+	pbMessage := dynamicpb.NewMessage(pbMessageDesc)
+	pbMessage.Set(pbMessageDesc.Fields().Get(0), protoreflect.ValueOfMessage(timestamppb.New(now).ProtoReflect()))
+	pbMessage.Set(pbMessageDesc.Fields().Get(1), protoreflect.ValueOfInt64(1))
 
-	value, err := pbMessage.Marshal()
+	value, err := proto.Marshal(pbMessage)
 	if err != nil {
 		t.Fatalf("Failed to marshal proto message: %s", err)
 	}
@@ -368,11 +497,11 @@ func TestProtobufConsumeProtoFileWithoutProtoImportPathIntegration(t *testing.T)
 		ProtoImportPaths: []string{protoPath},
 		ProtoFiles:       []string{"msg.proto"},
 	}, "TopicMessage")
-	pbMessage := dynamic.NewMessage(pbMessageDesc)
-	pbMessage.SetFieldByNumber(1, timestamppb.New(now))
-	pbMessage.SetFieldByNumber(2, int64(1))
+	pbMessage := dynamicpb.NewMessage(pbMessageDesc)
+	pbMessage.Set(pbMessageDesc.Fields().Get(0), protoreflect.ValueOfMessage(timestamppb.New(now).ProtoReflect()))
+	pbMessage.Set(pbMessageDesc.Fields().Get(1), protoreflect.ValueOfInt64(1))
 
-	value, err := pbMessage.Marshal()
+	value, err := proto.Marshal(pbMessage)
 	if err != nil {
 		t.Fatalf("Failed to marshal proto message: %s", err)
 	}
@@ -423,11 +552,11 @@ func TestProtobufConsumeProtosetFileIntegration(t *testing.T) {
 	pbMessageDesc := protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtosetFiles: []string{protoPath},
 	}, "TopicMessage")
-	pbMessage := dynamic.NewMessage(pbMessageDesc)
-	pbMessage.SetFieldByNumber(1, timestamppb.New(now))
-	pbMessage.SetFieldByNumber(2, int64(1))
+	pbMessage := dynamicpb.NewMessage(pbMessageDesc)
+	pbMessage.Set(pbMessageDesc.Fields().Get(0), protoreflect.ValueOfMessage(timestamppb.New(now).ProtoReflect()))
+	pbMessage.Set(pbMessageDesc.Fields().Get(1), protoreflect.ValueOfInt64(1))
 
-	value, err := pbMessage.Marshal()
+	value, err := proto.Marshal(pbMessage)
 	if err != nil {
 		t.Fatalf("Failed to marshal proto message: %s", err)
 	}
@@ -458,11 +587,11 @@ func TestProtobufConsumeProtoFileErrNoMessageIntegration(t *testing.T) {
 	pbMessageDesc := protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtosetFiles: []string{protoPath},
 	}, "TopicMessage")
-	pbMessage := dynamic.NewMessage(pbMessageDesc)
-	pbMessage.SetFieldByNumber(1, timestamppb.New(now))
-	pbMessage.SetFieldByNumber(2, int64(1))
+	pbMessage := dynamicpb.NewMessage(pbMessageDesc)
+	pbMessage.Set(pbMessageDesc.Fields().Get(0), protoreflect.ValueOfMessage(timestamppb.New(now).ProtoReflect()))
+	pbMessage.Set(pbMessageDesc.Fields().Get(1), protoreflect.ValueOfInt64(1))
 
-	value, err := pbMessage.Marshal()
+	value, err := proto.Marshal(pbMessage)
 	if err != nil {
 		t.Fatalf("Failed to marshal proto message: %s", err)
 	}
@@ -498,7 +627,7 @@ func TestProtobufConsumeProtoFileErrDecodeIntegration(t *testing.T) {
 	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
 
 	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "--proto-import-path", protoPath, "--proto-file", "msg.proto", "--value-proto-type", "TopicMessage"); err != nil {
-		testutil.AssertErrorContains(t, "failed to deserialize value: proto: bad wiretype", err)
+		testutil.AssertErrorContains(t, "failed to deserialize value: proto: cannot parse invalid wire-format data", err)
 	} else {
 		t.Fatal("Expected consumer to fail")
 	}

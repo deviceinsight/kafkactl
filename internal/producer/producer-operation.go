@@ -8,6 +8,8 @@ import (
 	"strings"
 	"syscall"
 
+	"google.golang.org/protobuf/reflect/protoreflect"
+
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
@@ -94,7 +96,7 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 
 	if len(context.ProtoFiles) != 0 || len(context.ProtoImportPaths) != 0 || len(context.ProtosetFiles) != 0 {
 
-		serializer, err := CreateProtobufMessageSerializer(topic, context, flags.KeyProtoType, flags.ValueProtoType)
+		serializer, err := CreateProtobufMessageSerializer(topic, context, protoreflect.Name(flags.KeyProtoType), protoreflect.Name(flags.ValueProtoType))
 		if err != nil {
 			return err
 		}

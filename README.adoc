@@ -200,6 +200,13 @@ contexts:
         - "otherMessage.proto"
       protosetFiles:
         - "/usr/include/protoset/other.protoset"
+      # see: https://pkg.go.dev/google.golang.org/protobuf@v1.36.6/encoding/protojson#MarshalOptions
+      marshalOptions:
+        allowPartial: true
+        useProtoNames: true
+        useEnumNumbers: true
+        emitUnpopulated: true
+        emitDefaultValues: true
 
     producer:
       # optional: changes the default partitioner

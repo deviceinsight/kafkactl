@@ -11,9 +11,3 @@ linters:
     - goimports
     - revive
     - govet
-
-issues:
-  exclude-rules:
-    - linters:
-        - staticcheck
-      text: 'SA1019:.*github.com/golang/protobuf/jsonpb.*deprecated' # dependency of github.com/jhump/protoreflect, see https://github.com/jhump/protoreflect/issues/463

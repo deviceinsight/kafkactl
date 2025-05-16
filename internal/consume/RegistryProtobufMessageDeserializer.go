@@ -5,23 +5,21 @@ import (
 	"errors"
 	"fmt"
 
+	"google.golang.org/protobuf/reflect/protoreflect"
+
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
-	"github.com/jhump/protoreflect/desc"
-	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/riferrei/srclient"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoregistry"
-	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 type RegistryProtobufMessageDeserializer struct {
+	config   internal.ProtobufConfig
 	registry *internal.CachingSchemaRegistry
 }
 
-func (deserializer RegistryProtobufMessageDeserializer) canDeserialize(consumerMsg *sarama.ConsumerMessage, data []byte) bool {
+func (deserializer *RegistryProtobufMessageDeserializer) canDeserialize(consumerMsg *sarama.ConsumerMessage, data []byte) bool {
 	schemaID, err := deserializer.registry.ExtractSchemaID(data)
 	if err == nil {
 		schema, schemaErr := deserializer.registry.GetSchema(schemaID)
@@ -38,23 +36,23 @@ func (deserializer RegistryProtobufMessageDeserializer) canDeserialize(consumerM
 	return false
 }
 
-func (deserializer RegistryProtobufMessageDeserializer) CanDeserializeValue(msg *sarama.ConsumerMessage, _ Flags) bool {
+func (deserializer *RegistryProtobufMessageDeserializer) CanDeserializeValue(msg *sarama.ConsumerMessage, _ Flags) bool {
 	return deserializer.canDeserialize(msg, msg.Value)
 }
 
-func (deserializer RegistryProtobufMessageDeserializer) CanDeserializeKey(msg *sarama.ConsumerMessage, _ Flags) bool {
+func (deserializer *RegistryProtobufMessageDeserializer) CanDeserializeKey(msg *sarama.ConsumerMessage, _ Flags) bool {
 	return deserializer.canDeserialize(msg, msg.Key)
 }
 
-func (deserializer RegistryProtobufMessageDeserializer) DeserializeValue(msg *sarama.ConsumerMessage) (*DeserializedData, error) {
+func (deserializer *RegistryProtobufMessageDeserializer) DeserializeValue(msg *sarama.ConsumerMessage) (*DeserializedData, error) {
 	return deserializer.deserialize(msg.Value)
 }
 
-func (deserializer RegistryProtobufMessageDeserializer) DeserializeKey(msg *sarama.ConsumerMessage) (*DeserializedData, error) {
+func (deserializer *RegistryProtobufMessageDeserializer) DeserializeKey(msg *sarama.ConsumerMessage) (*DeserializedData, error) {
 	return deserializer.deserialize(msg.Key)
 }
 
-func (deserializer RegistryProtobufMessageDeserializer) deserialize(rawData []byte) (*DeserializedData, error) {
+func (deserializer *RegistryProtobufMessageDeserializer) deserialize(rawData []byte) (*DeserializedData, error) {
 	schemaID, err := deserializer.registry.ExtractSchemaID(rawData)
 	if err != nil {
 		return nil, err
@@ -64,35 +62,20 @@ func (deserializer RegistryProtobufMessageDeserializer) deserialize(rawData []by
 		return nil, err
 	}
 	output.Debugf("fetched schema %d", schemaID)
-	resolvedSchemas, err := deserializer.resolveDependencies(schema.References())
+	fileDesc, err := protobuf.SchemaToFileDescriptor(deserializer.registry, schema)
 	if err != nil {
 		return nil, err
 	}
-	resolvedSchemas["."] = schema.Schema()
-	fileDesc, err := deserializer.schemaToFileDescriptor(schema)
+	indexes, indexBytes, err := readIndexes(rawData[internal.WireFormatBytes:])
 	if err != nil {
 		return nil, err
 	}
-	indexes, bytes, err := readIndexes(rawData[5:])
-	if err != nil {
-		return nil, err
-	}
-	messageDescriptor, err := findMessageDescriptor(indexes, fileDesc.GetMessageTypes())
-	if err != nil {
-		return nil, err
-	}
-	dynmsg := dynamicpb.NewMessage(messageDescriptor.UnwrapMessage())
-	err = proto.Unmarshal(rawData[5+bytes:], dynmsg)
+	messageDescriptor, err := findMessageDescriptor(indexes, fileDesc.Messages())
 	if err != nil {
 		return nil, err
 	}
 
-	asJSONBytes, err := protojson.MarshalOptions{
-		Multiline:       false,
-		EmitUnpopulated: true,
-		AllowPartial:    true,
-		Resolver:        &ignoreUnrecognizedAny{protoregistry.GlobalTypes},
-	}.Marshal(dynmsg)
+	jsonBytes, err := decodeProtobuf(rawData[internal.WireFormatBytes+indexBytes:], messageDescriptor, deserializer.config.MarshalOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +83,7 @@ func (deserializer RegistryProtobufMessageDeserializer) deserialize(rawData []by
 	schemaString := schema.Schema()
 
 	return &DeserializedData{
-		data:     asJSONBytes,
+		data:     jsonBytes,
 		schema:   schemaString,
 		schemaID: &schemaID,
 	}, nil
@@ -127,43 +110,17 @@ func readIndexes(rawData []byte) ([]int64, int, error) {
 	return indexes, bytes, nil
 }
 
-func findMessageDescriptor(indexes []int64, descriptors []*desc.MessageDescriptor) (*desc.MessageDescriptor, error) {
+func findMessageDescriptor(indexes []int64, descriptors protoreflect.MessageDescriptors) (protoreflect.MessageDescriptor, error) {
 	if len(indexes) == 0 {
 		return nil, errors.New("indexes can't be empty")
-	} else if len(indexes) == 1 {
-		return descriptors[indexes[0]], nil
-	}
-	return findMessageDescriptor(indexes[1:], descriptors)
-}
-
-func (deserializer RegistryProtobufMessageDeserializer) schemaToFileDescriptor(schema *srclient.Schema) (*desc.FileDescriptor, error) {
-	dependencies, err := deserializer.resolveDependencies(schema.References())
-	if err != nil {
-		return nil, err
-	}
-	dependencies["."] = schema.Schema()
-
-	return parseFileDescriptor(".", dependencies)
-}
-
-func (deserializer RegistryProtobufMessageDeserializer) resolveDependencies(references []srclient.Reference) (map[string]string, error) {
-	resolved := map[string]string{}
-	for _, r := range references {
-		latest, err := deserializer.registry.GetLatestSchema(r.Subject)
-		if err != nil {
-			return map[string]string{}, err
-		}
-		resolved[r.Subject] = latest.Schema()
+	} else if descriptors.Len() == 0 {
+		return nil, errors.New("descriptors can't be empty")
 	}
 
-	return resolved, nil
-}
-
-func parseFileDescriptor(filename string, resolvedSchemas map[string]string) (*desc.FileDescriptor, error) {
-	parser := protoparse.Parser{Accessor: protoparse.FileContentsFromMap(resolvedSchemas)}
-	parsedFiles, err := parser.ParseFiles(filename)
-	if err != nil {
-		return nil, err
+	descriptor := descriptors.Get(int(indexes[0]))
+	if len(indexes) == 1 {
+		return descriptor, nil
 	}
-	return parsedFiles[0], nil
+
+	return findMessageDescriptor(indexes[1:], descriptor.Messages())
 }
