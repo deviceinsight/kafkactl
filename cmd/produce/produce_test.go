@@ -2,7 +2,9 @@ package produce_test
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,13 +12,14 @@ import (
 	"strings"
 	"testing"
 
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/dynamicpb"
+
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
-	"github.com/riferrei/srclient"
-
-	"github.com/jhump/protoreflect/dynamic"
-
 	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
+	"github.com/riferrei/srclient"
 )
 
 func TestProduceWithKeyAndValueIntegration(t *testing.T) {
@@ -434,28 +437,28 @@ func TestProduceProtoFileIntegration(t *testing.T) {
 		t.Fatalf("Failed to decode value: %s", err)
 	}
 
-	keyMessage := dynamic.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
+	keyMessage := dynamicpb.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtoImportPaths: []string{protoPath},
 		ProtoFiles:       []string{"msg.proto"},
 	}, "TopicKey"))
-	valueMessage := dynamic.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
+	valueMessage := dynamicpb.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtoImportPaths: []string{protoPath},
 		ProtoFiles:       []string{"msg.proto"},
 	}, "TopicMessage"))
 
-	if err = keyMessage.Unmarshal(rawKey); err != nil {
+	if err = proto.Unmarshal(rawKey, keyMessage); err != nil {
 		t.Fatalf("Unmarshal key failed: %s", err)
 	}
-	if err = valueMessage.Unmarshal(rawValue); err != nil {
+	if err = proto.Unmarshal(rawValue, valueMessage); err != nil {
 		t.Fatalf("Unmarshal value failed: %s", err)
 	}
 
-	actualKey, err := keyMessage.MarshalJSON()
+	actualKey, err := marshalJSON(keyMessage)
 	if err != nil {
 		t.Fatalf("Key to json failed: %s", err)
 	}
 
-	actualValue, err := valueMessage.MarshalJSON()
+	actualValue, err := marshalJSON(valueMessage)
 	if err != nil {
 		t.Fatalf("Value to json failed: %s", err)
 	}
@@ -603,16 +606,16 @@ func TestProduceProtoFileWithOnlyKeyEncodedIntegration(t *testing.T) {
 		t.Fatalf("Failed to decode key: %s", err)
 	}
 
-	keyMessage := dynamic.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
+	keyMessage := dynamicpb.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtoImportPaths: []string{protoPath},
 		ProtoFiles:       []string{"msg.proto"},
 	}, "TopicKey"))
 
-	if err = keyMessage.Unmarshal(rawKey); err != nil {
+	if err = proto.Unmarshal(rawKey, keyMessage); err != nil {
 		t.Fatalf("Unmarshal key failed: %s", err)
 	}
 
-	actualKey, err := keyMessage.MarshalJSON()
+	actualKey, err := marshalJSON(keyMessage)
 	if err != nil {
 		t.Fatalf("Key to json failed: %s", err)
 	}
@@ -660,28 +663,28 @@ func TestProduceProtoFileWithoutProtoImportPathIntegration(t *testing.T) {
 		t.Fatalf("Failed to decode value: %s", err)
 	}
 
-	keyMessage := dynamic.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
+	keyMessage := dynamicpb.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtoImportPaths: []string{protoPath},
 		ProtoFiles:       []string{"msg.proto"},
 	}, "TopicKey"))
-	valueMessage := dynamic.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
+	valueMessage := dynamicpb.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtoImportPaths: []string{protoPath},
 		ProtoFiles:       []string{"msg.proto"},
 	}, "TopicMessage"))
 
-	if err = keyMessage.Unmarshal(rawKey); err != nil {
+	if err = proto.Unmarshal(rawKey, keyMessage); err != nil {
 		t.Fatalf("Unmarshal key failed: %s", err)
 	}
-	if err = valueMessage.Unmarshal(rawValue); err != nil {
+	if err = proto.Unmarshal(rawValue, valueMessage); err != nil {
 		t.Fatalf("Unmarshal value failed: %s", err)
 	}
 
-	actualKey, err := keyMessage.MarshalJSON()
+	actualKey, err := marshalJSON(keyMessage)
 	if err != nil {
 		t.Fatalf("Key to json failed: %s", err)
 	}
 
-	actualValue, err := valueMessage.MarshalJSON()
+	actualValue, err := marshalJSON(valueMessage)
 	if err != nil {
 		t.Fatalf("Value to json failed: %s", err)
 	}
@@ -727,26 +730,26 @@ func TestProduceProtosetFileIntegration(t *testing.T) {
 		t.Fatalf("Failed to decode value: %s", err)
 	}
 
-	keyMessage := dynamic.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
+	keyMessage := dynamicpb.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtosetFiles: []string{protoPath},
 	}, "TopicKey"))
-	valueMessage := dynamic.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
+	valueMessage := dynamicpb.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
 		ProtosetFiles: []string{protoPath},
 	}, "TopicMessage"))
 
-	if err = keyMessage.Unmarshal(rawKey); err != nil {
+	if err = proto.Unmarshal(rawKey, keyMessage); err != nil {
 		t.Fatalf("Unmarshal key failed: %s", err)
 	}
-	if err = valueMessage.Unmarshal(rawValue); err != nil {
+	if err = proto.Unmarshal(rawValue, valueMessage); err != nil {
 		t.Fatalf("Unmarshal value failed: %s", err)
 	}
 
-	actualKey, err := keyMessage.MarshalJSON()
+	actualKey, err := marshalJSON(keyMessage)
 	if err != nil {
 		t.Fatalf("Key to json failed: %s", err)
 	}
 
-	actualValue, err := valueMessage.MarshalJSON()
+	actualValue, err := marshalJSON(valueMessage)
 	if err != nil {
 		t.Fatalf("Value to json failed: %s", err)
 	}
@@ -853,4 +856,20 @@ func TestProduceLongMessageFailsIntegration(t *testing.T) {
 	} else {
 		t.Fatalf("Expected producer to fail")
 	}
+}
+
+func marshalJSON(message *dynamicpb.Message) ([]byte, error) {
+	jsonValue, err := protojson.MarshalOptions{Indent: ""}.Marshal(message)
+	if err != nil {
+		return nil, err
+	}
+
+	// this is needed to eliminate whitespace randomization
+	// https://github.com/golang/protobuf/issues/1082
+	buffer := new(bytes.Buffer)
+	if err := json.Compact(buffer, jsonValue); err != nil {
+		return nil, err
+	}
+
+	return buffer.Bytes(), nil
 }

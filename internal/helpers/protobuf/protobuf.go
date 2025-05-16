@@ -1,23 +1,27 @@
 package protobuf
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/bufbuild/protocompile"
+	"github.com/jhump/protoreflect/desc"
+	"github.com/jhump/protoreflect/desc/protoparse"
+	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
-	"github.com/jhump/protoreflect/desc"
-	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/pkg/errors"
 	"github.com/riferrei/srclient"
 )
 
-func SchemaToFileDescriptor(registry srclient.ISchemaRegistryClient, schema *srclient.Schema) (*desc.FileDescriptor, error) {
+func SchemaToFileDescriptor(registry srclient.ISchemaRegistryClient, schema *srclient.Schema) (protoreflect.FileDescriptor, error) {
 	dependencies, err := resolveSchemaDependencies(registry, schema)
 	if err != nil {
 		return nil, err
@@ -55,35 +59,42 @@ func resolveRefsDependencies(registry srclient.ISchemaRegistryClient, resolved m
 	return nil
 }
 
-func ParseFileDescriptor(filename string, resolvedSchemas map[string]string) (*desc.FileDescriptor, error) {
-	parser := protoparse.Parser{Accessor: protoparse.FileContentsFromMap(resolvedSchemas)}
-	parsedFiles, err := parser.ParseFiles(filename)
+func ParseFileDescriptor(filename string, resolvedSchemas map[string]string) (protoreflect.FileDescriptor, error) {
+	resolver := protocompile.SourceResolver{Accessor: protocompile.SourceAccessorFromMap(resolvedSchemas)}
+
+	compiler := protocompile.Compiler{
+		Resolver: &resolver,
+	}
+
+	parsedFiles, err := compiler.Compile(context.TODO(), filename)
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't parse file descriptor")
 	}
-	return parsedFiles[0], nil
+
+	return parsedFiles[0].ParentFile(), nil
 }
 
-func ComputeIndexes(fileDesc *desc.FileDescriptor, msgName string) ([]int64, error) {
+func ComputeIndexes(fileDesc protoreflect.FileDescriptor, msgName protoreflect.FullName) ([]int64, error) {
 	result := make([]int64, 0, 16)
-	if len(fileDesc.GetMessageTypes()) > 0 && fileDesc.GetMessageTypes()[0].GetFullyQualifiedName() == msgName {
+	if fileDesc.Messages().Len() > 0 && fileDesc.Messages().Get(0).FullName() == msgName {
 		return result, nil
 	}
 
-	messages := fileDesc.GetMessageTypes()
+	messages := fileDesc.Messages()
 	found := false
 
 	for {
 		found = false
-		for i, message := range messages {
-			if message.GetFullyQualifiedName() == msgName {
+		for i := range messages.Len() {
+			message := messages.Get(i)
+			if message.FullName() == msgName {
 				return append(result, int64(i)), nil
 			}
 
-			if strings.Contains(msgName, message.GetFullyQualifiedName()+".") {
+			if strings.Contains(string(msgName), string(message.FullName()+".")) {
 				found = true
 				result = append(result, int64(i))
-				messages = message.GetNestedMessageTypes()
+				messages = message.Messages()
 				break
 			}
 		}
@@ -93,18 +104,38 @@ func ComputeIndexes(fileDesc *desc.FileDescriptor, msgName string) ([]int64, err
 	}
 }
 
-func ResolveMessageType(protobufConfig internal.ProtobufConfig, typeName string) *desc.MessageDescriptor {
-	for _, descriptor := range makeDescriptors(protobufConfig) {
-		if msg := descriptor.FindMessage(typeName); msg != nil {
-			return msg
+func FindMessageDescriptor(fileDesc protoreflect.FileDescriptor, msgName protoreflect.FullName) (protoreflect.MessageDescriptor, error) {
+	return findMessageDescriptor(fileDesc.Messages(), msgName)
+}
+
+func findMessageDescriptor(messages protoreflect.MessageDescriptors, msgName protoreflect.FullName) (protoreflect.MessageDescriptor, error) {
+
+	for i := range messages.Len() {
+		message := messages.Get(i)
+
+		if message.FullName() == msgName {
+			return message, nil
+		}
+
+		if strings.HasPrefix(string(msgName), string(message.FullName()+".")) {
+			return findMessageDescriptor(message.Messages(), msgName)
 		}
 	}
 
+	return nil, errors.Errorf("can't find message descriptor for %s", msgName)
+}
+
+func ResolveMessageType(protobufConfig internal.ProtobufConfig, typeName protoreflect.Name) protoreflect.MessageDescriptor {
+	for _, descriptor := range makeDescriptors(protobufConfig) {
+		if msg := descriptor.Messages().ByName(typeName); msg != nil {
+			return msg
+		}
+	}
 	return nil
 }
 
-func makeDescriptors(protobufConfig internal.ProtobufConfig) []*desc.FileDescriptor {
-	var ret []*desc.FileDescriptor
+func makeDescriptors(protobufConfig internal.ProtobufConfig) []protoreflect.FileDescriptor {
+	var ret []protoreflect.FileDescriptor
 
 	ret = appendProtosets(ret, protobufConfig.ProtosetFiles)
 	importPaths := slices.Clone(protobufConfig.ProtoImportPaths)
@@ -136,12 +167,14 @@ func makeDescriptors(protobufConfig internal.ProtobufConfig) []*desc.FileDescrip
 		output.Warnf("Proto files parse error: %s", err)
 	}
 
-	ret = append(ret, protoFiles...)
+	for _, protoFile := range protoFiles {
+		ret = append(ret, protoFile.UnwrapFile())
+	}
 
 	return ret
 }
 
-func appendProtosets(descs []*desc.FileDescriptor, protosetFiles []string) []*desc.FileDescriptor {
+func appendProtosets(descs []protoreflect.FileDescriptor, protosetFiles []string) []protoreflect.FileDescriptor {
 	for _, protosetFile := range protosetFiles {
 		var files descriptorpb.FileDescriptorSet
 
@@ -163,9 +196,8 @@ func appendProtosets(descs []*desc.FileDescriptor, protosetFiles []string) []*de
 		}
 
 		for _, fd := range fds {
-			descs = append(descs, fd)
+			descs = append(descs, fd.UnwrapFile())
 		}
-
 	}
 
 	return descs

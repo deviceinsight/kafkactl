@@ -3,20 +3,20 @@ package producer
 import (
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
-	"github.com/jhump/protoreflect/desc"
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 type ProtobufMessageSerializer struct {
 	topic           string
-	keyDescriptor   *desc.MessageDescriptor
-	valueDescriptor *desc.MessageDescriptor
+	keyDescriptor   protoreflect.MessageDescriptor
+	valueDescriptor protoreflect.MessageDescriptor
 }
 
-func CreateProtobufMessageSerializer(topic string, context internal.ProtobufConfig, keyType, valueType string) (*ProtobufMessageSerializer, error) {
+func CreateProtobufMessageSerializer(topic string, context internal.ProtobufConfig, keyType, valueType protoreflect.Name) (*ProtobufMessageSerializer, error) {
 	valueDescriptor := protobuf.ResolveMessageType(context, valueType)
 	if valueDescriptor == nil && valueType != "" {
 		return nil, errors.Errorf("value message type %q not found in provided files", valueType)
@@ -50,12 +50,12 @@ func (serializer ProtobufMessageSerializer) SerializeKey(key []byte, _ Flags) ([
 	return encodeProtobuf(key, serializer.keyDescriptor)
 }
 
-func encodeProtobuf(data []byte, messageDescriptor *desc.MessageDescriptor) ([]byte, error) {
+func encodeProtobuf(data []byte, messageDescriptor protoreflect.MessageDescriptor) ([]byte, error) {
 	if messageDescriptor == nil {
 		return data, nil
 	}
 
-	message := dynamicpb.NewMessage(messageDescriptor.UnwrapMessage())
+	message := dynamicpb.NewMessage(messageDescriptor)
 
 	unmarshaler := protojson.UnmarshalOptions{DiscardUnknown: true}
 

@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 
+	"google.golang.org/protobuf/reflect/protoreflect"
+
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
-	"github.com/jhump/protoreflect/desc"
 	"github.com/riferrei/srclient"
 )
 
@@ -65,16 +66,16 @@ func (deserializer *RegistryProtobufMessageDeserializer) deserialize(rawData []b
 	if err != nil {
 		return nil, err
 	}
-	indexes, bytes, err := readIndexes(rawData[5:])
+	indexes, indexBytes, err := readIndexes(rawData[internal.WireFormatBytes:])
 	if err != nil {
 		return nil, err
 	}
-	messageDescriptor, err := findMessageDescriptor(indexes, fileDesc.GetMessageTypes())
+	messageDescriptor, err := findMessageDescriptor(indexes, fileDesc.Messages())
 	if err != nil {
 		return nil, err
 	}
 
-	jsonBytes, err := decodeProtobuf(rawData[5+bytes:], messageDescriptor, deserializer.config.MarshalOptions)
+	jsonBytes, err := decodeProtobuf(rawData[internal.WireFormatBytes+indexBytes:], messageDescriptor, deserializer.config.MarshalOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -109,13 +110,17 @@ func readIndexes(rawData []byte) ([]int64, int, error) {
 	return indexes, bytes, nil
 }
 
-func findMessageDescriptor(indexes []int64, descriptors []*desc.MessageDescriptor) (*desc.MessageDescriptor, error) {
+func findMessageDescriptor(indexes []int64, descriptors protoreflect.MessageDescriptors) (protoreflect.MessageDescriptor, error) {
 	if len(indexes) == 0 {
 		return nil, errors.New("indexes can't be empty")
-	} else if len(descriptors) == 0 {
+	} else if descriptors.Len() == 0 {
 		return nil, errors.New("descriptors can't be empty")
-	} else if len(indexes) == 1 {
-		return descriptors[indexes[0]], nil
 	}
-	return findMessageDescriptor(indexes[1:], descriptors[indexes[0]].GetNestedMessageTypes())
+
+	descriptor := descriptors.Get(int(indexes[0]))
+	if len(indexes) == 1 {
+		return descriptor, nil
+	}
+
+	return findMessageDescriptor(indexes[1:], descriptor.Messages())
 }

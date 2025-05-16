@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/reflect/protoreflect"
+
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers"
@@ -112,7 +114,7 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 		deserializers = append(deserializers, &avroDeserializer, &protobufDeserializer)
 	}
 
-	deserializer, err := CreateProtobufMessageDeserializer(protobufConfig, flags.KeyProtoType, flags.ValueProtoType)
+	deserializer, err := CreateProtobufMessageDeserializer(protobufConfig, protoreflect.Name(flags.KeyProtoType), protoreflect.Name(flags.ValueProtoType))
 	if err != nil {
 		return err
 	}

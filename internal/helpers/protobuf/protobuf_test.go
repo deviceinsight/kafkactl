@@ -3,6 +3,8 @@ package protobuf
 import (
 	"slices"
 	"testing"
+
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 const schema = `syntax = "proto3";
@@ -41,7 +43,7 @@ message Outer2 {       // Level 0
 
 func TestComputeIndexes(t *testing.T) {
 	testCases := []struct {
-		msgName  string
+		msgName  protoreflect.FullName
 		expected []int64
 	}{
 		{"foo.bar.Outer", []int64{}},
@@ -57,7 +59,7 @@ func TestComputeIndexes(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.msgName, func(t *testing.T) {
+		t.Run(string(tc.msgName), func(t *testing.T) {
 			result, err := ComputeIndexes(fileDesc, tc.msgName)
 			if err != nil {
 				t.Fatal(err)
@@ -74,7 +76,7 @@ func TestComputeIndexesErrorsWhenCantCompute(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	msgName := "foo.bar.MiddleAA"
+	msgName := protoreflect.FullName("foo.bar.MiddleAA")
 	result, err := ComputeIndexes(fileDesc, msgName)
 	if err == nil {
 		t.Fatalf("expected: error, found: %+v", result)

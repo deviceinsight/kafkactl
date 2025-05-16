@@ -5,23 +5,23 @@ import (
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
-	"github.com/jhump/protoreflect/desc"
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 type ProtobufMessageDeserializer struct {
-	keyType         string
-	valueType       string
+	keyType         protoreflect.Name
+	valueType       protoreflect.Name
 	marshalOptions  internal.ProtobufMarshalOptions
-	keyDescriptor   *desc.MessageDescriptor
-	valueDescriptor *desc.MessageDescriptor
+	keyDescriptor   protoreflect.MessageDescriptor
+	valueDescriptor protoreflect.MessageDescriptor
 }
 
-func CreateProtobufMessageDeserializer(config internal.ProtobufConfig, keyType, valueType string) (*ProtobufMessageDeserializer, error) {
+func CreateProtobufMessageDeserializer(config internal.ProtobufConfig, keyType, valueType protoreflect.Name) (*ProtobufMessageDeserializer, error) {
 	return &ProtobufMessageDeserializer{
 		keyType:         keyType,
 		valueType:       valueType,
@@ -59,12 +59,12 @@ func (deserializer *ProtobufMessageDeserializer) DeserializeValue(consumerMsg *s
 	return &DeserializedData{data: deserialized}, err
 }
 
-func decodeProtobuf(rawData []byte, messageDescriptor *desc.MessageDescriptor, marshalOptions internal.ProtobufMarshalOptions) ([]byte, error) {
+func decodeProtobuf(rawData []byte, messageDescriptor protoreflect.MessageDescriptor, marshalOptions internal.ProtobufMarshalOptions) ([]byte, error) {
 	if len(rawData) == 0 { // tombstone record, can't be unmarshalled as protobuf
 		return nil, nil
 	}
 
-	msg := dynamicpb.NewMessage(messageDescriptor.UnwrapMessage())
+	msg := dynamicpb.NewMessage(messageDescriptor)
 	if err := proto.Unmarshal(rawData, msg); err != nil {
 		return nil, err
 	}
