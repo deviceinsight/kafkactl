@@ -79,7 +79,7 @@ func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {
 	testutil.AssertEquals(t, "pass", envMap[global.SaslPassword])
 	testutil.AssertEquals(t, "oauth", envMap[global.SaslMechanism])
 	testutil.AssertEquals(t, "azure", envMap[global.SaslTokenProviderPlugin])
-	testutil.AssertEquals(t, `"{\"int-key\":12,\"tenantid\":\"azure-tenant-id\"}"`, envMap[global.SaslTokenProviderOptions])
+	testutil.AssertEquals(t, `{"int-key":12,"tenantid":"azure-tenant-id"}`, envMap[global.SaslTokenProviderOptions])
 	testutil.AssertEquals(t, "my-client", envMap[global.ClientID])
 	testutil.AssertEquals(t, "2.0.1", envMap[global.KafkaVersion])
 	testutil.AssertEquals(t, "avro", envMap[global.AvroJSONCodec])
