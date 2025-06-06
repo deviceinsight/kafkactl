@@ -241,7 +241,7 @@ func appendMapIfDefined(env []string, key string, value map[string]any) []string
 		if err != nil {
 			panic(err)
 		}
-		return append(env, fmt.Sprintf("%s=%q", key, jsonMap))
+		return append(env, fmt.Sprintf("%s=%s", key, jsonMap))
 	}
 	return env
 }
