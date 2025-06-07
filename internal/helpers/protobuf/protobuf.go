@@ -10,7 +10,6 @@ import (
 	"google.golang.org/protobuf/reflect/protodesc"
 
 	"github.com/bufbuild/protocompile"
-	"github.com/bufbuild/protocompile/wellknownimports"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"google.golang.org/protobuf/proto"
@@ -64,7 +63,7 @@ func ParseFileDescriptor(filename string, resolvedSchemas map[string]string) (pr
 	resolver := protocompile.SourceResolver{Accessor: protocompile.SourceAccessorFromMap(resolvedSchemas)}
 
 	compiler := protocompile.Compiler{
-		Resolver: wellknownimports.WithStandardImports(&resolver),
+		Resolver: protocompile.WithStandardImports(&resolver),
 	}
 
 	parsedFiles, err := compiler.Compile(context.Background(), filename)
