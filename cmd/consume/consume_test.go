@@ -203,6 +203,36 @@ func TestConsumeRegistryProtobufWithNestedDependenciesIntegration(t *testing.T) 
 	testutil.AssertEquals(t, fmt.Sprintf("test-key#%s", value), kafkaCtl.GetStdOut())
 }
 
+func TestConsumeRegistryProtobufWithWellKnowType(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	bazMsg := `syntax = "proto3";
+  package baz;
+
+  import "google/protobuf/timestamp.proto";
+
+  message Baz {
+    google.protobuf.Timestamp field = 1;
+  }
+  `
+	value := `{"field":"2025-06-07T11:11:11Z"}`
+
+	testutil.RegisterSchema(t, "baz", bazMsg, srclient.Protobuf)
+	topicName := testutil.CreateTopic(t, "consume-topic")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", value); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-keys"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, fmt.Sprintf("test-key#%s", value), kafkaCtl.GetStdOut())
+}
+
 func TestConsumeRegistryProtobufWithNestedProtoIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
@@ -259,7 +289,6 @@ func TestConsumeRegistryProtobufWithNestedProtoIntegration(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			topicName := testutil.CreateTopic(t, "consume-topic")
 			testutil.RegisterSchema(t, topicName+"-value", schema, srclient.Protobuf)
 
