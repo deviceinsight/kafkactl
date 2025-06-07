@@ -151,12 +151,12 @@ func getOffsetBounds(client *sarama.Client, topic string, flags Flags, currentPa
 		endOffset = endOffset - 1
 	}
 	if flags.Tail > 0 && startOffset == sarama.OffsetNewest {
-		//When --tail is used compute startOffset so that it minimizes the number of messages consumed
-		if endOffset-int64(flags.Tail) > 0 {
-			startOffset = endOffset - int64(flags.Tail)
-		} else {
-			startOffset = sarama.OffsetOldest
+		// When --tail is used compute startOffset so that it minimizes the number of messages consumed
+		var oldestOffset int64
+		if oldestOffset, err = (*client).GetOffset(topic, currentPartition, sarama.OffsetOldest); err != nil {
+			return ErrOffset, ErrOffset, err
 		}
+		startOffset = max(oldestOffset, endOffset-int64(flags.Tail))
 	}
 	output.Debugf("consumer will consume offset %d to %d on partition %d", startOffset, endOffset, currentPartition)
 	return startOffset, endOffset, nil
