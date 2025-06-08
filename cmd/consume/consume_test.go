@@ -206,18 +206,18 @@ func TestConsumeRegistryProtobufWithNestedDependenciesIntegration(t *testing.T) 
 func TestConsumeRegistryProtobufWithWellKnowTypeIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
-	bazMsg := `syntax = "proto3";
-  package baz;
+	newFooMsg := `syntax = "proto3";
+  package new.foo;
 
   import "google/protobuf/timestamp.proto";
 
-  message Baz {
+  message Foo {
     google.protobuf.Timestamp field = 1;
   }
   `
 	value := `{"field":"2025-06-07T11:11:11Z"}`
 
-	testutil.RegisterSchema(t, "baz", bazMsg, srclient.Protobuf)
+	testutil.RegisterSchema(t, "new.foo", newFooMsg, srclient.Protobuf)
 	topicName := testutil.CreateTopic(t, "consume-topic")
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
