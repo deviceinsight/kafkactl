@@ -203,7 +203,7 @@ func TestConsumeRegistryProtobufWithNestedDependenciesIntegration(t *testing.T) 
 	testutil.AssertEquals(t, fmt.Sprintf("test-key#%s", value), kafkaCtl.GetStdOut())
 }
 
-func TestConsumeRegistryProtobufWithWellKnowType(t *testing.T) {
+func TestConsumeRegistryProtobufWithWellKnowTypeIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
 	bazMsg := `syntax = "proto3";
