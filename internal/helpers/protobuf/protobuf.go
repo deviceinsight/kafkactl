@@ -63,7 +63,7 @@ func ParseFileDescriptor(filename string, resolvedSchemas map[string]string) (pr
 	resolver := protocompile.SourceResolver{Accessor: protocompile.SourceAccessorFromMap(resolvedSchemas)}
 
 	compiler := protocompile.Compiler{
-		Resolver: &resolver,
+		Resolver: protocompile.WithStandardImports(&resolver),
 	}
 
 	parsedFiles, err := compiler.Compile(context.Background(), filename)
@@ -109,7 +109,6 @@ func FindMessageDescriptor(fileDesc protoreflect.FileDescriptor, msgName protore
 }
 
 func findMessageDescriptor(messages protoreflect.MessageDescriptors, msgName protoreflect.FullName) (protoreflect.MessageDescriptor, error) {
-
 	for i := range messages.Len() {
 		message := messages.Get(i)
 
@@ -174,7 +173,6 @@ func makeDescriptors(protobufConfig internal.ProtobufConfig) []protoreflect.File
 }
 
 func readFileDescriptors(protoSetFiles []string) []protoreflect.FileDescriptor {
-
 	var descriptors []protoreflect.FileDescriptor
 
 	for _, protoSetFile := range protoSetFiles {
