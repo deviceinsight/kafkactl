@@ -240,6 +240,12 @@ func (operation *Operation) printTopic(topic Topic, flags DescribeTopicFlags) er
 		topic.Configs = nil
 	}
 
+	if len(topic.Configs) != 0 {
+		sort.Slice(topic.Configs, func(i, j int) bool {
+			return topic.Configs[i].Name < topic.Configs[j].Name
+		})
+	}
+
 	if len(topic.Configs) != 0 && flags.OutputFormat != "json" && flags.OutputFormat != "yaml" {
 		configTableWriter := output.CreateTableWriter()
 		if err := configTableWriter.WriteHeader("CONFIG", "VALUE"); err != nil {
