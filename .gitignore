@@ -9,7 +9,6 @@
 .vscode
 
 ### Binary
-docs
 dist
 kafkactl
 kafkactl.exe
