@@ -18,9 +18,9 @@ jobs:
           go-version-file: 'go.mod'
       -
         name: Build and generate docs
-        run: make docs
+        run: make docs DOCS_TARGET=pages
       -
         name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: docs
+          folder: pages

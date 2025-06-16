@@ -1,6 +1,7 @@
 BUILD_TS := $(shell date -Iseconds -u)
 COMMIT_SHA := $(shell git rev-parse HEAD)
 VERSION := $(shell git describe --abbrev=0 --tags || echo "latest")
+DOCS_TARGET ?= docs
 
 export CGO_ENABLED=0
 
@@ -48,7 +49,9 @@ build:
 .PHONY: docs
 docs: build
 	touch /tmp/empty.yaml
-	./kafkactl docs --directory docs --single-page --config-file=/tmp/empty.yaml
+	./kafkactl docs --directory $(DOCS_TARGET) --single-page --config-file=/tmp/empty.yaml
+	echo "![version](https://img.shields.io/badge/version-$(VERSION)-blue)" > $(DOCS_TARGET)/version.md
+	cp index.md $(DOCS_TARGET)
 
 .PHONY: clean
 clean:

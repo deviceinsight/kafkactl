@@ -1,3 +1,5 @@
 # kafkactl command documentation
 
-{% include_relative docs/kafkactl_docs.md %}
+{% include_relative version.md %}
+
+{% include_relative kafkactl_docs.md %}
