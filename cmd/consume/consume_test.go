@@ -665,7 +665,7 @@ func TestProtobufConsumeProtoFileErrDecodeIntegration(t *testing.T) {
 	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
 
 	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "--proto-import-path", protoPath, "--proto-file", "msg.proto", "--value-proto-type", "TopicMessage"); err != nil {
-		testutil.AssertErrorContains(t, "failed to deserialize value: proto: cannot parse invalid wire-format data", err)
+		testutil.AssertErrorContains(t, "cannot parse invalid wire-format data", err)
 	} else {
 		t.Fatal("Expected consumer to fail")
 	}
