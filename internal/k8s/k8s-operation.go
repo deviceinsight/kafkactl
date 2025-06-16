@@ -31,7 +31,6 @@ func NewOperation() Operation {
 }
 
 func (op *operation) initialize(context internal.ClientContext) error {
-
 	if !context.Kubernetes.Enabled {
 		return errors.Errorf("context is not a kubernetes context: %s", context.Name)
 	}
@@ -48,7 +47,6 @@ func (op *operation) initialize(context internal.ClientContext) error {
 }
 
 func (op *operation) Attach() error {
-
 	context, err := internal.CreateClientContext()
 	if err != nil {
 		return err
@@ -65,11 +63,10 @@ func (op *operation) Attach() error {
 
 	podEnvironment := parsePodEnvironment(context)
 
-	return exec.Run("ubuntu", "bash", nil, podEnvironment)
+	return exec.Run("ubuntu", "bash", nil, podEnvironment, "--tty")
 }
 
 func (op *operation) Run(cmd *cobra.Command, args []string) error {
-
 	context, err := internal.CreateClientContext()
 	if err != nil {
 		return err
@@ -83,7 +80,6 @@ func (op *operation) Run(cmd *cobra.Command, args []string) error {
 }
 
 func (op *operation) run(context internal.ClientContext, cmd *cobra.Command, args []string) error {
-
 	if err := op.initialize(context); err != nil {
 		return err
 	}
@@ -174,7 +170,6 @@ func parseCompleteCommand(cmd *cobra.Command, found []string) []string {
 }
 
 func parsePodEnvironment(context internal.ClientContext) []string {
-
 	var envVariables []string
 
 	envVariables = appendStrings(envVariables, global.Brokers, context.Brokers)
@@ -246,7 +241,7 @@ func appendMapIfDefined(env []string, key string, value map[string]any) []string
 		if err != nil {
 			panic(err)
 		}
-		return append(env, fmt.Sprintf("%s=%q", key, jsonMap))
+		return append(env, fmt.Sprintf("%s=%s", key, jsonMap))
 	}
 	return env
 }

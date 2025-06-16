@@ -203,6 +203,36 @@ func TestConsumeRegistryProtobufWithNestedDependenciesIntegration(t *testing.T) 
 	testutil.AssertEquals(t, fmt.Sprintf("test-key#%s", value), kafkaCtl.GetStdOut())
 }
 
+func TestConsumeRegistryProtobufWithWellKnowTypeIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	newFooMsg := `syntax = "proto3";
+  package new.foo;
+
+  import "google/protobuf/timestamp.proto";
+
+  message Foo {
+    google.protobuf.Timestamp field = 1;
+  }
+  `
+	value := `{"field":"2025-06-07T11:11:11Z"}`
+
+	testutil.RegisterSchema(t, "new.foo", newFooMsg, srclient.Protobuf)
+	topicName := testutil.CreateTopic(t, "consume-topic")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", value); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-keys"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, fmt.Sprintf("test-key#%s", value), kafkaCtl.GetStdOut())
+}
+
 func TestConsumeRegistryProtobufWithNestedProtoIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
@@ -259,7 +289,6 @@ func TestConsumeRegistryProtobufWithNestedProtoIntegration(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			topicName := testutil.CreateTopic(t, "consume-topic")
 			testutil.RegisterSchema(t, topicName+"-value", schema, srclient.Protobuf)
 
@@ -481,7 +510,10 @@ func TestProtobufConsumeProtoFileIntegration(t *testing.T) {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, kafkaCtl.GetStdOut())
+	// https://github.com/golang/protobuf/issues/1082
+	output := strings.ReplaceAll(kafkaCtl.GetStdOut(), " ", "")
+
+	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, output)
 }
 
 func TestProtobufConsumeProtoFileWithoutProtoImportPathIntegration(t *testing.T) {
@@ -517,7 +549,10 @@ func TestProtobufConsumeProtoFileWithoutProtoImportPathIntegration(t *testing.T)
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, kafkaCtl.GetStdOut())
+	// https://github.com/golang/protobuf/issues/1082
+	output := strings.ReplaceAll(kafkaCtl.GetStdOut(), " ", "")
+
+	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, output)
 }
 
 func TestConsumeTombstoneWithProtoFileIntegration(t *testing.T) {
@@ -572,7 +607,10 @@ func TestProtobufConsumeProtosetFileIntegration(t *testing.T) {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, kafkaCtl.GetStdOut())
+	// https://github.com/golang/protobuf/issues/1082
+	output := strings.ReplaceAll(kafkaCtl.GetStdOut(), " ", "")
+
+	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, output)
 }
 
 func TestProtobufConsumeProtoFileErrNoMessageIntegration(t *testing.T) {
@@ -627,7 +665,7 @@ func TestProtobufConsumeProtoFileErrDecodeIntegration(t *testing.T) {
 	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
 
 	if _, err := kafkaCtl.Execute("consume", pbTopic, "--from-beginning", "--exit", "--proto-import-path", protoPath, "--proto-file", "msg.proto", "--value-proto-type", "TopicMessage"); err != nil {
-		testutil.AssertErrorContains(t, "failed to deserialize value: proto: cannot parse invalid wire-format data", err)
+		testutil.AssertErrorContains(t, "cannot parse invalid wire-format data", err)
 	} else {
 		t.Fatal("Expected consumer to fail")
 	}

@@ -44,7 +44,6 @@ type executor struct {
 const letterBytes = "abcdefghijklmnpqrstuvwxyz123456789"
 
 func randomString(n int) string {
-
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	b := make([]byte, n)
@@ -55,7 +54,6 @@ func randomString(n int) string {
 }
 
 func getKubectlVersion(kubectlBinary string, runner Runner) (Version, error) {
-
 	bytes, err := runner.ExecuteAndReturn(kubectlBinary, []string{"version", "--client", "-o", "json"})
 	if err != nil {
 		return Version{}, err
@@ -97,7 +95,6 @@ func getKubectlVersion(kubectlBinary string, runner Runner) (Version, error) {
 }
 
 func newExecutor(context internal.ClientContext, runner Runner) (*executor, error) {
-
 	version, err := getKubectlVersion(context.Kubernetes.Binary, runner)
 	if err != nil {
 		return nil, err
@@ -127,16 +124,17 @@ func (kubectl *executor) SetKubectlBinary(bin string) {
 	kubectl.kubectlBinary = bin
 }
 
-func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []string, podEnvironment []string) error {
-
+func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []string, podEnvironment []string, additionalKubectlArgs ...string) error {
 	dockerImage := getDockerImage(kubectl.image, dockerImageType)
 
 	podName := fmt.Sprintf("kafkactl-%s-%s", strings.ToLower(kubectl.clientID), randomString(4))
 
 	kubectlArgs := []string{
-		"run", "-i", "--tty", "--restart=Never", podName,
+		"run", "-i", "--restart=Never", podName,
 		"--image", dockerImage,
 	}
+
+	kubectlArgs = append(kubectlArgs, additionalKubectlArgs...)
 
 	if !kubectl.keepPod {
 		kubectlArgs = slices.Insert(kubectlArgs, 1, "--rm")
@@ -177,7 +175,6 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 }
 
 func addTerminalSizeEnv(args []string) []string {
-
 	if !term.IsTerminal(0) {
 		output.Debugf("no terminal detected")
 		return args
@@ -195,7 +192,6 @@ func addTerminalSizeEnv(args []string) []string {
 }
 
 func getDockerImage(image string, imageType string) string {
-
 	if KafkaCtlVersion == "" {
 		KafkaCtlVersion = "latest"
 	}

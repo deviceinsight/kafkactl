@@ -144,12 +144,12 @@ partitions:
 configs:
 - name: cleanup.policy
   value: compact
+- name: delete.retention.ms
+  value: "0"
 - name: max.message.bytes
   value: "10485880"
 - name: min.cleanable.dirty.ratio
   value: "1.0E-4"
-- name: delete.retention.ms
-  value: "0"
 - name: segment.ms
   value: "100"
 `, topicName)
@@ -197,12 +197,12 @@ partitions:
 configs:
 - name: cleanup.policy
   value: compact
+- name: delete.retention.ms
+  value: "0"
 - name: max.message.bytes
   value: "10485880"
 - name: min.cleanable.dirty.ratio
   value: "1.0E-4"
-- name: delete.retention.ms
-  value: "0"
 - name: segment.ms
   value: "100"`
 

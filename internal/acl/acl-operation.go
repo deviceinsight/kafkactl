@@ -195,6 +195,7 @@ func (operation *Operation) CreateACL(flags CreateACLFlags) error {
 		resource.ResourcePatternType = patternTypeFromString(flags.PatternType)
 	} else {
 		resource.ResourceType = sarama.AclResourceCluster
+		resource.ResourceName = "kafka-cluster"
 		resource.ResourcePatternType = patternTypeFromString(flags.PatternType)
 	}
 

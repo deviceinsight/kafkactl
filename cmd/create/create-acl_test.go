@@ -107,3 +107,18 @@ func TestCreateTopicAlterConfigsDenyAclIntegration(t *testing.T) {
 
 	testutil.AssertErrorContainsOneOf(t, []string{pre27ErrorMessage, errorMessage}, err)
 }
+
+func TestCreateClusterIdempotentWriteAllowAclIntegration(t *testing.T) {
+	testutil.StartIntegrationTestWithContext(t, "sasl-admin")
+
+	// add cluster acl
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("create", "acl", "--cluster", "--operation", "IdempotentWrite", "--allow", "--principal", "User:user"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	// remove acl again, it has side effects on other tests
+	if _, err := kafkaCtl.Execute("delete", "acl", "--cluster", "--operation", "IdempotentWrite", "--pattern", "any"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+}

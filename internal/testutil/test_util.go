@@ -215,7 +215,7 @@ func AssertErrorContains(t *testing.T, expected string, err error) {
 	}
 
 	if !strings.Contains(err.Error(), expected) {
-		t.Fatalf("expected error to contain: %s\nactual: %v", expected, err)
+		t.Fatalf("expected error to contain: %s\nactual: %s", expected, err.Error())
 	}
 }
 
