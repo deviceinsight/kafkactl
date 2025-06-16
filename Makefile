@@ -19,7 +19,7 @@ all: fmt lint cve-check test build docs
 
 fmt:
 	gofmt -s -l -w $(FILES) $(TESTS)
-	goimports -l -w $(FILES) $(TESTS)
+	go tool goimports -l -w $(FILES) $(TESTS)
 
 .PHONY: update-dependencies
 update-dependencies: # update dependencies to latest MINOR.PATCH
