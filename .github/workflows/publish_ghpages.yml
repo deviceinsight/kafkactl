@@ -1,8 +1,9 @@
 name: Publish github pages
 on:
   push:
-    branches:
-      - main
+    tags:
+      - v*
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest

@@ -50,7 +50,7 @@ build:
 docs: build
 	touch /tmp/empty.yaml
 	./kafkactl docs --directory $(DOCS_TARGET) --single-page --config-file=/tmp/empty.yaml
-	echo "![version](https://img.shields.io/badge/version-$(VERSION)-blue)" > $(DOCS_TARGET)/version.md
+	echo "[![version](https://img.shields.io/badge/version-$(VERSION)-blue)](https://github.com/deviceinsight/kafkactl/releases/tag/$(VERSION))" > $(DOCS_TARGET)/version.md
 	cp index.md $(DOCS_TARGET)
 
 .PHONY: clean
