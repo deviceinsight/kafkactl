@@ -109,12 +109,10 @@ func TestCreateTopicAlterConfigsDenyAclIntegration(t *testing.T) {
 }
 
 func TestCreateClusterIdempotentWriteAllowAclIntegration(t *testing.T) {
-		testutil.StartIntegrationTestWithContext(t, "sasl-admin")
-
-	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	testutil.StartIntegrationTestWithContext(t, "sasl-admin")
 
 	// add cluster acl
-	kafkaCtl = testutil.CreateKafkaCtlCommand()
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
 	if _, err := kafkaCtl.Execute("create", "acl", "--cluster", "--operation", "IdempotentWrite", "--allow", "--principal", "User:user"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
