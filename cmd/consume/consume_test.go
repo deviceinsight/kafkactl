@@ -510,7 +510,10 @@ func TestProtobufConsumeProtoFileIntegration(t *testing.T) {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, kafkaCtl.GetStdOut())
+	// https://github.com/golang/protobuf/issues/1082
+	output := strings.ReplaceAll(kafkaCtl.GetStdOut(), " ", "")
+
+	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, output)
 }
 
 func TestProtobufConsumeProtoFileWithoutProtoImportPathIntegration(t *testing.T) {
@@ -546,7 +549,10 @@ func TestProtobufConsumeProtoFileWithoutProtoImportPathIntegration(t *testing.T)
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, kafkaCtl.GetStdOut())
+	// https://github.com/golang/protobuf/issues/1082
+	output := strings.ReplaceAll(kafkaCtl.GetStdOut(), " ", "")
+
+	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, output)
 }
 
 func TestConsumeTombstoneWithProtoFileIntegration(t *testing.T) {
@@ -601,7 +607,10 @@ func TestProtobufConsumeProtosetFileIntegration(t *testing.T) {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, kafkaCtl.GetStdOut())
+	// https://github.com/golang/protobuf/issues/1082
+	output := strings.ReplaceAll(kafkaCtl.GetStdOut(), " ", "")
+
+	testutil.AssertEquals(t, `{"producedAt":"2021-12-01T14:10:12Z","num":"1"}`, output)
 }
 
 func TestProtobufConsumeProtoFileErrNoMessageIntegration(t *testing.T) {
