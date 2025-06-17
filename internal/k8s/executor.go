@@ -167,7 +167,7 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 
 	// Keep only kafkactl arguments that are relevant in k8s context
 	allExceptConfigFileFilter := func(s string) bool {
-		return !strings.HasPrefix(s, "-C=") && !strings.HasPrefix(s, "--config-file=")
+		return !strings.HasPrefix(s, "-C=") && !strings.HasPrefix(s, "--config-file=") && !strings.HasPrefix(s, "--context=")
 	}
 	kubectlArgs = append(kubectlArgs, filter(kafkactlArgs, allExceptConfigFileFilter)...)
 
