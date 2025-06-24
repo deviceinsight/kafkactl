@@ -27,6 +27,10 @@ func LoadTokenProviderPlugin(pluginName string, options map[string]any, brokers 
 			return nil, err
 		}
 
+		if options == nil {
+			options = make(map[string]any)
+		}
+
 		if err := loadedPlugin.Init(options, brokers); err != nil {
 			return nil, err
 		}
