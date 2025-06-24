@@ -32,6 +32,7 @@ type executor struct {
 	kubeConfig      string
 	kubeContext     string
 	serviceAccount  string
+	asUser          string
 	keepPod         bool
 	namespace       string
 	labels          map[string]string
@@ -110,6 +111,7 @@ func newExecutor(context internal.ClientContext, runner Runner) (*executor, erro
 		kubeContext:     context.Kubernetes.KubeContext,
 		namespace:       context.Kubernetes.Namespace,
 		serviceAccount:  context.Kubernetes.ServiceAccount,
+		asUser:          context.Kubernetes.AsUser,
 		keepPod:         context.Kubernetes.KeepPod,
 		labels:          context.Kubernetes.Labels,
 		annotations:     context.Kubernetes.Annotations,
@@ -142,6 +144,10 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 
 	if kubectl.kubeConfig != "" {
 		kubectlArgs = append(kubectlArgs, "--kubeconfig", kubectl.kubeConfig)
+	}
+
+	if kubectl.asUser != "" {
+		kubectlArgs = append(kubectlArgs, "--as", kubectl.asUser)
 	}
 
 	podOverride := kubectl.createPodOverride()

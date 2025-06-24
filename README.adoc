@@ -124,6 +124,8 @@ contexts:
       image: private.registry.com/deviceinsight/kafkactl
       # optional: secret for private docker registry
       imagePullSecret: registry-secret
+      # optional: Username to impersonate for the kubectl command
+      asUser: user
       # optional: serviceAccount to use for the pod
       serviceAccount: my-service-account
       # optional: keep pod after exit (can be set to true for debugging)

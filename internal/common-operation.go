@@ -89,6 +89,7 @@ type K8sConfig struct {
 	Image           string
 	ImagePullSecret string
 	ServiceAccount  string
+	AsUser          string
 	KeepPod         bool
 	Labels          map[string]string
 	Annotations     map[string]string
@@ -223,6 +224,7 @@ func CreateClientContext() (ClientContext, error) {
 	context.Kubernetes.Image = viper.GetString("contexts." + context.Name + ".kubernetes.image")
 	context.Kubernetes.ImagePullSecret = viper.GetString("contexts." + context.Name + ".kubernetes.imagePullSecret")
 	context.Kubernetes.ServiceAccount = viper.GetString("contexts." + context.Name + ".kubernetes.serviceAccount")
+	context.Kubernetes.AsUser = viper.GetString("contexts." + context.Name + ".kubernetes.asUser")
 	context.Kubernetes.KeepPod = viper.GetBool("contexts." + context.Name + ".kubernetes.keepPod")
 	context.Kubernetes.Labels = viper.GetStringMapString("contexts." + context.Name + ".kubernetes.labels")
 	context.Kubernetes.Annotations = viper.GetStringMapString("contexts." + context.Name + ".kubernetes.annotations")

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Current context is now stored in a separate file to avoid write operations on the config file.
+- run kubectl commands as user other.
 
 ### Changed
 - Update to Go 1.24.4
