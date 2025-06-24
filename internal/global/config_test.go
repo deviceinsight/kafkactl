@@ -59,11 +59,6 @@ func TestResolvePath(t *testing.T) {
 			filename:     "root.go",
 			wantFilename: "cmd/root.go",
 		},
-		{
-			description:  "filename_resolvable_relative_to_writable_config",
-			filename:     "plugins/plugins.go",
-			wantFilename: "pkg/plugins/plugins.go",
-		},
 	} {
 		t.Run(tc.description, func(t *testing.T) {
 

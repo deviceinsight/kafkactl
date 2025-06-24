@@ -23,6 +23,12 @@ type Flags struct {
 
 const defaultContextPrefix = "CONTEXTS_DEFAULT_"
 
+const configFileName = "config"
+const writableConfigFileName = "current-context"
+
+const ConfigEnvVariable = "KAFKA_CTL_CONFIG"
+const WritableConfigEnvVariable = "KAFKA_CTL_WRITABLE_CONFIG"
+
 var projectConfigNames = []string{"kafkactl.yml", ".kafkactl.yml"}
 
 var configPaths = []string{
@@ -108,18 +114,6 @@ func ResolvePath(filename string) (string, error) {
 		}
 	}
 
-	if configInstance.writableConfig != viper.GetViper() {
-		// relative to writeable config file
-		writableConfigDir := path.Dir(configInstance.writableConfig.ConfigFileUsed())
-		searchPaths[writableConfigDir] = true
-		cfgFilename := filepath.Join(writableConfigDir, filename)
-		if _, err := os.Stat(cfgFilename); err == nil {
-			return cfgFilename, err
-		} else if !errors.Is(err, os.ErrNotExist) {
-			return "", fmt.Errorf("unable to resolve path %q: %v", cfgFilename, err)
-		}
-	}
-
 	// check in path (e.g. for kubectl binary)
 	if _, err := exec.LookPath(filename); err == nil {
 		return filename, nil
@@ -149,6 +143,7 @@ func (c *config) DefaultPaths() []string {
 func (c *config) currentContext() string {
 	return c.writableConfig.GetString("current-context")
 }
+
 func (c *config) setCurrentContext(contextName string) error {
 	c.writableConfig.Set("current-context", contextName)
 	return c.writableConfig.WriteConfig()
@@ -172,47 +167,39 @@ func (c *config) Init() error {
 	switch {
 	case c.flags.ConfigFile != "":
 		configFile = &c.flags.ConfigFile
-	case os.Getenv("KAFKA_CTL_CONFIG") != "":
-		envConfig := os.Getenv("KAFKA_CTL_CONFIG")
+	case os.Getenv(ConfigEnvVariable) != "":
+		envConfig := os.Getenv(ConfigEnvVariable)
 		configFile = &envConfig
 	}
 
 	mapEnvVariables()
 
-	if err := c.loadConfig(viper.GetViper(), configFile); err != nil {
+	if err := loadConfig(configFileName, viper.GetViper(), configFile); err != nil {
 		if isUnknownError(err) {
 			return fmt.Errorf("error reading config file: %s (%v)", viper.ConfigFileUsed(), err.Error())
 		}
-		err = generateDefaultConfig()
+		err = generateDefaultConfig(configFileName, viper.GetViper())
 		if err != nil {
 			return fmt.Errorf("error generating default config file: %v", err.Error())
 		}
-
-		// We read generated config now
-		if err = c.loadConfig(viper.GetViper(), configFile); err != nil {
-			return fmt.Errorf("error reading config file: %s (%v)", viper.ConfigFileUsed(), err.Error())
-		}
 	}
 
-	if configFile != nil && viper.GetString("current-context") == "" {
-		// assuming the provided configFile is read-only
-		c.writableConfig = viper.New()
-		if err := c.loadConfig(c.writableConfig, nil); err != nil {
-			if isUnknownError(err) {
-				return fmt.Errorf("error reading config file: %s (%v)", c.writableConfig.ConfigFileUsed(), err.Error())
-			}
-			err = generateDefaultConfig()
-			if err != nil {
-				return fmt.Errorf("error generating default config file: %v", err.Error())
-			}
+	var writableConfigFile *string
 
-			// We read generated config now
-			if err = c.loadConfig(c.writableConfig, configFile); err != nil {
-				return fmt.Errorf("error reading config file: %s (%v)", viper.ConfigFileUsed(), err.Error())
-			}
+	if os.Getenv(WritableConfigEnvVariable) != "" {
+		envConfig := os.Getenv(WritableConfigEnvVariable)
+		writableConfigFile = &envConfig
+	}
+
+	c.writableConfig = viper.New()
+	if err := loadConfig(writableConfigFileName, c.writableConfig, writableConfigFile); err != nil {
+		if isUnknownError(err) {
+			return fmt.Errorf("error reading config file: %s (%v)", c.writableConfig.ConfigFileUsed(), err.Error())
 		}
-	} else {
-		c.writableConfig = viper.GetViper()
+		err = generateDefaultConfig(writableConfigFileName, c.writableConfig)
+		if err != nil {
+			return fmt.Errorf("error generating default config file: %v", err.Error())
+		}
 	}
 	return nil
 }
@@ -227,7 +214,7 @@ func isUnknownError(err error) bool {
 	return !isConfigFileNotFoundError && !isOsPathError
 }
 
-func (c *config) loadConfig(viperInstance *viper.Viper, configFile *string) error {
+func loadConfig(name string, viperInstance *viper.Viper, configFile *string) error {
 
 	if configFile != nil {
 		viperInstance.SetConfigFile(*configFile)
@@ -235,7 +222,7 @@ func (c *config) loadConfig(viperInstance *viper.Viper, configFile *string) erro
 		for _, p := range configPaths {
 			viperInstance.AddConfigPath(os.ExpandEnv(p))
 		}
-		viperInstance.SetConfigName("config")
+		viperInstance.SetConfigName(name)
 	}
 
 	replacer := strings.NewReplacer("-", "_", ".", "_")
@@ -314,18 +301,22 @@ func mapEnvVariables() {
 }
 
 // generateDefaultConfig generates default config in case there is no config
-func generateDefaultConfig() error {
+func generateDefaultConfig(name string, viperInstance *viper.Viper) error {
 
-	cfgFile := filepath.Join(os.ExpandEnv(configPaths[0]), "config.yml")
+	filename := name + ".yml"
+	cfgFile := filepath.Join(os.ExpandEnv(configPaths[0]), filename)
 
-	if os.Getenv("KAFKA_CTL_CONFIG") != "" {
+	if name == configFileName && os.Getenv(ConfigEnvVariable) != "" {
 		// use config file provided via env
-		cfgFile = os.Getenv("KAFKA_CTL_CONFIG")
+		cfgFile = os.Getenv(ConfigEnvVariable)
+	} else if name == writableConfigFileName && os.Getenv(WritableConfigEnvVariable) != "" {
+		// use config file provided via env
+		cfgFile = os.Getenv(WritableConfigEnvVariable)
 	} else if runtime.GOOS == "windows" {
 		// use different configFile when running on windows
 		for _, configPath := range configPaths {
 			if strings.Contains(configPath, "$APPDATA") {
-				cfgFile = filepath.Join(os.ExpandEnv(configPath), "config.yml")
+				cfgFile = filepath.Join(os.ExpandEnv(configPath), filename)
 				break
 			}
 		}
@@ -335,13 +326,37 @@ func generateDefaultConfig() error {
 		return err
 	}
 
-	viper.SetDefault("contexts.default.brokers", []string{"localhost:9092"})
-	viper.SetDefault("current-context", "default")
+	if name == configFileName {
+		viperInstance.SetDefault("contexts.default.brokers", []string{"localhost:9092"})
+	} else {
+		viperInstance.SetDefault("current-context", getInitialCurrentContext(cfgFile))
+	}
 
-	if err := viper.WriteConfigAs(cfgFile); err != nil {
+	if err := viperInstance.WriteConfigAs(cfgFile); err != nil {
 		return err
 	}
 
 	output.Debugf("generated default config at %s", cfgFile)
+
+	// We read generated config now
+	if err := loadConfig(name, viperInstance, &cfgFile); err != nil {
+		return fmt.Errorf("error reading config file: %s (%v)", viperInstance.ConfigFileUsed(), err.Error())
+	}
+
 	return nil
+}
+
+func getInitialCurrentContext(writableConfigFile string) string {
+
+	if viper.GetString("current-context") != "" {
+		output.Warnf(fmt.Sprintf(`the configuration of the current context is now managed in a separate file: %s
+the parameter “current-context” in config.yml is no longer used. Please remove it to avoid confusion.`, writableConfigFile))
+		return viper.GetString("current-context")
+	}
+
+	availableContexts := ListAvailableContexts()
+	if len(availableContexts) > 0 {
+		return availableContexts[0]
+	}
+	return ""
 }
