@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Update to Go 1.24.4
 
+### Fixed
+- Fixed panic() when configuring a nil map as tokenProvider.options
+
 ## 5.9.0 - 2025-06-16
 ### Fixed
 - [#255](https://github.com/deviceinsight/kafkactl/pull/255) Set resource name when creating a cluster ACL
