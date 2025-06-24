@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 5.10.0 - 2025-06-24
+
 ### Added
 - Current context is now stored in a separate file to avoid write operations on the config file.
 - run kubectl commands as user other.
