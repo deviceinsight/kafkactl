@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Current context is now stored in a separate file to avoid write operations on the config file.
+
 ### Changed
 - Update to Go 1.24.4
 

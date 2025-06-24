@@ -24,7 +24,7 @@ func TestEnvironmentVariableLoading(t *testing.T) {
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	if _, err := kafkaCtl.Execute("version"); err != nil {
+	if _, err := kafkaCtl.Execute("config", "current-context"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
