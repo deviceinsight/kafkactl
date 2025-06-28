@@ -15,18 +15,57 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/deviceinsight/kafkactl/v5/cmd"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 )
 
 func main() {
+	ctx, cancel := signal.NotifyContext(context.Background(),
+		syscall.SIGTERM, syscall.SIGINT)
+	defer cancel()
 
-	ioStreams := output.DefaultIOStreams()
-
-	if err := cmd.NewKafkactlCommand(ioStreams).Execute(); err != nil {
+	if err := runWithShutdownTimeout(ctx, 30*time.Second); err != nil {
+		if errors.Is(err, context.Canceled) {
+			os.Exit(0)
+		}
+		if errors.Is(err, context.DeadlineExceeded) {
+			output.Warnf("Shutdown timeout exceeded, forced exit")
+			os.Exit(1)
+		}
 		output.Warnf("%v", err)
 		os.Exit(1)
+	}
+}
+
+func runWithShutdownTimeout(ctx context.Context, shutdownTimeout time.Duration) error {
+	errChan := make(chan error, 1)
+	ioStreams := output.DefaultIOStreams()
+
+	rootCmd := cmd.NewKafkactlCommand(ioStreams)
+
+	go func() {
+		errChan <- rootCmd.ExecuteContext(ctx)
+		close(errChan)
+	}()
+
+	select {
+	case err := <-errChan:
+		return err
+	case <-ctx.Done():
+		output.Debugf("Shutdown signal received, allowing %v for graceful shutdown...", shutdownTimeout)
+
+		select {
+		case err := <-errChan:
+			return err
+		case <-time.Tick(shutdownTimeout):
+			return errors.Join(context.DeadlineExceeded, ctx.Err())
+		}
 	}
 }
