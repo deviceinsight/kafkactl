@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -40,6 +41,7 @@ type executor struct {
 	nodeSelector    map[string]string
 	affinity        map[string]any
 	tolerations     []internal.K8sToleration
+	ctx             context.Context
 }
 
 const letterBytes = "abcdefghijklmnpqrstuvwxyz123456789"
@@ -95,30 +97,31 @@ func getKubectlVersion(kubectlBinary string, runner Runner) (Version, error) {
 	}, nil
 }
 
-func newExecutor(context internal.ClientContext, runner Runner) (*executor, error) {
-	version, err := getKubectlVersion(context.Kubernetes.Binary, runner)
+func newExecutor(ctx context.Context, clientContext internal.ClientContext, runner Runner) (*executor, error) {
+	version, err := getKubectlVersion(clientContext.Kubernetes.Binary, runner)
 	if err != nil {
 		return nil, err
 	}
 
 	return &executor{
-		kubectlBinary:   context.Kubernetes.Binary,
+		kubectlBinary:   clientContext.Kubernetes.Binary,
 		version:         version,
-		image:           context.Kubernetes.Image,
-		imagePullSecret: context.Kubernetes.ImagePullSecret,
-		clientID:        internal.GetClientID(&context, ""),
-		kubeConfig:      context.Kubernetes.KubeConfig,
-		kubeContext:     context.Kubernetes.KubeContext,
-		namespace:       context.Kubernetes.Namespace,
-		serviceAccount:  context.Kubernetes.ServiceAccount,
-		asUser:          context.Kubernetes.AsUser,
-		keepPod:         context.Kubernetes.KeepPod,
-		labels:          context.Kubernetes.Labels,
-		annotations:     context.Kubernetes.Annotations,
-		nodeSelector:    context.Kubernetes.NodeSelector,
-		affinity:        context.Kubernetes.Affinity,
-		tolerations:     context.Kubernetes.Tolerations,
+		image:           clientContext.Kubernetes.Image,
+		imagePullSecret: clientContext.Kubernetes.ImagePullSecret,
+		clientID:        internal.GetClientID(&clientContext, ""),
+		kubeConfig:      clientContext.Kubernetes.KubeConfig,
+		kubeContext:     clientContext.Kubernetes.KubeContext,
+		namespace:       clientContext.Kubernetes.Namespace,
+		serviceAccount:  clientContext.Kubernetes.ServiceAccount,
+		asUser:          clientContext.Kubernetes.AsUser,
+		keepPod:         clientContext.Kubernetes.KeepPod,
+		labels:          clientContext.Kubernetes.Labels,
+		annotations:     clientContext.Kubernetes.Annotations,
+		nodeSelector:    clientContext.Kubernetes.NodeSelector,
+		affinity:        clientContext.Kubernetes.Affinity,
+		tolerations:     clientContext.Kubernetes.Tolerations,
 		runner:          runner,
+		ctx:             ctx,
 	}, nil
 }
 
@@ -176,8 +179,24 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 		return !strings.HasPrefix(s, "-C=") && !strings.HasPrefix(s, "--config-file=") && !strings.HasPrefix(s, "--context=")
 	}
 	kubectlArgs = append(kubectlArgs, filter(kafkactlArgs, allExceptConfigFileFilter)...)
+	errChan := make(chan error, 1)
 
-	return kubectl.exec(kubectlArgs)
+	go func() {
+		errChan <- kubectl.exec(kubectlArgs)
+		close(errChan)
+	}()
+
+	select {
+	case <-kubectl.ctx.Done():
+		err := kubectl.exec([]string{"delete", "pod", podName, "-n", kubectl.namespace, "--wait=true"})
+		if err != nil {
+			output.Warnf("delete pod %s returned an error %w", podName, err)
+			return err
+		}
+		return context.Canceled
+	case err := <-errChan:
+		return err
+	}
 }
 
 func addTerminalSizeEnv(args []string) []string {

@@ -1,6 +1,7 @@
 package k8s_test
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -44,16 +45,15 @@ func (runner *TestRunner) Execute(binary string, args []string) error {
 }
 
 func TestExecWithImageAndImagePullSecretProvided(t *testing.T) {
+	var clientContext internal.ClientContext
+	clientContext.Kubernetes.Image = "private.registry.com/deviceinsight/kafkactl"
+	clientContext.Kubernetes.ImagePullSecret = "registry-secret"
 
-	var context internal.ClientContext
-	context.Kubernetes.Image = "private.registry.com/deviceinsight/kafkactl"
-	context.Kubernetes.ImagePullSecret = "registry-secret"
-
-	var testRunner = TestRunner{}
+	testRunner := TestRunner{}
 	testRunner.response = []byte(sampleKubectlVersionOutput)
 	var runner k8s.Runner = &testRunner
 
-	exec, err := k8s.NewExecutor(context, runner)
+	exec, err := k8s.NewExecutor(context.Background(), clientContext, runner)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +64,7 @@ func TestExecWithImageAndImagePullSecretProvided(t *testing.T) {
 	}
 
 	image := extractParam(t, testRunner.args, "--image")
-	if image != context.Kubernetes.Image+":latest-scratch" {
+	if image != clientContext.Kubernetes.Image+":latest-scratch" {
 		t.Fatalf("wrong image: %s", image)
 	}
 
@@ -74,21 +74,20 @@ func TestExecWithImageAndImagePullSecretProvided(t *testing.T) {
 		t.Fatalf("unable to unmarshall overrides: %v", err)
 	}
 	if len(podOverrides.Spec.ImagePullSecrets) != 1 ||
-		podOverrides.Spec.ImagePullSecrets[0].Name != context.Kubernetes.ImagePullSecret {
+		podOverrides.Spec.ImagePullSecrets[0].Name != clientContext.Kubernetes.ImagePullSecret {
 		t.Fatalf("wrong overrides: %s", overrides)
 	}
 }
 
 func TestExecWithoutPodOverridesProvided(t *testing.T) {
+	var clientContext internal.ClientContext
+	clientContext.Kubernetes.Image = "private.registry.com/deviceinsight/kafkactl"
 
-	var context internal.ClientContext
-	context.Kubernetes.Image = "private.registry.com/deviceinsight/kafkactl"
-
-	var testRunner = TestRunner{}
+	testRunner := TestRunner{}
 	testRunner.response = []byte(sampleKubectlVersionOutput)
 	var runner k8s.Runner = &testRunner
 
-	exec, err := k8s.NewExecutor(context, runner)
+	exec, err := k8s.NewExecutor(context.Background(), clientContext, runner)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,15 +103,14 @@ func TestExecWithoutPodOverridesProvided(t *testing.T) {
 }
 
 func TestExecWithImageAndTagAddsSuffix(t *testing.T) {
+	var clientContext internal.ClientContext
+	clientContext.Kubernetes.Image = "private.registry.com/deviceinsight/kafkactl:latest"
 
-	var context internal.ClientContext
-	context.Kubernetes.Image = "private.registry.com/deviceinsight/kafkactl:latest"
-
-	var testRunner = TestRunner{}
+	testRunner := TestRunner{}
 	testRunner.response = []byte(sampleKubectlVersionOutput)
 	var runner k8s.Runner = &testRunner
 
-	exec, err := k8s.NewExecutor(context, runner)
+	exec, err := k8s.NewExecutor(context.Background(), clientContext, runner)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,15 +118,14 @@ func TestExecWithImageAndTagAddsSuffix(t *testing.T) {
 	_ = exec.Run("scratch", "/kafkactl", []string{"version"}, []string{"ENV_A=1"})
 
 	image := extractParam(t, testRunner.args, "--image")
-	if image != context.Kubernetes.Image+"-scratch" {
+	if image != clientContext.Kubernetes.Image+"-scratch" {
 		t.Fatalf("wrong image: %s", image)
 	}
 }
 
 //nolint:gocognit
 func TestParseKubectlVersion(t *testing.T) {
-
-	var testRunner = TestRunner{}
+	testRunner := TestRunner{}
 	var runner k8s.Runner = &testRunner
 
 	type tests struct {
@@ -178,7 +175,6 @@ func TestParseKubectlVersion(t *testing.T) {
 		},
 	} {
 		t.Run(test.description, func(t *testing.T) {
-
 			testRunner.response = []byte(test.kubectlOutput)
 
 			version, err := k8s.GetKubectlVersion("kubectl", runner)
@@ -214,7 +210,6 @@ func TestParseKubectlVersion(t *testing.T) {
 }
 
 func extractParam(t *testing.T, args []string, param string) string {
-
 	var paramIdx int
 
 	if paramIdx = indexOf(param, args); paramIdx < 0 {
