@@ -6,14 +6,16 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/global"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/deviceinsight/kafkactl/v5/pkg/plugins"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
-	"github.com/pkg/errors"
 )
+
+const PluginPathsEnvVariable = "KAFKA_CTL_PLUGIN_PATHS"
 
 func LoadPlugin[P plugin.Plugin, I any](pluginName string, pluginSpec plugins.PluginSpec[P, I]) (impl I, err error) {
 
@@ -71,6 +73,19 @@ func resolvePluginPath(pluginName string) (string, error) {
 
 	pluginExecutable := fmt.Sprintf("kafkactl-%s-plugin%s", pluginName, extension)
 
+	// search in paths configured via environment variable
+	if os.Getenv(PluginPathsEnvVariable) != "" {
+		pluginPaths := strings.Split(os.Getenv(PluginPathsEnvVariable), ":")
+		for _, pluginPath := range pluginPaths {
+			pluginLocation := filepath.Join(pluginPath, pluginExecutable)
+			if _, err := os.Stat(pluginLocation); err == nil {
+				return pluginLocation, nil
+			} else if !os.IsNotExist(err) {
+				return "", fmt.Errorf("error checking plugin path %q: %w", pluginPath, err)
+			}
+		}
+	}
+
 	// search relative to working dir
 	workingDir, err := os.Getwd()
 	if err != nil {
@@ -102,5 +117,6 @@ func resolvePluginPath(pluginName string) (string, error) {
 		return pluginLocationExe, nil
 	}
 
-	return "", errors.Wrapf(err, "plugin not found: %q", []string{pluginExecutable, pluginLocationExe, pluginLocationWorkingDir})
+	return "", fmt.Errorf("plugin not found: %q", []string{
+		pluginExecutable, pluginLocationExe, pluginLocationWorkingDir, os.Getenv(PluginPathsEnvVariable)})
 }
