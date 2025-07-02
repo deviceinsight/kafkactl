@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 5.10.1 - 2025-07-02
+
 ### Fixed
 - gracefully shutdown Kubernetes pod on exit
 - make plugin search path configurable via `KAFKA_CTL_PLUGIN_PATHS` environment variable
