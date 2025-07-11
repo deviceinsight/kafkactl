@@ -81,3 +81,35 @@ func TestListConfigsFromEntries(t *testing.T) {
 		})
 	}
 }
+
+func TestSanitizeUsername(t *testing.T) {
+	testCases := []struct {
+		descriptions string
+		username     string
+		want         string
+	}{
+		{
+			descriptions: "windows user with domain",
+			username:     "DOMAIN|MACHINE\\username",
+			want:         "username",
+		},
+		{
+			descriptions: "user with email",
+			username:     "user@domain.com",
+			want:         "user-domain-com",
+		},
+		{
+			descriptions: "user with underscores",
+			username:     "user_with__underscores",
+			want:         "user-with-underscores",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.descriptions, func(t *testing.T) {
+			if tc.want != sanitizeUsername(tc.username) {
+				t.Fatalf("expected:\n--\n%s\n--\nactual:\n--\n%s\n--", tc.want, sanitizeUsername(tc.username))
+			}
+		})
+	}
+}

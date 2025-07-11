@@ -23,7 +23,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var invalidClientIDCharactersRegExp = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
+var invalidClientIDCharactersRegExp = regexp.MustCompile(`[^a-zA-Z0-9-]+`)
 
 type TokenProvider struct {
 	PluginName string
@@ -374,7 +374,7 @@ func sanitizeUsername(u string) string {
 	u = s[len(s)-1]
 	// Windows account can contain spaces or other special characters not supported
 	// in client ID. Keep the bare minimum and ditch the rest.
-	return invalidClientIDCharactersRegExp.ReplaceAllString(u, "")
+	return invalidClientIDCharactersRegExp.ReplaceAllString(u, "-")
 }
 
 // setupTlsConfig takes the paths to a tls certificate, CA, and certificate key in
