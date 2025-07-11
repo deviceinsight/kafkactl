@@ -671,6 +671,28 @@ func TestProtobufConsumeProtoFileErrDecodeIntegration(t *testing.T) {
 	}
 }
 
+func TestConsumeGroupMaxMessagesDoNotOverConsumeIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+	prefix := "consume-group-max-messages-test"
+	topicName := testutil.CreateTopic(t, prefix+"topic")
+	group := testutil.CreateConsumerGroup(t, prefix+"group", topicName)
+
+	msgs := []string{"value1", "value2", "value3", "value4", "value5"}
+
+	for i, msg := range msgs {
+		testutil.ProduceMessage(t, topicName, "test-key", msg, 0, int64(i))
+	}
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	for _, expectedMsg := range msgs {
+		if _, err := kafkaCtl.Execute("consume", topicName, "--group", group, "--max-messages", "1"); err != nil {
+			t.Fatalf("failed to execute command: %v", err)
+		}
+		results := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+		testutil.AssertContains(t, expectedMsg, results)
+	}
+}
+
 func TestConsumeGroupIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
