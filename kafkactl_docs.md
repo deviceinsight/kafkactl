@@ -654,8 +654,10 @@ kafkactl delete access-control-list [flags]
   -d, --deny               acl of permissionType 'deny'
   -g, --groups             delete acl for a consumer group
   -h, --help               help for access-control-list
+      --host string        host of acl
   -o, --operation string   operation of acl
       --pattern string     pattern type. one of (any, match, prefixed, literal)
+  -p, --principal string   principal of acl
   -t, --topics             delete acl for a topic
   -v, --validate-only      validate only
 ```
@@ -938,15 +940,18 @@ kafkactl get access-control-list [flags]
 ##### Options
 
 ```
-  -a, --allow              acl of permissionType 'allow'
-  -c, --cluster            list acl for the cluster
-  -d, --deny               acl of permissionType 'deny'
-  -g, --groups             list acl for consumer groups
-  -h, --help               help for access-control-list
-      --operation string   operation of acl (default "any")
-  -o, --output string      output format. One of: json|yaml
-      --pattern string     pattern type. one of (any, match, prefixed, literal) (default "any")
-  -t, --topics             list acl for topics
+  -a, --allow                  acl of permissionType 'allow'
+  -c, --cluster                list acl for the cluster
+  -d, --deny                   acl of permissionType 'deny'
+  -g, --groups                 list acl for consumer groups
+  -h, --help                   help for access-control-list
+      --host string            host of acl
+      --operation string       operation of acl (default "any")
+  -o, --output string          output format. One of: json|yaml
+      --pattern string         pattern type. one of (any, match, prefixed, literal) (default "any")
+  -p, --principal string       principal of acl
+  -r, --resource-name string   resource name of acl (e.g. topic name)
+  -t, --topics                 list acl for topics
 ```
 
 ##### Options inherited from parent commands
