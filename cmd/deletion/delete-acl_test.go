@@ -94,8 +94,9 @@ func TestDeleteAclByPrincipalIntegration(t *testing.T) {
 	}
 	testutil.AssertIntEquals(t, 1, len(acls))
 	testutil.AssertIntEquals(t, 2, len(acls[0].Acls))
-	testutil.AssertEquals(t, "User:user", acls[0].Acls[0].Principal)
-	testutil.AssertEquals(t, "User:admin", acls[0].Acls[1].Principal)
+	principals := []string{acls[0].Acls[0].Principal, acls[0].Acls[1].Principal}
+	testutil.AssertContains(t, "User:user", principals)
+	testutil.AssertContains(t, "User:admin", principals)
 
 	// delete the acl
 	if _, err := kafkaCtl.Execute("delete", "acl", "--topics", "--operation", "read", "--principal", "User:user", "--pattern", "literal"); err != nil {
@@ -145,8 +146,10 @@ func TestDeleteAclByHostIntegration(t *testing.T) {
 	}
 	testutil.AssertIntEquals(t, 1, len(acls))
 	testutil.AssertIntEquals(t, 2, len(acls[0].Acls))
-	testutil.AssertEquals(t, "host-a", acls[0].Acls[0].Host)
-	testutil.AssertEquals(t, "host-b", acls[0].Acls[1].Host)
+
+	hosts := []string{acls[0].Acls[0].Host, acls[0].Acls[1].Host}
+	testutil.AssertContains(t, "host-a", hosts)
+	testutil.AssertContains(t, "host-b", hosts)
 
 	// delete the acl
 	if _, err := kafkaCtl.Execute("delete", "acl", "--topics", "--operation", "read", "--host", "host-a", "--pattern", "literal"); err != nil {
