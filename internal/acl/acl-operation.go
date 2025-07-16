@@ -6,6 +6,7 @@ import (
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
 type ResourceACLEntry struct {
@@ -26,7 +27,10 @@ type GetACLFlags struct {
 	OutputFormat string
 	FilterTopic  string
 	Operation    string
+	ResourceName string
 	PatternType  string
+	Principal    string
+	Host         string
 	Allow        bool
 	Deny         bool
 	Topics       bool
@@ -54,6 +58,8 @@ type DeleteACLFlags struct {
 	Cluster      bool
 	Allow        bool
 	Deny         bool
+	Principal    string
+	Host         string
 	Operation    string
 	PatternType  string
 }
@@ -116,6 +122,18 @@ func (operation *Operation) GetACL(flags GetACLFlags) error {
 	} else {
 		filter.ResourceType = sarama.AclResourceAny
 		filter.ResourcePatternTypeFilter = patternTypeFromString(flags.PatternType)
+	}
+
+	if flags.ResourceName != "" {
+		filter.ResourceName = &flags.ResourceName
+	}
+
+	if flags.Principal != "" {
+		filter.Principal = &flags.Principal
+	}
+
+	if flags.Host != "" {
+		filter.Host = &flags.Host
 	}
 
 	if acls, err = admin.ListAcls(filter); err != nil {
@@ -300,6 +318,14 @@ func (operation *Operation) DeleteACL(flags DeleteACLFlags) error {
 		filter.ResourcePatternTypeFilter = patternTypeFromString(flags.PatternType)
 	}
 
+	if flags.Principal != "" {
+		filter.Principal = &flags.Principal
+	}
+
+	if flags.Host != "" {
+		filter.Host = &flags.Host
+	}
+
 	if matchingACL, err = admin.DeleteACL(filter, flags.ValidateOnly); err != nil {
 		return errors.Wrap(err, "failed to delete acl")
 	}
@@ -369,4 +395,10 @@ func printResourceAcls(outputFormat string, aclList ...ResourceACLEntry) error {
 func CompleteCreateACL(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 	output.Infof("complete")
 	return nil, cobra.ShellCompDirectiveError
+}
+
+func FromYaml(yamlString string) ([]ResourceACLEntry, error) {
+	var entries []ResourceACLEntry
+	err := yaml.Unmarshal([]byte(yamlString), &entries)
+	return entries, err
 }

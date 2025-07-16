@@ -27,6 +27,10 @@ func newGetACLCmd() *cobra.Command {
 	cmdGetAcls.Flags().StringVarP(&flags.Operation, "operation", "", "any", "operation of acl")
 	cmdGetAcls.Flags().StringVarP(&flags.PatternType, "pattern", "", "any", "pattern type. one of (any, match, prefixed, literal)")
 
+	cmdGetAcls.Flags().StringVarP(&flags.ResourceName, "resource-name", "r", "", "resource name of acl (e.g. topic name)")
+	cmdGetAcls.Flags().StringVarP(&flags.Principal, "principal", "p", "", "principal of acl")
+	cmdGetAcls.Flags().StringVarP(&flags.Host, "host", "", "", "host of acl")
+
 	// specify permissionType
 	cmdGetAcls.Flags().BoolVarP(&flags.Allow, "allow", "a", false, "acl of permissionType 'allow'")
 	cmdGetAcls.Flags().BoolVarP(&flags.Deny, "deny", "d", false, "acl of permissionType 'deny'")
