@@ -2,8 +2,9 @@ package deletion_test
 
 import (
 	"fmt"
-	"github.com/deviceinsight/kafkactl/v5/internal/acl"
 	"testing"
+
+	"github.com/deviceinsight/kafkactl/v5/internal/acl"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 )

@@ -186,7 +186,7 @@ func AssertEquals(t *testing.T, expected, actual string) {
 func AssertIntEquals(t *testing.T, expected, actual int) {
 	t.Helper()
 	if actual != expected {
-		t.Fatalf("unexpected output:\nexpected:\n--\n%s\n--\nactual:\n--\n%s\n--", expected, actual)
+		t.Fatalf("unexpected output:\nexpected:\n--\n%d\n--\nactual:\n--\n%d\n--", expected, actual)
 	}
 }
 

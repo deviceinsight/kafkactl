@@ -2,10 +2,11 @@ package get_test
 
 import (
 	"fmt"
-	"github.com/deviceinsight/kafkactl/v5/internal/acl"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/deviceinsight/kafkactl/v5/internal/acl"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 )
