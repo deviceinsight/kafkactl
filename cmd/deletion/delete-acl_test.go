@@ -71,7 +71,7 @@ func TestDeleteAclByPrincipalIntegration(t *testing.T) {
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	topicName := testutil.CreateTopic(t, "acl-topic")
+	topicName := testutil.CreateTopic(t, "acl-topic-principal")
 
 	// add read acl
 	if _, err := kafkaCtl.Execute("create", "acl", "--topic", topicName, "--operation", "read", "--allow", "--principal", "User:user"); err != nil {
@@ -122,7 +122,7 @@ func TestDeleteAclByHostIntegration(t *testing.T) {
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	topicName := testutil.CreateTopic(t, "acl-topic")
+	topicName := testutil.CreateTopic(t, "acl-topic-host")
 
 	// add acl for host-a
 	if _, err := kafkaCtl.Execute("create", "acl", "--topic", topicName, "--operation", "read", "--allow", "--principal", "User:user", "--host", "host-a"); err != nil {

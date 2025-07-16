@@ -46,7 +46,7 @@ func TestGetAclByPrincipalIntegration(t *testing.T) {
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	topicName := testutil.CreateTopic(t, "acl-topic")
+	topicName := testutil.CreateTopic(t, "acl-get-topic-principal")
 
 	// add read acl
 	if _, err := kafkaCtl.Execute("create", "acl", "--topic", topicName, "--operation", "read", "--allow", "--principal", "User:user"); err != nil {
@@ -78,7 +78,7 @@ func TestGetAclByHostIntegration(t *testing.T) {
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	topicName := testutil.CreateTopic(t, "acl-topic")
+	topicName := testutil.CreateTopic(t, "acl-get-topic-host")
 
 	// add acl for host-a
 	if _, err := kafkaCtl.Execute("create", "acl", "--topic", topicName, "--operation", "read", "--allow", "--principal", "User:user", "--host", "host-a"); err != nil {
