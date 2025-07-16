@@ -28,12 +28,10 @@ You can install the pre-compiled binary or compile from source.
 
 [,bash]
 ----
-# install tap repository once
-brew tap deviceinsight/packages
 # install kafkactl
-brew install deviceinsight/packages/kafkactl
+brew install kafkactl
 # upgrade kafkactl
-brew upgrade deviceinsight/packages/kafkactl
+brew upgrade kafkactl
 ----
 
 *winget*:
