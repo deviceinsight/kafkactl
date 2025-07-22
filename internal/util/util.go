@@ -1,6 +1,7 @@
 package util
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -9,13 +10,10 @@ import (
 )
 
 var dateFormats = []string{
-	"2006-01-02T15:04:05.00000Z",
-	"2006-01-02T15:04:05.000Z",
-	"2006-01-02T15:04:05.000",
-	"2006-01-02T15:04:05Z",
+	time.RFC3339,
 	"2006-01-02T15:04:05",
 	"2006-01-02T15:04",
-	"2006-01-02",
+	time.DateOnly,
 }
 
 func ParseTimestamp(timestamp string) (time.Time, error) {
@@ -41,21 +39,11 @@ func ConvertControlChars(value string) string {
 }
 
 func ContainsString(list []string, element string) bool {
-	for _, it := range list {
-		if it == element {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(list, element)
 }
 
 func ContainsInt32(list []int32, element int32) bool {
-	for _, it := range list {
-		if it == element {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(list, element)
 }
 
 func StringArraysEqual(a, b []string) bool {
