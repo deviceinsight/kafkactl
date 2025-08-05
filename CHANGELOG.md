@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- [#282](https://github.com/deviceinsight/kafkactl/issues/282) Do not generate a config file when brokers for default context are set by environment variable
+
 ## 5.11.1 - 2025-07-28
 
 ## 5.11.0 - 2025-07-16

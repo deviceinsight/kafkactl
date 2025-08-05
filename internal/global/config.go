@@ -332,6 +332,11 @@ func generateDefaultConfig(name string, viperInstance *viper.Viper) error {
 		viperInstance.SetDefault("current-context", getInitialCurrentContext(cfgFile))
 	}
 
+	if os.Getenv(defaultContextPrefix+Brokers) != "" {
+		output.Debugf("skip generating default config file %s, because environment variable %s is set", cfgFile, defaultContextPrefix+Brokers)
+		return nil
+	}
+
 	if err := viperInstance.WriteConfigAs(cfgFile); err != nil {
 		return err
 	}
