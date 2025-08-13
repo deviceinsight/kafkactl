@@ -870,6 +870,39 @@ ____
 :bulb: use the flag `--validate-only` to perform a dry-run without actually modifying the topic
 ____
 
+=== Altering brokers
+
+Using the `alter broker` command allows you to change dynamic broker configurations for individual brokers or cluster-wide defaults.
+
+To alter a configuration for a specific broker:
+
+[,bash]
+----
+kafkactl alter broker 101 --config background.threads=8
+----
+
+To alter a cluster-wide default configuration (affects brokers without individual overrides):
+
+[,bash]
+----
+kafkactl alter broker "" --config background.threads=8
+----
+
+Multiple configurations can be altered simultaneously:
+
+[,bash]
+----
+kafkactl alter broker 101 --config background.threads=8 --config log.cleaner.threads=2
+----
+
+____
+:bulb: use the flag `--validate-only` to perform a dry-run without actually modifying the broker configuration
+____
+
+____
+:information_source: only dynamically configurable broker properties can be altered. Static properties like `broker.id` or `log.dirs` require a broker restart to change.
+____
+
 === Altering partitions
 
 The assigned replicas of a partition can directly be altered with:
