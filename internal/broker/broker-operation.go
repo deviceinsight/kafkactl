@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 
@@ -29,6 +30,90 @@ type DescribeBrokerFlags struct {
 }
 
 type Operation struct {
+}
+
+type AlterBrokerFlags struct {
+	ValidateOnly bool
+	Configs      []string
+}
+
+func (operation *Operation) AlterBroker(id string, flags AlterBrokerFlags) error {
+	var (
+		err     error
+		context internal.ClientContext
+		client  sarama.Client
+		admin   sarama.ClusterAdmin
+	)
+
+	if context, err = internal.CreateClientContext(); err != nil {
+		return err
+	}
+
+	if client, err = internal.CreateClient(&context); err != nil {
+		return errors.Wrap(err, "failed to create client")
+	}
+
+	if admin, err = internal.CreateClusterAdmin(&context); err != nil {
+		return errors.Wrap(err, "failed to create cluster admin")
+	}
+
+	var broker *sarama.Broker
+
+	for _, aBroker := range client.Brokers() {
+		if strconv.Itoa(int(aBroker.ID())) == id {
+			broker = aBroker
+			break
+		}
+	}
+
+	if id != "" && broker == nil {
+		return errors.Errorf("cannot find broker with id: %d", id)
+	}
+
+	var configs []internal.Config
+	brokerConfig := sarama.ConfigResource{
+		Type: sarama.BrokerResource,
+		Name: id,
+	}
+
+	if configs, err = internal.ListConfigs(&admin, brokerConfig, false); err != nil {
+		return err
+	}
+
+	//	b = Broker{ID: broker.ID(), Address: broker.Addr(), Configs: configs}
+
+	if len(flags.Configs) > 0 {
+		mergedConfigEntries := make(map[string]*string)
+
+		for _, config := range flags.Configs {
+			configParts := strings.Split(config, "=")
+
+			if len(configParts) == 2 {
+				if len(configParts[1]) == 0 {
+					delete(mergedConfigEntries, configParts[0])
+				} else {
+					mergedConfigEntries[configParts[0]] = &configParts[1]
+				}
+			}
+		}
+
+		if err = admin.AlterConfig(sarama.BrokerResource, id, mergedConfigEntries, flags.ValidateOnly); err != nil {
+			return errors.Errorf("Could not alter broker config '%s': %v", id, err)
+		}
+		if !flags.ValidateOnly {
+			output.Infof("config has been altered")
+		}
+
+	}
+
+	if flags.ValidateOnly {
+		for _, config := range configs {
+			fmt.Println(config.Name + "=" + config.Value)
+		}
+
+	}
+	return nil
+
 }
 
 func (operation *Operation) GetBrokers(flags GetBrokersFlags) error {
