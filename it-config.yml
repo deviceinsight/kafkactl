@@ -8,7 +8,7 @@ contexts:
     requestTimeout: 15s
     schemaRegistry:
       url: localhost:18081
-    kafkaversion: 2.6.0
+    kafkaversion: 3.0.0
 
   # context without avro
   no-avro:
@@ -17,7 +17,7 @@ contexts:
       - localhost:29093
       - localhost:39093
     requestTimeout: 15s
-    kafkaversion: 2.6.0
+    kafkaversion: 3.0.0
 
   # sasl context as admin
   sasl-admin:
@@ -32,7 +32,7 @@ contexts:
       password: admin-secret
     schemaRegistry:
       url: localhost:18081
-    kafkaversion: 2.6.0
+    kafkaversion: 3.0.0
 
   # sasl context as user
   sasl-user:
@@ -47,7 +47,7 @@ contexts:
       password: user-secret
     schemaRegistry:
       url: localhost:18081
-    kafkaversion: 2.6.0
+    kafkaversion: 3.0.0
 
   # k8s-mock context with mocked kubectl
   k8s-mock:
@@ -61,6 +61,6 @@ contexts:
       binary: docker/kubectl-mock.sh
       kubeContext: k8s-cluster
       namespace: k8s-namespace
-    kafkaversion: 2.6.0
+    kafkaversion: 3.0.0
 
 current-context: default

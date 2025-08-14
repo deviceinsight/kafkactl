@@ -1078,6 +1078,126 @@ To view configs for a single broker use `describe broker`
 kafkactl describe broker 1
 ----
 
+=== SCRAM User Management
+
+kafkactl provides comprehensive SCRAM (Salted Challenge Response Authentication Mechanism) user management capabilities for Kafka clusters that support SCRAM authentication. This allows you to create, modify, and manage user credentials directly through kafkactl.
+
+==== Requirements
+
+* Kafka 2.7.0+ (for SCRAM user management APIs)
+* Admin privileges on the Kafka cluster
+* SCRAM-enabled listeners configured on Kafka brokers
+
+==== Supported Mechanisms
+
+* `SCRAM-SHA-256` (default)
+* `SCRAM-SHA-512`
+
+==== Create SCRAM Users
+
+Create a new SCRAM user with default settings:
+
+[,bash]
+----
+# Create user with SCRAM-SHA-256 (default mechanism)
+kafkactl create user myuser --password mypassword
+
+# Create user with specific mechanism
+kafkactl create user myuser --password mypassword --mechanism SCRAM-SHA-512
+
+# Create user with custom iterations (default: 4096)
+kafkactl create user myuser --password mypassword --iterations 8192
+
+# Create user with custom base64-encoded salt
+kafkactl create user myuser --password mypassword --salt "c2FsdA=="
+----
+
+==== Alter SCRAM Users
+
+Update existing user credentials:
+
+[,bash]
+----
+# Update user password (keeps existing mechanism)
+kafkactl alter user myuser --password newpassword
+
+# Update user with different mechanism
+kafkactl alter user myuser --password newpassword --mechanism SCRAM-SHA-512
+
+# Update with custom iterations
+kafkactl alter user myuser --password newpassword --iterations 16384
+----
+
+==== Delete SCRAM Users
+
+Remove SCRAM credentials by mechanism:
+
+[,bash]
+----
+# Delete SCRAM-SHA-256 credentials (default)
+kafkactl delete user myuser --mechanism SCRAM-SHA-256
+
+# Delete SCRAM-SHA-512 credentials
+kafkactl delete user myuser --mechanism SCRAM-SHA-512
+
+# Note: A user may have multiple mechanisms, delete each separately
+----
+
+==== List SCRAM Users
+
+Get all SCRAM users and their mechanisms:
+
+[,bash]
+----
+# List all users (table format)
+kafkactl get users
+
+# List users in JSON format
+kafkactl get users -o json
+
+# List users in YAML format
+kafkactl get users -o yaml
+----
+
+==== Describe SCRAM User
+
+Get detailed information about a specific user:
+
+[,bash]
+----
+# Describe user (table format)
+kafkactl describe user myuser
+
+# Describe user in JSON format
+kafkactl describe user myuser -o json
+
+# Describe user in YAML format
+kafkactl describe user myuser -o yaml
+----
+
+==== Security Considerations
+
+* **Salt Generation**: kafkactl automatically generates cryptographically secure random salts unless custom salts are provided
+* **Password Security**: Passwords are transmitted securely to Kafka and never stored by kafkactl
+* **Mechanism Support**: Users can have credentials for multiple SCRAM mechanisms simultaneously
+* **Admin Privileges**: SCRAM user management requires admin-level access to the Kafka cluster
+
+==== Multi-Mechanism Users
+
+A single user can have credentials for multiple SCRAM mechanisms:
+
+[,bash]
+----
+# Create user with SCRAM-SHA-256
+kafkactl create user myuser --password mypassword --mechanism SCRAM-SHA-256
+
+# Add SCRAM-SHA-512 credentials to the same user
+kafkactl create user myuser --password mypassword --mechanism SCRAM-SHA-512
+
+# User now has both mechanisms
+kafkactl describe user myuser
+----
+
 == Development
 
 In order to see linter errors before commit, add the following pre-commit hook:
