@@ -67,7 +67,7 @@ func (operation *Operation) AlterBroker(id string, flags AlterBrokerFlags) error
 	}
 
 	if id != "" && broker == nil {
-		return errors.Errorf("cannot find broker with id: %d", id)
+		return errors.Errorf("cannot find broker with id: %s", id)
 	}
 
 	var configs []internal.Config
@@ -79,8 +79,6 @@ func (operation *Operation) AlterBroker(id string, flags AlterBrokerFlags) error
 	if configs, err = internal.ListConfigs(&admin, brokerConfig, false); err != nil {
 		return err
 	}
-
-	//	b = Broker{ID: broker.ID(), Address: broker.Addr(), Configs: configs}
 
 	if len(flags.Configs) > 0 {
 		mergedConfigEntries := make(map[string]*string)
@@ -98,26 +96,23 @@ func (operation *Operation) AlterBroker(id string, flags AlterBrokerFlags) error
 		}
 
 		if err = admin.AlterConfig(sarama.BrokerResource, id, mergedConfigEntries, flags.ValidateOnly); err != nil {
-			return errors.Errorf("Could not alter broker config '%s': %v", id, err)
+			return errors.Errorf("could not alter broker config '%s': %v", id, err)
 		}
 		if !flags.ValidateOnly {
 			output.Infof("config has been altered")
 		}
-
 	}
 
 	if flags.ValidateOnly {
 		for _, config := range configs {
 			fmt.Println(config.Name + "=" + config.Value)
 		}
-
 	}
-	return nil
 
+	return nil
 }
 
 func (operation *Operation) GetBrokers(flags GetBrokersFlags) error {
-
 	var (
 		err     error
 		context internal.ClientContext
@@ -154,7 +149,6 @@ func (operation *Operation) GetBrokers(flags GetBrokersFlags) error {
 
 	brokerList := make([]Broker, 0, len(brokers))
 	for _, broker := range brokers {
-
 		var configs []internal.Config
 
 		brokerConfig := sarama.ConfigResource{
@@ -198,7 +192,6 @@ func (operation *Operation) GetBrokers(flags GetBrokersFlags) error {
 }
 
 func (operation *Operation) DescribeBroker(id int32, flags DescribeBrokerFlags) error {
-
 	var (
 		err     error
 		context internal.ClientContext
