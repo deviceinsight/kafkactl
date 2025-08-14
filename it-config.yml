@@ -66,13 +66,13 @@ contexts:
   # scram context for SCRAM user management testing
   scram-admin:
     brokers:
-      - localhost:19094
-      - localhost:29094
-      - localhost:39094
+      - localhost:19092
+      - localhost:29092
+      - localhost:39092
     requestTimeout: 15s
     sasl:
       enabled: true
-      mechanism: SCRAM-SHA-256
+      mechanism: PLAIN
       username: admin
       password: admin-secret
     schemaRegistry:

@@ -11,7 +11,7 @@ import (
 )
 
 func TestCreateUserIntegration(t *testing.T) {
-	testutil.StartIntegrationTestWithContext(t, "scram-admin")
+	testutil.StartIntegrationTestWithContext(t, "sasl-admin")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	username := fmt.Sprintf("testuser-%d", time.Now().Unix())
@@ -49,7 +49,7 @@ func TestCreateUserIntegration(t *testing.T) {
 }
 
 func TestCreateUserWithCustomSaltIntegration(t *testing.T) {
-	testutil.StartIntegrationTestWithContext(t, "scram-admin")
+	testutil.StartIntegrationTestWithContext(t, "sasl-admin")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	username := fmt.Sprintf("testsaltuser-%d", time.Now().Unix())
@@ -88,7 +88,7 @@ func TestCreateUserWithCustomSaltIntegration(t *testing.T) {
 }
 
 func TestCreateUserSCRAMSHA512Integration(t *testing.T) {
-	testutil.StartIntegrationTestWithContext(t, "scram-admin")
+	testutil.StartIntegrationTestWithContext(t, "sasl-admin")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	username := fmt.Sprintf("testsha512user-%d", time.Now().Unix())
@@ -125,7 +125,7 @@ func TestCreateUserSCRAMSHA512Integration(t *testing.T) {
 }
 
 func TestCreateUserMissingPasswordIntegration(t *testing.T) {
-	testutil.StartIntegrationTestWithContext(t, "scram-admin")
+	testutil.StartIntegrationTestWithContext(t, "sasl-admin")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	username := fmt.Sprintf("testnopass-%d", time.Now().Unix())
@@ -142,7 +142,7 @@ func TestCreateUserMissingPasswordIntegration(t *testing.T) {
 }
 
 func TestCreateUserInvalidMechanismIntegration(t *testing.T) {
-	testutil.StartIntegrationTestWithContext(t, "scram-admin")
+	testutil.StartIntegrationTestWithContext(t, "sasl-admin")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	username := fmt.Sprintf("testinvalid-%d", time.Now().Unix())
@@ -161,7 +161,7 @@ func TestCreateUserInvalidMechanismIntegration(t *testing.T) {
 }
 
 func TestAlterUserIntegration(t *testing.T) {
-	testutil.StartIntegrationTestWithContext(t, "scram-admin")
+	testutil.StartIntegrationTestWithContext(t, "sasl-admin")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	username := fmt.Sprintf("testalter-%d", time.Now().Unix())
@@ -197,7 +197,7 @@ func TestAlterUserIntegration(t *testing.T) {
 }
 
 func TestDeleteUserIntegration(t *testing.T) {
-	testutil.StartIntegrationTestWithContext(t, "scram-admin")
+	testutil.StartIntegrationTestWithContext(t, "sasl-admin")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	username := fmt.Sprintf("testdelete-%d", time.Now().Unix())
@@ -238,7 +238,7 @@ func TestDeleteUserIntegration(t *testing.T) {
 }
 
 func TestGetUsersIntegration(t *testing.T) {
-	testutil.StartIntegrationTestWithContext(t, "scram-admin")
+	testutil.StartIntegrationTestWithContext(t, "sasl-admin")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	// Test getting all users (might be empty)
@@ -284,7 +284,7 @@ func TestGetUsersIntegration(t *testing.T) {
 }
 
 func TestDescribeUserIntegration(t *testing.T) {
-	testutil.StartIntegrationTestWithContext(t, "scram-admin")
+	testutil.StartIntegrationTestWithContext(t, "sasl-admin")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	username := fmt.Sprintf("testdescribe-%d", time.Now().Unix())
@@ -344,7 +344,7 @@ func TestDescribeUserIntegration(t *testing.T) {
 }
 
 func TestDescribeNonExistentUserIntegration(t *testing.T) {
-	testutil.StartIntegrationTestWithContext(t, "scram-admin")
+	testutil.StartIntegrationTestWithContext(t, "sasl-admin")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	nonExistentUser := fmt.Sprintf("nonexistent-%d", time.Now().Unix())
@@ -361,7 +361,7 @@ func TestDescribeNonExistentUserIntegration(t *testing.T) {
 }
 
 func TestUserLifecycleIntegration(t *testing.T) {
-	testutil.StartIntegrationTestWithContext(t, "scram-admin")
+	testutil.StartIntegrationTestWithContext(t, "sasl-admin")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	username := fmt.Sprintf("lifecycle-%d", time.Now().Unix())
