@@ -63,4 +63,20 @@ contexts:
       namespace: k8s-namespace
     kafkaversion: 3.0.0
 
+  # scram context for SCRAM user management testing
+  scram-admin:
+    brokers:
+      - localhost:19094
+      - localhost:29094
+      - localhost:39094
+    requestTimeout: 15s
+    sasl:
+      enabled: true
+      mechanism: SCRAM-SHA-256
+      username: admin
+      password: admin-secret
+    schemaRegistry:
+      url: localhost:18081
+    kafkaversion: 3.0.0
+
 current-context: default
