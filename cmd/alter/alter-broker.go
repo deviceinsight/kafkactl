@@ -3,8 +3,8 @@ package alter
 import (
 	"github.com/deviceinsight/kafkactl/v5/cmd/validation"
 	"github.com/deviceinsight/kafkactl/v5/internal"
-	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
 	"github.com/deviceinsight/kafkactl/v5/internal/broker"
+	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
 	"github.com/spf13/cobra"
 )
 
@@ -31,10 +31,9 @@ func newAlterBrokerCmd() *cobra.Command {
 	cmdAlterBroker.Flags().StringArrayVarP(&flags.Configs, "config", "c", flags.Configs, "configs in format `key=value`")
 	cmdAlterBroker.Flags().BoolVarP(&flags.ValidateOnly, "validate-only", "v", false, "validate only")
 
-	
 	if err := validation.MarkFlagAtLeastOneRequired(cmdAlterBroker.Flags(), "config"); err != nil {
 		panic(err)
 	}
-	
+
 	return cmdAlterBroker
 }
