@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 
@@ -31,8 +32,114 @@ type DescribeBrokerFlags struct {
 type Operation struct {
 }
 
-func (operation *Operation) GetBrokers(flags GetBrokersFlags) error {
+type AlterBrokerFlags struct {
+	ValidateOnly bool
+	Configs      []string
+}
 
+func (operation *Operation) AlterBroker(id string, flags AlterBrokerFlags) error {
+	var (
+		err     error
+		context internal.ClientContext
+		client  sarama.Client
+		admin   sarama.ClusterAdmin
+	)
+
+	if context, err = internal.CreateClientContext(); err != nil {
+		return err
+	}
+
+	if client, err = internal.CreateClient(&context); err != nil {
+		return errors.Wrap(err, "failed to create client")
+	}
+
+	if admin, err = internal.CreateClusterAdmin(&context); err != nil {
+		return errors.Wrap(err, "failed to create cluster admin")
+	}
+
+	var broker *sarama.Broker
+
+	for _, aBroker := range client.Brokers() {
+		if strconv.Itoa(int(aBroker.ID())) == id {
+			broker = aBroker
+			break
+		}
+	}
+
+	if id != "" && broker == nil {
+		return errors.Errorf("cannot find broker with id: %s", id)
+	}
+
+	var existingConfigs []sarama.ConfigEntry
+	brokerConfig := sarama.ConfigResource{
+		Type: sarama.BrokerResource,
+		Name: id,
+	}
+
+	if existingConfigs, err = admin.DescribeConfig(brokerConfig); err != nil {
+		return errors.Wrap(err, "failed to describe config for broker")
+	}
+
+	mergedConfigEntries := make(map[string]*string)
+	for _, existingConfig := range existingConfigs {
+		if !existingConfig.ReadOnly && !existingConfig.Default {
+			mergedConfigEntries[existingConfig.Name] = &(existingConfig.Value)
+		}
+	}
+
+	for _, config := range flags.Configs {
+		configParts := strings.Split(config, "=")
+
+		if len(configParts) == 2 {
+			if len(configParts[1]) == 0 {
+				delete(mergedConfigEntries, configParts[0])
+			} else {
+				mergedConfigEntries[configParts[0]] = &configParts[1]
+			}
+		}
+	}
+
+	if err = admin.AlterConfig(sarama.BrokerResource, id, mergedConfigEntries, flags.ValidateOnly); err != nil {
+		return errors.Errorf("could not alter broker config '%s': %v", id, err)
+	}
+
+	if !flags.ValidateOnly {
+		output.Infof("config has been altered")
+		return nil
+	}
+
+	return operation.printConfig(mergedConfigEntries)
+}
+
+func (operation *Operation) printConfig(configs map[string]*string) error {
+
+	keys := make([]string, 0, len(configs))
+	for k := range configs {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	configTableWriter := output.CreateTableWriter()
+	if err := configTableWriter.WriteHeader("CONFIG", "VALUE"); err != nil {
+		return err
+	}
+
+	for _, key := range keys {
+		if configs[key] != nil {
+			if err := configTableWriter.Write(key, *configs[key]); err != nil {
+				return err
+			}
+		}
+	}
+
+	if err := configTableWriter.Flush(); err != nil {
+		return err
+	}
+	output.PrintStrings("")
+	return nil
+}
+
+func (operation *Operation) GetBrokers(flags GetBrokersFlags) error {
 	var (
 		err     error
 		context internal.ClientContext
@@ -69,7 +176,6 @@ func (operation *Operation) GetBrokers(flags GetBrokersFlags) error {
 
 	brokerList := make([]Broker, 0, len(brokers))
 	for _, broker := range brokers {
-
 		var configs []internal.Config
 
 		brokerConfig := sarama.ConfigResource{
@@ -113,7 +219,6 @@ func (operation *Operation) GetBrokers(flags GetBrokersFlags) error {
 }
 
 func (operation *Operation) DescribeBroker(id int32, flags DescribeBrokerFlags) error {
-
 	var (
 		err     error
 		context internal.ClientContext
