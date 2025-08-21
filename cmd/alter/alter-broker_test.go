@@ -1,6 +1,7 @@
 package alter_test
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 
@@ -19,30 +20,7 @@ func TestAlterBrokerAutoCompletionIntegration(t *testing.T) {
 	}
 
 	outputLines := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
-
-	// Check that we get broker IDs in the completion (usually 101, 102, 103 in test environment)
-	// We can't predict exact broker IDs, but we should get some numeric IDs
-	if len(outputLines) == 0 {
-		t.Fatalf("expected broker IDs in autocompletion, got empty result")
-	}
-
-	// Verify that at least one line looks like a broker ID (numeric, may have shell completion prefix)
-	foundNumericID := false
-	for _, line := range outputLines {
-		line = strings.TrimSpace(line)
-		if line != "" {
-			// Remove shell completion directive prefix if present (e.g., ":1" -> "1")
-			line = strings.TrimPrefix(line, ":")
-			if isNumeric(line) {
-				foundNumericID = true
-				break
-			}
-		}
-	}
-
-	if !foundNumericID {
-		t.Fatalf("expected at least one numeric broker ID in autocompletion, got: %v", outputLines)
-	}
+	testutil.AssertArraysEquals(t, []string{"101", "102", "103", ":4"}, outputLines)
 }
 
 func TestAlterBrokerConfigIntegration(t *testing.T) {
@@ -51,27 +29,28 @@ func TestAlterBrokerConfigIntegration(t *testing.T) {
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	// Get first broker ID
-	brokerID := getFirstBrokerID(t, kafkaCtl)
+	if _, err := kafkaCtl.Execute("alter", "broker", "101", "--config", "background.threads=10"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
 
-	// Test altering a broker config - this tests the full command path
-	// Even if config isn't dynamically configurable, we verify proper error handling
-	_, err := kafkaCtl.Execute("alter", "broker", brokerID, "--config", "background.threads=10")
+	// alter another config to ensure config merge is working
+	if _, err := kafkaCtl.Execute("alter", "broker", "101", "--config", "log.cleaner.threads=2"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
 
-	if err != nil {
-		// If it fails due to non-dynamic config, that's expected - verify proper error
-		if strings.Contains(err.Error(), "Cannot update these configs dynamically") {
-			// This is the expected behavior for non-dynamic configs
-			t.Logf("Config not dynamically configurable (expected): %v", err)
-		} else {
-			t.Fatalf("unexpected error: %v", err)
-		}
-	} else {
-		// If it succeeds, verify the success message
-		output := kafkaCtl.GetStdOut()
-		if !strings.Contains(output, "config has been altered") {
-			t.Fatalf("expected 'config has been altered' message, got: %s", output)
-		}
+	if _, err := kafkaCtl.Execute("alter", "broker", "101", "--config", "auto.create.topics.enable=false", "--validate-only"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	output := kafkaCtl.GetStdOut()
+	config1Regex, _ := regexp.Compile(`background.threads\s+10\s`)
+	if config1Regex.FindString(output) == "" {
+		t.Fatalf("expected output to contain 'background.threads 10', got: %s", output)
+	}
+
+	config2Regex, _ := regexp.Compile(`log.cleaner.threads\s+2\s`)
+	if config2Regex.FindString(output) == "" {
+		t.Fatalf("expected output to contain 'log.cleaner.threads 2', got: %s", output)
 	}
 }
 
@@ -81,27 +60,15 @@ func TestAlterBrokerValidateOnlyIntegration(t *testing.T) {
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	// Get first broker ID
-	brokerID := getFirstBrokerID(t, kafkaCtl)
-
-	// Test validate-only flag - even if config isn't dynamically changeable,
-	// validate-only should not show "config has been altered" message
-	_, err := kafkaCtl.Execute("alter", "broker", brokerID, "--config", "background.threads=10", "--validate-only")
+	if _, err := kafkaCtl.Execute("alter", "broker", "101", "--config", "background.threads=20", "--validate-only"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
 
 	output := kafkaCtl.GetStdOut()
-
-	// Validate-only should never show "config has been altered" message, even on error
-	if strings.Contains(output, "config has been altered") {
-		t.Fatalf("validate-only should not show 'config has been altered' message, got: %s", output)
+	config1Regex, _ := regexp.Compile(`background.threads\s+20\s`)
+	if config1Regex.FindString(output) == "" {
+		t.Fatalf("expected output to contain 'background.threads 20', got: %s", output)
 	}
-
-	if err != nil {
-		t.Fatalf("unexpected error in validate-only mode: %v", err)
-	}
-
-	// With validate-only, the config output goes directly to stdout via fmt.Println
-	// The test framework captures this output, so we don't check GetStdOut() here
-	// The fact that there was no error means validate-only worked correctly
 }
 
 func TestAlterBrokerNonDynamicConfigIntegration(t *testing.T) {
@@ -110,22 +77,15 @@ func TestAlterBrokerNonDynamicConfigIntegration(t *testing.T) {
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	// Get first broker ID
-	brokerID := getFirstBrokerID(t, kafkaCtl)
-
-	// Test attempting to alter a non-dynamic config - should fail with proper error
-	_, err := kafkaCtl.Execute("alter", "broker", brokerID, "--config", "broker.id=999")
-
+	_, err := kafkaCtl.Execute("alter", "broker", "101", "--config", "broker.id=999")
 	if err == nil {
 		t.Fatalf("expected error when trying to alter non-dynamic config broker.id, but command succeeded")
 	}
 
-	// Verify we get the expected error about non-dynamic configs
 	if !strings.Contains(err.Error(), "Cannot update these configs dynamically") {
 		t.Fatalf("expected error about non-dynamic configs, got: %v", err)
 	}
 
-	// Verify broker.id is mentioned in the error (it should be in the list of non-dynamic configs)
 	if !strings.Contains(err.Error(), "broker.id") {
 		t.Fatalf("expected broker.id to be mentioned in non-dynamic config error, got: %v", err)
 	}
@@ -137,14 +97,10 @@ func TestAlterBrokerClusterWideConfigIntegration(t *testing.T) {
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	// Test cluster-wide config alteration with empty broker ID
-	_, err := kafkaCtl.Execute("alter", "broker", "", "--config", "background.threads=8")
-
-	if err != nil {
-		t.Fatalf("failed to alter cluster-wide broker config: %v", err)
+	if _, err := kafkaCtl.Execute("alter", "broker", "", "--config", "background.threads=8"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	// Verify the success message
 	output := kafkaCtl.GetStdOut()
 	if !strings.Contains(output, "config has been altered") {
 		t.Fatalf("expected 'config has been altered' message, got: %s", output)
@@ -161,21 +117,15 @@ func TestAlterBrokerClusterWideValidateOnlyIntegration(t *testing.T) {
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-	// Test cluster-wide validate-only with empty broker ID (use a valid value within range)
-	_, err := kafkaCtl.Execute("alter", "broker", "", "--config", "background.threads=12", "--validate-only")
-
-	if err != nil {
-		t.Fatalf("unexpected error in cluster-wide validate-only mode: %v", err)
+	if _, err := kafkaCtl.Execute("alter", "broker", "", "--config", "background.threads=12", "--validate-only"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	// Validate-only should not show "config has been altered" message
 	output := kafkaCtl.GetStdOut()
-	if strings.Contains(output, "config has been altered") {
-		t.Fatalf("validate-only should not show 'config has been altered' message, got: %s", output)
+	config1Regex, _ := regexp.Compile(`background.threads\s+12\s`)
+	if config1Regex.FindString(output) == "" {
+		t.Fatalf("expected output to contain 'background.threads 12', got: %s", output)
 	}
-
-	// With cluster-wide validate-only, we should see current cluster-wide config values
-	// The exact output format may vary, so we just verify no error occurred
 }
 
 func TestAlterBrokerConfigK8sIntegration(t *testing.T) {
@@ -226,42 +176,4 @@ func TestAlterBrokerConfigK8sIntegration(t *testing.T) {
 			}
 		})
 	}
-}
-
-// Helper function to check if a string is numeric
-func isNumeric(s string) bool {
-	s = strings.TrimSpace(s)
-	if len(s) == 0 {
-		return false
-	}
-	for _, r := range s {
-		if r < '0' || r > '9' {
-			return false
-		}
-	}
-	return true
-}
-
-// Helper function to get the first available broker ID
-func getFirstBrokerID(t *testing.T, kafkaCtl testutil.KafkaCtlTestCommand) string {
-	if _, err := kafkaCtl.Execute("get", "brokers"); err != nil {
-		t.Fatalf("failed to get brokers: %v", err)
-	}
-
-	output := kafkaCtl.GetStdOut()
-	lines := strings.Split(output, "\n")
-
-	// Skip header line, look for first data line
-	for i, line := range lines {
-		if i == 0 || strings.TrimSpace(line) == "" {
-			continue // Skip header or empty lines
-		}
-		fields := strings.Fields(line)
-		if len(fields) > 0 && isNumeric(fields[0]) {
-			return fields[0]
-		}
-	}
-
-	t.Fatalf("could not find any broker ID in output: %s", output)
-	return ""
 }

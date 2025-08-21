@@ -70,45 +70,72 @@ func (operation *Operation) AlterBroker(id string, flags AlterBrokerFlags) error
 		return errors.Errorf("cannot find broker with id: %s", id)
 	}
 
-	var configs []internal.Config
+	var existingConfigs []sarama.ConfigEntry
 	brokerConfig := sarama.ConfigResource{
 		Type: sarama.BrokerResource,
 		Name: id,
 	}
 
-	if configs, err = internal.ListConfigs(&admin, brokerConfig, false); err != nil {
+	if existingConfigs, err = admin.DescribeConfig(brokerConfig); err != nil {
+		return errors.Wrap(err, "failed to describe config for broker")
+	}
+
+	mergedConfigEntries := make(map[string]*string)
+	for _, existingConfig := range existingConfigs {
+		if !existingConfig.ReadOnly && !existingConfig.Default {
+			mergedConfigEntries[existingConfig.Name] = &(existingConfig.Value)
+		}
+	}
+
+	for _, config := range flags.Configs {
+		configParts := strings.Split(config, "=")
+
+		if len(configParts) == 2 {
+			if len(configParts[1]) == 0 {
+				delete(mergedConfigEntries, configParts[0])
+			} else {
+				mergedConfigEntries[configParts[0]] = &configParts[1]
+			}
+		}
+	}
+
+	if err = admin.AlterConfig(sarama.BrokerResource, id, mergedConfigEntries, flags.ValidateOnly); err != nil {
+		return errors.Errorf("could not alter broker config '%s': %v", id, err)
+	}
+
+	if !flags.ValidateOnly {
+		output.Infof("config has been altered")
+		return nil
+	}
+
+	return operation.printConfig(mergedConfigEntries)
+}
+
+func (operation *Operation) printConfig(configs map[string]*string) error {
+
+	keys := make([]string, 0, len(configs))
+	for k := range configs {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	configTableWriter := output.CreateTableWriter()
+	if err := configTableWriter.WriteHeader("CONFIG", "VALUE"); err != nil {
 		return err
 	}
 
-	if len(flags.Configs) > 0 {
-		mergedConfigEntries := make(map[string]*string)
-
-		for _, config := range flags.Configs {
-			configParts := strings.Split(config, "=")
-
-			if len(configParts) == 2 {
-				if len(configParts[1]) == 0 {
-					delete(mergedConfigEntries, configParts[0])
-				} else {
-					mergedConfigEntries[configParts[0]] = &configParts[1]
-				}
+	for _, key := range keys {
+		if configs[key] != nil {
+			if err := configTableWriter.Write(key, *configs[key]); err != nil {
+				return err
 			}
 		}
-
-		if err = admin.AlterConfig(sarama.BrokerResource, id, mergedConfigEntries, flags.ValidateOnly); err != nil {
-			return errors.Errorf("could not alter broker config '%s': %v", id, err)
-		}
-		if !flags.ValidateOnly {
-			output.Infof("config has been altered")
-		}
 	}
 
-	if flags.ValidateOnly {
-		for _, config := range configs {
-			fmt.Println(config.Name + "=" + config.Value)
-		}
+	if err := configTableWriter.Flush(); err != nil {
+		return err
 	}
-
+	output.PrintStrings("")
 	return nil
 }
 
