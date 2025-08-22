@@ -160,13 +160,13 @@ func (operation *Operation) DeleteUser(username string, flags DeleteUserFlags) e
 	}
 
 	// Create delete request
-	delete := sarama.AlterUserScramCredentialsDelete{
+	deleteReq := sarama.AlterUserScramCredentialsDelete{
 		Name:      username,
 		Mechanism: mechanism,
 	}
 
 	// Use DeleteUserScramCredentials method
-	response, err := admin.DeleteUserScramCredentials([]sarama.AlterUserScramCredentialsDelete{delete})
+	response, err := admin.DeleteUserScramCredentials([]sarama.AlterUserScramCredentialsDelete{deleteReq})
 	if err != nil {
 		return errors.Wrap(err, "failed to delete user")
 	}
