@@ -9,13 +9,14 @@ func NewGetCmd() *cobra.Command {
 	var cmdGet = &cobra.Command{
 		Use:     "get",
 		Aliases: []string{"list"},
-		Short:   "get info about topics, consumerGroups, acls, brokers",
+		Short:   "get info about topics, consumerGroups, acls, brokers, users",
 	}
 
 	cmdGet.AddCommand(newGetTopicsCmd())
 	cmdGet.AddCommand(newGetConsumerGroupsCmd())
 	cmdGet.AddCommand(newGetACLCmd())
 	cmdGet.AddCommand(newGetBrokersCmd())
+	cmdGet.AddCommand(newGetUsersCmd())
 
 	return cmdGet
 }

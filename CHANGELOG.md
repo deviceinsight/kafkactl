@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Alter Broker Command**: New `kafkactl alter broker` command for dynamic broker configuration management without requiring broker restarts
+- **SCRAM User Management**: Complete SCRAM credential management with `kafkactl create user`, `kafkactl alter user`, `kafkactl delete user`, `kafkactl get users`, and `kafkactl describe user` commands supporting SCRAM-SHA-256 and SCRAM-SHA-512 mechanisms
 
 ## 5.11.1 - 2025-07-28
 
