@@ -169,5 +169,5 @@ func TestContextFlagAutoCompletion(t *testing.T) {
 
 	outputLines := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
 
-	testutil.AssertArraysEquals(t, []string{"default", "k8s-mock", "no-avro", "sasl-admin", "sasl-user"}, outputLines[:len(outputLines)-1])
+	testutil.AssertArraysEquals(t, []string{"default", "k8s-mock", "no-avro", "sasl-admin", "sasl-user", "scram-admin"}, outputLines[:len(outputLines)-1])
 }

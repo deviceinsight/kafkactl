@@ -20,7 +20,7 @@ func TestUseContextAutoCompletionIntegration(t *testing.T) {
 
 	outputLines := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
 
-	expectedContexts := []string{"default", "k8s-mock", "no-avro", "sasl-admin", "sasl-user"}
+	expectedContexts := []string{"default", "k8s-mock", "no-avro", "sasl-admin", "sasl-user", "scram-admin"}
 
 	if len(outputLines) != len(expectedContexts)+1 {
 		t.Fatalf("unexpected output. expected %d lines got %d: %s", len(expectedContexts)+1, len(outputLines), kafkaCtl.GetStdOut())
