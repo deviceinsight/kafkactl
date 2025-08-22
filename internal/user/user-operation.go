@@ -126,12 +126,7 @@ func (operation *Operation) CreateUser(username string, flags CreateUserFlags) e
 
 func (operation *Operation) AlterUser(username string, flags AlterUserFlags) error {
 	// Same logic as CreateUser - SCRAM credentials are upserted
-	createFlags := CreateUserFlags{
-		Mechanism:  flags.Mechanism,
-		Password:   flags.Password,
-		Salt:       flags.Salt,
-		Iterations: flags.Iterations,
-	}
+	createFlags := CreateUserFlags(flags)
 
 	err := operation.CreateUser(username, createFlags)
 	if err != nil {
