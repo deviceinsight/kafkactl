@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
@@ -17,7 +18,12 @@ func newViewCmd() *cobra.Command {
 		Long:  `Shows the contents of the config file that is currently used`,
 		RunE: func(_ *cobra.Command, _ []string) error {
 
-			yamlFile, err := os.ReadFile(viper.ConfigFileUsed())
+			configFileUsed := viper.ConfigFileUsed()
+			if _, err := os.Stat(configFileUsed); os.IsNotExist(err) {
+				return fmt.Errorf("no config file loaded")
+			}
+
+			yamlFile, err := os.ReadFile(configFileUsed)
 			if err != nil {
 				return errors.Wrap(err, "unable to read config")
 			}
