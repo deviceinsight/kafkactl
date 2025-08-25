@@ -322,18 +322,20 @@ func generateDefaultConfig(name string, viperInstance *viper.Viper) error {
 		}
 	}
 
-	if err := os.MkdirAll(filepath.Dir(cfgFile), os.FileMode(0700)); err != nil {
-		return err
-	}
-
 	if name == configFileName {
 		viperInstance.SetDefault("contexts.default.brokers", []string{"localhost:9092"})
 	} else {
 		viperInstance.SetDefault("current-context", getInitialCurrentContext(cfgFile))
 	}
 
+	if err := os.MkdirAll(filepath.Dir(cfgFile), os.FileMode(0700)); err != nil {
+		output.Warnf("cannot creating config file directory: %v", err)
+		return nil
+	}
+
 	if err := viperInstance.WriteConfigAs(cfgFile); err != nil {
-		return err
+		output.Warnf("cannot write config file=%s: %v", cfgFile, err)
+		return nil
 	}
 
 	output.Debugf("generated default config at %s", cfgFile)
