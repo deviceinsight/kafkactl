@@ -36,8 +36,7 @@ func TestDescribeTopicConfigsIntegration(t *testing.T) {
 	testutil.AssertArraysEquals(t, []string{"retention.ms"}, configKeys)
 	testutil.AssertEquals(t, "3600000", describedTopic.Configs[0].Value)
 
-	// explicitly without defaults
-	if _, err := kafkaCtl.Execute("describe", "topic", topicName1, "-c", "no_defaults", "-o", "yaml"); err != nil {
+	if _, err := kafkaCtl.Execute("describe", "topic", topicName1, "-o", "yaml"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
@@ -52,7 +51,7 @@ func TestDescribeTopicConfigsIntegration(t *testing.T) {
 	testutil.AssertEquals(t, "3600000", describedTopic.Configs[0].Value)
 
 	// all configs
-	if _, err := kafkaCtl.Execute("describe", "topic", topicName1, "-c", "all", "-o", "yaml"); err != nil {
+	if _, err := kafkaCtl.Execute("describe", "topic", topicName1, "--all-configs", "-o", "yaml"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
