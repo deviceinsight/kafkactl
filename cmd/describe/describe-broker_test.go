@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/broker"
-
 	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 )
 
@@ -42,6 +41,57 @@ func TestDescribeBrokerIntegration(t *testing.T) {
 
 	if len(expectedConfigs) > 0 {
 		t.Fatalf("expected configs missing: %v", expectedConfigs)
+	}
+}
+
+func TestDescribeBrokerConfigsIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	kafkaCtl.Verbose = false
+
+	if _, err := kafkaCtl.Execute("describe", "broker", "101", "-o", "yaml"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	describedBroker, err := broker.FromYaml(kafkaCtl.GetStdOut())
+	if err != nil {
+		t.Fatalf("failed to read yaml: %v", err)
+	}
+
+	configKeys := getConfigKeys(describedBroker.Configs)
+	if len(configKeys) < 10 {
+		t.Fatalf("expected to find >=10 config keys, found %v", len(configKeys))
+	}
+
+	if _, err := kafkaCtl.Execute("describe", "broker", "101", "--all-configs", "-o", "yaml"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	describedBroker, err = broker.FromYaml(kafkaCtl.GetStdOut())
+	if err != nil {
+		t.Fatalf("failed to read yaml: %v", err)
+	}
+
+	allConfigKeys := getConfigKeys(describedBroker.Configs)
+
+	// Verify allConfigKeys contains more entries than configKeys
+	if len(allConfigKeys) <= len(configKeys) {
+		t.Fatalf("expected allConfigKeys (%d) to contain more entries than configKeys (%d)",
+			len(allConfigKeys), len(configKeys))
+	}
+
+	// Verify all strings in configKeys are also in allConfigKeys
+	allConfigKeysMap := make(map[string]bool)
+	for _, key := range allConfigKeys {
+		allConfigKeysMap[key] = true
+	}
+
+	for _, key := range configKeys {
+		if !allConfigKeysMap[key] {
+			t.Fatalf("config key %q found in configKeys but not in allConfigKeys", key)
+		}
 	}
 }
 

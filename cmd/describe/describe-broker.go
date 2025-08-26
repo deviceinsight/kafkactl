@@ -1,8 +1,6 @@
 package describe
 
 import (
-	"strconv"
-
 	"github.com/deviceinsight/kafkactl/v5/internal"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/broker"
@@ -22,16 +20,12 @@ func newDescribeBrokerCmd() *cobra.Command {
 			if internal.IsKubernetesEnabled() {
 				return k8s.NewOperation().Run(cmd, args)
 			}
-			id, err := strconv.ParseInt(args[0], 10, 32)
-			if err != nil {
-				return err
-			}
-
-			return (&broker.Operation{}).DescribeBroker(int32(id), flags)
+			return (&broker.Operation{}).DescribeBroker(args[0], flags)
 		},
 		ValidArgsFunction: broker.CompleteBrokerIDs,
 	}
 
+	cmdDescribeBroker.Flags().BoolVarP(&flags.AllConfigs, "all-configs", "a", false, "print all configs including defaults")
 	cmdDescribeBroker.Flags().StringVarP(&flags.OutputFormat, "output", "o", flags.OutputFormat, "output format. One of: json|yaml|wide")
 
 	return cmdDescribeBroker
