@@ -33,13 +33,8 @@ func TestViewConfigWithEnvVariablesInGeneratedConfigSet(t *testing.T) {
 		}
 	}()
 
-	if err := os.Setenv("KAFKA_CTL_CONFIG", newConfigFile); err != nil {
-		t.Fatalf("unable to set env variable: %v", err)
-	}
-
-	if err := os.Setenv("KAFKA_CTL_WRITABLE_CONFIG", newContextFile); err != nil {
-		t.Fatalf("unable to set env variable: %v", err)
-	}
+	t.Setenv("KAFKA_CTL_CONFIG", newConfigFile)
+	t.Setenv("KAFKA_CTL_WRITABLE_CONFIG", newContextFile)
 
 	if err := os.Setenv("BROKERS", "env-broker:9092"); err != nil {
 		t.Fatalf("unable to set env variable: %v", err)
@@ -79,11 +74,10 @@ func TestViewConfigWorksIfConfigDirIsReadOnly(t *testing.T) {
 	tests := []struct {
 		name             string
 		configFileExists bool
-		wantError        string
 	}{
 		{
-			name:      "config_and_context_file_cannot_be_created",
-			wantError: "no config file loaded",
+			name:             "config_and_context_file_cannot_be_created",
+			configFileExists: false,
 		},
 		{
 			name:             "config_file_exists_but_context_file_cannot_be_created",
@@ -124,46 +118,75 @@ contexts:
 				t.Fatalf("unable to make config file readonly: %v", err)
 			}
 
-			if err := os.Setenv("KAFKA_CTL_CONFIG", configFile); err != nil {
-				t.Fatalf("unable to set env variable: %v", err)
-			}
-
-			if err := os.Setenv("KAFKA_CTL_WRITABLE_CONFIG", contextFile); err != nil {
-				t.Fatalf("unable to set env variable: %v", err)
-			}
-
-			if err := os.Setenv("BROKERS", "env-broker:9092"); err != nil {
-				t.Fatalf("unable to set env variable: %v", err)
-			}
+			t.Setenv("KAFKA_CTL_CONFIG", configFile)
+			t.Setenv("KAFKA_CTL_WRITABLE_CONFIG", contextFile)
+			t.Setenv("BROKERS", "env-broker:9092")
 
 			kafkaCtl := testutil.CreateKafkaCtlCommand()
 
-			_, err := kafkaCtl.Execute("config", "view")
-
-			if tt.wantError == "" && err != nil {
+			if _, err := kafkaCtl.Execute("config", "view"); err != nil {
 				t.Fatalf("failed to execute command: %v", err)
-			} else if tt.wantError != "" && err == nil {
-				t.Fatalf("expecting error but got none: %s", tt.wantError)
-				return
-			} else if tt.wantError != "" {
-				testutil.AssertContainSubstring(t, tt.wantError, err.Error())
-				return
-			}
-
-			actualConfigContent, err := os.ReadFile(configFile)
-			if err != nil {
-				t.Fatalf("error reading generated config %s %v", configFile, err)
 			}
 
 			if _, err := os.Stat(contextFile); err == nil {
 				t.Fatalf("context file should not exist %s: %v", contextFile, err)
 			}
 
-			testutil.AssertEquals(t, configContent, string(actualConfigContent))
 			testutil.AssertEquals(t, configContent, kafkaCtl.GetStdOut())
 			testutil.AssertContainSubstring(t, "cannot write config file", kafkaCtl.GetStdErr())
 		})
 	}
+}
+
+func TestContextFileLookedUpNextToMainConfig(t *testing.T) {
+
+	testutil.StartUnitTest(t)
+
+	tempDir := getTempDir()
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+			output.TestLogf("unable to delete temp dir %s: %v", path, err)
+		}
+	}(tempDir)
+
+	newConfigFile := path.Join(tempDir, "non-existing-config.yml")
+	newContextFile := path.Join(tempDir, "current-context.yml")
+
+	t.Setenv("HOME", "/non-existing-home-dir")
+	t.Setenv("KAFKA_CTL_CONFIG", newConfigFile)
+
+	if err := os.Setenv("BROKERS", "env-broker:9092"); err != nil {
+		t.Fatalf("unable to set env variable: %v", err)
+	}
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	defaultConfigContent := `
+contexts:
+    default:
+        brokers: env-broker:9092`
+
+	defaultContextContent := `
+current-context: default`
+
+	if _, err := kafkaCtl.Execute("config", "view"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	configContent, err := os.ReadFile(newConfigFile)
+	if err != nil {
+		t.Fatalf("error reading generated config %s %v", newConfigFile, err)
+	}
+
+	contextContent, err := os.ReadFile(newContextFile)
+	if err != nil {
+		t.Fatalf("error reading generated config %s %v", newContextFile, err)
+	}
+
+	testutil.AssertEquals(t, defaultConfigContent, string(configContent))
+	testutil.AssertEquals(t, defaultContextContent, string(contextContent))
+	testutil.AssertEquals(t, defaultConfigContent, kafkaCtl.GetStdOut())
 }
 
 func getTempDir() string {

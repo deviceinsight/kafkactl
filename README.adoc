@@ -252,6 +252,18 @@ During initialization _kafkactl_ starts from the current working directory and r
 config file. The recursive lookup ends at the boundary of a git repository (i.e. if a `.git` folder is found).
 This way, _kafkactl_ can be used conveniently anywhere in the git repository.
 
+[#_current_context]
+==== Current context
+
+The current context can be set via commandline argument `--context`, environment variable `CURRENT_CONTEXT` or
+it can be defined in a file.
+
+If no current context is defined, the first context in the config file is used as current context. Additionally,
+in this case a file storing the current context is created.
+
+The file is typically stored next to the config file and named `current-context.yml`.
+The location of the file can be overridden via environment variable `KAFKA_CTL_WRITABLE_CONFIG`.
+
 === Auto completion
 
 ==== bash

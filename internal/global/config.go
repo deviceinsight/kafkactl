@@ -312,6 +312,9 @@ func generateDefaultConfig(name string, viperInstance *viper.Viper) error {
 	} else if name == writableConfigFileName && os.Getenv(WritableConfigEnvVariable) != "" {
 		// use config file provided via env
 		cfgFile = os.Getenv(WritableConfigEnvVariable)
+	} else if name == writableConfigFileName && os.Getenv(ConfigEnvVariable) != "" {
+		// use config file provided via env as base path
+		cfgFile = filepath.Join(path.Dir(os.Getenv(ConfigEnvVariable)), filename)
 	} else if runtime.GOOS == "windows" {
 		// use different configFile when running on windows
 		for _, configPath := range configPaths {
