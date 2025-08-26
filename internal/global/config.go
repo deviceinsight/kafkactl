@@ -189,6 +189,10 @@ func (c *config) Init() error {
 	if os.Getenv(WritableConfigEnvVariable) != "" {
 		envConfig := os.Getenv(WritableConfigEnvVariable)
 		writableConfigFile = &envConfig
+	} else if os.Getenv(ConfigEnvVariable) != "" {
+		// use config file provided via env as base path
+		envConfig := filepath.Join(path.Dir(os.Getenv(ConfigEnvVariable)), writableConfigFileName+".yml")
+		writableConfigFile = &envConfig
 	}
 
 	c.writableConfig = viper.New()

@@ -143,6 +143,61 @@ func TestContextFileLookedUpNextToMainConfig(t *testing.T) {
 	testutil.StartUnitTest(t)
 
 	tempDir := getTempDir()
+	if err := os.MkdirAll(tempDir, 0755); err != nil {
+		t.Fatalf("unable to create temp dir: %v", err)
+	}
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+			output.TestLogf("unable to delete temp dir %s: %v", path, err)
+		}
+	}(tempDir)
+
+	configFile := path.Join(tempDir, "config.yml")
+	contextFile := path.Join(tempDir, "current-context.yml")
+
+	defaultConfigContent := `
+contexts:
+    ctx1:
+        brokers: broker1:9092
+    ctx2:
+        brokers: broker2:9092
+`
+
+	defaultContextContent := `
+current-context: ctx2`
+
+	if err := os.WriteFile(configFile, []byte(defaultConfigContent), 0644); err != nil {
+		t.Fatalf("unable to create config file: %v", err)
+	}
+
+	if err := os.WriteFile(contextFile, []byte(defaultContextContent), 0644); err != nil {
+		t.Fatalf("unable to create context file: %v", err)
+	}
+
+	t.Setenv("HOME", "/non-existing-home-dir")
+	t.Setenv("KAFKA_CTL_CONFIG", configFile)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("config", "view"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, defaultConfigContent, kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("config", "current-context"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "ctx2", kafkaCtl.GetStdOut())
+}
+
+func TestContextFileGeneratedNextToMainConfig(t *testing.T) {
+
+	testutil.StartUnitTest(t)
+
+	tempDir := getTempDir()
 	defer func(path string) {
 		err := os.RemoveAll(path)
 		if err != nil {
