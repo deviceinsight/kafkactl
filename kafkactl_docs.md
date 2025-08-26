@@ -17,16 +17,16 @@ A command-line interface the simplifies interaction with Kafka.
 
 ### SEE ALSO
 
-* [kafkactl alter](#kafkactl-alter)	 - alter topics, partitions
+* [kafkactl alter](#kafkactl-alter)	 - alter topics, partitions, brokers, users
 * [kafkactl attach](#kafkactl-attach)	 - run kafkactl pod in kubernetes and attach to it
 * [kafkactl clone](#kafkactl-clone)	 - clone topics, consumerGroups
 * [kafkactl completion](#kafkactl-completion)	 - generate shell auto-completion file
 * [kafkactl config](#kafkactl-config)	 - show and edit configurations
 * [kafkactl consume](#kafkactl-consume)	 - consume messages from a topic
-* [kafkactl create](#kafkactl-create)	 - create topics, consumerGroups, acls
-* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records
-* [kafkactl describe](#kafkactl-describe)	 - describe topics, consumerGroups, brokers
-* [kafkactl get](#kafkactl-get)	 - get info about topics, consumerGroups, acls, brokers
+* [kafkactl create](#kafkactl-create)	 - create topics, consumerGroups, acls, users
+* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records, users
+* [kafkactl describe](#kafkactl-describe)	 - describe topics, consumerGroups, brokers, users
+* [kafkactl get](#kafkactl-get)	 - get info about topics, consumerGroups, acls, brokers, users
 * [kafkactl produce](#kafkactl-produce)	 - produce messages to a topic
 * [kafkactl reset](#kafkactl-reset)	 - reset consumerGroupsOffset
 * [kafkactl version](#kafkactl-version)	 - print the version of kafkactl
@@ -34,7 +34,7 @@ A command-line interface the simplifies interaction with Kafka.
 
 ### kafkactl alter
 
-alter topics, partitions
+alter topics, partitions, brokers, users
 
 #### Options
 
@@ -53,8 +53,39 @@ alter topics, partitions
 #### SEE ALSO
 
 * [kafkactl](#kafkactl)	 - command-line interface for Apache Kafka
+* [kafkactl alter broker](#kafkactl-alter-broker)	 - alter a broker
 * [kafkactl alter partition](#kafkactl-alter-partition)	 - alter a partition
 * [kafkactl alter topic](#kafkactl-alter-topic)	 - alter a topic
+* [kafkactl alter user](#kafkactl-alter-user)	 - alter a SCRAM user
+
+
+#### kafkactl alter broker
+
+alter a broker
+
+```
+kafkactl alter broker BROKER [flags]
+```
+
+##### Options
+
+```
+  -c, --config key=value   configs in format key=value
+  -h, --help               help for broker
+  -v, --validate-only      validate only
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl alter](#kafkactl-alter)	 - alter topics, partitions, brokers, users
 
 
 #### kafkactl alter partition
@@ -83,7 +114,7 @@ kafkactl alter partition TOPIC PARTITION [flags]
 
 ##### SEE ALSO
 
-* [kafkactl alter](#kafkactl-alter)	 - alter topics, partitions
+* [kafkactl alter](#kafkactl-alter)	 - alter topics, partitions, brokers, users
 
 
 #### kafkactl alter topic
@@ -114,7 +145,38 @@ kafkactl alter topic TOPIC [flags]
 
 ##### SEE ALSO
 
-* [kafkactl alter](#kafkactl-alter)	 - alter topics, partitions
+* [kafkactl alter](#kafkactl-alter)	 - alter topics, partitions, brokers, users
+
+
+#### kafkactl alter user
+
+alter a SCRAM user
+
+```
+kafkactl alter user USERNAME [flags]
+```
+
+##### Options
+
+```
+  -h, --help               help for user
+  -i, --iterations int32   SCRAM iterations (default 4096)
+  -m, --mechanism string   SCRAM mechanism (SCRAM-SHA-256, SCRAM-SHA-512) (default "SCRAM-SHA-256")
+  -p, --password string    new user password
+  -s, --salt string        custom salt (base64 encoded, generated if not provided)
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl alter](#kafkactl-alter)	 - alter topics, partitions, brokers, users
 
 
 ### kafkactl attach
@@ -303,7 +365,7 @@ show and edit configurations
 * [kafkactl config current-context](#kafkactl-config-current-context)	 - show current context
 * [kafkactl config get-contexts](#kafkactl-config-get-contexts)	 - list configured contexts
 * [kafkactl config use-context](#kafkactl-config-use-context)	 - switch active context
-* [kafkactl config view](#kafkactl-config-view)	 - show contents of config file
+* [kafkactl config view](#kafkactl-config-view)	 - show current config
 
 
 #### kafkactl config current-context
@@ -402,11 +464,11 @@ kafkactl config use-context [flags]
 
 #### kafkactl config view
 
-show contents of config file
+show current config
 
 ##### Synopsis
 
-Shows the contents of the config file that is currently used
+Shows the merged config that is currently used
 
 ```
 kafkactl config view [flags]
@@ -485,7 +547,7 @@ kafkactl consume TOPIC [flags]
 
 ### kafkactl create
 
-create topics, consumerGroups, acls
+create topics, consumerGroups, acls, users
 
 #### Options
 
@@ -507,6 +569,7 @@ create topics, consumerGroups, acls
 * [kafkactl create access-control-list](#kafkactl-create-access-control-list)	 - create an acl
 * [kafkactl create consumer-group](#kafkactl-create-consumer-group)	 - create a consumerGroup
 * [kafkactl create topic](#kafkactl-create-topic)	 - create a topic
+* [kafkactl create user](#kafkactl-create-user)	 - create a SCRAM user
 
 
 #### kafkactl create access-control-list
@@ -543,7 +606,7 @@ kafkactl create access-control-list [flags]
 
 ##### SEE ALSO
 
-* [kafkactl create](#kafkactl-create)	 - create topics, consumerGroups, acls
+* [kafkactl create](#kafkactl-create)	 - create topics, consumerGroups, acls, users
 
 
 #### kafkactl create consumer-group
@@ -575,7 +638,7 @@ kafkactl create consumer-group GROUP [flags]
 
 ##### SEE ALSO
 
-* [kafkactl create](#kafkactl-create)	 - create topics, consumerGroups, acls
+* [kafkactl create](#kafkactl-create)	 - create topics, consumerGroups, acls, users
 
 
 #### kafkactl create topic
@@ -607,12 +670,43 @@ kafkactl create topic TOPIC [flags]
 
 ##### SEE ALSO
 
-* [kafkactl create](#kafkactl-create)	 - create topics, consumerGroups, acls
+* [kafkactl create](#kafkactl-create)	 - create topics, consumerGroups, acls, users
+
+
+#### kafkactl create user
+
+create a SCRAM user
+
+```
+kafkactl create user USERNAME [flags]
+```
+
+##### Options
+
+```
+  -h, --help               help for user
+  -i, --iterations int32   SCRAM iterations (default 4096)
+  -m, --mechanism string   SCRAM mechanism (SCRAM-SHA-256, SCRAM-SHA-512) (default "SCRAM-SHA-256")
+  -p, --password string    user password
+  -s, --salt string        custom salt (base64 encoded, generated if not provided)
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl create](#kafkactl-create)	 - create topics, consumerGroups, acls, users
 
 
 ### kafkactl delete
 
-delete topics, consumerGroups, consumer-group-offset, acls, records
+delete topics, consumerGroups, consumer-group-offset, acls, records, users
 
 #### Options
 
@@ -636,6 +730,7 @@ delete topics, consumerGroups, consumer-group-offset, acls, records
 * [kafkactl delete consumer-group-offset](#kafkactl-delete-consumer-group-offset)	 - delete a consumer-group-offset
 * [kafkactl delete records](#kafkactl-delete-records)	 - delete a records from a topic
 * [kafkactl delete topic](#kafkactl-delete-topic)	 - delete a topic
+* [kafkactl delete user](#kafkactl-delete-user)	 - delete SCRAM user credentials
 
 
 #### kafkactl delete access-control-list
@@ -672,7 +767,7 @@ kafkactl delete access-control-list [flags]
 
 ##### SEE ALSO
 
-* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records
+* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records, users
 
 
 #### kafkactl delete consumer-group-offset
@@ -701,7 +796,7 @@ kafkactl delete consumer-group-offset CONSUMER-GROUP --topic=TOPIC --partition=P
 
 ##### SEE ALSO
 
-* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records
+* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records, users
 
 
 #### kafkactl delete consumer-group
@@ -728,7 +823,7 @@ kafkactl delete consumer-group CONSUMER-GROUP [flags]
 
 ##### SEE ALSO
 
-* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records
+* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records, users
 
 
 #### kafkactl delete records
@@ -756,7 +851,7 @@ kafkactl delete records TOPIC [flags]
 
 ##### SEE ALSO
 
-* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records
+* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records, users
 
 
 #### kafkactl delete topic
@@ -783,12 +878,40 @@ kafkactl delete topic TOPIC [flags]
 
 ##### SEE ALSO
 
-* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records
+* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records, users
+
+
+#### kafkactl delete user
+
+delete SCRAM user credentials
+
+```
+kafkactl delete user USERNAME [flags]
+```
+
+##### Options
+
+```
+  -h, --help               help for user
+  -m, --mechanism string   SCRAM mechanism to delete (SCRAM-SHA-256, SCRAM-SHA-512) (default "SCRAM-SHA-256")
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl delete](#kafkactl-delete)	 - delete topics, consumerGroups, consumer-group-offset, acls, records, users
 
 
 ### kafkactl describe
 
-describe topics, consumerGroups, brokers
+describe topics, consumerGroups, brokers, users
 
 #### Options
 
@@ -810,6 +933,7 @@ describe topics, consumerGroups, brokers
 * [kafkactl describe broker](#kafkactl-describe-broker)	 - describe a broker
 * [kafkactl describe consumer-group](#kafkactl-describe-consumer-group)	 - describe a consumerGroup
 * [kafkactl describe topic](#kafkactl-describe-topic)	 - describe a topic
+* [kafkactl describe user](#kafkactl-describe-user)	 - describe a SCRAM user
 
 
 #### kafkactl describe broker
@@ -823,6 +947,7 @@ kafkactl describe broker ID [flags]
 ##### Options
 
 ```
+  -a, --all-configs     print all configs including defaults
   -h, --help            help for broker
   -o, --output string   output format. One of: json|yaml|wide
 ```
@@ -837,7 +962,7 @@ kafkactl describe broker ID [flags]
 
 ##### SEE ALSO
 
-* [kafkactl describe](#kafkactl-describe)	 - describe topics, consumerGroups, brokers
+* [kafkactl describe](#kafkactl-describe)	 - describe topics, consumerGroups, brokers, users
 
 
 #### kafkactl describe consumer-group
@@ -869,7 +994,7 @@ kafkactl describe consumer-group GROUP [flags]
 
 ##### SEE ALSO
 
-* [kafkactl describe](#kafkactl-describe)	 - describe topics, consumerGroups, brokers
+* [kafkactl describe](#kafkactl-describe)	 - describe topics, consumerGroups, brokers, users
 
 
 #### kafkactl describe topic
@@ -883,10 +1008,10 @@ kafkactl describe topic TOPIC [flags]
 ##### Options
 
 ```
-  -h, --help                   help for topic
-  -o, --output string          output format. One of: json|yaml|wide
-  -c, --print-configs string   print configs. One of none|no_defaults|all (default "no_defaults")
-  -s, --skip-empty             show only partitions that have a messages
+  -a, --all-configs     print all configs including defaults
+  -h, --help            help for topic
+  -o, --output string   output format. One of: json|yaml|wide
+  -s, --skip-empty      show only partitions that have a messages
 ```
 
 ##### Options inherited from parent commands
@@ -899,12 +1024,40 @@ kafkactl describe topic TOPIC [flags]
 
 ##### SEE ALSO
 
-* [kafkactl describe](#kafkactl-describe)	 - describe topics, consumerGroups, brokers
+* [kafkactl describe](#kafkactl-describe)	 - describe topics, consumerGroups, brokers, users
+
+
+#### kafkactl describe user
+
+describe a SCRAM user
+
+```
+kafkactl describe user USERNAME [flags]
+```
+
+##### Options
+
+```
+  -h, --help            help for user
+  -o, --output string   output format. One of: json|yaml
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl describe](#kafkactl-describe)	 - describe topics, consumerGroups, brokers, users
 
 
 ### kafkactl get
 
-get info about topics, consumerGroups, acls, brokers
+get info about topics, consumerGroups, acls, brokers, users
 
 #### Options
 
@@ -927,6 +1080,7 @@ get info about topics, consumerGroups, acls, brokers
 * [kafkactl get brokers](#kafkactl-get-brokers)	 - list brokers
 * [kafkactl get consumer-groups](#kafkactl-get-consumer-groups)	 - list available consumerGroups
 * [kafkactl get topics](#kafkactl-get-topics)	 - list available topics
+* [kafkactl get users](#kafkactl-get-users)	 - get SCRAM users
 
 
 #### kafkactl get access-control-list
@@ -964,7 +1118,7 @@ kafkactl get access-control-list [flags]
 
 ##### SEE ALSO
 
-* [kafkactl get](#kafkactl-get)	 - get info about topics, consumerGroups, acls, brokers
+* [kafkactl get](#kafkactl-get)	 - get info about topics, consumerGroups, acls, brokers, users
 
 
 #### kafkactl get brokers
@@ -992,7 +1146,7 @@ kafkactl get brokers [flags]
 
 ##### SEE ALSO
 
-* [kafkactl get](#kafkactl-get)	 - get info about topics, consumerGroups, acls, brokers
+* [kafkactl get](#kafkactl-get)	 - get info about topics, consumerGroups, acls, brokers, users
 
 
 #### kafkactl get consumer-groups
@@ -1021,7 +1175,7 @@ kafkactl get consumer-groups [flags]
 
 ##### SEE ALSO
 
-* [kafkactl get](#kafkactl-get)	 - get info about topics, consumerGroups, acls, brokers
+* [kafkactl get](#kafkactl-get)	 - get info about topics, consumerGroups, acls, brokers, users
 
 
 #### kafkactl get topics
@@ -1049,7 +1203,35 @@ kafkactl get topics [flags]
 
 ##### SEE ALSO
 
-* [kafkactl get](#kafkactl-get)	 - get info about topics, consumerGroups, acls, brokers
+* [kafkactl get](#kafkactl-get)	 - get info about topics, consumerGroups, acls, brokers, users
+
+
+#### kafkactl get users
+
+get SCRAM users
+
+```
+kafkactl get users [flags]
+```
+
+##### Options
+
+```
+  -h, --help            help for users
+  -o, --output string   output format. One of: json|yaml
+```
+
+##### Options inherited from parent commands
+
+```
+  -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
+      --context string       The name of the context to use
+  -V, --verbose              verbose output
+```
+
+##### SEE ALSO
+
+* [kafkactl get](#kafkactl-get)	 - get info about topics, consumerGroups, acls, brokers, users
 
 
 ### kafkactl produce
