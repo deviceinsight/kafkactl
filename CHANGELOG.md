@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 5.12.0 - 2025-08-26
+
 ### Added
 - **Alter Broker Command**: New `kafkactl alter broker` command for dynamic broker configuration management without requiring broker restarts
 - Only warn when config file or context file cannot be created (#282)
