@@ -811,7 +811,42 @@ or with protoset
 kafkactl consume <topic> --key-proto-type TopicKey --value-proto-type TopicValue --protoset-file kafkamsg.protoset
 ----
 
-=== Create topics
+
+=== Topic management
+
+==== List topics
+
+In order to get a list of topics the `get topics` command can be used:
+
+[,bash]
+----
+kafkactl get topics
+kafkactl list topics
+----
+
+==== Describe topic
+
+A detailed description of a topic can be obtained with `describe topic`:
+
+[,bash]
+----
+kafkactl describe topic my-topic
+----
+
+Per default only overwritten config entries are printed. To print all config entries including defaults use:
+
+[,bash]
+----
+kafkactl describe topic my-topic --all-configs
+----
+
+To print only partition details of partitions with messages use:
+[,bash]
+----
+kafkactl describe topic my-topic --skip-empty
+----
+
+==== Create topic
 
 The `create topic` allows you to create one or multiple topics.
 
@@ -846,8 +881,7 @@ kafkactl describe topic my-topic -o json > my-topic-config.json
 kafkactl create topic my-topic-clone --file my-topic-config.json
 ----
 
-
-=== Altering topics
+==== Altering topics
 
 Using the `alter topic` command allows you to change the partition count, replication factor and topic-level
 configurations of an existing topic.
@@ -882,40 +916,7 @@ ____
 :bulb: use the flag `--validate-only` to perform a dry-run without actually modifying the topic
 ____
 
-=== Altering brokers
-
-Using the `alter broker` command allows you to change dynamic broker configurations for individual brokers or cluster-wide defaults.
-
-To alter a configuration for a specific broker:
-
-[,bash]
-----
-kafkactl alter broker 101 --config background.threads=8
-----
-
-To alter a cluster-wide default configuration (affects brokers without individual overrides):
-
-[,bash]
-----
-kafkactl alter broker "" --config background.threads=8
-----
-
-Multiple configurations can be altered simultaneously:
-
-[,bash]
-----
-kafkactl alter broker 101 --config background.threads=8 --config log.cleaner.threads=2
-----
-
-____
-:bulb: use the flag `--validate-only` to perform a dry-run without actually modifying the broker configuration
-____
-
-____
-:information_source: only dynamically configurable broker properties can be altered. Static properties like `broker.id` or `log.dirs` require a broker restart to change.
-____
-
-=== Altering partitions
+==== Altering partitions
 
 The assigned replicas of a partition can directly be altered with:
 
@@ -925,7 +926,7 @@ The assigned replicas of a partition can directly be altered with:
 kafkactl alter partition my-topic 3 -r 102,103
 ----
 
-=== Clone topic
+==== Clone topic
 
 New topic may be created from existing topic as follows:
 
@@ -937,7 +938,21 @@ kafkactl clone topic source-topic target-topic
 Source topic must exist, target topic must not exist.
 `kafkactl` clones partitions count, replication factor and config entries.
 
-=== Consumer groups
+
+==== Delete Records from a topics
+
+Command to be used to delete records from partition, which have an offset smaller than the provided offset.
+
+[,bash]
+----
+# delete records with offset < 123 from partition 0 and offset < 456 from partition 1
+kafkactl delete records my-topic --offset 0=123 --offset 1=456
+----
+
+
+=== Consumer group management
+
+==== List Consumer groups
 
 In order to get a list of consumer groups the `get consumer-groups` command can be used:
 
@@ -954,6 +969,8 @@ kafkactl get cg
 To get detailed information about the consumer group use `describe consumer-group`. If the parameter `--partitions`
 is provided details will be printed for each partition otherwise the partitions are aggregated to the clients.
 
+==== Describe Consumer group
+
 [,bash]
 ----
 # describe a consumer group
@@ -966,17 +983,7 @@ kafkactl describe consumer-group my-group --topic my-topic
 kafkactl describe cg my-group
 ----
 
-=== Delete Records from a topics
-
-Command to be used to delete records from partition, which have an offset smaller than the provided offset.
-
-[,bash]
-----
-# delete records with offset < 123 from partition 0 and offset < 456 from partition 1
-kafkactl delete records my-topic --offset 0=123 --offset 1=456
-----
-
-=== Create consumer groups
+==== Create consumer groups
 
 A consumer-group can be created as follows:
 
@@ -992,7 +999,7 @@ kafkactl create consumer-group my-group --topic my-topic --partition 5 --offset 
 kafkactl create consumer-group my-group --topic my-topic-a --topic my-topic-b --oldest
 ----
 
-=== Clone consumer group
+==== Clone consumer group
 
 A consumer group may be created as clone of another consumer group as follows:
 
@@ -1004,7 +1011,7 @@ kafkactl clone consumer-group source-group target-group
 Source group must exist and have committed offsets. Target group must not exist or don't have committed offsets.
 `kafkactl` clones topic assignment and partition offsets.
 
-=== Reset consumer group offsets
+==== Reset consumer group offsets
 
 in order to ensure the reset does what it is expected, per default only
 the results are printed without actually executing it. Use the additional parameter `--execute` to perform the reset.
@@ -1027,7 +1034,7 @@ kafkactl reset offset my-group --topic my-topic-a --to-datetime 2014-04-26T17:24
 kafkactl reset offset my-group --topic my-topic-a --to-datetime 1697726906352
 ----
 
-=== Delete consumer group offsets
+==== Delete consumer group offsets
 
 In order to delete a consumer group offset use `delete offset`
 
@@ -1039,7 +1046,7 @@ kafkactl delete offset my-group --topic my-topic
 kafkactl delete offset my-group --topic my-topic --partition 1
 ----
 
-=== Delete consumer groups
+==== Delete consumer groups
 
 In order to delete a consumer group or a list of consumer groups use `delete consumer-group`
 
@@ -1103,7 +1110,9 @@ kafkactl delete acl --topics --operation any --pattern any --prinicipal User:myU
 kafkactl delete acl --topics --operation any --pattern any --host my-host
 ----
 
-=== Getting Brokers
+=== Broker Management
+
+==== Getting Brokers
 
 To get the list of brokers of a kafka cluster use `get brokers`
 
@@ -1113,7 +1122,7 @@ To get the list of brokers of a kafka cluster use `get brokers`
 kafkactl get brokers
 ----
 
-=== Describe Broker
+==== Describe Broker
 
 To view configs for a single broker use `describe broker`
 
@@ -1122,6 +1131,53 @@ To view configs for a single broker use `describe broker`
 # describe broker
 kafkactl describe broker 1
 ----
+
+Per default only dynamic configs are shown. To view all configs use `--all-configs`
+
+[,bash]
+----
+kafkactl describe broker 1 --all-configs
+----
+
+Additionally, only default configs can be shown with:
+[,bash]
+----
+kafkactl describe broker default
+----
+
+==== Altering brokers
+
+Using the `alter broker` command allows you to change dynamic broker configurations for individual brokers or cluster-wide defaults.
+
+To alter a configuration for a specific broker:
+
+[,bash]
+----
+kafkactl alter broker 101 --config background.threads=8
+----
+
+To alter a cluster-wide default configuration (affects brokers without individual overrides):
+
+[,bash]
+----
+kafkactl alter broker default --config background.threads=8
+----
+
+Multiple configurations can be altered simultaneously:
+
+[,bash]
+----
+kafkactl alter broker 101 --config background.threads=8 --config log.cleaner.threads=2
+----
+
+____
+:bulb: use the flag `--validate-only` to perform a dry-run without actually modifying the broker configuration
+____
+
+____
+:information_source: only dynamically configurable broker properties can be altered. Static properties like `broker.id` or `log.dirs` require a broker restart to change.
+____
+
 
 === SCRAM User Management
 

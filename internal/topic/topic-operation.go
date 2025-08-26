@@ -82,6 +82,7 @@ const (
 
 type DescribeTopicFlags struct {
 	PrintConfigs        PrintConfigsParam
+	AllConfigs          bool
 	SkipEmptyPartitions bool
 	OutputFormat        string
 }
@@ -225,7 +226,12 @@ func (operation *Operation) DescribeTopic(topic string, flags DescribeTopicFlags
 	}
 
 	fields := allFields
-	fields.config = flags.PrintConfigs
+
+	if flags.AllConfigs {
+		fields.config = AllConfigs
+	} else {
+		fields.config = NonDefaultConfigs
+	}
 
 	if t, err = readTopic(&client, &admin, topic, fields); err != nil {
 		return errors.Wrap(err, "failed to read topic")
