@@ -7,18 +7,18 @@ import (
 	"slices"
 	"strings"
 
-	"google.golang.org/protobuf/reflect/protodesc"
-
 	"github.com/bufbuild/protocompile"
+	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 
-	"github.com/deviceinsight/kafkactl/v5/internal"
-	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/pkg/errors"
 	"github.com/riferrei/srclient"
+
+	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 )
 
 func SchemaToFileDescriptor(registry srclient.ISchemaRegistryClient, schema *srclient.Schema) (protoreflect.FileDescriptor, error) {
@@ -124,10 +124,32 @@ func findMessageDescriptor(messages protoreflect.MessageDescriptors, msgName pro
 	return nil, errors.Errorf("can't find message descriptor for %s", msgName)
 }
 
-func ResolveMessageType(protobufConfig internal.ProtobufConfig, typeName protoreflect.Name) protoreflect.MessageDescriptor {
-	for _, descriptor := range makeDescriptors(protobufConfig) {
-		if msg := descriptor.Messages().ByName(typeName); msg != nil {
-			return msg
+func ResolveMessageType(protobufConfig internal.ProtobufConfig, typeName protoreflect.FullName) protoreflect.MessageDescriptor {
+	descSets := makeDescriptors(protobufConfig)
+	return resolveMessageType(descSets, typeName)
+}
+
+func resolveMessageType(descSets []protoreflect.FileDescriptor, typeName protoreflect.FullName) protoreflect.MessageDescriptor {
+	// make sure we use the shortname for using ByName:
+	shortName := typeName.Name()
+	var candidates []protoreflect.MessageDescriptor
+	for _, descriptor := range descSets {
+		if msg := descriptor.Messages().ByName(shortName); msg != nil {
+			candidates = append(candidates, msg)
+		}
+	}
+
+	// Prefer matching FullName first:
+	for _, candidate := range candidates {
+		if candidate.FullName() == typeName {
+			return candidate
+		}
+	}
+
+	// Fallback to matching short Name:
+	for _, candidate := range candidates {
+		if string(candidate.Name()) == string(typeName) {
+			return candidate
 		}
 	}
 	return nil

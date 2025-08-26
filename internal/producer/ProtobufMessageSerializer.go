@@ -16,7 +16,7 @@ type ProtobufMessageSerializer struct {
 	valueDescriptor protoreflect.MessageDescriptor
 }
 
-func CreateProtobufMessageSerializer(topic string, context internal.ProtobufConfig, keyType, valueType protoreflect.Name) (*ProtobufMessageSerializer, error) {
+func CreateProtobufMessageSerializer(topic string, context internal.ProtobufConfig, keyType, valueType protoreflect.FullName) (*ProtobufMessageSerializer, error) {
 	valueDescriptor := protobuf.ResolveMessageType(context, valueType)
 	if valueDescriptor == nil && valueType != "" {
 		return nil, errors.Errorf("value message type %q not found in provided files", valueType)

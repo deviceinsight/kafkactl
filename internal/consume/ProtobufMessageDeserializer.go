@@ -21,10 +21,10 @@ type ProtobufMessageDeserializer struct {
 	valueDescriptor protoreflect.MessageDescriptor
 }
 
-func CreateProtobufMessageDeserializer(config internal.ProtobufConfig, keyType, valueType protoreflect.Name) (*ProtobufMessageDeserializer, error) {
+func CreateProtobufMessageDeserializer(config internal.ProtobufConfig, keyType, valueType protoreflect.FullName) (*ProtobufMessageDeserializer, error) {
 	return &ProtobufMessageDeserializer{
-		keyType:         keyType,
-		valueType:       valueType,
+		keyType:         keyType.Name(),
+		valueType:       valueType.Name(),
 		marshalOptions:  config.MarshalOptions,
 		keyDescriptor:   protobuf.ResolveMessageType(config, keyType),
 		valueDescriptor: protobuf.ResolveMessageType(config, valueType),
