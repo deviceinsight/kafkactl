@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- [#295](https://github.com/deviceinsight/kafkactl/issues/295) make sure we match the FullName first before using shortname
+
 ## 5.12.0 - 2025-08-26
 
 ### Added
