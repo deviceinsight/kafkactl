@@ -96,7 +96,7 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 
 	if len(context.ProtoFiles) != 0 || len(context.ProtoImportPaths) != 0 || len(context.ProtosetFiles) != 0 {
 
-		serializer, err := CreateProtobufMessageSerializer(topic, context, protoreflect.Name(flags.KeyProtoType), protoreflect.Name(flags.ValueProtoType))
+		serializer, err := CreateProtobufMessageSerializer(topic, context, protoreflect.FullName(flags.KeyProtoType), protoreflect.FullName(flags.ValueProtoType))
 		if err != nil {
 			return err
 		}

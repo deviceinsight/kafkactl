@@ -114,7 +114,7 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 		deserializers = append(deserializers, &avroDeserializer, &protobufDeserializer)
 	}
 
-	deserializer, err := CreateProtobufMessageDeserializer(protobufConfig, protoreflect.Name(flags.KeyProtoType), protoreflect.Name(flags.ValueProtoType))
+	deserializer, err := CreateProtobufMessageDeserializer(protobufConfig, protoreflect.FullName(flags.KeyProtoType), protoreflect.FullName(flags.ValueProtoType))
 	if err != nil {
 		return err
 	}
