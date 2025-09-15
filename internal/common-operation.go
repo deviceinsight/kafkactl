@@ -36,6 +36,7 @@ type SaslConfig struct {
 	Password      string
 	Mechanism     string
 	TokenProvider TokenProvider
+	Version       string
 }
 
 type SchemaRegistryConfig struct {
@@ -205,6 +206,7 @@ func CreateClientContext() (ClientContext, error) {
 	context.Sasl.Username = viper.GetString("contexts." + context.Name + ".sasl.username")
 	context.Sasl.Password = viper.GetString("contexts." + context.Name + ".sasl.password")
 	context.Sasl.Mechanism = viper.GetString("contexts." + context.Name + ".sasl.mechanism")
+	context.Sasl.Version = viper.GetString("contexts." + context.Name + ".sasl.version")
 	context.Sasl.TokenProvider.PluginName = viper.GetString("contexts." + context.Name + ".sasl.tokenProvider.plugin")
 	context.Sasl.TokenProvider.Options = viper.GetStringMap("contexts." + context.Name + ".sasl.tokenProvider.options")
 
@@ -291,6 +293,12 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 		config.Net.SASL.Enable = true
 		config.Net.SASL.User = context.Sasl.Username
 		config.Net.SASL.Password = context.Sasl.Password
+		if strings.EqualFold(context.Sasl.Version, "v0") {
+			config.Net.SASL.Version = sarama.SASLHandshakeV0
+		}
+		if strings.EqualFold(context.Sasl.Version, "v1") {
+			config.Net.SASL.Version = sarama.SASLHandshakeV1
+		}
 		switch context.Sasl.Mechanism {
 		case "scram-sha512":
 			config.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA512
