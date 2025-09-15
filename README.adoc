@@ -103,6 +103,8 @@ contexts:
       password: admin
       # optional configure sasl mechanism as plaintext, scram-sha256, scram-sha512, oauth (defaults to plaintext)
       mechanism: oauth
+      # optional configure sasl version as v0, v1 (defaults to not configured), Refer to: https://github.com/IBM/sarama/issues/3000#issuecomment-2415829478
+      version: v0
       # optional tokenProvider configuration (only used for 'sasl.mechanism=oauth')
       tokenprovider:
         # plugin to use as token provider implementation (see plugin section)
