@@ -8,10 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 5.13.0 - 2025-09-22
 
-## 5.12.1 - 2025-08-27
-
 ### Added
 - [#297](https://github.com/deviceinsight/kafkactl/pull/297) Support configuring SASL version
+
+## 5.12.1 - 2025-08-27
 
 ### Fixed
 - [#295](https://github.com/deviceinsight/kafkactl/issues/295) make sure we match the FullName first before using shortname
