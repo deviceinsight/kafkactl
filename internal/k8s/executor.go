@@ -41,6 +41,7 @@ type executor struct {
 	annotations     map[string]string
 	nodeSelector    map[string]string
 	affinity        map[string]any
+	resources       map[string]any
 	tolerations     []internal.K8sToleration
 	ctx             context.Context
 }
@@ -121,6 +122,7 @@ func newExecutor(ctx context.Context, clientContext internal.ClientContext, runn
 		annotations:     clientContext.Kubernetes.Annotations,
 		nodeSelector:    clientContext.Kubernetes.NodeSelector,
 		affinity:        clientContext.Kubernetes.Affinity,
+		resources:       clientContext.Kubernetes.Resources,
 		tolerations:     clientContext.Kubernetes.Tolerations,
 		runner:          runner,
 		ctx:             ctx,

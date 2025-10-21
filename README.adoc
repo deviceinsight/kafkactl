@@ -141,6 +141,14 @@ contexts:
       # optional: nodeSelector to add to the pod
       nodeSelector:
         key: value
+      # optional: resource limits to add to the pod
+      resources:
+        requests:
+          memory: "64Mi"
+          cpu: "250m"
+        limits:
+          memory: "128Mi"
+          cpu: "500m"
 
       # optional: affinity to add to the pod
       affinity:

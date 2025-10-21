@@ -181,6 +181,70 @@ func TestExecWithTLSSecretProvided(t *testing.T) {
 	}
 }
 
+func TestExecWithResourcesProvided(t *testing.T) {
+	var clientContext internal.ClientContext
+	clientContext.Kubernetes.Image = "private.registry.com/deviceinsight/kafkactl"
+	clientContext.Kubernetes.Resources = map[string]any{
+		"requests": map[string]any{
+			"memory": "64Mi",
+			"cpu":    "250m",
+		},
+		"limits": map[string]any{
+			"memory": "128Mi",
+			"cpu":    "500m",
+		},
+	}
+
+	testRunner := TestRunner{}
+	testRunner.response = []byte(sampleKubectlVersionOutput)
+	var runner k8s.Runner = &testRunner
+
+	exec, err := k8s.NewExecutor(context.Background(), clientContext, runner)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = exec.Run("scratch", "/kafkactl", []string{"version"}, []string{"ENV_A=1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	overrideType := extractParam(t, testRunner.args, "--override-type")
+	if overrideType != "json" {
+		t.Fatalf("wrong override-type: %s", overrideType)
+	}
+
+	overrides := extractParam(t, testRunner.args, "--overrides")
+	var podOverrides k8s.JSONPatchType
+	if err := json.Unmarshal([]byte(overrides), &podOverrides); err != nil {
+		t.Fatalf("unable to unmarshall overrides: %v", err)
+	}
+
+	// Find the resources patch operation
+	found := false
+	for _, patch := range podOverrides {
+		if patch.Path == "/spec/containers/0/resources" && patch.Op == "add" {
+			found = true
+			// Verify the value is correct
+			valueBytes, _ := json.Marshal(patch.Value)
+			var resources map[string]map[string]string
+			if err := json.Unmarshal(valueBytes, &resources); err != nil {
+				t.Fatalf("unable to parse resources value: %v", err)
+			}
+			if resources["requests"]["memory"] != "64Mi" ||
+				resources["requests"]["cpu"] != "250m" ||
+				resources["limits"]["memory"] != "128Mi" ||
+				resources["limits"]["cpu"] != "500m" {
+				t.Fatalf("wrong resources in patch: %s", overrides)
+			}
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("resources patch operation not found in overrides: %s", overrides)
+	}
+}
+
 func TestExecWithoutPodOverridesProvided(t *testing.T) {
 	var clientContext internal.ClientContext
 	clientContext.Kubernetes.Image = "private.registry.com/deviceinsight/kafkactl"
