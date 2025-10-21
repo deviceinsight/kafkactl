@@ -27,6 +27,7 @@ type executor struct {
 	kubectlBinary   string
 	image           string
 	imagePullSecret string
+	tlsSecret       string
 	version         Version
 	runner          Runner
 	clientID        string
@@ -108,6 +109,7 @@ func newExecutor(ctx context.Context, clientContext internal.ClientContext, runn
 		version:         version,
 		image:           clientContext.Kubernetes.Image,
 		imagePullSecret: clientContext.Kubernetes.ImagePullSecret,
+		tlsSecret:       clientContext.Kubernetes.TLSSecret,
 		clientID:        internal.GetClientID(&clientContext, ""),
 		kubeConfig:      clientContext.Kubernetes.KubeConfig,
 		kubeContext:     clientContext.Kubernetes.KubeContext,
@@ -153,14 +155,15 @@ func (kubectl *executor) Run(dockerImageType, entryPoint string, kafkactlArgs []
 		kubectlArgs = append(kubectlArgs, "--as", kubectl.asUser)
 	}
 
-	podOverride := kubectl.createPodOverride()
-	if !podOverride.IsEmpty() {
-		podOverrideJSON, err := json.Marshal(podOverride)
+	podOverrides := kubectl.createPodOverrides()
+	if len(podOverrides) > 0 {
+		podOverridesJSON, err := json.Marshal(podOverrides)
 		if err != nil {
-			return errors.Wrap(err, "unable to create override")
+			return errors.Wrap(err, "unable to create overrides")
 		}
 
-		kubectlArgs = append(kubectlArgs, "--overrides", string(podOverrideJSON))
+		kubectlArgs = append(kubectlArgs, "--override-type", "json")
+		kubectlArgs = append(kubectlArgs, "--overrides", string(podOverridesJSON))
 	}
 
 	kubectlArgs = append(kubectlArgs, "--context", kubectl.kubeContext)

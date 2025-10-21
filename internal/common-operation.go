@@ -89,6 +89,7 @@ type K8sConfig struct {
 	Namespace       string
 	Image           string
 	ImagePullSecret string
+	TLSSecret       string
 	ServiceAccount  string
 	AsUser          string
 	KeepPod         bool
@@ -225,6 +226,7 @@ func CreateClientContext() (ClientContext, error) {
 	context.Kubernetes.Namespace = viper.GetString("contexts." + context.Name + ".kubernetes.namespace")
 	context.Kubernetes.Image = viper.GetString("contexts." + context.Name + ".kubernetes.image")
 	context.Kubernetes.ImagePullSecret = viper.GetString("contexts." + context.Name + ".kubernetes.imagePullSecret")
+	context.Kubernetes.TLSSecret = viper.GetString("contexts." + context.Name + ".kubernetes.tlsSecret")
 	context.Kubernetes.ServiceAccount = viper.GetString("contexts." + context.Name + ".kubernetes.serviceAccount")
 	context.Kubernetes.AsUser = viper.GetString("contexts." + context.Name + ".kubernetes.asUser")
 	context.Kubernetes.KeepPod = viper.GetBool("contexts." + context.Name + ".kubernetes.keepPod")
@@ -366,6 +368,10 @@ func resolvePath(key string) (string, error) {
 	filename := viper.GetString(key)
 
 	if filename == "" {
+		return filename, nil
+	}
+
+	if IsKubernetesEnabled() {
 		return filename, nil
 	}
 
