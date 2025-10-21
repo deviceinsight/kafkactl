@@ -5,4 +5,8 @@ FROM scratch
 ENV USER docker
 COPY kafkactl /
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+# add extra paths for files
+ENV EXTRA_PATHS "/etc/ssl/certs/kafkactl"
+
 ENTRYPOINT ["/kafkactl"]

@@ -4,6 +4,21 @@ type imagePullSecretType struct {
 	Name string `json:"name"`
 }
 
+type secretType struct {
+	SecretName string `json:"secretName"`
+}
+
+type volumeType struct {
+	Name   string     `json:"name"`
+	Secret secretType `json:"secret"`
+}
+
+type volumeMountType struct {
+	Name      string `json:"name"`
+	MountPath string `json:"mountPath"`
+	ReadOnly  bool   `json:"readOnly"`
+}
+
 // JSONPatchOperation represents a single JSON Patch operation (RFC 6902)
 type JSONPatchOperation struct {
 	Op    string `json:"op"`
@@ -24,6 +39,24 @@ func (kubectl *executor) createPodOverrides() JSONPatchType {
 			Path: "/spec/imagePullSecrets",
 			Value: []imagePullSecretType{
 				{Name: kubectl.imagePullSecret},
+			},
+		})
+	}
+
+	// mount tls secret if specified
+	if kubectl.tlsSecret != "" {
+		patches = append(patches, JSONPatchOperation{
+			Op:   "add",
+			Path: "/spec/volumes",
+			Value: []volumeType{
+				{Name: "kafkactl-tls", Secret: secretType{SecretName: kubectl.tlsSecret}},
+			},
+		})
+		patches = append(patches, JSONPatchOperation{
+			Op:   "add",
+			Path: "/spec/containers/0/volumeMounts",
+			Value: []volumeMountType{
+				{Name: "kafkactl-tls", MountPath: "/etc/ssl/certs/kafkactl", ReadOnly: true},
 			},
 		})
 	}

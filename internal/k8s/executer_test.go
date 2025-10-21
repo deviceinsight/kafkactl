@@ -101,6 +101,86 @@ func TestExecWithImageAndImagePullSecretProvided(t *testing.T) {
 	}
 }
 
+func TestExecWithTLSSecretProvided(t *testing.T) {
+	var clientContext internal.ClientContext
+	clientContext.Kubernetes.Image = "private.registry.com/deviceinsight/kafkactl"
+	clientContext.Kubernetes.TLSSecret = "my-tls-secret"
+
+	testRunner := TestRunner{}
+	testRunner.response = []byte(sampleKubectlVersionOutput)
+	var runner k8s.Runner = &testRunner
+
+	exec, err := k8s.NewExecutor(context.Background(), clientContext, runner)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = exec.Run("scratch", "/kafkactl", []string{"version"}, []string{"ENV_A=1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	overrideType := extractParam(t, testRunner.args, "--override-type")
+	if overrideType != "json" {
+		t.Fatalf("wrong override-type: %s", overrideType)
+	}
+
+	overrides := extractParam(t, testRunner.args, "--overrides")
+	var podOverrides k8s.JSONPatchType
+	if err := json.Unmarshal([]byte(overrides), &podOverrides); err != nil {
+		t.Fatalf("unable to unmarshall overrides: %v", err)
+	}
+
+	// Find the volumes patch operation
+	foundVolumes := false
+	foundVolumeMounts := false
+
+	for _, patch := range podOverrides {
+		if patch.Path == "/spec/volumes" && patch.Op == "add" {
+			foundVolumes = true
+			// Verify the volume is correct
+			valueBytes, _ := json.Marshal(patch.Value)
+			var volumes []struct {
+				Name   string `json:"name"`
+				Secret struct {
+					SecretName string `json:"secretName"`
+				} `json:"secret"`
+			}
+			if err := json.Unmarshal(valueBytes, &volumes); err != nil {
+				t.Fatalf("unable to parse volumes value: %v", err)
+			}
+			if len(volumes) != 1 || volumes[0].Name != "kafkactl-tls" || volumes[0].Secret.SecretName != clientContext.Kubernetes.TLSSecret {
+				t.Fatalf("wrong volumes in patch: %s", overrides)
+			}
+		}
+
+		if patch.Path == "/spec/containers/0/volumeMounts" && patch.Op == "add" {
+			foundVolumeMounts = true
+			// Verify the volumeMount is correct
+			valueBytes, _ := json.Marshal(patch.Value)
+			var volumeMounts []struct {
+				Name      string `json:"name"`
+				MountPath string `json:"mountPath"`
+				ReadOnly  bool   `json:"readOnly"`
+			}
+			if err := json.Unmarshal(valueBytes, &volumeMounts); err != nil {
+				t.Fatalf("unable to parse volumeMounts value: %v", err)
+			}
+			if len(volumeMounts) != 1 || volumeMounts[0].Name != "kafkactl-tls" ||
+				volumeMounts[0].MountPath != "/etc/ssl/certs/kafkactl" || !volumeMounts[0].ReadOnly {
+				t.Fatalf("wrong volumeMounts in patch: %s", overrides)
+			}
+		}
+	}
+
+	if !foundVolumes {
+		t.Fatalf("volumes patch operation not found in overrides: %s", overrides)
+	}
+	if !foundVolumeMounts {
+		t.Fatalf("volumeMounts patch operation not found in overrides: %s", overrides)
+	}
+}
+
 func TestExecWithoutPodOverridesProvided(t *testing.T) {
 	var clientContext internal.ClientContext
 	clientContext.Kubernetes.Image = "private.registry.com/deviceinsight/kafkactl"

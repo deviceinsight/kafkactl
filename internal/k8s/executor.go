@@ -27,6 +27,7 @@ type executor struct {
 	kubectlBinary   string
 	image           string
 	imagePullSecret string
+	tlsSecret       string
 	version         Version
 	runner          Runner
 	clientID        string
@@ -108,6 +109,7 @@ func newExecutor(ctx context.Context, clientContext internal.ClientContext, runn
 		version:         version,
 		image:           clientContext.Kubernetes.Image,
 		imagePullSecret: clientContext.Kubernetes.ImagePullSecret,
+		tlsSecret:       clientContext.Kubernetes.TLSSecret,
 		clientID:        internal.GetClientID(&clientContext, ""),
 		kubeConfig:      clientContext.Kubernetes.KubeConfig,
 		kubeContext:     clientContext.Kubernetes.KubeContext,

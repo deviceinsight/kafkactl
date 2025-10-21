@@ -114,6 +114,19 @@ func ResolvePath(filename string) (string, error) {
 		}
 	}
 
+	// relative to EXTRA_PATHS
+	if os.Getenv("EXTRA_PATHS") != "" {
+		for _, extraPath := range strings.Split(os.Getenv("EXTRA_PATHS"), ":") {
+			searchPaths[extraPath] = true
+			cfgFilename := filepath.Join(extraPath, filename)
+			if _, err := os.Stat(cfgFilename); err == nil {
+				return cfgFilename, err
+			} else if !errors.Is(err, os.ErrNotExist) {
+				return "", fmt.Errorf("unable to resolve path %q: %v", cfgFilename, err)
+			}
+		}
+	}
+
 	// check in path (e.g. for kubectl binary)
 	if _, err := exec.LookPath(filename); err == nil {
 		return filename, nil

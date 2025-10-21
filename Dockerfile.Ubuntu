@@ -28,4 +28,8 @@ WORKDIR /home/kafkactl
 RUN chown -R kafkactl:kafkactl /home/kafkactl
 
 USER kafkactl
+
+# add extra paths for files
+ENV EXTRA_PATHS "/etc/ssl/certs/kafkactl"
+
 ENTRYPOINT ["kafkactl"]
