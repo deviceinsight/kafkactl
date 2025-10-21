@@ -115,5 +115,14 @@ func (kubectl *executor) createPodOverrides() JSONPatchType {
 		})
 	}
 
+	// Add resources if specified
+	if len(kubectl.resources) > 0 {
+		patches = append(patches, JSONPatchOperation{
+			Op:    "add",
+			Path:  "/spec/containers/0/resources",
+			Value: kubectl.resources,
+		})
+	}
+
 	return patches
 }
