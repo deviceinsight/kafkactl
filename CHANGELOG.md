@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 5.14.0 - 2025-10-21
+
 ### Added
 - [#300](https://github.com/deviceinsight/kafkactl/issues/300) Allow mounting secrets with certificates to kafkactl pod
 - [#253](https://github.com/deviceinsight/kafkactl/issues/253) Allow configuring k8s resource requests/limits
