@@ -1,74 +1,86 @@
 package k8s
 
-import "github.com/deviceinsight/kafkactl/v5/internal"
-
 type imagePullSecretType struct {
 	Name string `json:"name"`
 }
 
-type metadataType struct {
-	Labels      *map[string]string `json:"labels,omitempty"`
-	Annotations *map[string]string `json:"annotations,omitempty"`
+// JSONPatchOperation represents a single JSON Patch operation (RFC 6902)
+type JSONPatchOperation struct {
+	Op    string `json:"op"`
+	Path  string `json:"path"`
+	Value any    `json:"value,omitempty"`
 }
 
-type specType struct {
-	ImagePullSecrets   []imagePullSecretType     `json:"imagePullSecrets,omitempty"`
-	ServiceAccountName *string                   `json:"serviceAccountName,omitempty"`
-	NodeSelector       *map[string]string        `json:"nodeSelector,omitempty"`
-	Affinity           *map[string]any           `json:"affinity,omitempty"`
-	Tolerations        *[]internal.K8sToleration `json:"tolerations,omitempty"`
-}
+// JSONPatchType is an array of JSON Patch operations
+type JSONPatchType []JSONPatchOperation
 
-type PodOverrideType struct {
-	APIVersion string        `json:"apiVersion"`
-	Metadata   *metadataType `json:"metadata,omitempty"`
-	Spec       *specType     `json:"spec,omitempty"`
-}
+func (kubectl *executor) createPodOverrides() JSONPatchType {
+	var patches JSONPatchType
 
-func (o *PodOverrideType) IsEmpty() bool {
-	return o.Metadata == nil && o.Spec == nil
-}
-
-func (kubectl *executor) createPodOverride() PodOverrideType {
-	var override PodOverrideType
-	override.APIVersion = "v1"
-
-	if kubectl.serviceAccount != "" || kubectl.imagePullSecret != "" || len(kubectl.nodeSelector) > 0 || len(kubectl.affinity) > 0 || len(kubectl.tolerations) > 0 {
-		override.Spec = &specType{}
-
-		if kubectl.serviceAccount != "" {
-			override.Spec.ServiceAccountName = &kubectl.serviceAccount
-		}
-
-		if kubectl.imagePullSecret != "" {
-			override.Spec.ImagePullSecrets = make([]imagePullSecretType, 1)
-			override.Spec.ImagePullSecrets[0].Name = kubectl.imagePullSecret
-		}
-
-		if len(kubectl.nodeSelector) > 0 {
-			override.Spec.NodeSelector = &kubectl.nodeSelector
-		}
-
-		if len(kubectl.affinity) > 0 {
-			override.Spec.Affinity = &kubectl.affinity
-		}
-
-		if len(kubectl.tolerations) > 0 {
-			override.Spec.Tolerations = &kubectl.tolerations
-		}
+	// Add imagePullSecrets if specified
+	if kubectl.imagePullSecret != "" {
+		patches = append(patches, JSONPatchOperation{
+			Op:   "add",
+			Path: "/spec/imagePullSecrets",
+			Value: []imagePullSecretType{
+				{Name: kubectl.imagePullSecret},
+			},
+		})
 	}
 
-	if len(kubectl.labels) > 0 || len(kubectl.annotations) > 0 {
-		override.Metadata = &metadataType{}
-
-		if len(kubectl.labels) > 0 {
-			override.Metadata.Labels = &kubectl.labels
-		}
-
-		if len(kubectl.annotations) > 0 {
-			override.Metadata.Annotations = &kubectl.annotations
-		}
+	// Add serviceAccountName if specified
+	if kubectl.serviceAccount != "" {
+		patches = append(patches, JSONPatchOperation{
+			Op:    "add",
+			Path:  "/spec/serviceAccountName",
+			Value: kubectl.serviceAccount,
+		})
 	}
 
-	return override
+	// Add nodeSelector if specified
+	if len(kubectl.nodeSelector) > 0 {
+		patches = append(patches, JSONPatchOperation{
+			Op:    "add",
+			Path:  "/spec/nodeSelector",
+			Value: kubectl.nodeSelector,
+		})
+	}
+
+	// Add affinity if specified
+	if len(kubectl.affinity) > 0 {
+		patches = append(patches, JSONPatchOperation{
+			Op:    "add",
+			Path:  "/spec/affinity",
+			Value: kubectl.affinity,
+		})
+	}
+
+	// Add tolerations if specified
+	if len(kubectl.tolerations) > 0 {
+		patches = append(patches, JSONPatchOperation{
+			Op:    "add",
+			Path:  "/spec/tolerations",
+			Value: kubectl.tolerations,
+		})
+	}
+
+	// Add labels if specified
+	if len(kubectl.labels) > 0 {
+		patches = append(patches, JSONPatchOperation{
+			Op:    "add",
+			Path:  "/metadata/labels",
+			Value: kubectl.labels,
+		})
+	}
+
+	// Add annotations if specified
+	if len(kubectl.annotations) > 0 {
+		patches = append(patches, JSONPatchOperation{
+			Op:    "add",
+			Path:  "/metadata/annotations",
+			Value: kubectl.annotations,
+		})
+	}
+
+	return patches
 }

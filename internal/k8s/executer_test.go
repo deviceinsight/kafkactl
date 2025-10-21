@@ -68,14 +68,36 @@ func TestExecWithImageAndImagePullSecretProvided(t *testing.T) {
 		t.Fatalf("wrong image: %s", image)
 	}
 
+	overrideType := extractParam(t, testRunner.args, "--override-type")
+	if overrideType != "json" {
+		t.Fatalf("wrong override-type: %s", overrideType)
+	}
+
 	overrides := extractParam(t, testRunner.args, "--overrides")
-	var podOverrides k8s.PodOverrideType
+	var podOverrides k8s.JSONPatchType
 	if err := json.Unmarshal([]byte(overrides), &podOverrides); err != nil {
 		t.Fatalf("unable to unmarshall overrides: %v", err)
 	}
-	if len(podOverrides.Spec.ImagePullSecrets) != 1 ||
-		podOverrides.Spec.ImagePullSecrets[0].Name != clientContext.Kubernetes.ImagePullSecret {
-		t.Fatalf("wrong overrides: %s", overrides)
+
+	// Find the imagePullSecrets patch operation
+	found := false
+	for _, patch := range podOverrides {
+		if patch.Path == "/spec/imagePullSecrets" && patch.Op == "add" {
+			found = true
+			// Verify the value is correct
+			valueBytes, _ := json.Marshal(patch.Value)
+			var secrets []struct{ Name string }
+			if err := json.Unmarshal(valueBytes, &secrets); err != nil {
+				t.Fatalf("unable to parse imagePullSecrets value: %v", err)
+			}
+			if len(secrets) != 1 || secrets[0].Name != clientContext.Kubernetes.ImagePullSecret {
+				t.Fatalf("wrong imagePullSecrets in patch: %s", overrides)
+			}
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("imagePullSecrets patch operation not found in overrides: %s", overrides)
 	}
 }
 
