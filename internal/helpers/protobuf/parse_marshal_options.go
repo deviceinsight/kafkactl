@@ -17,7 +17,7 @@ const optionEmitUnpopulated = "emitunpopulated"
 const optionEmitDefaultValues = "emitdefaultvalues"
 
 var AllMarshalOptions = []string{optionAllowPartial, optionUseProtoNames,
-	optionUseEnumNumbers, optionEmitDefaultValues, optionEmitDefaultValues}
+	optionUseEnumNumbers, optionEmitDefaultValues}
 
 func ParseMarshalOptions(rawOptions []string, options internal.ProtobufMarshalOptions) (internal.ProtobufMarshalOptions, error) {
 

@@ -203,6 +203,75 @@ func TestConsumeRegistryProtobufWithNestedDependenciesIntegration(t *testing.T) 
 	testutil.AssertEquals(t, fmt.Sprintf("test-key#%s", value), kafkaCtl.GetStdOut())
 }
 
+func TestConsumeRegistryEmitDefaultValuesIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	alarmMsg := `syntax = "proto3";
+
+		import "google/protobuf/timestamp.proto";
+		
+		message Alarm {
+		  message Metadata {
+			string key = 1;
+			string value = 2;
+		  }
+		  string uid = 1;
+		  optional google.protobuf.Timestamp timestamp = 2; //overrides default timestamp for this specific alarm
+		  bool active = 3;
+		  repeated Metadata metadata = 4;
+		}
+		`
+
+	alarmsMsg := `syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "alarm/protobuf/alarm.proto";
+
+message Alarms {
+  string fqsn = 1;
+  google.protobuf.Timestamp timestamp = 2; //is used as default timestamp for every alarm
+  repeated Alarm alarms = 3;
+  google.protobuf.Timestamp agentIngestionTimestamp = 4; // timestamp when the agent ingested the data. This is used to calculate the delay between the ingestion and the processing of the data
+}
+  `
+
+	value := `{
+  "fqsn": "opcua-simulator-asset",
+  "timestamp": "2025-10-23T13:49:17.147436255Z",
+  "alarms": [
+    {
+      "uid": "nx_wtg_al-wyk1ms",
+      "timestamp": "2025-10-23T13:49:17.142109984Z",
+      "active": true,
+      "metadata": []
+    },
+    {
+      "uid": "nx_wtg_al-wy4tqi",
+      "timestamp": "2025-10-23T13:49:17.142109984Z",
+      "active": false,
+      "metadata": []
+    }
+  ],
+  "agentIngestionTimestamp": "2025-10-23T13:49:17.147281616Z"
+}`
+
+	topicName := testutil.CreateTopic(t, "consume-topic")
+	testutil.RegisterSchema(t, "alarm", alarmMsg, srclient.Protobuf)
+	testutil.RegisterSchema(t, topicName+"-value", alarmsMsg, srclient.Protobuf, srclient.Reference{Name: "alarm/protobuf/alarm.proto", Version: 1, Subject: "alarm"})
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", value); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-keys", "--proto-marshal-option", "emitdefaultvalues=true"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, fmt.Sprintf("test-key#%s", removeWhitespace(value)), removeWhitespace(kafkaCtl.GetStdOut()))
+}
+
 func TestConsumeRegistryProtobufWithWellKnowTypeIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
@@ -814,4 +883,14 @@ func TestConsumePartitionsK8sIntegration(t *testing.T) {
 			}
 		})
 	}
+}
+
+func removeWhitespace(s string) string {
+	s = strings.ReplaceAll(s, " ", "")
+	s = strings.ReplaceAll(s, "\t", "")
+	s = strings.ReplaceAll(s, "\n", "")
+	s = strings.ReplaceAll(s, "\v", "")
+	s = strings.ReplaceAll(s, "\f", "")
+	s = strings.ReplaceAll(s, "\r", "")
+	return s
 }
