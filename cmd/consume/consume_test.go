@@ -206,58 +206,43 @@ func TestConsumeRegistryProtobufWithNestedDependenciesIntegration(t *testing.T) 
 func TestConsumeRegistryEmitDefaultValuesIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
-	alarmMsg := `syntax = "proto3";
-
-		import "google/protobuf/timestamp.proto";
-		
-		message Alarm {
+	singleMsg := `syntax = "proto3";
+	
+		message MyMessage {
 		  message Metadata {
 			string key = 1;
 			string value = 2;
 		  }
-		  string uid = 1;
-		  optional google.protobuf.Timestamp timestamp = 2; //overrides default timestamp for this specific alarm
 		  bool active = 3;
 		  repeated Metadata metadata = 4;
 		}
 		`
 
-	alarmsMsg := `syntax = "proto3";
+	listMsg := `syntax = "proto3";
 
-import "google/protobuf/timestamp.proto";
-import "alarm/protobuf/alarm.proto";
+import "my-message.proto";
 
-message Alarms {
-  string fqsn = 1;
-  google.protobuf.Timestamp timestamp = 2; //is used as default timestamp for every alarm
-  repeated Alarm alarms = 3;
-  google.protobuf.Timestamp agentIngestionTimestamp = 4; // timestamp when the agent ingested the data. This is used to calculate the delay between the ingestion and the processing of the data
+message MyList {
+  repeated MyMessage messages = 3;
 }
   `
 
 	value := `{
-  "fqsn": "opcua-simulator-asset",
-  "timestamp": "2025-10-23T13:49:17.147436255Z",
-  "alarms": [
+  "messages": [
     {
-      "uid": "nx_wtg_al-wyk1ms",
-      "timestamp": "2025-10-23T13:49:17.142109984Z",
       "active": true,
       "metadata": []
     },
     {
-      "uid": "nx_wtg_al-wy4tqi",
-      "timestamp": "2025-10-23T13:49:17.142109984Z",
       "active": false,
       "metadata": []
     }
-  ],
-  "agentIngestionTimestamp": "2025-10-23T13:49:17.147281616Z"
+  ]
 }`
 
 	topicName := testutil.CreateTopic(t, "consume-topic")
-	testutil.RegisterSchema(t, "alarm", alarmMsg, srclient.Protobuf)
-	testutil.RegisterSchema(t, topicName+"-value", alarmsMsg, srclient.Protobuf, srclient.Reference{Name: "alarm/protobuf/alarm.proto", Version: 1, Subject: "alarm"})
+	testutil.RegisterSchema(t, "my-message", singleMsg, srclient.Protobuf)
+	testutil.RegisterSchema(t, topicName+"-value", listMsg, srclient.Protobuf, srclient.Reference{Name: "my-message.proto", Version: 1, Subject: "my-message"})
 
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", value); err != nil {
