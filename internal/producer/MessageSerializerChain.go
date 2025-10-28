@@ -3,6 +3,8 @@ package producer
 import (
 	"github.com/IBM/sarama"
 	"github.com/pkg/errors"
+
+	"github.com/deviceinsight/kafkactl/v5/internal/producer/input"
 )
 
 type MessageSerializerChain struct {
@@ -10,22 +12,32 @@ type MessageSerializerChain struct {
 	serializers []messageSerializer
 }
 
-func (serializer MessageSerializerChain) Serialize(key, value []byte, flags Flags) (*sarama.ProducerMessage, error) {
+func (serializer MessageSerializerChain) Serialize(msg input.Message, flags Flags) (*sarama.ProducerMessage, error) {
 	recordHeaders, err := createRecordHeaders(flags)
 	if err != nil {
 		return nil, err
 	}
+	for k, v := range msg.Headers {
+		recordHeaders = append(recordHeaders, sarama.RecordHeader{
+			Key:   sarama.ByteEncoder(k),
+			Value: sarama.ByteEncoder(v),
+		})
+	}
 	message := &sarama.ProducerMessage{Topic: serializer.topic, Partition: flags.Partition, Headers: recordHeaders}
 
-	if key != nil {
-		bytes, err := serializer.serializeKey(key, flags)
+	if msg.Key != nil {
+		bytes, err := serializer.serializeKey([]byte(*msg.Key), flags)
 		if err != nil {
 			return nil, err
 		}
 		message.Key = sarama.ByteEncoder(bytes)
 	}
+	var out []byte
+	if msg.Value != nil {
+		out = []byte(*msg.Value)
+	}
 
-	bytes, err := serializer.serializeValue(value, flags)
+	bytes, err := serializer.serializeValue(out, flags)
 	if err != nil {
 		return nil, err
 	}

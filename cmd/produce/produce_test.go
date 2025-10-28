@@ -16,10 +16,11 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/dynamicpb"
 
+	"github.com/riferrei/srclient"
+
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
-	"github.com/riferrei/srclient"
 )
 
 func TestProduceWithKeyAndValueIntegration(t *testing.T) {
@@ -550,6 +551,28 @@ func TestProduceWithJSONFileIntegration(t *testing.T) {
 	}
 
 	testutil.AssertEquals(t, "1#a\n2#b\n3#c", kafkaCtl.GetStdOut())
+}
+
+func TestProduceWithJSONWithFileIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+	topic := testutil.CreateTopic(t, "produce-topic-json")
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	dataFilePath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata")
+
+	if _, err := kafkaCtl.Execute("produce", topic,
+		"--file", filepath.Join(dataFilePath, "msg.json"),
+		"--input-format", "json"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "3 messages produced", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topic, "--from-beginning", "--print-keys", "--print-headers", "--exit"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "a:b,c:1#1#a\n#2#b\nx:y#3#c", kafkaCtl.GetStdOut())
 }
 
 func TestProduceWithJSONFileBase64ValuesIntegration(t *testing.T) {
