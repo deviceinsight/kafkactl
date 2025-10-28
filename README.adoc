@@ -580,7 +580,7 @@ It is also possible to produce messages in json format:
 
 [,bash]
 ----
-# each line in myfile.json is expected to contain a json object with fields key, value
+# each line in myfile.json is expected to contain a json object with fields key, value and headers
 kafkactl produce my-topic --file=myfile.json --input-format=json
 cat myfile.json | kafkactl produce my-topic --input-format=json
 ----

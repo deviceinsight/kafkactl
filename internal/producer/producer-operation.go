@@ -11,12 +11,13 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"github.com/IBM/sarama"
+	"github.com/pkg/errors"
+	"go.uber.org/ratelimit"
+
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/deviceinsight/kafkactl/v5/internal/producer/input"
 	"github.com/deviceinsight/kafkactl/v5/internal/util"
-	"github.com/pkg/errors"
-	"go.uber.org/ratelimit"
 )
 
 type Flags struct {
@@ -132,9 +133,9 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 		var message *sarama.ProducerMessage
 
 		if flags.NullValue {
-			message, err = serializers.Serialize([]byte(flags.Key), nil, flags)
+			message, err = serializers.Serialize(input.Message{Key: &flags.Key}, flags)
 		} else {
-			message, err = serializers.Serialize([]byte(flags.Key), []byte(flags.Value), flags)
+			message, err = serializers.Serialize(input.Message{Key: &flags.Key, Value: &flags.Value}, flags)
 		}
 
 		if err != nil {
@@ -218,7 +219,7 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 			}
 
 			messageCount++
-			message, err := serializers.Serialize([]byte(inputMessage.Key), []byte(inputMessage.Value), flags)
+			message, err := serializers.Serialize(inputMessage, flags)
 			if err != nil {
 				return errors.Wrap(err, "Failed to produce message")
 			}

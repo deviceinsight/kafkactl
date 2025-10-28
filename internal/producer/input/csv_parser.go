@@ -5,9 +5,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/deviceinsight/kafkactl/v5/internal/util"
-	"github.com/pkg/errors"
 )
 
 const defaultKeyColumnIdx = 0
@@ -35,7 +36,7 @@ func NewCsvParser(key string, separator string) Parser {
 func (p *csvParser) ParseLine(line string) (Message, error) {
 
 	if p.separator == "" {
-		return Message{Key: p.key, Value: line}, nil
+		return Message{Key: &p.key, Value: &line}, nil
 	}
 
 	input := strings.Split(line, util.ConvertControlChars(p.separator))
@@ -52,7 +53,7 @@ func (p *csvParser) ParseLine(line string) (Message, error) {
 		return Message{}, fmt.Errorf("line contains unexpected amount of separators:\n%s", line)
 	}
 
-	return Message{input[p.keyColumnIdx], input[p.valueColumnIdx]}, nil
+	return Message{&input[p.keyColumnIdx], &input[p.valueColumnIdx], nil}, nil
 }
 
 func resolveColumns(line []string) (keyColumnIdx, valueColumnIdx, columnCount int, err error) {
