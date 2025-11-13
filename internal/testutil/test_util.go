@@ -297,7 +297,7 @@ func (kafkactl *KafkaCtlTestCommand) GetStdOutLines() []string {
 
 	stdOutput := space.ReplaceAllString(kafkactl.GetStdOut(), "|")
 
-	return strings.Split(stdOutput, "\n")
+	return strings.Split(strings.TrimSpace(stdOutput), "\n")
 }
 
 func (kafkactl *KafkaCtlTestCommand) GetStdErr() string {

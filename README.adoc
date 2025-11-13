@@ -583,6 +583,8 @@ It is also possible to produce messages in json format:
 # each line in myfile.json is expected to contain a json object with fields key, value and headers
 kafkactl produce my-topic --file=myfile.json --input-format=json
 cat myfile.json | kafkactl produce my-topic --input-format=json
+echo '{"value": "my-value"}' | kafkactl produce my-topic --input-format=json
+echo '{"key": "my-key", "value": "my-value", "headers": {"my-header": "val"}}' | kafkactl produce my-topic --input-format=json
 ----
 
 the number of messages produced per second can be controlled with the `--rate` parameter:
