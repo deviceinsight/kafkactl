@@ -523,7 +523,7 @@ kafkactl consume TOPIC [flags]
   -t, --print-timestamps                                                                 print message timestamps
       --proto-file strings                                                               additional protobuf description file for searching message description
       --proto-import-path strings                                                        additional path to search files listed in proto 'import' directive
-      --proto-marshal-option strings                                                     json marshall options to use for protobuf. Format is key=value. Valid keys are allowpartial,useprotonames,useenumnumbers,emitdefaultvalues,emitdefaultvalues
+      --proto-marshal-option strings                                                     json marshall options to use for protobuf. Format is key=value. Valid keys are allowpartial,useprotonames,useenumnumbers,emitdefaultvalues
       --protoset-file strings                                                            additional compiled protobuf description file for searching message description
   -s, --separator string                                                                 separator to split key and value (default "#")
       --tail int                                                                         show only the last n messages on the topic (default -1)
