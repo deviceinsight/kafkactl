@@ -1,3 +1,6 @@
-{"key": "1", "value": "a"}
+{"key": "1", "value": "a","headers":  {"a":  "b", "c":  "1"}}
 {"key": "2", "value": "b"}
-{"key": "3", "value": "c"}
+{"key": "3", "value": "c", "headers":  {"x":  "y"}}
+{"value":  "value-only"}
+{"key":  "key-only"}
+{}

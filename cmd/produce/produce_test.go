@@ -16,10 +16,11 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/dynamicpb"
 
+	"github.com/riferrei/srclient"
+
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
-	"github.com/riferrei/srclient"
 )
 
 func TestProduceWithKeyAndValueIntegration(t *testing.T) {
@@ -543,13 +544,14 @@ func TestProduceWithJSONFileIntegration(t *testing.T) {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	testutil.AssertEquals(t, "3 messages produced", kafkaCtl.GetStdOut())
+	testutil.AssertEquals(t, "6 messages produced", kafkaCtl.GetStdOut())
 
-	if _, err := kafkaCtl.Execute("consume", topic, "--from-beginning", "--print-keys", "--exit"); err != nil {
+	if _, err := kafkaCtl.Execute("consume", topic, "--from-beginning", "--print-keys", "--print-headers", "--exit"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 
-	testutil.AssertEquals(t, "1#a\n2#b\n3#c", kafkaCtl.GetStdOut())
+	expectedMessages := []string{"a:b,c:1#1#a", "#2#b", "x:y#3#c", "##value-only", "#key-only#null", "##null"}
+	testutil.AssertArraysEquals(t, expectedMessages, kafkaCtl.GetStdOutLines())
 }
 
 func TestProduceWithJSONFileBase64ValuesIntegration(t *testing.T) {
