@@ -21,3 +21,5 @@ kafkactl.yml
 ### logs
 *.log
 /kafkactl-completion.bash
+# Added by goreleaser init:
+dist/

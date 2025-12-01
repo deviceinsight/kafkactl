@@ -1,3 +1,5 @@
+version: 2
+
 before:
   hooks:
     - go mod download
@@ -17,7 +19,7 @@ archives:
   - id: default
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [ 'zip' ]
     files:
       - LICENSE.md
       - CHANGELOG.md
@@ -40,7 +42,7 @@ release:
   disable: false
   draft: false
 
-brews:
+homebrew_casks:
   -
     repository:
       owner: deviceinsight
@@ -50,7 +52,7 @@ brews:
       name: goreleaserbot
       email: goreleaser@device-insight.com
 
-    folder: Formula
+    directory: Formula
 
     homepage: https://www.device-insight.com/
 
@@ -80,21 +82,23 @@ winget:
           name: winget-pkgs
           branch: master
 
-dockers:
-  -
-    skip_push: false
+dockers_v2:
+  - id: ubuntu
     dockerfile: Dockerfile.Ubuntu
-    image_templates:
-      - "deviceinsight/kafkactl:latest-ubuntu"
-      - "deviceinsight/kafkactl:{{ .Tag }}-ubuntu"
-      - "deviceinsight/kafkactl:latest"
-      - "deviceinsight/kafkactl:{{ .Tag }}"
-  -
-    skip_push: false
+    images:
+      - "deviceinsight/kafkactl"
+    tags:
+      - "latest-ubuntu"
+      - "{{ .Tag }}-ubuntu"
+      - "latest"
+      - "{{ .Tag }}"
+  - id: scratch
     dockerfile: Dockerfile.Scratch
-    image_templates:
-      - "deviceinsight/kafkactl:latest-scratch"
-      - "deviceinsight/kafkactl:{{ .Tag }}-scratch"
+    images:
+      - "deviceinsight/kafkactl"
+    tags:
+      - "latest-scratch"
+      - "{{ .Tag }}-scratch"
 
 publishers:
   - name: aur-kafkactl
