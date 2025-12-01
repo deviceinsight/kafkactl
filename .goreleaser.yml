@@ -92,6 +92,9 @@ dockers_v2:
       - "{{ .Tag }}-ubuntu"
       - "latest"
       - "{{ .Tag }}"
+    platforms:
+      - linux/amd64
+      - linux/arm64
   - id: scratch
     dockerfile: Dockerfile.Scratch
     images:
@@ -99,6 +102,9 @@ dockers_v2:
     tags:
       - "latest-scratch"
       - "{{ .Tag }}-scratch"
+    platforms:
+      - linux/amd64
+      - linux/arm64
 
 publishers:
   - name: aur-kafkactl
