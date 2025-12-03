@@ -28,7 +28,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v6
         with:
           version: '~> v2'
-          args: release --clean --debug
+          args: release --clean --verbose
         env:
           # create personal access token: https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
