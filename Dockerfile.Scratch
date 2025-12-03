@@ -1,12 +1,13 @@
-FROM alpine:latest as certs
+FROM alpine:latest AS certs
 RUN apk --update --no-cache add ca-certificates && update-ca-certificates
 
 FROM scratch
-ENV USER docker
-COPY kafkactl /
+ARG TARGETPLATFORM
+ENV USER=docker
+COPY $TARGETPLATFORM/kafkactl /
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 # add extra paths for files
-ENV EXTRA_PATHS "/etc/ssl/certs/kafkactl"
+ENV EXTRA_PATHS="/etc/ssl/certs/kafkactl"
 
 ENTRYPOINT ["/kafkactl"]

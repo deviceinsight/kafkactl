@@ -1,6 +1,7 @@
 FROM ubuntu:latest
-ENV USER docker
-COPY kafkactl /usr/local/bin
+ARG TARGETPLATFORM
+ENV USER=docker
+COPY $TARGETPLATFORM/kafkactl /usr/local/bin
 RUN apt-get update && apt-get install -y bash-completion
 
 # install bash completion script
@@ -22,7 +23,7 @@ RUN echo '[[ -n $TERM_HEIGHT ]] && stty rows $TERM_HEIGHT cols $TERM_WIDTH' >> /
 # Install CA certificates
 RUN apt-get update && apt-get install -y \
     ca-certificates \
-&& rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /home/kafkactl
 RUN chown -R kafkactl:kafkactl /home/kafkactl
@@ -30,6 +31,6 @@ RUN chown -R kafkactl:kafkactl /home/kafkactl
 USER kafkactl
 
 # add extra paths for files
-ENV EXTRA_PATHS "/etc/ssl/certs/kafkactl"
+ENV EXTRA_PATHS="/etc/ssl/certs/kafkactl"
 
 ENTRYPOINT ["kafkactl"]
