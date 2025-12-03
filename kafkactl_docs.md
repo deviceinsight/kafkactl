@@ -516,6 +516,7 @@ kafkactl consume TOPIC [flags]
       --offset partition=offset (for partitions not specified, other parameters apply)   offsets in format partition=offset (for partitions not specified, other parameters apply)
   -o, --output string                                                                    output format. One of: json|yaml
   -p, --partitions ints                                                                  partitions to consume. The default is to consume from all partitions.
+      --print-all                                                                        print all messages details
       --print-headers                                                                    print message headers
   -k, --print-keys                                                                       print message keys
       --print-partitions                                                                 print message partitions
