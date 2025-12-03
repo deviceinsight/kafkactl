@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - [#306](https://github.com/deviceinsight/kafkactl/pull/306) Support building arm image by updating to goreleaser v2 
+- new flag `--print-all` for consume command which combines the other print parameters into one
 
 ## 5.15.0 - 2025-11-13
 

@@ -27,6 +27,7 @@ type Flags struct {
 	PrintTimestamps     bool
 	PrintSchema         bool
 	PrintHeaders        bool
+	PrintAll            bool
 	OutputFormat        string
 	Separator           string
 	Group               string

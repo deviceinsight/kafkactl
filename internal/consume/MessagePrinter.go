@@ -36,19 +36,21 @@ func newMessage(consumerMsg *sarama.ConsumerMessage, flags Flags, key, value *De
 		Value:     encodeBytes(value.data, flags.EncodeValue),
 	}
 
-	if flags.PrintKeys {
-		msg.Key = encodeBytes(key.data, flags.EncodeKey)
+	if flags.PrintAll || flags.PrintKeys {
+		if key != nil {
+			msg.Key = encodeBytes(key.data, flags.EncodeKey)
+		}
 	}
 
-	if flags.PrintTimestamps && !consumerMsg.Timestamp.IsZero() {
+	if flags.PrintAll || flags.PrintTimestamps && !consumerMsg.Timestamp.IsZero() {
 		msg.Timestamp = &consumerMsg.Timestamp
 	}
 
-	if flags.PrintHeaders {
+	if flags.PrintAll || flags.PrintHeaders {
 		msg.Headers = encodeRecordHeaders(consumerMsg.Headers)
 	}
 
-	if flags.PrintSchema {
+	if flags.PrintAll || flags.PrintSchema {
 		if key != nil && key.schemaID != nil {
 			msg.KeySchema = &key.schema
 			msg.KeySchemaID = key.schemaID
@@ -67,7 +69,7 @@ func printMessage(msg *message, flags Flags) error {
 	if flags.OutputFormat == "" {
 		var row []string
 
-		if flags.PrintHeaders {
+		if flags.PrintAll || flags.PrintHeaders {
 			if msg.Headers != nil {
 				column := toSortedArray(msg.Headers)
 				row = append(row, strings.Join(column[:], ","))
@@ -75,24 +77,24 @@ func printMessage(msg *message, flags Flags) error {
 				row = append(row, "")
 			}
 		}
-		if flags.PrintPartitions {
+		if flags.PrintAll || flags.PrintPartitions {
 			row = append(row, strconv.Itoa(int(msg.Partition)))
 		}
-		if flags.PrintKeys {
+		if flags.PrintAll || flags.PrintKeys {
 			if msg.Key != nil {
 				row = append(row, *msg.Key)
 			} else {
 				row = append(row, "")
 			}
 		}
-		if flags.PrintTimestamps {
+		if flags.PrintAll || flags.PrintTimestamps {
 			if msg.Timestamp != nil {
 				row = append(row, (*msg.Timestamp).Format(time.RFC3339))
 			} else {
 				row = append(row, "")
 			}
 		}
-		if flags.PrintSchema {
+		if flags.PrintAll || flags.PrintSchema {
 			if msg.KeySchemaID != nil {
 				row = append(row, *msg.KeySchema)
 				row = append(row, strconv.Itoa(*msg.KeySchemaID))

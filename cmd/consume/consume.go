@@ -33,6 +33,7 @@ func NewConsumeCmd() *cobra.Command {
 	cmdConsume.Flags().BoolVarP(&flags.PrintTimestamps, "print-timestamps", "t", false, "print message timestamps")
 	cmdConsume.Flags().BoolVarP(&flags.PrintSchema, "print-schema", "a", false, "print details about schema used for decoding")
 	cmdConsume.Flags().BoolVarP(&flags.PrintHeaders, "print-headers", "", false, "print message headers")
+	cmdConsume.Flags().BoolVarP(&flags.PrintAll, "print-all", "", false, "print all messages details")
 	cmdConsume.Flags().IntVarP(&flags.Tail, "tail", "", -1, "show only the last n messages on the topic")
 	cmdConsume.Flags().StringVarP(&flags.FromTimestamp, "from-timestamp", "", "", "consume data from offset of given timestamp")
 	cmdConsume.Flags().StringVarP(&flags.ToTimestamp, "to-timestamp", "", "", "consume data till offset of given timestamp")
