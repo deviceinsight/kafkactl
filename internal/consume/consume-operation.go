@@ -15,10 +15,20 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"regexp"
+
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/pkg/errors"
+)
+
+type FilterMode string
+
+const (
+	FilterModeAny     FilterMode = "any"
+	FilterModeKey     FilterMode = "key"
+	FilterModeMessage FilterMode = "message"
 )
 
 type Flags struct {
@@ -48,6 +58,17 @@ type Flags struct {
 	KeyProtoType        string
 	ValueProtoType      string
 	IsolationLevel      string
+
+	// FilterKeyword filters keys and values (applies only to textual/deserialized bytes)
+	FilterKeyword string
+	// FilterByRegex treats FilterKeyword as a regular expression
+	FilterByRegex bool
+
+	// FilterMode filter mode
+	FilterMode string
+
+	// compiled regex for use at runtime (not set by caller)
+	filterRegexp *regexp.Regexp
 }
 
 type ConsumedMessage struct {
@@ -61,6 +82,15 @@ type ConsumedMessage struct {
 type Operation struct{}
 
 func (operation *Operation) Consume(topic string, flags Flags) error {
+	// If a keyword is provided and regex mode is enabled, compile it once up-front
+	if flags.FilterKeyword != "" && flags.FilterByRegex {
+		re, err := regexp.Compile(flags.FilterKeyword)
+		if err != nil {
+			return fmt.Errorf("invalid regex for --filter-keyword: %w", err)
+		}
+		flags.filterRegexp = re
+	}
+
 	var (
 		clientContext internal.ClientContext
 		err           error

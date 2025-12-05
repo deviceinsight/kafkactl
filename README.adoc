@@ -825,6 +825,34 @@ or with protoset
 kafkactl consume <topic> --key-proto-type TopicKey --value-proto-type TopicValue --protoset-file kafkamsg.protoset
 ----
 
+You can also filter consumed messages by a keyword (applies only to textual deserialized keys/values):
+
+[,bash]
+----
+kafkactl consume <topic> --filter-keyword "needle"
+----
+
+To treat the keyword as a regular expression, add the --filter-by-regex flag. Note: regex matching uses Go's RE2 syntax and only applies when keys/values are textual (utf8).
+
+You can control *where* the filter applies using `--filter-mode`:
+
+* `any` (default) — match if *either* key OR message contains the keyword (substring) or matches the regex.
+* `key` — only match against the deserialized key (ignore message body when deciding whether to print).
+* `message` — only match against the deserialized message value (ignore key when deciding whether to print).
+
+Examples:
+
+[,bash]
+----
+# Only print messages whose key matches the literal "user-12"
+kafkactl consume <topic> --filter-keyword "user-12" --filter-mode key
+
+# Only print messages whose value matches the regex (RE2 syntax)
+kafkactl consume <topic> --filter-keyword "^ERROR: .*" --filter-by-regex --filter-mode message
+
+# Default behaviour (any): print when key OR value matches
+kafkactl consume <topic> --filter-keyword "needle"
+----
 
 === Topic management
 
