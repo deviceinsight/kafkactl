@@ -6,8 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- new options for filtering key/value of messages in consume command
+
 ## 5.16.0 - 2025-12-03
-- [#306](https://github.com/deviceinsight/kafkactl/pull/306) Support building arm image by updating to goreleaser v2 
+- [#306](https://github.com/deviceinsight/kafkactl/pull/306) Support building arm image by updating to goreleaser v2
 - new flag `--print-all` for consume command which combines the other print parameters into one
 - decoding of AMQP-encoded header values
 
@@ -16,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 5.14.0 - 2025-10-21
 
 ### Added
-- [#304](https://github.com/deviceinsight/kafkactl/pull/304) Add support for headers when using file input to produce 
+- [#304](https://github.com/deviceinsight/kafkactl/pull/304) Add support for headers when using file input to produce
 - [#300](https://github.com/deviceinsight/kafkactl/issues/300) Allow mounting secrets with certificates to kafkactl pod
 - [#253](https://github.com/deviceinsight/kafkactl/issues/253) Allow configuring k8s resource requests/limits
 
@@ -165,7 +167,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#160](https://github.com/deviceinsight/kafkactl/pull/160) Fix kubectl version detection
 
 ### Added
-- [#159](https://github.com/deviceinsight/kafkactl/issues/159) Add ability to read config file from `$PWD/kafkactl.yml` 
+- [#159](https://github.com/deviceinsight/kafkactl/issues/159) Add ability to read config file from `$PWD/kafkactl.yml`
 
 ## 3.2.0 - 2023-08-17
 
@@ -239,7 +241,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - [#112](https://github.com/deviceinsight/kafkactl/issues/112) make `maxMessageBytes` configurable in produce command.
-  
+
   :warning: this is a breaking change since the format of the `config.yml` has been changed in order to group producer
   related configurations under `context.producer`.
 
@@ -329,7 +331,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - SASL mechanism support now also implemented for cluster admin
-- process no longer gets stuck when deserialization error occurs 
+- process no longer gets stuck when deserialization error occurs
 
 ### Added
 - calls to avro schema registry are now cached in memory to improve performance
@@ -404,13 +406,13 @@ of `plaintext`.
 
 ### Fixed
 - auto-completion should now work consistent for all supported shells and provides dynamic completion for
- e.g. names of topics or consumer-groups. 
+ e.g. names of topics or consumer-groups.
 
 ### Added
 - Add parameters `--key-encoding`, `--value-encoding` to produce command to write messages from hex/base64
 - Add parameters `--key-encoding`, `--value-encoding` to consume command to print messages as hex/base64
 - auto-completion now also works inside ubuntu docker image
-- bash auto-completion should work out of the box, when kafkactl is installed via snap 
+- bash auto-completion should work out of the box, when kafkactl is installed via snap
 
 ### Changed
 - improved and documented overriding config keys via environment variables
@@ -419,7 +421,7 @@ of `plaintext`.
 ## 1.9.0 - 2020-06-19
 
 ### Added
-- Add parameter `--header` to produce command to include message headers when writing messages 
+- Add parameter `--header` to produce command to include message headers when writing messages
 
 ### Changed
 - generation of commands and error handling have been refactored in order to allow for better testability
