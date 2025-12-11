@@ -15,16 +15,16 @@ type fakeDeserializer struct {
 	valueBytes []byte
 }
 
-func (f *fakeDeserializer) CanDeserializeKey(msg *sarama.ConsumerMessage, flags Flags) bool {
+func (f *fakeDeserializer) CanDeserializeKey(_ *sarama.ConsumerMessage, _ Flags) bool {
 	return f.keyBytes != nil
 }
-func (f *fakeDeserializer) CanDeserializeValue(msg *sarama.ConsumerMessage, flags Flags) bool {
+func (f *fakeDeserializer) CanDeserializeValue(_ *sarama.ConsumerMessage, _ Flags) bool {
 	return f.valueBytes != nil
 }
-func (f *fakeDeserializer) DeserializeKey(msg *sarama.ConsumerMessage) (*DeserializedData, error) {
+func (f *fakeDeserializer) DeserializeKey(_ *sarama.ConsumerMessage) (*DeserializedData, error) {
 	return &DeserializedData{data: f.keyBytes}, nil
 }
-func (f *fakeDeserializer) DeserializeValue(msg *sarama.ConsumerMessage) (*DeserializedData, error) {
+func (f *fakeDeserializer) DeserializeValue(_ *sarama.ConsumerMessage) (*DeserializedData, error) {
 	return &DeserializedData{data: f.valueBytes}, nil
 }
 
