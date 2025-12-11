@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- new options for filtering key/value of messages in consume command
+- new options `--filter-keyword`, `--filter-by-regex` and `--filter-mode` for filtering key/value of messages in consume command
 
 ## 5.16.0 - 2025-12-03
 - [#306](https://github.com/deviceinsight/kafkactl/pull/306) Support building arm image by updating to goreleaser v2
