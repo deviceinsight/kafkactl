@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"errors"
+
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal/util"
 	"github.com/deviceinsight/kafkactl/v5/pkg/plugins/auth"
@@ -15,6 +17,28 @@ type pluginTokenProvider struct {
 func (p *pluginTokenProvider) Token() (*sarama.AccessToken, error) {
 	token, err := p.pluginDelegate.Token()
 	return &sarama.AccessToken{Token: token}, err
+}
+
+type passthroughProvider struct {
+	token sarama.AccessToken
+}
+
+func (p passthroughProvider) Token() (*sarama.AccessToken, error) {
+	return &p.token, nil
+}
+
+// StaticTokenProvider simply sends the token up, this won't refresh tokens etc.
+// It is most of the time sufficient for testing things out or do 1 off calls like kafkactl is used as.
+func StaticTokenProvider(token string, extensions map[string]string) (sarama.AccessTokenProvider, error) {
+	if token == "" {
+		return nil, errors.New("token can't be empty")
+	}
+	return &passthroughProvider{
+		token: sarama.AccessToken{
+			Token:      token,
+			Extensions: extensions,
+		},
+	}, nil
 }
 
 func LoadTokenProviderPlugin(pluginName string, options map[string]any, brokers []string) (sarama.AccessTokenProvider, error) {
