@@ -108,10 +108,18 @@ contexts:
       # optional tokenProvider configuration (only used for 'sasl.mechanism=oauth')
       tokenprovider:
         # plugin to use as token provider implementation (see plugin section)
+        # if no plugin is specified, a static token provider is used (see below)
         plugin: azure
         # optional: additional options passed to the plugin
         options:
           key: value
+
+      # alternatively, use a static token without a plugin:
+      # tokenprovider:
+      #   options:
+      #     token: my-oauth-token
+      #     # optional: OAuth extensions
+      #     extensions.key: value
 
     # optional: access clusters running kubernetes
     kubernetes:
