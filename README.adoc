@@ -371,6 +371,31 @@ contexts:
       namespace: k8s-namespace
 ----
 
+If you are using `tlsSecret`, make sure that you set `ca`, `cert` and `certKey`. For example secret created by
+Strimzi Kafka operator will have values `ca.crt`, `user.crt`, `user.key`:
+
+[,$yaml]
+----
+contexts:
+  kafka-cluster:
+    brokers:
+      - broker1:9092
+      - broker2:9092
+    kubernetes:
+      enabled: true
+      binary: kubectl #optional
+      kubeContext: k8s-cluster
+      namespace: k8s-namespace
+      tlsSecret: tls-secret
+    tls:
+      enabled: true
+      ca: ca.crt
+      cert: user.crt
+      certKey: user.key
+      # set insecure to true to ignore all tls verification (defaults to false)
+      insecure: false
+----
+
 Instead of directly talking to kafka brokers a kafkactl docker image is deployed as a pod into the kubernetes
 cluster, and the defined namespace. Standard-Input and Standard-Output are then wired between the pod and your shell
 running kafkactl.
@@ -734,7 +759,7 @@ curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" \
 --data '{"schema": "{\"type\": \"record\", \"name\": \"LongList\", \"fields\" : [{\"name\": \"next\", \"type\": [\"null\", \"LongList\"], \"default\": null}]}"}' \
 http://localhost:8081/subjects/avro_topic-value/versions
 # produce a message
-kafkactl produce avro_topic --value {\"next\":{\"LongList\":{}}}
+kafkactl produce avro_topic --value {\"next\":{\"next\":{}}}
 # consume the message
 kafkactl consume avro_topic --from-beginning --print-schema -o yaml
 ----
