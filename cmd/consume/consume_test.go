@@ -879,3 +879,174 @@ func removeWhitespace(s string) string {
 	s = strings.ReplaceAll(s, "\r", "")
 	return s
 }
+
+func TestConsumeFilterByKeyIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	topicName := testutil.CreateTopic(t, "consume-filter-topic")
+
+	testutil.ProduceMessage(t, topicName, "user-123", "value1", 0, 0)
+	testutil.ProduceMessage(t, topicName, "admin-456", "value2", 0, 1)
+	testutil.ProduceMessage(t, topicName, "user-789", "value3", 0, 2)
+	testutil.ProduceMessage(t, topicName, "guest-111", "value4", 0, 3)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--filter-key", "user-*", "--print-keys"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	messages := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+
+	if len(messages) != 2 {
+		t.Fatalf("expected 2 messages, got %d: %v", len(messages), messages)
+	}
+
+	testutil.AssertEquals(t, "user-123#value1", messages[0])
+	testutil.AssertEquals(t, "user-789#value3", messages[1])
+}
+
+func TestConsumeFilterByKeyAlternativesIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	topicName := testutil.CreateTopic(t, "consume-filter-topic")
+
+	testutil.ProduceMessage(t, topicName, "user-123", "value1", 0, 0)
+	testutil.ProduceMessage(t, topicName, "admin-456", "value2", 0, 1)
+	testutil.ProduceMessage(t, topicName, "guest-789", "value3", 0, 2)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--filter-key", "{user,admin}-*", "--print-keys"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	messages := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+
+	if len(messages) != 2 {
+		t.Fatalf("expected 2 messages, got %d: %v", len(messages), messages)
+	}
+
+	testutil.AssertEquals(t, "user-123#value1", messages[0])
+	testutil.AssertEquals(t, "admin-456#value2", messages[1])
+}
+
+func TestConsumeFilterByValueIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	topicName := testutil.CreateTopic(t, "consume-filter-topic")
+
+	testutil.ProduceMessage(t, topicName, "key1", "error: something failed", 0, 0)
+	testutil.ProduceMessage(t, topicName, "key2", "success: operation completed", 0, 1)
+	testutil.ProduceMessage(t, topicName, "key3", "error: connection timeout", 0, 2)
+	testutil.ProduceMessage(t, topicName, "key4", "info: processing", 0, 3)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--filter-value", "error:*"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	messages := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+
+	if len(messages) != 2 {
+		t.Fatalf("expected 2 messages, got %d: %v", len(messages), messages)
+	}
+
+	testutil.AssertEquals(t, "error: something failed", messages[0])
+	testutil.AssertEquals(t, "error: connection timeout", messages[1])
+}
+
+func TestConsumeFilterByHeaderIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	topicName := testutil.CreateTopic(t, "consume-filter-topic")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "key1", "--value", "value1", "-H", "env:prod", "-H", "trace-id:abc-123"); err != nil {
+		t.Fatalf("failed to produce message: %v", err)
+	}
+
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "key2", "--value", "value2", "-H", "env:dev", "-H", "trace-id:xyz-456"); err != nil {
+		t.Fatalf("failed to produce message: %v", err)
+	}
+
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "key3", "--value", "value3", "-H", "env:prod", "-H", "trace-id:abc-789"); err != nil {
+		t.Fatalf("failed to produce message: %v", err)
+	}
+
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--filter-header", "trace-id=abc-*", "--print-keys"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	messages := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+
+	if len(messages) != 2 {
+		t.Fatalf("expected 2 messages, got %d: %v", len(messages), messages)
+	}
+
+	testutil.AssertEquals(t, "key1#value1", messages[0])
+	testutil.AssertEquals(t, "key3#value3", messages[1])
+}
+
+func TestConsumeFilterANDLogicIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	topicName := testutil.CreateTopic(t, "consume-filter-topic")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "user-123", "--value", "error occurred", "-H", "env:prod"); err != nil {
+		t.Fatalf("failed to produce message: %v", err)
+	}
+
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "user-456", "--value", "success", "-H", "env:prod"); err != nil {
+		t.Fatalf("failed to produce message: %v", err)
+	}
+
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "admin-789", "--value", "error occurred", "-H", "env:prod"); err != nil {
+		t.Fatalf("failed to produce message: %v", err)
+	}
+
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "user-111", "--value", "error occurred", "-H", "env:dev"); err != nil {
+		t.Fatalf("failed to produce message: %v", err)
+	}
+
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--filter-key", "user-*", "--filter-value", "error*", "--filter-header", "env=prod", "--print-keys"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	messages := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+
+	if len(messages) != 1 {
+		t.Fatalf("expected 1 message, got %d: %v", len(messages), messages)
+	}
+
+	testutil.AssertEquals(t, "user-123#error occurred", messages[0])
+}
+
+func TestConsumeFilterNoMatchIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	topicName := testutil.CreateTopic(t, "consume-filter-topic")
+
+	testutil.ProduceMessage(t, topicName, "user-123", "value1", 0, 0)
+	testutil.ProduceMessage(t, topicName, "admin-456", "value2", 0, 1)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--filter-key", "guest-*"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	output := strings.TrimSpace(kafkaCtl.GetStdOut())
+
+	if output != "" {
+		t.Fatalf("expected no output for non-matching filter, got: %q", output)
+	}
+}

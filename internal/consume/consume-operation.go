@@ -48,6 +48,10 @@ type Flags struct {
 	KeyProtoType        string
 	ValueProtoType      string
 	IsolationLevel      string
+
+	FilterKey    string
+	FilterValue  string
+	FilterHeader map[string]string
 }
 
 type ConsumedMessage struct {
@@ -164,7 +168,12 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 		return errors.Wrap(err, "Failed to start consumer")
 	}
 
-	deserializationGroup := deserializeMessages(ctx, flags, messages, stopConsumers, deserializers)
+	messageFilter, err := NewMessageFilter(flags.FilterKey, flags.FilterValue, flags.FilterHeader)
+	if err != nil {
+		return err
+	}
+
+	deserializationGroup := deserializeMessages(ctx, flags, messages, stopConsumers, deserializers, messageFilter)
 
 	if err := consumer.Wait(); err != nil {
 		return errors.Wrap(err, "Failed while waiting for consumer")
@@ -232,7 +241,7 @@ func parseIsolationLevel(isolationLevel string) (sarama.IsolationLevel, error) {
 }
 
 func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sarama.ConsumerMessage,
-	stopConsumers chan<- bool, deserializers MessageDeserializerChain,
+	stopConsumers chan<- bool, deserializers MessageDeserializerChain, filter *MessageFilter,
 ) *errgroup.Group {
 	errorGroup, _ := errgroup.WithContext(ctx)
 
@@ -248,7 +257,7 @@ func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sara
 			}
 			lastIndex := len(sortedMessages) - 1
 			for i := range sortedMessages {
-				err := deserializers.Deserialize(sortedMessages[lastIndex-i], flags)
+				err := deserializers.Deserialize(sortedMessages[lastIndex-i], flags, filter)
 				if err != nil {
 					return err
 				}
@@ -263,7 +272,7 @@ func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sara
 			var err error
 
 			for msg := range messages {
-				err = deserializers.Deserialize(msg, flags)
+				err = deserializers.Deserialize(msg, flags, filter)
 				messageCount++
 				if err != nil {
 					close(stopConsumers)
