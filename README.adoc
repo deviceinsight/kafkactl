@@ -564,6 +564,48 @@ If you want to limit the number of messages that will be read, specify `--max-me
 kafkactl consume my-topic --max-messages 2
 ----
 
+Messages can be filtered by key, value, or headers using glob patterns:
+
+[,bash]
+----
+# filter by key pattern
+kafkactl consume my-topic --filter-key "user-*" --print-keys
+
+# filter by value pattern
+kafkactl consume my-topic --filter-value "error:*"
+
+# filter by header pattern
+kafkactl consume my-topic --filter-header "trace-id=abc-*" --print-headers
+
+# combine multiple filters (all must match)
+kafkactl consume my-topic --filter-key "user-*" --filter-value "*error*" --filter-header "env=prod"
+----
+
+Glob patterns support the following wildcards:
+
+* `*` - matches any sequence of characters
+* `?` - matches a single character
+* `[abc]` - matches any character in the set
+* `[!abc]` - matches any character not in the set
+* `{a,b,c}` - matches any of the alternatives
+
+Examples of glob patterns:
+
+[,bash]
+----
+# match keys starting with "user-"
+--filter-key "user-*"
+
+# match keys for user or admin
+--filter-key "{user,admin}-*"
+
+# match values containing "error" or "warn"
+--filter-value "*error*" or --filter-value "*warn*"
+
+# match specific header patterns
+--filter-header "trace-id=abc-???"
+----
+
 === Producing messages
 
 Producing messages can be done in multiple ways. If we want to produce a message with `key='my-key'`,
@@ -849,6 +891,7 @@ or with protoset
 ----
 kafkactl consume <topic> --key-proto-type TopicKey --value-proto-type TopicValue --protoset-file kafkamsg.protoset
 ----
+
 
 
 === Topic management

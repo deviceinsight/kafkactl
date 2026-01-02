@@ -53,6 +53,9 @@ func NewConsumeCmd() *cobra.Command {
 	cmdConsume.Flags().StringSliceVarP(&flags.ProtoMarshalOptions, "proto-marshal-option", "", flags.ProtoMarshalOptions, "json marshall options to use for protobuf. Format is key=value. Valid keys are "+strings.Join(protobuf.AllMarshalOptions, ","))
 	cmdConsume.Flags().StringVarP(&flags.KeyProtoType, "key-proto-type", "", flags.KeyProtoType, "key protobuf message type")
 	cmdConsume.Flags().StringVarP(&flags.ValueProtoType, "value-proto-type", "", flags.ValueProtoType, "value protobuf message type")
+	cmdConsume.Flags().StringVarP(&flags.FilterKey, "filter-key", "", "", "filter messages keys with glob pattern")
+	cmdConsume.Flags().StringVarP(&flags.FilterValue, "filter-value", "", "", "filter messages values with glob pattern")
+	cmdConsume.Flags().StringToStringVarP(&flags.FilterHeader, "filter-header", "", map[string]string{}, "filter messages headers with glob pattern")
 	cmdConsume.Flags().StringVarP(&flags.IsolationLevel, "isolation-level", "i", "", "isolationLevel to use. One of: ReadUncommitted|ReadCommitted")
 
 	if err := cmdConsume.RegisterFlagCompletionFunc("group", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

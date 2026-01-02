@@ -8,13 +8,17 @@ import (
 
 type MessageDeserializerChain []MessageDeserializer
 
-func (deserializer *MessageDeserializerChain) Deserialize(consumerMsg *sarama.ConsumerMessage, flags Flags) error {
+func (deserializer *MessageDeserializerChain) Deserialize(consumerMsg *sarama.ConsumerMessage, flags Flags, filter *MessageFilter) error {
 
 	var key, value *DeserializedData
 	var err error
 
+	// determine whether we need to deserialize the key: either because keys are requested to be printed
+	// or because a filter is applied to keys
+	needKey := flags.PrintKeys || flags.FilterKey != ""
+
 	// deserialize key
-	if flags.PrintKeys {
+	if needKey {
 		for _, d := range *deserializer {
 
 			if !d.CanDeserializeKey(consumerMsg, flags) {
@@ -28,7 +32,7 @@ func (deserializer *MessageDeserializerChain) Deserialize(consumerMsg *sarama.Co
 			break
 		}
 
-		if key == nil {
+		if key == nil && flags.PrintKeys {
 			return fmt.Errorf("can't find suitable deserializer for key")
 		}
 	}
@@ -48,6 +52,11 @@ func (deserializer *MessageDeserializerChain) Deserialize(consumerMsg *sarama.Co
 
 	if value == nil {
 		return fmt.Errorf("can't find suitable deserializer for value")
+	}
+
+	// Apply filters - all filters must match (AND logic)
+	if filter.IsActive() && !filter.Matches(consumerMsg, key, value) {
+		return nil
 	}
 
 	// print message
