@@ -326,7 +326,7 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 	}
 
 	if config.Net.SASL.Mechanism == sarama.SASLTypeOAuth {
-		tokenProvider, err := initTokenProvider(context.Sasl.TokenProvider, nil)
+		tokenProvider, err := auth.LoadTokenProviderPlugin(context.Sasl.TokenProvider.PluginName, context.Sasl.TokenProvider.Options, context.Brokers)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load tokenProvider")
 		}
@@ -334,28 +334,6 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 	}
 
 	return config, nil
-}
-
-func initTokenProvider(tokenProvider TokenProvider, brokers []string) (sarama.AccessTokenProvider, error) {
-	switch tokenProvider.PluginName {
-	case "":
-		var token string
-		extensions := map[string]string{}
-		for k, v := range tokenProvider.Options {
-			if k == "token" {
-				token = v.(string)
-			} else if strings.HasPrefix(k, "extensions.") {
-				extensions[strings.TrimPrefix(k, "extensions.")] = v.(string)
-			}
-		}
-		if token == "" {
-			return nil, errors.New("option 'token' required when not using a token tokenProvider plugin")
-		}
-		return auth.StaticTokenProvider(token, extensions)
-	default:
-		return auth.LoadTokenProviderPlugin(tokenProvider.PluginName, tokenProvider.Options, brokers)
-	}
-
 }
 
 func GetClientID(context *ClientContext, defaultPrefix string) string {
