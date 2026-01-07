@@ -113,17 +113,6 @@ contexts:
         options:
           key: value
 
-      # alternatively, use a script to retrieve a token dynamically (see plugin section):
-      # tokenprovider:
-      #   plugin: generic
-      #   options:
-      #     # path to an executable script that outputs a JSON with format `{"token": "<token>", "extensions": {"<key>": "<value>"}` where `extensions` is optional
-      #     script: /path/to/token-script.sh
-      #     # optional: arguments to pass to the script
-      #     args:
-      #       - --audience
-      #       - my-kafka-cluster
-
     # optional: access clusters running kubernetes
     kubernetes:
       enabled: false
@@ -440,7 +429,7 @@ Available plugins:
 * https://github.com/deviceinsight/kafkactl-plugins/blob/main/aws/README.adoc[aws plugin]
 * https://github.com/deviceinsight/kafkactl-plugins/blob/main/azure/README.adoc[azure plugin]
 
-=== Generic Script Token Provider
+=== Generic Token Provider
 
 For cases where a custom plugin is not needed, _kafkactl_ provides a built-in `generic` token provider that executes a script to retrieve OAuth tokens dynamically.
 
