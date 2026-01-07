@@ -454,6 +454,62 @@ Available plugins:
 * https://github.com/deviceinsight/kafkactl-plugins/blob/main/aws/README.adoc[aws plugin]
 * https://github.com/deviceinsight/kafkactl-plugins/blob/main/azure/README.adoc[azure plugin]
 
+=== Generic Token Provider
+
+For cases where a custom plugin is not needed, _kafkactl_ provides a built-in `generic` token provider that executes a script to retrieve OAuth tokens dynamically.
+
+==== Configuration
+
+[,yaml]
+----
+contexts:
+  my-cluster:
+    sasl:
+      enabled: true
+      mechanism: oauth
+      tokenprovider:
+        plugin: generic
+        options:
+          script: /path/to/get-token.sh
+          args:
+            - intended-scope
+----
+
+==== Script Output Format
+
+The script must output a JSON object with the following structure:
+
+[,json]
+----
+{
+  "token": "your-oauth-access-token",
+  "extensions": {
+    "key": "value"
+  }
+}
+----
+
+* `token` (required): The OAuth access token string
+* `extensions` (optional): A map of string key-value pairs for OAuth extensions
+
+==== Example Script
+
+[,bash]
+----
+#!/bin/bash
+# Example script that fetches a token from an OAuth provider
+SCOPE=${1:-kafka}
+
+curl -s --fail -X POST "$AUTH_SERVER/oauth/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=client_credentials" \
+  -d "client_id=$CLIENT_ID" \
+  -d "client_secret=$CLIENT_SECRET" \
+  -d "scope=$SCOPE" | jq -r '{"token": .access_token}'
+----
+
+The script is executed each time a token is needed, allowing for automatic token refresh.
+
 == Examples
 
 === Consuming messages

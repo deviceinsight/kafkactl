@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- [#309](https://github.com/deviceinsight/kafkactl/issues/309) Allow executing a script to retrieve a OAuth token.
 
 - new flags `--filter-key`, `--filter-value` and `--filter-header` for filtering key/value/headers of messages
 
