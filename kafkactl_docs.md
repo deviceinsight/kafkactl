@@ -505,6 +505,9 @@ kafkactl consume TOPIC [flags]
 
 ```
   -e, --exit                                                                             stop consuming when latest offset is reached
+      --filter-header stringToString                                                     filter messages headers with glob pattern (default [])
+      --filter-key string                                                                filter messages keys with glob pattern
+      --filter-value string                                                              filter messages values with glob pattern
   -b, --from-beginning                                                                   set offset for consumer to the oldest offset
       --from-timestamp string                                                            consume data from offset of given timestamp
   -g, --group string                                                                     consumer group to join
