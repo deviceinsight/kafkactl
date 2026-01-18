@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Update to Go 1.24.12
+
 ## 5.17.0 - 2026-01-07
 - [#309](https://github.com/deviceinsight/kafkactl/issues/309) Allow executing a script to retrieve a OAuth token.
 
