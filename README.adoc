@@ -12,6 +12,7 @@ image:https://github.com/deviceinsight/kafkactl/actions/workflows/lint_test.yml/
 
 * command auto-completion for bash, zsh, fish shell including dynamic completion for e.g. topics or consumer groups.
 * support for avro schemas
+* support for JSON schema registry
 * Configuration of different contexts
 * directly access kafka clusters inside your kubernetes cluster
 * support for consuming and producing protobuf-encoded messages
@@ -866,6 +867,44 @@ kafkactl consume avro_topic --from-beginning --print-schema -o yaml
 
 As for producing `kafkactl` will also lookup the topic in the schema registry to determine if key or value needs to be
 decoded with an avro schema.
+
+The `consume` command handles this automatically and no configuration is needed.
+
+An additional parameter `print-schema` can be provided to display the schema used for decoding.
+
+=== JSON schema support
+
+JSON schema support works similarly to Avro. When a schema registry is configured, `kafkactl` will automatically detect
+topics with JSON schemas registered and encode/decode messages using the Confluent wire format.
+
+==== Producing to a JSON schema topic
+
+`kafkactl` will lookup the topic in the schema registry in order to determine if key or value has a JSON schema registered.
+The input JSON is validated against the schema before producing. If producing with the latest `schemaVersion` is sufficient,
+no additional configuration is needed and `kafkactl` handles this automatically.
+
+If however one needs to produce an older `schemaVersion` this can be achieved by providing the parameters `keySchemaVersion`, `valueSchemaVersion`.
+
+===== Example
+
+[,bash]
+----
+# create a topic
+kafkactl create topic json_topic
+# add a JSON schema for the topic value
+curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+--data '{"schemaType": "JSON", "schema": "{\"type\": \"object\", \"properties\": {\"name\": {\"type\": \"string\"}, \"age\": {\"type\": \"integer\"}}, \"required\": [\"name\", \"age\"]}"}' \
+http://localhost:8081/subjects/json_topic-value/versions
+# produce a message
+kafkactl produce json_topic --value '{"name":"Alice","age":30}'
+# consume the message
+kafkactl consume json_topic --from-beginning --print-schema -o yaml
+----
+
+==== Consuming from a JSON schema topic
+
+As for producing, `kafkactl` will also lookup the topic in the schema registry to determine if key or value needs to be
+decoded with a JSON schema.
 
 The `consume` command handles this automatically and no configuration is needed.
 

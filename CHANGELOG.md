@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- [#315](https://github.com/deviceinsight/kafkactl/issues/315) Support for JSON schema registry
+
 ## 5.17.1 - 2026-02-03
 
 ### Changed

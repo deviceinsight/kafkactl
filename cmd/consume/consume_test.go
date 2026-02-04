@@ -493,7 +493,7 @@ func TestAvroDeserializationErrorHandlingIntegration(t *testing.T) {
 	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
 
 	// produce message that cannot be deserialized
-	testutil.SwitchContext("no-avro")
+	testutil.SwitchContext("no-schema-reg")
 
 	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", "no-avro"); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
