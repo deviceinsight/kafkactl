@@ -87,8 +87,9 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 		}
 		avroSerializer := AvroMessageSerializer{topic: topic, client: client, jsonCodec: clientContext.Avro.JSONCodec}
 		protobufSerializer := RegistryProtobufMessageSerializer{topic: topic, client: client}
+		jsonSchemaSerializer := JSONSchemaMessageSerializer{topic: topic, client: client}
 
-		serializers.serializers = append(serializers.serializers, avroSerializer, protobufSerializer)
+		serializers.serializers = append(serializers.serializers, avroSerializer, protobufSerializer, jsonSchemaSerializer)
 	}
 	context := clientContext.Protobuf
 	context.ProtosetFiles = append(flags.ProtosetFiles, context.ProtosetFiles...)

@@ -10,8 +10,8 @@ contexts:
       url: localhost:18081
     kafkaversion: 3.0.0
 
-  # context without avro
-  no-avro:
+  # context without schema registry
+  no-schema-reg:
     brokers:
       - localhost:19093
       - localhost:29093

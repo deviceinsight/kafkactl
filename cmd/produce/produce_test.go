@@ -272,6 +272,80 @@ func TestProduceJsonMessageWithSchemaIntegration(t *testing.T) {
 	testutil.AssertContainSubstring(t, `"ExpiresOn": "2022-12-12"`, stdout)
 }
 
+func TestProduceJsonMessageWithSchemaValidationErrorIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	valueSchema := `{
+	  "$schema": "http://json-schema.org/draft-04/schema#",
+	  "type": "object",
+	  "properties": {
+		"Name": {
+		  "type": "string"
+		},
+		"Age": {
+		  "type": "integer"
+		}
+	  },
+	  "required": [
+		"Name",
+		"Age"
+	  ]
+	}`
+
+	// Missing required field "Age"
+	value := `{"Name": "Alice"}`
+
+	topicName := testutil.CreateTopicWithSchema(t, "produce-topic", "", valueSchema, srclient.Json)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	_, err := kafkaCtl.Execute("produce", topicName, "--value", value)
+	if err == nil {
+		t.Fatalf("expected validation error but got none")
+	}
+
+	testutil.AssertErrorContains(t, "json data does not match schema", err)
+}
+
+func TestProduceJsonMessageWithSchemaAndPrintSchemaIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	valueSchema := `{
+	  "$schema": "http://json-schema.org/draft-04/schema#",
+	  "type": "object",
+	  "properties": {
+		"City": {
+		  "type": "string"
+		}
+	  },
+	  "required": [
+		"City"
+	  ]
+	}`
+
+	value := `{"City": "Berlin"}`
+
+	topicName := testutil.CreateTopicWithSchema(t, "produce-topic", "", valueSchema, srclient.Json)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", topicName, "--value", value); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-schema", "-o", "yaml"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	stdout := kafkaCtl.GetStdOut()
+	testutil.AssertContainSubstring(t, "City", stdout)
+	testutil.AssertContainSubstring(t, "Berlin", stdout)
+	testutil.AssertContainSubstring(t, "valueSchema:", stdout)
+	testutil.AssertContainSubstring(t, "valueSchemaId:", stdout)
+}
+
 func TestProduceAvroMessageWithUnionAvroJsonIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 

@@ -116,7 +116,8 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 	if schemaRegistryClient != nil {
 		avroDeserializer := AvroMessageDeserializer{topic: topic, registry: schemaRegistryClient, jsonCodec: clientContext.Avro.JSONCodec}
 		protobufDeserializer := RegistryProtobufMessageDeserializer{config: protobufConfig, registry: schemaRegistryClient}
-		deserializers = append(deserializers, &avroDeserializer, &protobufDeserializer)
+		jsonSchemaDeserializer := JSONSchemaMessageDeserializer{topic: topic, registry: schemaRegistryClient}
+		deserializers = append(deserializers, &avroDeserializer, &protobufDeserializer, &jsonSchemaDeserializer)
 	}
 
 	deserializer, err := CreateProtobufMessageDeserializer(protobufConfig, protoreflect.FullName(flags.KeyProtoType), protoreflect.FullName(flags.ValueProtoType))

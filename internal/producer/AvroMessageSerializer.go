@@ -6,6 +6,7 @@ import (
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
+	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/riferrei/srclient"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/util"
@@ -28,10 +29,12 @@ func (serializer AvroMessageSerializer) CanSerializeKey(topic string) (bool, err
 }
 
 func (serializer AvroMessageSerializer) SerializeValue(value []byte, flags Flags) ([]byte, error) {
+	output.Debugf("serialize value with AvroMessageSerializer")
 	return serializer.encode(value, flags.ValueSchemaVersion, serializer.topic+"-value")
 }
 
 func (serializer AvroMessageSerializer) SerializeKey(key []byte, flags Flags) ([]byte, error) {
+	output.Debugf("serialize key with AvroMessageSerializer")
 	return serializer.encode(key, flags.KeySchemaVersion, serializer.topic+"-key")
 }
 
@@ -45,11 +48,13 @@ func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int
 		if err != nil {
 			return nil, errors.Errorf("failed to find latest avro schema for subject: %s (%v)", subject, err)
 		}
+		output.Debugf("encode with latest avro schema id=%d subject=%s codec=%s", schema.ID(), subject, serializer.jsonCodec)
 	} else {
 		schema, err = serializer.client.GetSchemaByVersion(subject, schemaVersion)
 		if err != nil {
 			return nil, errors.Errorf("failed to find avro schema for subject: %s id: %d (%v)", subject, schemaVersion, err)
 		}
+		output.Debugf("encode with avro schema id=%d version=%d subject=%s codec=%s", schema.ID(), schemaVersion, subject, serializer.jsonCodec)
 	}
 
 	var avroCodec *goavro.Codec
