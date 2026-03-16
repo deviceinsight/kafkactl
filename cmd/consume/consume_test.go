@@ -122,15 +122,10 @@ func TestConsumeFromTimestampIntegration(t *testing.T) {
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 	t1Formatted := time.UnixMilli(t1).Format("2006-01-02T15:04:05.000Z")
 	t2Formatted := time.UnixMilli(t2).Format("2006-01-02T15:04:05.000Z")
-	t.Logf("DEBUG: t1=%d (%s), t2=%d (%s)", t1, t1Formatted, t2, t2Formatted)
 	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", t1Formatted, "--to-timestamp", t2Formatted); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
-	stdout := kafkaCtl.GetStdOut()
-	stderr := kafkaCtl.GetStdErr()
-	t.Logf("DEBUG: stdout=%q", stdout)
-	t.Logf("DEBUG: stderr contains: %s", stderr)
-	messages := strings.Split(strings.TrimSpace(stdout), "\n")
+	messages := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
 	testutil.AssertArraysEquals(t, []string{"c", "d", "e", "f"}, messages)
 
 	// test --from-timestamp with --to-timestamp with unix epoch millis timestamps
