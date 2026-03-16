@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- [#256](https://github.com/deviceinsight/kafkactl/issues/256) `alter topic --replication-factor` infinite loop when broker is unavailable
+
 ## 5.18.0 - 2026-02-12
 
 ### Added

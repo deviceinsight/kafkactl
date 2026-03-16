@@ -371,20 +371,43 @@ func (operation *Operation) AlterTopic(topic string, flags AlterTopicFlags) erro
 
 	if flags.ReplicationFactor > 0 {
 
-		var brokers = client.Brokers()
+		var allBrokers = client.Brokers()
 
-		if int(flags.ReplicationFactor) > len(brokers) {
-			return errors.Errorf("Replication factor for topic '%s' must not exceed the number of available brokers", topic)
+		var availableBrokers []*sarama.Broker
+		for _, broker := range allBrokers {
+			connected, err := broker.Connected()
+			if err != nil {
+				output.Debugf("error checking broker %d connectivity: %v", broker.ID(), err)
+				continue
+			}
+			if connected {
+				availableBrokers = append(availableBrokers, broker)
+			} else {
+				output.Warnf("broker %d (%s) is not available and will be excluded from replica assignment", broker.ID(), broker.Addr())
+			}
 		}
 
+		if len(availableBrokers) == 0 {
+			return errors.Errorf("no available brokers found for topic '%s'", topic)
+		}
+
+		if int(flags.ReplicationFactor) > len(availableBrokers) {
+			return errors.Errorf("Replication factor for topic '%s' must not exceed the number of available brokers (%d available)", topic, len(availableBrokers))
+		}
+
+		// Only include available brokers in the replica count map.
+		// Replicas on unavailable brokers will be preferentially removed by getTargetReplicas
+		// because they won't have an entry in this map.
 		brokerReplicaCount := make(map[int32]int)
-		for _, broker := range brokers {
+		for _, broker := range availableBrokers {
 			brokerReplicaCount[broker.ID()] = 0
 		}
 
 		for _, partition := range t.Partitions {
 			for _, brokerID := range partition.Replicas {
-				brokerReplicaCount[brokerID]++
+				if _, ok := brokerReplicaCount[brokerID]; ok {
+					brokerReplicaCount[brokerID]++
+				}
 			}
 		}
 
@@ -419,6 +442,8 @@ func (operation *Operation) AlterTopic(topic string, flags AlterTopicFlags) erro
 				partitions[0] = p.ID
 			}
 
+			const maxReassignmentWait = 10 * time.Minute
+			deadline := time.Now().Add(maxReassignmentWait)
 			assignmentRunning := true
 
 			for assignmentRunning {
@@ -433,8 +458,13 @@ func (operation *Operation) AlterTopic(topic string, flags AlterTopicFlags) erro
 					for partitionID, statusPartition := range statusTopic {
 						output.Infof("reassignment running for topic=%s partition=%d: replicas:%v addingReplicas:%v removingReplicas:%v",
 							topic, partitionID, statusPartition.Replicas, statusPartition.AddingReplicas, statusPartition.RemovingReplicas)
-						time.Sleep(5 * time.Second)
 						assignmentRunning = true
+					}
+					if assignmentRunning {
+						if time.Now().After(deadline) {
+							return errors.Errorf("partition reassignment for topic '%s' did not complete within %s", topic, maxReassignmentWait)
+						}
+						time.Sleep(5 * time.Second)
 					}
 				} else {
 					output.Debugf("Emtpy list partition reassignment result returned (len status: %d)", len(status))
@@ -589,6 +619,14 @@ func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int
 		sort.Slice(replicas, func(i, j int) bool {
 			brokerI := replicas[i]
 			brokerJ := replicas[j]
+			_, availableI := brokerReplicaCount[brokerI]
+			_, availableJ := brokerReplicaCount[brokerJ]
+
+			// Unavailable brokers (not in brokerReplicaCount) should be sorted to the end
+			// so they are removed first when decreasing replication factor
+			if availableI != availableJ {
+				return availableI
+			}
 			return brokerReplicaCount[brokerI] < brokerReplicaCount[brokerJ] || (brokerReplicaCount[brokerI] == brokerReplicaCount[brokerJ] && brokerI < brokerJ)
 		})
 
