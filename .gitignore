@@ -21,3 +21,4 @@ kafkactl.yml
 ### logs
 *.log
 /kafkactl-completion.bash
+/current-context.yml
