@@ -75,11 +75,13 @@ func (c *PartitionConsumer) Start(ctx context.Context, flags Flags, messages cha
 
 			if lastOffset == -1 && (flags.Exit || flags.Tail > 0 || flags.ToTimestamp != "") {
 				output.Debugf("Skipping empty partition %d", partitionID)
+				pc.AsyncClose()
 				return nil
 			} else if lastOffset == -1 || initialOffset <= lastOffset {
 				output.Debugf("Start consuming partition %d from offset %d to %d", partitionID, initialOffset, lastOffset)
 			} else {
-				output.Debugf("Skipping partition %d", partitionID)
+				output.Debugf("Skipping partition %d (initialOffset=%d > lastOffset=%d)", partitionID, initialOffset, lastOffset)
+				pc.AsyncClose()
 				return nil
 			}
 
@@ -157,11 +159,19 @@ func getOffsetBounds(client *sarama.Client, topic string, flags Flags, currentPa
 		output.Debugf("to-timestamp beyond messages, using newest offset %d on partition %d", endOffset, currentPartition)
 	}
 
-	// Check if there are any messages in the range before adjusting endOffset
-	if endOffset != sarama.OffsetNewest && startOffset >= endOffset {
+	// If startOffset is -1 (from-timestamp beyond messages) and we have a to-timestamp,
+	// it means there are no messages in the time range, so mark as empty
+	if startOffset == sarama.OffsetNewest && flags.ToTimestamp != "" {
 		endOffset = sarama.OffsetNewest // nothing to consume on this partition
+		output.Debugf("from-timestamp beyond messages, marking partition %d as empty", currentPartition)
+	} else if endOffset != sarama.OffsetNewest && startOffset > endOffset {
+		// Check if there are any messages in the range BEFORE adjusting endOffset
+		// Note: startOffset == endOffset means there's ONE message at that offset
+		endOffset = sarama.OffsetNewest // nothing to consume on this partition
+		output.Debugf("no messages in range (start=%d > end=%d), marking partition %d as empty", startOffset, endOffset, currentPartition)
 	} else if endOffset != sarama.OffsetNewest {
 		endOffset = endOffset - 1
+		output.Debugf("adjusted endOffset to %d on partition %d", endOffset, currentPartition)
 	}
 	if flags.Tail > 0 && startOffset == sarama.OffsetNewest {
 		// When --tail is used compute startOffset so that it minimizes the number of messages consumed
