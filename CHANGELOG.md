@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- [#299](https://github.com/deviceinsight/kafkactl/issues/299) Consumer authorization errors now return non-zero exit code
+
 ## 5.18.0 - 2026-02-12
 
 ### Added

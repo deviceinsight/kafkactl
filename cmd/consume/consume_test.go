@@ -1050,3 +1050,76 @@ func TestConsumeFilterNoMatchIntegration(t *testing.T) {
 		t.Fatalf("expected no output for non-matching filter, got: %q", output)
 	}
 }
+
+func TestConsumeTopicWithAuthorizationErrorReturnsNonZeroExitCodeIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTestWithContext(t, "sasl-admin")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	topicName := testutil.CreateTopic(t, "consume-auth-error")
+
+	// produce a message as admin
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", "test-value"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	// allow user to describe the topic (so topic metadata is visible), but deny read
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("create", "acl", "--topic", topicName, "--operation", "describe", "--allow", "--principal", "User:user"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("create", "acl", "--topic", topicName, "--operation", "read", "--deny", "--principal", "User:user"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	// switch to sasl 'user'
+	testutil.SwitchContext("sasl-user")
+
+	// consume should fail with authorization error
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+	_, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit")
+
+	testutil.AssertErrorContains(t, "not authorized", err)
+}
+
+func TestConsumeGroupWithAuthorizationErrorReturnsNonZeroExitCodeIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTestWithContext(t, "sasl-admin")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	topicName := testutil.CreateTopic(t, "consume-group-auth-error")
+
+	// produce a message as admin
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", "test-value"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	// allow user to describe the topic (so topic metadata is visible), but deny read
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("create", "acl", "--topic", topicName, "--operation", "describe", "--allow", "--principal", "User:user"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("create", "acl", "--topic", topicName, "--operation", "read", "--deny", "--principal", "User:user"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	// switch to sasl 'user'
+	testutil.SwitchContext("sasl-user")
+
+	// consume with --group should fail with authorization error via the group consumer error channel
+	groupName := testutil.GetPrefixedName("consume-group-auth-error")
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+	_, err := kafkaCtl.Execute("consume", topicName, "--group", groupName, "--from-beginning", "--max-messages", "1")
+
+	testutil.AssertErrorContains(t, "not authorized", err)
+}
