@@ -150,21 +150,22 @@ func getOffsetBounds(client *sarama.Client, topic string, flags Flags, currentPa
 	}
 	output.Debugf("raw offsets: start=%d end=%d (before adjustment) on partition %d", startOffset, endOffset, currentPartition)
 
-	// When to-timestamp is specified and GetOffset returns -1, it means the timestamp
-	// is beyond all messages. We need to get the actual newest offset to consume up to it.
-	if endOffset == sarama.OffsetNewest && flags.ToTimestamp != "" {
+	// If BOTH startOffset and endOffset are -1 when using timestamps, it means both timestamps
+	// are beyond all messages, so there's nothing to consume
+	if startOffset == sarama.OffsetNewest && endOffset == sarama.OffsetNewest && flags.ToTimestamp != "" {
+		output.Debugf("both from and to timestamps beyond messages, marking partition %d as empty", currentPartition)
+		// Leave both as -1 to skip partition
+	} else if endOffset == sarama.OffsetNewest && flags.ToTimestamp != "" {
+		// When to-timestamp is specified and GetOffset returns -1, it means the timestamp
+		// is beyond all messages. We need to get the actual newest offset to consume up to it.
 		if endOffset, err = (*client).GetOffset(topic, currentPartition, sarama.OffsetNewest); err != nil {
 			return ErrOffset, ErrOffset, err
 		}
 		output.Debugf("to-timestamp beyond messages, using newest offset %d on partition %d", endOffset, currentPartition)
 	}
 
-	// If startOffset is -1 (from-timestamp beyond messages) and we have a to-timestamp,
-	// it means there are no messages in the time range, so mark as empty
-	if startOffset == sarama.OffsetNewest && flags.ToTimestamp != "" {
-		endOffset = sarama.OffsetNewest // nothing to consume on this partition
-		output.Debugf("from-timestamp beyond messages, marking partition %d as empty", currentPartition)
-	} else if endOffset != sarama.OffsetNewest && startOffset > endOffset {
+	// Check if there are no messages in the range
+	if endOffset != sarama.OffsetNewest && startOffset > endOffset {
 		// Check if there are any messages in the range BEFORE adjusting endOffset
 		// Note: startOffset == endOffset means there's ONE message at that offset
 		endOffset = sarama.OffsetNewest // nothing to consume on this partition
