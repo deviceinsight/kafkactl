@@ -75,45 +75,65 @@ func (operation *Operation) AlterBroker(id string, flags AlterBrokerFlags) error
 		return errors.Errorf("cannot find broker with id: %s", id)
 	}
 
-	var existingConfigs []sarama.ConfigEntry
-	brokerConfig := sarama.ConfigResource{
-		Type: sarama.BrokerResource,
-		Name: id,
-	}
-
-	if existingConfigs, err = admin.DescribeConfig(brokerConfig); err != nil {
-		return errors.Wrap(err, "failed to describe config for broker")
-	}
-
-	mergedConfigEntries := make(map[string]*string)
-	for _, existingConfig := range existingConfigs {
-		if !existingConfig.ReadOnly && !existingConfig.Default {
-			mergedConfigEntries[existingConfig.Name] = &(existingConfig.Value)
+	if flags.ValidateOnly {
+		// For validate-only, read existing configs and merge to show a preview
+		var existingConfigs []sarama.ConfigEntry
+		brokerConfig := sarama.ConfigResource{
+			Type: sarama.BrokerResource,
+			Name: id,
 		}
+
+		if existingConfigs, err = admin.DescribeConfig(brokerConfig); err != nil {
+			return errors.Wrap(err, "failed to describe config for broker")
+		}
+
+		mergedConfigEntries := make(map[string]*string)
+		for _, existingConfig := range existingConfigs {
+			if !existingConfig.ReadOnly && !existingConfig.Default {
+				mergedConfigEntries[existingConfig.Name] = &(existingConfig.Value)
+			}
+		}
+
+		for _, config := range flags.Configs {
+			configParts := strings.SplitN(config, "=", 2)
+
+			if len(configParts) == 2 {
+				if len(configParts[1]) == 0 {
+					delete(mergedConfigEntries, configParts[0])
+				} else {
+					mergedConfigEntries[configParts[0]] = &configParts[1]
+				}
+			}
+		}
+
+		return operation.printConfig(mergedConfigEntries)
 	}
+
+	configEntries := make(map[string]sarama.IncrementalAlterConfigsEntry)
 
 	for _, config := range flags.Configs {
-		configParts := strings.Split(config, "=")
+		configParts := strings.SplitN(config, "=", 2)
 
 		if len(configParts) == 2 {
 			if len(configParts[1]) == 0 {
-				delete(mergedConfigEntries, configParts[0])
+				configEntries[configParts[0]] = sarama.IncrementalAlterConfigsEntry{
+					Operation: sarama.IncrementalAlterConfigsOperationDelete,
+				}
 			} else {
-				mergedConfigEntries[configParts[0]] = &configParts[1]
+				configEntries[configParts[0]] = sarama.IncrementalAlterConfigsEntry{
+					Operation: sarama.IncrementalAlterConfigsOperationSet,
+					Value:     &configParts[1],
+				}
 			}
 		}
 	}
 
-	if err = admin.AlterConfig(sarama.BrokerResource, id, mergedConfigEntries, flags.ValidateOnly); err != nil {
+	if err = admin.IncrementalAlterConfig(sarama.BrokerResource, id, configEntries, false); err != nil {
 		return errors.Errorf("could not alter broker config '%s': %v", id, err)
 	}
 
-	if !flags.ValidateOnly {
-		output.Infof("config has been altered")
-		return nil
-	}
-
-	return operation.printConfig(mergedConfigEntries)
+	output.Infof("config has been altered")
+	return nil
 }
 
 func (operation *Operation) printConfig(configs map[string]*string) error {
