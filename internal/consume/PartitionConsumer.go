@@ -145,8 +145,21 @@ func getOffsetBounds(client *sarama.Client, topic string, flags Flags, currentPa
 	}
 	if endOffset, err = getEndOffset(client, topic, flags, currentPartition); err != nil {
 		return ErrOffset, ErrOffset, err
-	} else if startOffset == endOffset {
-		endOffset = sarama.OffsetNewest //nothing to consume on this partition
+	}
+	output.Debugf("raw offsets: start=%d end=%d (before adjustment) on partition %d", startOffset, endOffset, currentPartition)
+
+	// When to-timestamp is specified and GetOffset returns -1, it means the timestamp
+	// is beyond all messages. We need to get the actual newest offset to consume up to it.
+	if endOffset == sarama.OffsetNewest && flags.ToTimestamp != "" {
+		if endOffset, err = (*client).GetOffset(topic, currentPartition, sarama.OffsetNewest); err != nil {
+			return ErrOffset, ErrOffset, err
+		}
+		output.Debugf("to-timestamp beyond messages, using newest offset %d on partition %d", endOffset, currentPartition)
+	}
+
+	// Check if there are any messages in the range before adjusting endOffset
+	if endOffset != sarama.OffsetNewest && startOffset >= endOffset {
+		endOffset = sarama.OffsetNewest // nothing to consume on this partition
 	} else if endOffset != sarama.OffsetNewest {
 		endOffset = endOffset - 1
 	}
