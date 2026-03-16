@@ -153,6 +153,59 @@ func TestConsumeFromTimestampIntegration(t *testing.T) {
 	testutil.AssertArraysEquals(t, []string{"g", "h"}, messages)
 }
 
+func TestConsumeSingleMessageInTimeRangeIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	topicName := testutil.CreateTopic(t, "consume-single-msg", "--partitions", "3")
+
+	// Produce some messages before the target time range
+	testutil.ProduceMessageOnPartition(t, topicName, "key-1", "before1", 0, 0)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-2", "before2", 1, 0)
+
+	time.Sleep(2 * time.Millisecond)
+	t1 := time.Now().UnixMilli()
+	time.Sleep(2 * time.Millisecond)
+
+	// Produce exactly ONE message on each partition within the time range
+	testutil.ProduceMessageOnPartition(t, topicName, "key-3", "single0", 0, 1)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-4", "single1", 1, 1)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-5", "single2", 2, 0)
+
+	time.Sleep(2 * time.Millisecond)
+	t2 := time.Now().UnixMilli()
+	time.Sleep(2 * time.Millisecond)
+
+	// Produce messages after the target time range
+	testutil.ProduceMessageOnPartition(t, topicName, "key-6", "after1", 0, 2)
+	testutil.ProduceMessageOnPartition(t, topicName, "key-7", "after2", 1, 2)
+
+	// Test: consume with time range that contains exactly one message per partition
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", strconv.FormatInt(t1, 10), "--to-timestamp", strconv.FormatInt(t2, 10), "--exit"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	output := kafkaCtl.GetStdOut()
+	messages := strings.Split(strings.TrimSpace(output), "\n")
+
+	// Should get exactly 3 messages (one from each partition)
+	if len(messages) != 3 {
+		t.Fatalf("expected 3 messages, got %d: %v", len(messages), messages)
+	}
+
+	// Verify we got the correct messages (order may vary due to partition consumption)
+	testutil.AssertContains(t, "single0", messages)
+	testutil.AssertContains(t, "single1", messages)
+	testutil.AssertContains(t, "single2", messages)
+
+	// Verify we did NOT get the before/after messages
+	for _, msg := range messages {
+		if strings.Contains(msg, "before") || strings.Contains(msg, "after") {
+			t.Fatalf("got unexpected message: %s", msg)
+		}
+	}
+}
+
 func TestConsumeRegistryProtobufWithNestedDependenciesIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
