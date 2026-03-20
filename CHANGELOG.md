@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Fixed a bug where consuming a time range near the end of a topic would not work correctly
 
 ### Fixed
 - [#313](https://github.com/deviceinsight/kafkactl/issues/313) Use `IncrementalAlterConfigs` API to fix TOCTOU race condition when altering topic/broker configs concurrently

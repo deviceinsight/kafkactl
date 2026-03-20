@@ -75,11 +75,13 @@ func (c *PartitionConsumer) Start(ctx context.Context, flags Flags, messages cha
 
 			if lastOffset == -1 && (flags.Exit || flags.Tail > 0 || flags.ToTimestamp != "") {
 				output.Debugf("Skipping empty partition %d", partitionID)
+				pc.AsyncClose()
 				return nil
 			} else if lastOffset == -1 || initialOffset <= lastOffset {
 				output.Debugf("Start consuming partition %d from offset %d to %d", partitionID, initialOffset, lastOffset)
 			} else {
-				output.Debugf("Skipping partition %d", partitionID)
+				output.Debugf("Skipping partition %d (initialOffset=%d > lastOffset=%d)", partitionID, initialOffset, lastOffset)
+				pc.AsyncClose()
 				return nil
 			}
 
@@ -151,10 +153,32 @@ func getOffsetBounds(client *sarama.Client, topic string, flags Flags, currentPa
 	}
 	if endOffset, err = getEndOffset(client, topic, flags, currentPartition); err != nil {
 		return ErrOffset, ErrOffset, err
-	} else if startOffset == endOffset {
-		endOffset = sarama.OffsetNewest //nothing to consume on this partition
+	}
+	output.Debugf("raw offsets: start=%d end=%d (before adjustment) on partition %d", startOffset, endOffset, currentPartition)
+
+	// If BOTH startOffset and endOffset are -1 when using timestamps, it means both timestamps
+	// are beyond all messages, so there's nothing to consume
+	if startOffset == sarama.OffsetNewest && endOffset == sarama.OffsetNewest && flags.ToTimestamp != "" {
+		output.Debugf("both from and to timestamps beyond messages, marking partition %d as empty", currentPartition)
+		// Leave both as -1 to skip partition
+	} else if endOffset == sarama.OffsetNewest && flags.ToTimestamp != "" {
+		// When to-timestamp is specified and GetOffset returns -1, it means the timestamp
+		// is beyond all messages. We need to get the actual newest offset to consume up to it.
+		if endOffset, err = (*client).GetOffset(topic, currentPartition, sarama.OffsetNewest); err != nil {
+			return ErrOffset, ErrOffset, err
+		}
+		output.Debugf("to-timestamp beyond messages, using newest offset %d on partition %d", endOffset, currentPartition)
+	}
+
+	// Check if there are no messages in the range
+	if endOffset != sarama.OffsetNewest && startOffset > endOffset {
+		// Check if there are any messages in the range BEFORE adjusting endOffset
+		// Note: startOffset == endOffset means there's ONE message at that offset
+		endOffset = sarama.OffsetNewest // nothing to consume on this partition
+		output.Debugf("no messages in range (start=%d > end=%d), marking partition %d as empty", startOffset, endOffset, currentPartition)
 	} else if endOffset != sarama.OffsetNewest {
 		endOffset = endOffset - 1
+		output.Debugf("adjusted endOffset to %d on partition %d", endOffset, currentPartition)
 	}
 	if flags.Tail > 0 && startOffset == sarama.OffsetNewest {
 		// When --tail is used compute startOffset so that it minimizes the number of messages consumed
