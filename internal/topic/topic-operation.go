@@ -446,32 +446,50 @@ func (operation *Operation) AlterTopic(topic string, flags AlterTopicFlags) erro
 	}
 
 	if len(flags.Configs) > 0 {
-		mergedConfigEntries := make(map[string]*string)
+		if flags.ValidateOnly {
+			// validate only - build merged config preview without modifying the topic
+			mergedConfigEntries := make(map[string]*string)
+			for i, config := range t.Configs {
+				mergedConfigEntries[config.Name] = &(t.Configs[i].Value)
+			}
 
-		for i, config := range t.Configs {
-			mergedConfigEntries[config.Name] = &(t.Configs[i].Value)
-		}
+			for _, config := range flags.Configs {
+				configParts := strings.SplitN(config, "=", 2)
 
-		for _, config := range flags.Configs {
-			configParts := strings.Split(config, "=")
-
-			if len(configParts) == 2 {
-				if len(configParts[1]) == 0 {
-					delete(mergedConfigEntries, configParts[0])
-				} else {
-					mergedConfigEntries[configParts[0]] = &configParts[1]
+				if len(configParts) == 2 {
+					if len(configParts[1]) == 0 {
+						delete(mergedConfigEntries, configParts[0])
+					} else {
+						mergedConfigEntries[configParts[0]] = &configParts[1]
+					}
 				}
 			}
-		}
 
-		if flags.ValidateOnly {
-			// validate only - directly alter the response object
 			t.Configs = make([]internal.Config, 0, len(mergedConfigEntries))
 			for key, value := range mergedConfigEntries {
 				t.Configs = append(t.Configs, internal.Config{Name: key, Value: *value})
 			}
 		} else {
-			if err = admin.AlterConfig(sarama.TopicResource, topic, mergedConfigEntries, flags.ValidateOnly); err != nil {
+			configEntries := make(map[string]sarama.IncrementalAlterConfigsEntry)
+
+			for _, config := range flags.Configs {
+				configParts := strings.SplitN(config, "=", 2)
+
+				if len(configParts) == 2 {
+					if len(configParts[1]) == 0 {
+						configEntries[configParts[0]] = sarama.IncrementalAlterConfigsEntry{
+							Operation: sarama.IncrementalAlterConfigsOperationDelete,
+						}
+					} else {
+						configEntries[configParts[0]] = sarama.IncrementalAlterConfigsEntry{
+							Operation: sarama.IncrementalAlterConfigsOperationSet,
+							Value:     &configParts[1],
+						}
+					}
+				}
+			}
+
+			if err = admin.IncrementalAlterConfig(sarama.TopicResource, topic, configEntries, flags.ValidateOnly); err != nil {
 				return errors.Errorf("Could not alter topic config '%s': %v", topic, err)
 			}
 			output.Infof("config has been altered")

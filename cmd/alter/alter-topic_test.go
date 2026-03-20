@@ -166,6 +166,112 @@ func TestAlterTopicDecreaseReplicationFactorIntegration(t *testing.T) {
 	}
 }
 
+func TestAlterTopicConfigIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	prefix := "alter-t-config-"
+
+	topicName := testutil.CreateTopic(t, prefix)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	// set first config
+	if _, err := kafkaCtl.Execute("alter", "topic", topicName, "--config", "retention.ms=3600000"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	// set second config (should NOT overwrite the first one)
+	if _, err := kafkaCtl.Execute("alter", "topic", topicName, "--config", "max.message.bytes=65536"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	verifyConfigs := func(_ uint) error {
+		_, err := kafkaCtl.Execute("describe", "topic", topicName, "-o", "yaml")
+		if err != nil {
+			return err
+		}
+		describedTopic, err := topic.FromYaml(kafkaCtl.GetStdOut())
+		if err != nil {
+			return err
+		}
+
+		configMap := make(map[string]string)
+		for _, c := range describedTopic.Configs {
+			configMap[c.Name] = c.Value
+		}
+
+		if configMap["retention.ms"] != "3600000" {
+			return errors.Newf("expected retention.ms=3600000, got: %s", configMap["retention.ms"])
+		}
+		if configMap["max.message.bytes"] != "65536" {
+			return errors.Newf("expected max.message.bytes=65536, got: %s", configMap["max.message.bytes"])
+		}
+
+		return nil
+	}
+
+	err := retry.Retry(
+		verifyConfigs,
+		strategy.Limit(5),
+		strategy.Backoff(backoff.Linear(10*time.Millisecond)),
+	)
+
+	if err != nil {
+		t.Fatalf("config verification failed for topic %s: %v", topicName, err)
+	}
+}
+
+func TestAlterTopicConfigDeleteIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	prefix := "alter-t-cfgdel-"
+
+	topicName := testutil.CreateTopic(t, prefix)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	// set a config
+	if _, err := kafkaCtl.Execute("alter", "topic", topicName, "--config", "retention.ms=3600000"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	// delete the config by setting empty value
+	if _, err := kafkaCtl.Execute("alter", "topic", topicName, "--config", "retention.ms="); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	verifyConfigDeleted := func(_ uint) error {
+		_, err := kafkaCtl.Execute("describe", "topic", topicName, "-o", "yaml")
+		if err != nil {
+			return err
+		}
+		describedTopic, err := topic.FromYaml(kafkaCtl.GetStdOut())
+		if err != nil {
+			return err
+		}
+
+		for _, c := range describedTopic.Configs {
+			if c.Name == "retention.ms" {
+				return errors.Newf("expected retention.ms to be deleted, but found value: %s", c.Value)
+			}
+		}
+
+		return nil
+	}
+
+	err := retry.Retry(
+		verifyConfigDeleted,
+		strategy.Limit(5),
+		strategy.Backoff(backoff.Linear(10*time.Millisecond)),
+	)
+
+	if err != nil {
+		t.Fatalf("config deletion verification failed for topic %s: %v", topicName, err)
+	}
+}
+
 func TestAlterTopicConfigK8sIntegration(t *testing.T) {
 
 	testutil.StartIntegrationTestWithContext(t, "k8s-mock")
