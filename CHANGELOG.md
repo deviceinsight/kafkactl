@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - [#313](https://github.com/deviceinsight/kafkactl/issues/313) Use `IncrementalAlterConfigs` API to fix TOCTOU race condition when altering topic/broker configs concurrently
+- [#299](https://github.com/deviceinsight/kafkactl/issues/299) Consumer authorization errors now return non-zero exit code
 
 ## 5.18.0 - 2026-02-12
 

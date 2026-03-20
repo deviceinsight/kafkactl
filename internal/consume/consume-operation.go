@@ -225,6 +225,8 @@ func applyConsumerConfigs(config *sarama.Config, clientContext internal.ClientCo
 
 	output.Debugf("using isolationLevel=%v", config.Consumer.IsolationLevel)
 
+	config.Consumer.Return.Errors = true
+
 	return nil
 }
 
