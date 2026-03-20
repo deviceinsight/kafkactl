@@ -86,6 +86,7 @@ func (c *PartitionConsumer) Start(ctx context.Context, flags Flags, messages cha
 			c.partitionConsumers.Go(func() error {
 
 				messageChannel := pc.Messages()
+				errorChannel := pc.Errors()
 
 			messageChannelRead:
 				for {
@@ -98,6 +99,11 @@ func (c *PartitionConsumer) Start(ctx context.Context, flags Flags, messages cha
 								pc.AsyncClose()
 								break messageChannelRead
 							}
+						}
+					case consumerError := <-errorChannel:
+						if consumerError != nil {
+							pc.AsyncClose()
+							return errors.Errorf("error consuming partition %d: %s", partitionID, consumerError.Err)
 						}
 					case <-time.After(5 * time.Second):
 						if flags.Exit || flags.Tail > 0 {

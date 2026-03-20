@@ -57,6 +57,22 @@ func (c *GroupConsumer) Start(ctx context.Context, flags Flags, messages chan<- 
 		}
 	})
 
+	c.errorGroup.Go(func() error {
+		for {
+			select {
+			case err, ok := <-consumerGroupClient.Errors():
+				if !ok {
+					return nil
+				}
+				if err != nil {
+					return err
+				}
+			case <-ctx.Done():
+				return nil
+			}
+		}
+	})
+
 	<-groupHandler.ready
 	output.Debugf("group consumer initialized")
 	return nil
