@@ -99,3 +99,41 @@ func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {
 	testutil.AssertEquals(t, "WaitForAll", envMap[global.ProducerRequiredAcks])
 	testutil.AssertEquals(t, "1234", envMap[global.ProducerMaxMessageBytes])
 }
+
+func TestSaslCredentialsNotInPodEnvironmentWhenSaslSecretNameIsSet(t *testing.T) {
+	var context internal.ClientContext
+	context.Sasl.Enabled = true
+	context.Sasl.Username = "user"
+	context.Sasl.Password = "pass"
+	context.Kubernetes.SaslSecret.Name = "my-sasl-secret"
+
+	environment := k8s.ParsePodEnvironment(context)
+
+	for _, envVar := range environment {
+		if strings.HasPrefix(envVar, global.SaslUsername+"=") {
+			t.Fatalf("%s should not be in pod environment when saslSecret.name is set", global.SaslUsername)
+		}
+		if strings.HasPrefix(envVar, global.SaslPassword+"=") {
+			t.Fatalf("%s should not be in pod environment when saslSecret.name is set", global.SaslPassword)
+		}
+	}
+}
+
+func TestSaslCredentialsNotInPodEnvironmentWhenSaslSecretCreateIsEnabled(t *testing.T) {
+	var context internal.ClientContext
+	context.Sasl.Enabled = true
+	context.Sasl.Username = "user"
+	context.Sasl.Password = "pass"
+	context.Kubernetes.SaslSecret.Create = true
+
+	environment := k8s.ParsePodEnvironment(context)
+
+	for _, envVar := range environment {
+		if strings.HasPrefix(envVar, global.SaslUsername+"=") {
+			t.Fatalf("%s should not be in pod environment when saslSecret.create is enabled", global.SaslUsername)
+		}
+		if strings.HasPrefix(envVar, global.SaslPassword+"=") {
+			t.Fatalf("%s should not be in pod environment when saslSecret.create is enabled", global.SaslPassword)
+		}
+	}
+}

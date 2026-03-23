@@ -127,6 +127,13 @@ contexts:
       imagePullSecret: registry-secret
       # optional: secret containing tls certificates (e.g. ca.crt, cert.crt, key.key)
       tlsSecret: tls-secret
+      # optional: inject SASL credentials into the pod via a Kubernetes secret instead of plaintext env vars.
+      # name and create are mutually exclusive.
+      saslSecret:
+        # reference an existing secret with keys "username" and "password" (kafkactl will not manage its lifecycle)
+        name: sasl-secret
+        # alternatively, let kafkactl create a short-lived secret from the local sasl config and delete it after the pod exits
+        create: false
       # optional: Username to impersonate for the kubectl command
       asUser: user
       # optional: serviceAccount to use for the pod
@@ -396,6 +403,54 @@ contexts:
       # set insecure to true to ignore all tls verification (defaults to false)
       insecure: false
 ----
+
+If your Kafka cluster requires SASL authentication, you can avoid passing credentials as plaintext environment
+variables in the pod spec by using `saslSecret`. There are two options:
+
+. Reference an existing secret (must contain keys `username` and `password`):
++
+[,$yaml]
+----
+contexts:
+  kafka-cluster:
+    brokers:
+      - broker1:9092
+      - broker2:9092
+    kubernetes:
+      enabled: true
+      kubeContext: k8s-cluster
+      namespace: k8s-namespace
+      saslSecret:
+        name: my-sasl-secret
+    sasl:
+      enabled: true
+      mechanism: scram-sha256
+----
+
+. Let kafkactl create a short-lived secret based on credentials from the local config:
++
+[,$yaml]
+----
+contexts:
+  kafka-cluster:
+    brokers:
+      - broker1:9092
+      - broker2:9092
+    kubernetes:
+      enabled: true
+      kubeContext: k8s-cluster
+      namespace: k8s-namespace
+      saslSecret:
+        create: true
+    sasl:
+      enabled: true
+      mechanism: scram-sha256
+      username: my-user
+      password: my-password
+----
++
+kafkactl will create the secret before the pod starts, verify no secret with the generated name already exists,
+and delete it once the pod exits.
 
 Instead of directly talking to kafka brokers a kafkactl docker image is deployed as a pod into the kubernetes
 cluster, and the defined namespace. Standard-Input and Standard-Output are then wired between the pod and your shell
