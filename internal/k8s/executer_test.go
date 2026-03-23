@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/global"
 	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
 )
 
@@ -392,4 +393,94 @@ func indexOf(element string, data []string) int {
 		}
 	}
 	return -1
+}
+
+func TestExecWithSaslSecretNameProvided(t *testing.T) {
+	var clientContext internal.ClientContext
+	clientContext.Kubernetes.SaslSecret.Name = "my-sasl-secret"
+
+	testRunner := TestRunner{}
+	testRunner.response = []byte(sampleKubectlVersionOutput)
+	var runner k8s.Runner = &testRunner
+
+	exec, err := k8s.NewExecutor(context.Background(), clientContext, runner)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = exec.Run("scratch", "/kafkactl", []string{"version"}, []string{"ENV_A=1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	overrideType := extractParam(t, testRunner.args, "--override-type")
+	if overrideType != "json" {
+		t.Fatalf("wrong override-type: %s", overrideType)
+	}
+
+	overrides := extractParam(t, testRunner.args, "--overrides")
+	var podOverrides k8s.JSONPatchType
+	if err := json.Unmarshal([]byte(overrides), &podOverrides); err != nil {
+		t.Fatalf("unable to unmarshal overrides: %v", err)
+	}
+
+	var envVar struct {
+		Name      string `json:"name"`
+		ValueFrom struct {
+			SecretKeyRef struct {
+				Name string `json:"name"`
+				Key  string `json:"key"`
+			} `json:"secretKeyRef"`
+		} `json:"valueFrom"`
+	}
+
+	foundUsername := false
+	foundPassword := false
+	for _, patch := range podOverrides {
+		if patch.Path != "/spec/containers/0/env/-" || patch.Op != "add" {
+			continue
+		}
+		valueBytes, _ := json.Marshal(patch.Value)
+		if err := json.Unmarshal(valueBytes, &envVar); err != nil {
+			t.Fatalf("unable to parse env var patch value: %v", err)
+		}
+		if envVar.ValueFrom.SecretKeyRef.Name != "my-sasl-secret" {
+			t.Fatalf("wrong secret name in patch: %s", envVar.ValueFrom.SecretKeyRef.Name)
+		}
+		if envVar.Name == global.SaslUsername && envVar.ValueFrom.SecretKeyRef.Key == "username" {
+			foundUsername = true
+		}
+		if envVar.Name == global.SaslPassword && envVar.ValueFrom.SecretKeyRef.Key == "password" {
+			foundPassword = true
+		}
+	}
+	if !foundUsername {
+		t.Fatalf("username secretKeyRef patch not found in overrides: %s", overrides)
+	}
+	if !foundPassword {
+		t.Fatalf("password secretKeyRef patch not found in overrides: %s", overrides)
+	}
+}
+
+func TestExecWithSaslSecretNameAndCreateBothSetReturnsError(t *testing.T) {
+	var clientContext internal.ClientContext
+	clientContext.Kubernetes.SaslSecret.Name = "my-sasl-secret"
+	clientContext.Kubernetes.SaslSecret.Create = true
+
+	testRunner := TestRunner{}
+	testRunner.response = []byte(sampleKubectlVersionOutput)
+	var runner k8s.Runner = &testRunner
+
+	exec, err := k8s.NewExecutor(context.Background(), clientContext, runner)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = exec.Run("scratch", "/kafkactl", []string{"version"}, []string{})
+	if err == nil {
+		t.Fatal("expected error when both saslSecret.name and saslSecret.create are set")
+	}
+	if !strings.Contains(err.Error(), "mutually exclusive") {
+		t.Fatalf("unexpected error message: %v", err)
+	}
 }

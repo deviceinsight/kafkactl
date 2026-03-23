@@ -180,8 +180,12 @@ func parsePodEnvironment(context internal.ClientContext) []string {
 	envVariables = appendStringIfDefined(envVariables, global.TLSCertKey, context.TLS.CertKey)
 	envVariables = appendBool(envVariables, global.TLSInsecure, context.TLS.Insecure)
 	envVariables = appendBool(envVariables, global.SaslEnabled, context.Sasl.Enabled)
-	envVariables = appendStringIfDefined(envVariables, global.SaslUsername, context.Sasl.Username)
-	envVariables = appendStringIfDefined(envVariables, global.SaslPassword, context.Sasl.Password)
+
+	if context.Kubernetes.SaslSecret.Name == "" && !context.Kubernetes.SaslSecret.Create {
+		envVariables = appendStringIfDefined(envVariables, global.SaslUsername, context.Sasl.Username)
+		envVariables = appendStringIfDefined(envVariables, global.SaslPassword, context.Sasl.Password)
+	}
+
 	envVariables = appendStringIfDefined(envVariables, global.SaslMechanism, context.Sasl.Mechanism)
 	envVariables = appendStringIfDefined(envVariables, global.SaslTokenProviderPlugin, context.Sasl.TokenProvider.PluginName)
 	envVariables = appendMapIfDefined(envVariables, global.SaslTokenProviderOptions, context.Sasl.TokenProvider.Options)

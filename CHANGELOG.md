@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- [#322](https://github.com/deviceinsight/kafkactl/issues/322) Support SASL credential injection in pods via k8s secret
+
 ### Fixed
 - [#313](https://github.com/deviceinsight/kafkactl/issues/313) Use `IncrementalAlterConfigs` API to fix TOCTOU race condition when altering topic/broker configs concurrently
 - [#299](https://github.com/deviceinsight/kafkactl/issues/299) Consumer authorization errors now return non-zero exit code

@@ -1,5 +1,7 @@
 package k8s
 
+import "github.com/deviceinsight/kafkactl/v5/internal/global"
+
 type imagePullSecretType struct {
 	Name string `json:"name"`
 }
@@ -17,6 +19,20 @@ type volumeMountType struct {
 	Name      string `json:"name"`
 	MountPath string `json:"mountPath"`
 	ReadOnly  bool   `json:"readOnly"`
+}
+
+type secretKeyRefType struct {
+	Name string `json:"name"`
+	Key  string `json:"key"`
+}
+
+type valueFromType struct {
+	SecretKeyRef secretKeyRefType `json:"secretKeyRef"`
+}
+
+type secretEnvVarType struct {
+	Name      string        `json:"name"`
+	ValueFrom valueFromType `json:"valueFrom"`
 }
 
 // JSONPatchOperation represents a single JSON Patch operation (RFC 6902)
@@ -57,6 +73,26 @@ func (kubectl *executor) createPodOverrides() JSONPatchType {
 			Path: "/spec/containers/0/volumeMounts",
 			Value: []volumeMountType{
 				{Name: "kafkactl-tls", MountPath: "/etc/ssl/certs/kafkactl", ReadOnly: true},
+			},
+		})
+	}
+
+	// Add SASL secret if specified
+	if kubectl.saslSecret != "" {
+		patches = append(patches, JSONPatchOperation{
+			Op:   "add",
+			Path: "/spec/containers/0/env/-",
+			Value: secretEnvVarType{
+				Name:      global.SaslUsername,
+				ValueFrom: valueFromType{SecretKeyRef: secretKeyRefType{Name: kubectl.saslSecret, Key: "username"}},
+			},
+		})
+		patches = append(patches, JSONPatchOperation{
+			Op:   "add",
+			Path: "/spec/containers/0/env/-",
+			Value: secretEnvVarType{
+				Name:      global.SaslPassword,
+				ValueFrom: valueFromType{SecretKeyRef: secretKeyRefType{Name: kubectl.saslSecret, Key: "password"}},
 			},
 		})
 	}

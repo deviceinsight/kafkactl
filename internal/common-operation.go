@@ -81,6 +81,11 @@ type K8sToleration struct {
 	Effect   string `json:"effect" yaml:"effect"`
 }
 
+type K8sSaslSecretConfig struct {
+	Name   string
+	Create bool
+}
+
 type K8sConfig struct {
 	Enabled         bool
 	Binary          string
@@ -90,6 +95,7 @@ type K8sConfig struct {
 	Image           string
 	ImagePullSecret string
 	TLSSecret       string
+	SaslSecret      K8sSaslSecretConfig
 	ServiceAccount  string
 	AsUser          string
 	KeepPod         bool
@@ -228,6 +234,8 @@ func CreateClientContext() (ClientContext, error) {
 	context.Kubernetes.Image = viper.GetString("contexts." + context.Name + ".kubernetes.image")
 	context.Kubernetes.ImagePullSecret = viper.GetString("contexts." + context.Name + ".kubernetes.imagePullSecret")
 	context.Kubernetes.TLSSecret = viper.GetString("contexts." + context.Name + ".kubernetes.tlsSecret")
+	context.Kubernetes.SaslSecret.Name = viper.GetString("contexts." + context.Name + ".kubernetes.saslSecret.name")
+	context.Kubernetes.SaslSecret.Create = viper.GetBool("contexts." + context.Name + ".kubernetes.saslSecret.create")
 	context.Kubernetes.ServiceAccount = viper.GetString("contexts." + context.Name + ".kubernetes.serviceAccount")
 	context.Kubernetes.AsUser = viper.GetString("contexts." + context.Name + ".kubernetes.asUser")
 	context.Kubernetes.KeepPod = viper.GetBool("contexts." + context.Name + ".kubernetes.keepPod")
