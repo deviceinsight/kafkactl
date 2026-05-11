@@ -9,6 +9,7 @@ A command-line interface the simplifies interaction with Kafka.
 ### Options
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -h, --help                 help for kafkactl
@@ -45,6 +46,7 @@ alter topics, partitions, brokers, users
 #### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -78,6 +80,7 @@ kafkactl alter broker BROKER [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -107,6 +110,7 @@ kafkactl alter partition TOPIC PARTITION [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -138,6 +142,7 @@ kafkactl alter topic TOPIC [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -169,6 +174,7 @@ kafkactl alter user USERNAME [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -196,6 +202,7 @@ kafkactl attach [flags]
 #### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -219,6 +226,7 @@ clone topics, consumerGroups
 #### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -248,6 +256,7 @@ kafkactl clone consumer-group SOURCE_GROUP TARGET_GROUP [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -275,6 +284,7 @@ kafkactl clone topic SOURCE_TOPIC TARGET_TOPIC [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -331,6 +341,7 @@ kafkactl completion [bash|zsh|fish|powershell]
 #### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -354,6 +365,7 @@ show and edit configurations
 #### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -389,6 +401,7 @@ kafkactl config current-context [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -421,6 +434,7 @@ kafkactl config get-contexts [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -452,6 +466,7 @@ kafkactl config use-context [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -483,6 +498,7 @@ kafkactl config view [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -539,6 +555,7 @@ kafkactl consume TOPIC [flags]
 #### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -562,6 +579,7 @@ create topics, consumerGroups, acls, users
 #### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -603,6 +621,7 @@ kafkactl create access-control-list [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -635,6 +654,7 @@ kafkactl create consumer-group GROUP [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -667,6 +687,7 @@ kafkactl create topic TOPIC [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -698,6 +719,7 @@ kafkactl create user USERNAME [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -721,6 +743,7 @@ delete topics, consumerGroups, consumer-group-offset, acls, records, users
 #### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -764,6 +787,7 @@ kafkactl delete access-control-list [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -793,6 +817,7 @@ kafkactl delete consumer-group-offset CONSUMER-GROUP --topic=TOPIC --partition=P
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -820,6 +845,7 @@ kafkactl delete consumer-group CONSUMER-GROUP [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -848,6 +874,7 @@ kafkactl delete records TOPIC [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -875,6 +902,7 @@ kafkactl delete topic TOPIC [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -903,6 +931,7 @@ kafkactl delete user USERNAME [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -926,6 +955,7 @@ describe topics, consumerGroups, brokers, users
 #### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -959,6 +989,7 @@ kafkactl describe broker ID [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -991,6 +1022,7 @@ kafkactl describe consumer-group GROUP [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -1021,6 +1053,7 @@ kafkactl describe topic TOPIC [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -1049,6 +1082,7 @@ kafkactl describe user USERNAME [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -1072,6 +1106,7 @@ get info about topics, consumerGroups, acls, brokers, users
 #### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -1115,6 +1150,7 @@ kafkactl get access-control-list [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -1143,6 +1179,7 @@ kafkactl get brokers [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -1172,6 +1209,7 @@ kafkactl get consumer-groups [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -1200,6 +1238,7 @@ kafkactl get topics [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -1228,6 +1267,7 @@ kafkactl get users [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -1278,6 +1318,7 @@ kafkactl produce TOPIC [flags]
 #### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -1301,6 +1342,7 @@ reset consumerGroupsOffset
 #### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -1338,6 +1380,7 @@ kafkactl reset consumer-group-offset GROUP [flags]
 ##### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
@@ -1365,6 +1408,7 @@ kafkactl version [flags]
 #### Options inherited from parent commands
 
 ```
+      --clear-keyring        clear stored credentials from keyring and re-prompt
   -C, --config-file string   config file. default locations: [$HOME/.config/kafkactl $HOME/.kafkactl $APPDATA/kafkactl /etc/kafkactl]
       --context string       The name of the context to use
   -V, --verbose              verbose output
