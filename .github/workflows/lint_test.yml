@@ -13,8 +13,8 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
         with:
           go-version-file: 'go.mod'
       - name: Run Lint
@@ -24,14 +24,14 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
         with:
           go-version-file: 'go.mod'
       - name: Run Unit tests
         run: make test
       - name: Upload logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: test-logs
           path: test.log
@@ -56,19 +56,19 @@ jobs:
       KAFKAVERSION: ${{ matrix.kafka_version }}
       REQUESTTIMEOUT: 15s
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
         with:
           go-version-file: 'go.mod'
       - name: Run integration tests
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@14672906e672a08bd6eeb15720e9ed3ce869cdd4
         with:
           max_attempts: 2
           retry_on: error
           timeout_minutes: 10
           command: make integration_test
       - name: Upload logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: it-logs-${{ matrix.cp_version }}
           path: integration-test.log
