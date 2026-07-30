@@ -567,16 +567,33 @@ func TopicExists(client *sarama.Client, name string) (bool, error) {
 }
 
 func ListConfigs(admin *sarama.ClusterAdmin, resource sarama.ConfigResource, includeDefaults bool) ([]Config, error) {
-	var (
-		configEntries []sarama.ConfigEntry
-		err           error
-	)
-
-	if configEntries, err = (*admin).DescribeConfig(resource); err != nil {
+	configEntries, err := DescribeConfig(admin, resource)
+	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("failed to describe %v config", getResourceTypeName(resource.Type)))
 	}
 
 	return listConfigsFromEntries(configEntries, includeDefaults), nil
+}
+
+// DescribeConfig describes a single config resource. It replaces sarama's
+// deprecated ClusterAdmin.DescribeConfig, which is no longer available.
+func DescribeConfig(admin *sarama.ClusterAdmin, resource sarama.ConfigResource) ([]sarama.ConfigEntry, error) {
+	results, err := (*admin).DescribeConfigs([]*sarama.ConfigResource{&resource}, sarama.DescribeConfigsOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	entries := make([]sarama.ConfigEntry, 0, len(results))
+	for _, result := range results {
+		if result.Name != resource.Name {
+			continue
+		}
+		if result.ErrorCode != 0 {
+			return nil, &sarama.DescribeConfigError{Err: result.ErrorCode, ErrMsg: result.ErrorMsg}
+		}
+		entries = append(entries, result.Configs...)
+	}
+	return entries, nil
 }
 
 func listConfigsFromEntries(configEntries []sarama.ConfigEntry, includeDefaults bool) []Config {
