@@ -83,7 +83,7 @@ func (operation *Operation) AlterBroker(id string, flags AlterBrokerFlags) error
 			Name: id,
 		}
 
-		if existingConfigs, err = admin.DescribeConfig(brokerConfig); err != nil {
+		if existingConfigs, err = internal.DescribeConfig(&admin, brokerConfig); err != nil {
 			return errors.Wrap(err, "failed to describe config for broker")
 		}
 
