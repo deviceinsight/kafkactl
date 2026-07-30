@@ -1,6 +1,8 @@
 package reset_test
 
 import (
+	"encoding/json"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -50,6 +52,74 @@ func TestResetCGOForSingleTopicIntegration(t *testing.T) {
 
 	testutil.VerifyConsumerGroupOffset(t, group1, topicName, 0)
 	testutil.VerifyConsumerGroupOffset(t, group2, topicName, 2)
+}
+
+type resetPartitionOffset struct {
+	Partition     int32
+	CurrentOffset int64 `json:"currentOffset"`
+	TargetOffset  int64 `json:"targetOffset"`
+}
+
+func TestResetCGOForTopicWithManyPartitionsIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTest(t)
+
+	const partitionCount = 20
+
+	topicName := testutil.CreateTopic(t, "reset-cgo-parallel", "--partitions", strconv.Itoa(partitionCount))
+
+	group := testutil.CreateConsumerGroup(t, "reset-cgo-parallel", topicName)
+
+	for partition := int32(0); partition < partitionCount; partition++ {
+		testutil.ProduceMessageOnPartition(t, topicName, "test-key", "test-value1", partition, 0)
+		testutil.ProduceMessageOnPartition(t, topicName, "test-key", "test-value2", partition, 1)
+	}
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("reset", "consumer-group-offset", group, "--topic", topicName,
+		"--newest", "--execute", "-o", "json"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	resetResults := parseResetPartitionOffsets(t, kafkaCtl.GetStdOut())
+
+	testutil.AssertIntEquals(t, partitionCount, len(resetResults))
+
+	for i, result := range resetResults {
+		testutil.AssertIntEquals(t, i, int(result.Partition))
+		testutil.AssertIntEquals(t, 0, int(result.CurrentOffset))
+		testutil.AssertIntEquals(t, 2, int(result.TargetOffset))
+	}
+
+	// the reset command only reports what it committed - re-fetch the offsets from the
+	// broker in a fresh command to confirm the concurrent resets were actually persisted
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("reset", "consumer-group-offset", group, "--topic", topicName,
+		"--oldest", "-o", "json"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	verifyResults := parseResetPartitionOffsets(t, kafkaCtl.GetStdOut())
+
+	testutil.AssertIntEquals(t, partitionCount, len(verifyResults))
+
+	for i, result := range verifyResults {
+		testutil.AssertIntEquals(t, i, int(result.Partition))
+		testutil.AssertIntEquals(t, 2, int(result.CurrentOffset))
+		testutil.AssertIntEquals(t, 0, int(result.TargetOffset))
+	}
+}
+
+func parseResetPartitionOffsets(t *testing.T, output string) []resetPartitionOffset {
+	t.Helper()
+
+	var results []resetPartitionOffset
+	if err := json.Unmarshal([]byte(output), &results); err != nil {
+		t.Fatalf("failed to parse reset output: %v\noutput was:\n%s", err, output)
+	}
+	return results
 }
 
 func TestResetCGOForMultipleTopicsIntegration(t *testing.T) {
