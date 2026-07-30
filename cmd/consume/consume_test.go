@@ -120,8 +120,8 @@ func TestConsumeFromTimestampIntegration(t *testing.T) {
 
 	// test --from-timestamp with --to-timestamp with formatted dates
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
-	t1Formatted := time.UnixMilli(t1).Format("2006-01-02T15:04:05.000Z")
-	t2Formatted := time.UnixMilli(t2).Format("2006-01-02T15:04:05.000Z")
+	t1Formatted := time.UnixMilli(t1).UTC().Format("2006-01-02T15:04:05.000Z")
+	t2Formatted := time.UnixMilli(t2).UTC().Format("2006-01-02T15:04:05.000Z")
 	if _, err := kafkaCtl.Execute("consume", topicName, "--from-timestamp", t1Formatted, "--to-timestamp", t2Formatted); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
