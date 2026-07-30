@@ -7,6 +7,7 @@ import (
 	"github.com/deviceinsight/kafkactl/v5/internal/consume"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 )
 
 type partitionOffsets struct {
@@ -62,13 +63,28 @@ func (consumer *OffsetResettingConsumer) Setup(session sarama.ConsumerGroupSessi
 			return errors.Wrap(err, "failed to list partitions")
 		}
 
-		for _, partition := range partitions {
-			offset, err := resetOffset(&consumer.client, consumer.topicName, partition, flags, groupOffsets, session)
-			if err != nil {
-				return err
-			}
-			offsets = append(offsets, offset)
+		results := make([]partitionOffsets, len(partitions))
+		var resetErrorGroup errgroup.Group
+		resetErrorGroup.SetLimit(100)
+
+		for i, partition := range partitions {
+			index := i
+			partition := partition
+			resetErrorGroup.Go(func() error {
+				offset, err := resetOffset(&consumer.client, consumer.topicName, partition, flags, groupOffsets, session)
+				if err != nil {
+					return err
+				}
+				results[index] = offset
+				return nil
+			})
 		}
+
+		if err := resetErrorGroup.Wait(); err != nil {
+			return err
+		}
+
+		offsets = append(offsets, results...)
 	}
 
 	if flags.OutputFormat != "" {

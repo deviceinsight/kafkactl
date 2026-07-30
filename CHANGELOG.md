@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `reset offset` now resets partitions concurrently, significantly speeding up offset resets on topics with many partitions
+
 ## 5.19.0 - 2026-05-11
 
 ### Added
