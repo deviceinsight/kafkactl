@@ -58,6 +58,7 @@ type DeleteACLFlags struct {
 	Cluster      bool
 	Allow        bool
 	Deny         bool
+	ResourceName string
 	Principal    string
 	Host         string
 	Operation    string
@@ -316,6 +317,10 @@ func (operation *Operation) DeleteACL(flags DeleteACLFlags) error {
 	} else {
 		filter.ResourceType = sarama.AclResourceCluster
 		filter.ResourcePatternTypeFilter = patternTypeFromString(flags.PatternType)
+	}
+
+	if flags.ResourceName != "" {
+		filter.ResourceName = &flags.ResourceName
 	}
 
 	if flags.Principal != "" {

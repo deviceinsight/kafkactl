@@ -1406,6 +1406,8 @@ kafkactl delete acl --cluster --operation any --pattern any
 kafkactl delete acl --groups --operation describe --pattern prefixed --allow
 # delete all topic acls for a principal
 kafkactl delete acl --topics --operation any --pattern any --prinicipal User:myUser
+# delete all topic acls for a resource name
+kafkactl delete acl --topics --operation any --pattern any --resource-name my-topic
 # delete all topic acls for a host
 kafkactl delete acl --topics --operation any --pattern any --host my-host
 ----
