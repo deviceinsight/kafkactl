@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- [#337](https://github.com/deviceinsight/kafkactl/issues/337) Support producing and consuming raw Avro message values without Schema Registry, using schemas from local files or HTTP(S) URLs and, when consuming, per-message Kafka headers such as CloudEvents `ce_dataschema`
+
+### Changed
+- Cap individual Avro array and map blocks at 1,000,000 items to reduce excessive allocation during decoding
+
+### Fixed
+- Prevent integer overflow on 32-bit systems and correctly decode zero-length AMQP str32 and vbin32 header values
+
 ## 5.20.0 - 2026-07-30
 
 ### Changed

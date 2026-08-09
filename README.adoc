@@ -11,7 +11,7 @@ image:https://github.com/deviceinsight/kafkactl/actions/workflows/lint_test.yml/
 == Features
 
 * command auto-completion for bash, zsh, fish shell including dynamic completion for e.g. topics or consumer groups.
-* support for avro schemas
+* support for Schema Registry-backed and standalone Avro schemas
 * support for JSON schema registry
 * Configuration of different contexts
 * directly access kafka clusters inside your kubernetes cluster
@@ -952,7 +952,14 @@ kafkactl produce my-topic --value-proto-type=ComplexMessage --proto-file=complex
 
 === Avro support
 
-In order to enable avro support you just have to add the schema registry to your configuration:
+`kafkactl` supports both Schema Registry-backed Avro messages and raw Avro values. Raw Avro values contain the encoded
+Avro datum directly, without Confluent framing (the magic byte and schema ID).
+
+When decoding either format, `kafkactl` rejects a single Avro array or map block that declares more than 1,000,000
+items. This prevents a small malformed payload from triggering an extremely large memory allocation. An array or map
+may still contain more items in total when they are split across multiple Avro blocks.
+
+For Schema Registry-backed Avro messages, add the schema registry to your configuration:
 
 [,$yaml]
 ----
@@ -994,6 +1001,151 @@ decoded with an avro schema.
 The `consume` command handles this automatically and no configuration is needed.
 
 An additional parameter `print-schema` can be provided to display the schema used for decoding.
+
+==== Raw Avro values without Schema Registry
+
+Raw Avro mode encodes and decodes message values using a standalone Avro schema. It only applies to the Kafka message
+value; raw Avro mode does not process keys. Enabling this mode is explicit:
+
+* `produce` uses `--avro-schema-file`.
+* `consume` uses `--avro-schema-file`, `--avro-schema-header`, or both.
+
+Despite its name, `--avro-schema-file` accepts either a local file path or an `http://` or `https://` URL.
+`--avro-schema-file` explicitly enables raw Avro mode for either command, while `--avro-schema-header` enables it for
+`consume`. In this mode, `kafkactl` does not use the configured Schema Registry to serialize or deserialize messages.
+The existing `avro.jsonCodec` context setting still controls whether input and output use standard JSON (the default)
+or Avro JSON.
+
+===== Producing raw Avro values
+
+The input value is JSON and is encoded as a raw Avro datum using the supplied schema:
+
+[,bash]
+----
+# use a local schema
+kafkactl produce events --avro-schema-file ./event.avsc --value '{"id":"123","message":"created"}'
+
+# download the schema over HTTP(S)
+kafkactl produce events --avro-schema-file https://schemas.example.com/event.avsc \
+  --value '{"id":"123","message":"created"}'
+----
+
+As with other `produce` modes, `--value null` and `--null-value` create a Kafka tombstone. To encode the Avro JSON
+`null` value instead, pass the literal through an input encoding, for example:
+
+[,bash]
+----
+kafkactl produce events \
+  --avro-schema-file ./nullable-event.avsc \
+  --value bnVsbA== \
+  --value-encoding base64
+----
+
+`kafkactl` does not add a schema header automatically. To let consumers discover the schema through the CloudEvents
+`dataschema` attribute, add the Kafka header explicitly:
+
+[,bash]
+----
+kafkactl produce events \
+  --avro-schema-file https://schemas.example.com/event.avsc \
+  --value '{"id":"123","message":"created"}' \
+  -H ce_dataschema:https://schemas.example.com/event.avsc
+----
+
+===== Consuming raw Avro values
+
+Use a fixed schema source when every message has the same schema:
+
+[,bash]
+----
+kafkactl consume events --avro-schema-file ./event.avsc
+kafkactl consume events --avro-schema-file https://schemas.example.com/event.avsc
+----
+
+`--print-schema` also works in raw Avro mode; the standalone schema is shown without a Schema Registry ID. Kafka
+tombstones remain null and do not trigger header lookup or Avro decoding.
+
+To get a schema URL from each message, pass `--avro-schema-header`. When the flag is used without a value, it reads the
+CloudEvents `ce_dataschema` header:
+
+[,bash]
+----
+kafkactl consume events --avro-schema-header
+----
+
+Use the `--avro-schema-header=<name>` form to select a different header. Because the flag's value is optional, a custom
+name must be joined to the flag with `=`:
+
+[,bash]
+----
+kafkactl consume events --avro-schema-header=custom_schema_uri
+----
+
+Omitting `--avro-schema-header` leaves header-based raw Avro decoding disabled. The header value must be an `http://`
+or `https://` URL. Header names are case-sensitive. When a message contains the specified header more than once, the
+last value wins.
+
+A fixed source can be supplied as a fallback for messages without that header:
+
+[,bash]
+----
+kafkactl consume events \
+  --avro-schema-header \
+  --avro-schema-file ./fallback-event.avsc
+----
+
+For non-tombstone values, a present header always takes priority; the fixed source is used only when the header is
+missing. If the header value is not a valid URL, if the schema cannot be downloaded or parsed, or if the value cannot
+be decoded with that schema, `consume` returns an error instead of falling back.
+
+Schemas selected through header URLs are cached by default. Disable the cache if the same URL may serve a different
+schema:
+
+[,bash]
+----
+kafkactl consume events --avro-schema-header --avro-schema-cache=false
+----
+
+`--avro-schema-cache` only affects schemas selected through message headers. Its default value is `true`. The cache
+keeps one compiled schema for each distinct header URL for the lifetime of the command. URL fragments do not create
+separate cache entries, while query strings do. Consider disabling the cache if messages may reference many distinct
+URLs.
+
+===== Remote schema limits and security
+
+All remote schema sources are subject to the following limits:
+
+* Only `http://` and `https://` URLs are accepted.
+* Each schema lookup, including redirects and reading the response body, has a total timeout of 5 seconds. The response
+  body is limited to 1 MiB.
+* Redirects are limited to 10. Every redirect target must use HTTP(S), include a host, and contain no user information.
+* The final response must have a 2xx HTTP status.
+* `kafkactl` does not add credentials, cookies, or custom authentication headers. URLs containing user information are
+  rejected, and Schema Registry authentication settings are not used for raw Avro schema URLs.
+
+URLs for localhost and private network addresses are allowed. A header-controlled schema URL can therefore make
+requests to services reachable from the environment running `kafkactl` (the workstation or the temporary pod when
+Kubernetes execution is enabled). Only enable header-based lookup for trusted topics, and only in environments where
+access to those network services is acceptable.
+
+When Kubernetes execution is enabled, the command runs inside a temporary pod. A local path passed to
+`--avro-schema-file` refers to that pod and only works if the file exists there. Files from the workstation are not
+copied or mounted automatically. In most cases, use an HTTP(S) URL that the pod can reach. The same path behavior
+applies to local Protobuf descriptions specified with `--proto-file` or `--protoset-file`, or configured in the current
+context.
+
+===== Compatibility with other serialization options
+
+Raw Avro and `--value-proto-type` both control the message value and cannot be used together. `--key-proto-type` can be
+used at the same time because raw Avro does not process keys, but it requires a local Protobuf description supplied by
+`--proto-file`, `--protoset-file`, or the current context. `--proto-import-path` only resolves imports and does not
+provide a message description by itself.
+
+For `produce`, raw Avro also cannot be combined with a non-default `--key-schema-version` or
+`--value-schema-version`; those options select versions from Schema Registry.
+
+Using `ce_dataschema` only supplies a schema URL for the raw Kafka value. `kafkactl` does not create or validate a full
+CloudEvent, and CloudEvents structured content mode is not supported.
 
 === JSON schema support
 
