@@ -2,6 +2,7 @@ package consume
 
 import (
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"sort"
 	"time"
@@ -90,10 +91,10 @@ func decodeAMQPValue(data []byte) []byte {
 			return data[2 : 2+length]
 		}
 	case 0xb1: // str32: string with 4-byte length
-		if len(data) >= 6 {
-			length := int(data[1])<<24 | int(data[2])<<16 | int(data[3])<<8 | int(data[4])
-			if len(data) >= 5+length {
-				return data[5 : 5+length]
+		if len(data) >= 5 {
+			length := binary.BigEndian.Uint32(data[1:5])
+			if uint64(length) <= uint64(len(data)-5) {
+				return data[5 : 5+int(length)]
 			}
 		}
 	case 0xa0: // vbin8: binary with 1-byte length
@@ -102,10 +103,10 @@ func decodeAMQPValue(data []byte) []byte {
 			return data[2 : 2+length]
 		}
 	case 0xb0: // vbin32: binary with 4-byte length
-		if len(data) >= 6 {
-			length := int(data[1])<<24 | int(data[2])<<16 | int(data[3])<<8 | int(data[4])
-			if len(data) >= 5+length {
-				return data[5 : 5+length]
+		if len(data) >= 5 {
+			length := binary.BigEndian.Uint32(data[1:5])
+			if uint64(length) <= uint64(len(data)-5) {
+				return data[5 : 5+int(length)]
 			}
 		}
 	case 0x83: // timestamp: 64-bit milliseconds since Unix epoch
