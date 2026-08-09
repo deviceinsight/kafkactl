@@ -11,17 +11,37 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/IBM/sarama"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/dynamicpb"
 
 	"github.com/riferrei/srclient"
 
+	produceCmd "github.com/deviceinsight/kafkactl/v5/cmd/produce"
 	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 )
+
+func TestProduceRejectsEmptyAvroSchemaFile(t *testing.T) {
+	cmd := produceCmd.NewProduceCmd()
+	cmd.SetArgs([]string{"events", "--avro-schema-file=", "--value", `{"id":"123"}`})
+	cmd.SilenceErrors = true
+	cmd.SilenceUsage = true
+
+	err := cmd.Execute()
+	if err == nil {
+		t.Fatal("expected --avro-schema-file= to return an error, got nil")
+	}
+	const wantError = "parameter --avro-schema-file must not be empty"
+	if err.Error() != wantError {
+		t.Fatalf("expected error %q, got %q", wantError, err)
+	}
+}
 
 func TestProduceWithKeyAndValueIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
@@ -449,6 +469,190 @@ func TestProduceNullStringLiteralViaBase64Integration(t *testing.T) {
 	}
 
 	testutil.AssertEquals(t, "test-key#null", kafkaCtl.GetStdOut())
+}
+
+func TestProduceRawAvroNullIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	schemaPath := filepath.Join(t.TempDir(), "null.avsc")
+	if err := os.WriteFile(schemaPath, []byte(`"null"`), 0o600); err != nil {
+		t.Fatalf("failed to write Avro null schema %q: %v", schemaPath, err)
+	}
+
+	topicName := testutil.CreateTopic(t, "raw-avro-null")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute(
+		"produce", topicName,
+		"--avro-schema-file", schemaPath,
+		"--value", "null",
+	); err != nil {
+		t.Fatalf("failed to produce --value null with a raw Avro schema: %v", err)
+	}
+
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute(
+		"produce", topicName,
+		"--avro-schema-file", schemaPath,
+		"--null-value",
+	); err != nil {
+		t.Fatalf("failed to produce --null-value with a raw Avro schema: %v", err)
+	}
+
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute(
+		"produce", topicName,
+		"--avro-schema-file", schemaPath,
+		"--value", "bnVsbA==",
+		"--value-encoding", "base64",
+	); err != nil {
+		t.Fatalf("failed to produce base64-encoded raw Avro null: %v", err)
+	}
+
+	client := testutil.CreateClient(t)
+	defer func() {
+		if err := client.Close(); err != nil {
+			t.Errorf("failed to close Kafka client: %v", err)
+		}
+	}()
+
+	consumer, err := sarama.NewConsumerFromClient(client)
+	if err != nil {
+		t.Fatalf("failed to create Kafka consumer: %v", err)
+	}
+	defer func() {
+		if err := consumer.Close(); err != nil {
+			t.Errorf("failed to close Kafka consumer: %v", err)
+		}
+	}()
+
+	partitionConsumer, err := consumer.ConsumePartition(topicName, 0, sarama.OffsetOldest)
+	if err != nil {
+		t.Fatalf("failed to consume topic %q partition 0: %v", topicName, err)
+	}
+	defer func() {
+		if err := partitionConsumer.Close(); err != nil {
+			t.Errorf("failed to close Kafka partition consumer: %v", err)
+		}
+	}()
+
+	expectedMessages := []struct {
+		name            string
+		expectTombstone bool
+	}{
+		{name: "--value null", expectTombstone: true},
+		{name: "--null-value", expectTombstone: true},
+		{name: "base64 Avro null"},
+	}
+	for offset, expected := range expectedMessages {
+		select {
+		case message := <-partitionConsumer.Messages():
+			if message == nil {
+				t.Fatalf("expected Kafka message at offset %d, got nil", offset)
+			}
+			if message.Offset != int64(offset) {
+				t.Fatalf("expected message offset %d, got %d", offset, message.Offset)
+			}
+			if expected.expectTombstone {
+				if message.Value != nil {
+					t.Fatalf("expected %s to produce a tombstone, got a non-nil value of %d bytes (%x)", expected.name, len(message.Value), message.Value)
+				}
+				continue
+			}
+			if message.Value == nil {
+				t.Fatal("expected base64-encoded Avro null to produce a non-nil zero-byte value, got a tombstone")
+			}
+			if len(message.Value) != 0 {
+				t.Fatalf("expected base64-encoded Avro null value length 0, got %d bytes (%x)", len(message.Value), message.Value)
+			}
+		case consumerErr := <-partitionConsumer.Errors():
+			t.Fatalf("failed to consume raw Avro null message at expected offset %d: %v", offset, consumerErr)
+		case <-time.After(10 * time.Second):
+			t.Fatalf("timed out after 10s waiting for raw Avro null message at expected offset %d", offset)
+		}
+	}
+}
+
+func TestProduceRawAvroProtobufKeyIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	const valueSchema = `{
+  "type": "record",
+  "name": "person",
+  "fields": [
+    {"name": "name", "type": "string"}
+  ]
+}`
+	schemaPath := filepath.Join(t.TempDir(), "person.avsc")
+	if err := os.WriteFile(schemaPath, []byte(valueSchema), 0o600); err != nil {
+		t.Fatalf("failed to write raw Avro schema %q: %v", schemaPath, err)
+	}
+
+	topicName := testutil.CreateTopic(t, "raw-avro-protobuf-key")
+	protoPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata")
+	key := `{"fvalue":1.2}`
+	value := `{"name":"Alice"}`
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute(
+		"produce", topicName,
+		"--key", key,
+		"--key-proto-type", "TopicKey",
+		"--proto-import-path", protoPath,
+		"--proto-file", "msg.proto",
+		"--avro-schema-file", schemaPath,
+		"--value", value,
+	); err != nil {
+		t.Fatalf("failed to produce raw Avro value with Protobuf key: %v", err)
+	}
+
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute(
+		"consume", topicName,
+		"--from-beginning",
+		"--exit",
+		"--print-keys",
+		"--key-encoding", "hex",
+		"--value-encoding", "hex",
+	); err != nil {
+		t.Fatalf("failed to consume raw Avro value with Protobuf key: %v", err)
+	}
+
+	encodedParts := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "#")
+	if len(encodedParts) != 2 {
+		t.Fatalf("encoded key/value parts = %d, want 2 in output %q", len(encodedParts), kafkaCtl.GetStdOut())
+	}
+	rawKey, err := hex.DecodeString(encodedParts[0])
+	if err != nil {
+		t.Fatalf("failed to decode Protobuf key from hex %q: %v", encodedParts[0], err)
+	}
+	rawValue, err := hex.DecodeString(encodedParts[1])
+	if err != nil {
+		t.Fatalf("failed to decode raw Avro value from hex %q: %v", encodedParts[1], err)
+	}
+
+	keyMessage := dynamicpb.NewMessage(protobuf.ResolveMessageType(internal.ProtobufConfig{
+		ProtoImportPaths: []string{protoPath},
+		ProtoFiles:       []string{"msg.proto"},
+	}, "TopicKey"))
+	if err = proto.Unmarshal(rawKey, keyMessage); err != nil {
+		t.Fatalf("failed to decode Protobuf key: %v", err)
+	}
+	actualKey, err := marshalJSON(keyMessage)
+	if err != nil {
+		t.Fatalf("failed to convert Protobuf key to JSON: %v", err)
+	}
+	testutil.AssertEquals(t, key, string(actualKey))
+
+	valueCodec, err := avro.NewMessageCodec(valueSchema, avro.Standard)
+	if err != nil {
+		t.Fatalf("failed to create raw Avro value codec: %v", err)
+	}
+	actualValue, err := valueCodec.DecodeBinary(rawValue)
+	if err != nil {
+		t.Fatalf("failed to decode raw Avro value: %v", err)
+	}
+	testutil.AssertEquals(t, value, string(actualValue))
 }
 
 func TestProduceTombstoneIntegration(t *testing.T) {

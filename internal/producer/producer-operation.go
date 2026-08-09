@@ -15,6 +15,7 @@ import (
 	"go.uber.org/ratelimit"
 
 	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/deviceinsight/kafkactl/v5/internal/producer/input"
 	"github.com/deviceinsight/kafkactl/v5/internal/util"
@@ -44,6 +45,7 @@ type Flags struct {
 	ProtosetFiles      []string
 	KeyProtoType       string
 	ValueProtoType     string
+	AvroSchemaFile     string
 }
 
 const DefaultMaxMessagesBytes = 1000000
@@ -57,6 +59,16 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 	)
 
 	if clientContext, err = internal.CreateClientContext(); err != nil {
+		return err
+	}
+
+	protobufConfig := clientContext.Protobuf
+	protobufConfig.ProtosetFiles = append(flags.ProtosetFiles, protobufConfig.ProtosetFiles...)
+	protobufConfig.ProtoFiles = append(flags.ProtoFiles, protobufConfig.ProtoFiles...)
+	protobufConfig.ProtoImportPaths = append(flags.ProtoImportPaths, protobufConfig.ProtoImportPaths...)
+
+	rawAvroMode := flags.AvroSchemaFile != ""
+	if err = validateProducerFlags(flags, protobufConfig); err != nil {
 		return err
 	}
 
@@ -74,13 +86,20 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 		return err
 	}
 
-	if flags.Separator != "" && (flags.Key != "" || flags.Value != "") {
-		return errors.New("separator is used to split input from stdin/file. it cannot be used together with key or value")
+	var rawAvroCodec *avro.MessageCodec
+	if rawAvroMode {
+		resolver := avro.NewSchemaResolver(clientContext.Avro.JSONCodec, false)
+		rawAvroCodec, err = resolver.ResolveSource(flags.AvroSchemaFile)
+		if err != nil {
+			return errors.Wrap(err, "failed to load raw avro schema")
+		}
 	}
 
 	serializers := MessageSerializerChain{topic: topic}
 
-	if clientContext.SchemaRegistry.URL != "" {
+	if rawAvroMode {
+		serializers.serializers = append(serializers.serializers, NewRawAvroMessageSerializer(rawAvroCodec))
+	} else if clientContext.SchemaRegistry.URL != "" {
 		client, err := internal.CreateCachingSchemaRegistry(&clientContext)
 		if err != nil {
 			return err
@@ -91,14 +110,9 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 
 		serializers.serializers = append(serializers.serializers, avroSerializer, protobufSerializer, jsonSchemaSerializer)
 	}
-	context := clientContext.Protobuf
-	context.ProtosetFiles = append(flags.ProtosetFiles, context.ProtosetFiles...)
-	context.ProtoFiles = append(flags.ProtoFiles, context.ProtoFiles...)
-	context.ProtoImportPaths = append(flags.ProtoImportPaths, context.ProtoImportPaths...)
+	if len(protobufConfig.ProtoFiles) != 0 || len(protobufConfig.ProtoImportPaths) != 0 || len(protobufConfig.ProtosetFiles) != 0 {
 
-	if len(context.ProtoFiles) != 0 || len(context.ProtoImportPaths) != 0 || len(context.ProtosetFiles) != 0 {
-
-		serializer, err := CreateProtobufMessageSerializer(topic, context, protoreflect.FullName(flags.KeyProtoType), protoreflect.FullName(flags.ValueProtoType))
+		serializer, err := CreateProtobufMessageSerializer(topic, protobufConfig, protoreflect.FullName(flags.KeyProtoType), protoreflect.FullName(flags.ValueProtoType))
 		if err != nil {
 			return err
 		}
@@ -120,14 +134,6 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 	}()
 
 	var inputMessage input.Message
-
-	if flags.Key != "" && flags.Separator != "" {
-		return errors.New("parameters --key and --separator cannot be used together")
-	}
-
-	if flags.NullValue && flags.Value != "" {
-		return errors.New("parameters --null-value and --value cannot be used together")
-	}
 
 	if flags.Value == "null" {
 		flags.NullValue = true
@@ -253,6 +259,40 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 	} else {
 		return errors.New("value is required, or you have to provide the value on stdin")
 	}
+	return nil
+}
+
+func validateProducerFlags(flags Flags, protobufConfig internal.ProtobufConfig) error {
+	if err := validateRawAvroFlags(flags, protobufConfig); err != nil {
+		return err
+	}
+	if flags.Separator != "" && (flags.Key != "" || flags.Value != "") {
+		return errors.New("separator is used to split input from stdin/file. it cannot be used together with key or value")
+	}
+	if flags.NullValue && flags.Value != "" {
+		return errors.New("parameters --null-value and --value cannot be used together")
+	}
+
+	return nil
+}
+
+func validateRawAvroFlags(flags Flags, protobufConfig internal.ProtobufConfig) error {
+	if flags.AvroSchemaFile == "" {
+		return nil
+	}
+	if flags.ValueProtoType != "" {
+		return errors.New("parameters --avro-schema-file and --value-proto-type cannot be used together")
+	}
+	if flags.ValueSchemaVersion != -1 {
+		return errors.New("parameters --avro-schema-file and --value-schema-version cannot be used together")
+	}
+	if flags.KeySchemaVersion != -1 {
+		return errors.New("parameters --avro-schema-file and --key-schema-version cannot be used together")
+	}
+	if flags.KeyProtoType != "" && len(protobufConfig.ProtoFiles) == 0 && len(protobufConfig.ProtosetFiles) == 0 {
+		return errors.New("parameter --key-proto-type requires a local protobuf description file when used with --avro-schema-file")
+	}
+
 	return nil
 }
 
