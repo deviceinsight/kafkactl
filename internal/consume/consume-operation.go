@@ -9,6 +9,7 @@ import (
 
 	"google.golang.org/protobuf/reflect/protoreflect"
 
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers"
@@ -47,6 +48,9 @@ type Flags struct {
 	ProtoMarshalOptions []string
 	KeyProtoType        string
 	ValueProtoType      string
+	AvroSchemaHeader    string
+	AvroSchemaFile      string
+	AvroSchemaCache     bool
 	IsolationLevel      string
 
 	FilterKey    string
@@ -76,6 +80,31 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 		return err
 	}
 
+	protobufConfig, err := addFlagsToProtobufConfig(clientContext.Protobuf, flags)
+	if err != nil {
+		return err
+	}
+
+	rawAvroMode := flags.AvroSchemaFile != "" || flags.AvroSchemaHeader != ""
+	if err = validateRawAvroFlags(flags, protobufConfig); err != nil {
+		return err
+	}
+
+	var rawAvroDeserializer *RawAvroMessageDeserializer
+	if rawAvroMode {
+		resolver := avro.NewSchemaResolver(clientContext.Avro.JSONCodec, flags.AvroSchemaCache)
+		var staticCodec *avro.MessageCodec
+
+		if flags.AvroSchemaFile != "" {
+			staticCodec, err = resolver.ResolveSource(flags.AvroSchemaFile)
+			if err != nil {
+				return errors.Wrap(err, "failed to load raw avro schema")
+			}
+		}
+
+		rawAvroDeserializer = NewRawAvroMessageDeserializer(flags.AvroSchemaHeader, staticCodec, resolver)
+	}
+
 	config, err := internal.CreateClientConfig(&clientContext)
 	if err != nil {
 		return err
@@ -99,7 +128,7 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 
 	var schemaRegistryClient *internal.CachingSchemaRegistry
 
-	if clientContext.SchemaRegistry.URL != "" {
+	if !rawAvroMode && clientContext.SchemaRegistry.URL != "" {
 		schemaRegistryClient, err = internal.CreateCachingSchemaRegistry(&clientContext)
 		if err != nil {
 			return err
@@ -107,13 +136,10 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 	}
 
 	var deserializers MessageDeserializerChain
-	var protobufConfig internal.ProtobufConfig
 
-	if protobufConfig, err = addFlagsToProtobufConfig(clientContext.Protobuf, flags); err != nil {
-		return err
-	}
-
-	if schemaRegistryClient != nil {
+	if rawAvroMode {
+		deserializers = append(deserializers, rawAvroDeserializer)
+	} else if schemaRegistryClient != nil {
 		avroDeserializer := AvroMessageDeserializer{topic: topic, registry: schemaRegistryClient, jsonCodec: clientContext.Avro.JSONCodec}
 		protobufDeserializer := RegistryProtobufMessageDeserializer{config: protobufConfig, registry: schemaRegistryClient}
 		jsonSchemaDeserializer := JSONSchemaMessageDeserializer{topic: topic, registry: schemaRegistryClient}
@@ -190,6 +216,25 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 
 	if err := consumer.Close(); err != nil {
 		return errors.Wrap(err, "Failed to close consumer")
+	}
+
+	return nil
+}
+
+func validateRawAvroFlags(flags Flags, protobufConfig internal.ProtobufConfig) error {
+	rawAvroMode := flags.AvroSchemaFile != "" || flags.AvroSchemaHeader != ""
+	if !rawAvroMode {
+		return nil
+	}
+
+	if flags.ValueProtoType != "" {
+		return errors.New("parameter --value-proto-type cannot be used with --avro-schema-file or --avro-schema-header")
+	}
+	if flags.KeyProtoType != "" && len(protobufConfig.ProtoFiles) == 0 && len(protobufConfig.ProtosetFiles) == 0 {
+		return errors.New(
+			"parameter --key-proto-type requires a local protobuf description file " +
+				"when used with --avro-schema-file or --avro-schema-header",
+		)
 	}
 
 	return nil

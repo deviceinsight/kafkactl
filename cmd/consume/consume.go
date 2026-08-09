@@ -1,6 +1,7 @@
 package consume
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/deviceinsight/kafkactl/v5/internal"
@@ -24,6 +25,15 @@ func NewConsumeCmd() *cobra.Command {
 				return k8s.NewOperation().Run(cmd, args)
 			}
 			return (&consume.Operation{}).Consume(args[0], flags)
+		},
+		PreRunE: func(cmd *cobra.Command, _ []string) error {
+			if cmd.Flags().Changed("avro-schema-header") && flags.AvroSchemaHeader == "" {
+				return errors.New("parameter --avro-schema-header must not be empty")
+			}
+			if cmd.Flags().Changed("avro-schema-file") && flags.AvroSchemaFile == "" {
+				return errors.New("parameter --avro-schema-file must not be empty")
+			}
+			return nil
 		},
 		ValidArgsFunction: topic.CompleteTopicNames,
 	}
@@ -53,6 +63,10 @@ func NewConsumeCmd() *cobra.Command {
 	cmdConsume.Flags().StringSliceVarP(&flags.ProtoMarshalOptions, "proto-marshal-option", "", flags.ProtoMarshalOptions, "json marshall options to use for protobuf. Format is key=value. Valid keys are "+strings.Join(protobuf.AllMarshalOptions, ","))
 	cmdConsume.Flags().StringVarP(&flags.KeyProtoType, "key-proto-type", "", flags.KeyProtoType, "key protobuf message type")
 	cmdConsume.Flags().StringVarP(&flags.ValueProtoType, "value-proto-type", "", flags.ValueProtoType, "value protobuf message type")
+	cmdConsume.Flags().StringVarP(&flags.AvroSchemaHeader, "avro-schema-header", "", "", "Kafka header whose value is an HTTP(S) Avro schema URL for raw message values")
+	cmdConsume.Flags().Lookup("avro-schema-header").NoOptDefVal = "ce_dataschema"
+	cmdConsume.Flags().StringVarP(&flags.AvroSchemaFile, "avro-schema-file", "", "", "local Avro schema path or HTTP(S) URL used to decode raw message values")
+	cmdConsume.Flags().BoolVarP(&flags.AvroSchemaCache, "avro-schema-cache", "", true, "cache Avro schemas from message header URLs for the command lifetime")
 	cmdConsume.Flags().StringVarP(&flags.FilterKey, "filter-key", "", "", "filter messages keys with glob pattern")
 	cmdConsume.Flags().StringVarP(&flags.FilterValue, "filter-value", "", "", "filter messages values with glob pattern")
 	cmdConsume.Flags().StringToStringVarP(&flags.FilterHeader, "filter-header", "", map[string]string{}, "filter messages headers with glob pattern")

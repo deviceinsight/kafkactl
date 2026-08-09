@@ -51,11 +51,11 @@ func newMessage(consumerMsg *sarama.ConsumerMessage, flags Flags, key, value *De
 	}
 
 	if flags.PrintAll || flags.PrintSchema {
-		if key != nil && key.schemaID != nil {
+		if key != nil && (key.schema != "" || key.schemaID != nil) {
 			msg.KeySchema = &key.schema
 			msg.KeySchemaID = key.schemaID
 		}
-		if value.schemaID != nil {
+		if value.schema != "" || value.schemaID != nil {
 			msg.ValueSchema = &value.schema
 			msg.ValueSchemaID = value.schemaID
 		}
@@ -95,15 +95,23 @@ func printMessage(msg *message, flags Flags) error {
 			}
 		}
 		if flags.PrintAll || flags.PrintSchema {
-			if msg.KeySchemaID != nil {
+			if msg.KeySchema != nil {
 				row = append(row, *msg.KeySchema)
-				row = append(row, strconv.Itoa(*msg.KeySchemaID))
+				if msg.KeySchemaID != nil {
+					row = append(row, strconv.Itoa(*msg.KeySchemaID))
+				} else {
+					row = append(row, "")
+				}
 			} else {
 				row = append(row, "", "")
 			}
-			if msg.ValueSchemaID != nil {
+			if msg.ValueSchema != nil {
 				row = append(row, *msg.ValueSchema)
-				row = append(row, strconv.Itoa(*msg.ValueSchemaID))
+				if msg.ValueSchemaID != nil {
+					row = append(row, strconv.Itoa(*msg.ValueSchemaID))
+				} else {
+					row = append(row, "")
+				}
 			} else {
 				row = append(row, "", "")
 			}

@@ -3,9 +3,14 @@ package consume_test
 import (
 	"encoding/hex"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -13,6 +18,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
 
+	consumeCmd "github.com/deviceinsight/kafkactl/v5/cmd/consume"
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 	"github.com/riferrei/srclient"
@@ -20,6 +26,103 @@ import (
 	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+func TestConsumeAvroSchemaHeaderFlagParsing(t *testing.T) {
+	tests := []struct {
+		name        string
+		args        []string
+		wantHeader  string
+		wantChanged bool
+		wantArgs    []string
+	}{
+		{
+			name:     "omitted",
+			args:     []string{"events"},
+			wantArgs: []string{"events"},
+		},
+		{
+			name:        "bare_flag_before_topic",
+			args:        []string{"--avro-schema-header", "events"},
+			wantHeader:  "ce_dataschema",
+			wantChanged: true,
+			wantArgs:    []string{"events"},
+		},
+		{
+			name:        "bare_flag_after_topic",
+			args:        []string{"events", "--avro-schema-header"},
+			wantHeader:  "ce_dataschema",
+			wantChanged: true,
+			wantArgs:    []string{"events"},
+		},
+		{
+			name:        "custom_header",
+			args:        []string{"events", "--avro-schema-header=custom_schema_uri"},
+			wantHeader:  "custom_schema_uri",
+			wantChanged: true,
+			wantArgs:    []string{"events"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cmd := consumeCmd.NewConsumeCmd()
+			if err := cmd.ParseFlags(test.args); err != nil {
+				t.Fatalf("failed to parse consume args %q: %v", test.args, err)
+			}
+
+			gotHeader, err := cmd.Flags().GetString("avro-schema-header")
+			if err != nil {
+				t.Fatalf("failed to read --avro-schema-header: %v", err)
+			}
+			if gotHeader != test.wantHeader {
+				t.Fatalf("expected --avro-schema-header %q, got %q", test.wantHeader, gotHeader)
+			}
+			if gotChanged := cmd.Flags().Lookup("avro-schema-header").Changed; gotChanged != test.wantChanged {
+				t.Fatalf("expected --avro-schema-header Changed=%t, got %t", test.wantChanged, gotChanged)
+			}
+			if gotArgs := cmd.Flags().Args(); !reflect.DeepEqual(gotArgs, test.wantArgs) {
+				t.Fatalf("expected positional args %q, got %q", test.wantArgs, gotArgs)
+			}
+			if err := cmd.Args(cmd, cmd.Flags().Args()); err != nil {
+				t.Fatalf("positional args %q failed validation: %v", cmd.Flags().Args(), err)
+			}
+		})
+	}
+}
+
+func TestConsumeRejectsEmptyRawAvroFlags(t *testing.T) {
+	for _, test := range []struct {
+		name      string
+		flag      string
+		wantError string
+	}{
+		{
+			name:      "schema_header",
+			flag:      "--avro-schema-header=",
+			wantError: "parameter --avro-schema-header must not be empty",
+		},
+		{
+			name:      "schema_file",
+			flag:      "--avro-schema-file=",
+			wantError: "parameter --avro-schema-file must not be empty",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			cmd := consumeCmd.NewConsumeCmd()
+			cmd.SetArgs([]string{"events", test.flag})
+			cmd.SilenceErrors = true
+			cmd.SilenceUsage = true
+
+			err := cmd.Execute()
+			if err == nil {
+				t.Fatalf("expected %q to return an error, got nil", test.flag)
+			}
+			if err.Error() != test.wantError {
+				t.Fatalf("expected error %q, got %q", test.wantError, err)
+			}
+		})
+	}
+}
 
 func TestConsumeWithKeyAndValueIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
@@ -35,6 +138,154 @@ func TestConsumeWithKeyAndValueIntegration(t *testing.T) {
 	}
 
 	testutil.AssertEquals(t, "test-key#test-value", kafkaCtl.GetStdOut())
+}
+
+func TestConsumeRawAvroIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	personSchema := `{
+  "type": "record",
+  "name": "person",
+  "fields": [
+    {"name": "name", "type": "string"}
+  ]
+}`
+	metricSchema := `{
+  "type": "record",
+  "name": "metric",
+  "fields": [
+    {"name": "count", "type": "int"}
+  ]
+}`
+	schemaDir := t.TempDir()
+	personSchemaPath := filepath.Join(schemaDir, "person.avsc")
+	if err := os.WriteFile(personSchemaPath, []byte(personSchema), 0600); err != nil {
+		t.Fatalf("failed to write person Avro schema %q: %v", personSchemaPath, err)
+	}
+	metricSchemaPath := filepath.Join(schemaDir, "metric.avsc")
+	if err := os.WriteFile(metricSchemaPath, []byte(metricSchema), 0600); err != nil {
+		t.Fatalf("failed to write metric Avro schema %q: %v", metricSchemaPath, err)
+	}
+
+	var schemaRequests atomic.Int32
+	schemaServer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		schemaRequests.Add(1)
+		switch request.URL.Path {
+		case "/person.avsc":
+			_, _ = fmt.Fprint(writer, personSchema)
+		case "/metric.avsc":
+			_, _ = fmt.Fprint(writer, metricSchema)
+		default:
+			http.NotFound(writer, request)
+		}
+	}))
+	defer schemaServer.Close()
+
+	topicName := testutil.CreateTopic(t, "raw-avro-topic")
+
+	valuesWithHeader := []struct {
+		value      string
+		schemaPath string
+		schemaURL  string
+	}{
+		{value: `{"name":"Alice"}`, schemaPath: personSchemaPath, schemaURL: schemaServer.URL + "/person.avsc"},
+		{value: `{"name":"Bob"}`, schemaPath: personSchemaPath, schemaURL: schemaServer.URL + "/person.avsc"},
+		{value: `{"count":7}`, schemaPath: metricSchemaPath, schemaURL: schemaServer.URL + "/metric.avsc"},
+	}
+	for _, message := range valuesWithHeader {
+		kafkaCtl := testutil.CreateKafkaCtlCommand()
+		if _, err := kafkaCtl.Execute(
+			"produce", topicName,
+			"--value", message.value,
+			"--avro-schema-file", message.schemaPath,
+			"--header", "ce_dataschema:"+message.schemaURL,
+		); err != nil {
+			t.Fatalf("failed to produce raw Avro value %q with schema %q: %v", message.value, message.schemaPath, err)
+		}
+	}
+
+	fallbackValue := `{"name":"Carol"}`
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute(
+		"produce", topicName,
+		"--value", fallbackValue,
+		"--avro-schema-file", personSchemaPath,
+	); err != nil {
+		t.Fatalf("failed to produce raw Avro fallback value %q: %v", fallbackValue, err)
+	}
+
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute(
+		"consume", topicName,
+		"--from-beginning", "--exit",
+		"--avro-schema-header",
+		"--avro-schema-file", personSchemaPath,
+	); err != nil {
+		t.Fatalf("failed to consume raw Avro messages with schema caching enabled: %v", err)
+	}
+
+	values := strings.Split(strings.TrimSpace(kafkaCtl.GetStdOut()), "\n")
+	expectedValues := []string{valuesWithHeader[0].value, valuesWithHeader[1].value, valuesWithHeader[2].value, fallbackValue}
+	testutil.AssertArraysEquals(t, expectedValues, values)
+	if got := schemaRequests.Load(); got != 2 {
+		t.Fatalf("expected 2 schema requests with caching enabled, got %d", got)
+	}
+
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute(
+		"consume", topicName,
+		"--from-beginning", "--exit",
+		"--avro-schema-header=ce_dataschema",
+		"--avro-schema-file", personSchemaPath,
+		"--avro-schema-cache=false",
+	); err != nil {
+		t.Fatalf("failed to consume raw Avro messages with the schema cache disabled: %v", err)
+	}
+	if got := schemaRequests.Load(); got != 5 {
+		t.Fatalf("expected 5 total schema requests after disabling caching, got %d", got)
+	}
+}
+
+func TestConsumeRawAvroProtobufKeyIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	const valueSchema = `{"type":"record","name":"person","fields":[{"name":"name","type":"string"}]}`
+	schemaPath := filepath.Join(t.TempDir(), "person.avsc")
+	if err := os.WriteFile(schemaPath, []byte(valueSchema), 0o600); err != nil {
+		t.Fatalf("failed to write raw Avro schema %q: %v", schemaPath, err)
+	}
+
+	topicName := testutil.CreateTopic(t, "raw-avro-protobuf-key")
+	protosetPath := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata", "msg.protoset")
+	const key = `{"fvalue":1.2}`
+	const value = `{"name":"Alice"}`
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute(
+		"produce", topicName,
+		"--key", key,
+		"--key-proto-type", "TopicKey",
+		"--protoset-file", protosetPath,
+		"--avro-schema-file", schemaPath,
+		"--value", value,
+	); err != nil {
+		t.Fatalf("failed to produce raw Avro value with Protobuf key: %v", err)
+	}
+
+	kafkaCtl = testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute(
+		"consume", topicName,
+		"--from-beginning",
+		"--exit",
+		"--print-keys",
+		"--key-proto-type", "TopicKey",
+		"--protoset-file", protosetPath,
+		"--avro-schema-file", schemaPath,
+	); err != nil {
+		t.Fatalf("failed to consume raw Avro value with Protobuf key: %v", err)
+	}
+
+	testutil.AssertEquals(t, key+"#"+value, kafkaCtl.GetStdOut())
 }
 
 func TestConsumeWithPartitionAndValueIntegration(t *testing.T) {
