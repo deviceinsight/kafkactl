@@ -1,0 +1,8 @@
+{
+  "type": "record",
+  "name": "TopicMessage",
+  "fields": [
+    {"name": "name", "type": "string"},
+    {"name": "num", "type": "long"}
+  ]
+}

@@ -95,6 +95,97 @@ func TestProduceAvroMessageWithHeadersIntegration(t *testing.T) {
 	testutil.AssertEquals(t, fmt.Sprintf("key1:value1,key\\:2:value\\:2#test-key#%s", value), kafkaCtl.GetStdOut())
 }
 
+func TestProduceConsumeAvroSchemaFileIntegration(t *testing.T) {
+	testutil.StartIntegrationTestWithContext(t, "no-schema-reg")
+
+	topicName := testutil.CreateTopic(t, "produce-avro-file-topic")
+
+	schemaFile := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata", "msg.avsc")
+	value := `{"name":"Peter Mueller","num":42}`
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", value, "--avro-schema-file", schemaFile); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-keys", "--avro-schema-file", schemaFile); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	// field order in the decoded JSON isn't guaranteed by goavro's standard JSON codec, so
+	// check the key prefix and each field individually rather than the full string
+	stdout := kafkaCtl.GetStdOut()
+	testutil.AssertContainSubstring(t, "test-key#{", stdout)
+	testutil.AssertContainSubstring(t, `"name":"Peter Mueller"`, stdout)
+	testutil.AssertContainSubstring(t, `"num":42`, stdout)
+}
+
+func TestProduceConsumeAvroSchemaFromHeaderIntegration(t *testing.T) {
+	testutil.StartIntegrationTestWithContext(t, "no-schema-reg")
+
+	topicName := testutil.CreateTopic(t, "produce-avro-header-topic")
+
+	schemaFile := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata", "msg.avsc")
+	value := `{"name":"Peter Mueller","num":42}`
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", value,
+		"--avro-schema-file", schemaFile, "-H", fmt.Sprintf("ce_dataschema:%s", schemaFile)); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	// no --avro-schema-file passed: resolved from the ce_dataschema header via --avro-schema-header
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-keys",
+		"--avro-schema-header", "ce_dataschema"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	// field order in the decoded JSON isn't guaranteed by goavro's standard JSON codec, so
+	// check the key prefix and each field individually rather than the full string
+	stdout := kafkaCtl.GetStdOut()
+	testutil.AssertContainSubstring(t, "test-key#{", stdout)
+	testutil.AssertContainSubstring(t, `"name":"Peter Mueller"`, stdout)
+	testutil.AssertContainSubstring(t, `"num":42`, stdout)
+}
+
+func TestProduceAvroSchemaFileTakesPrecedenceOverRegistryIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	// deliberately different from testdata/msg.avsc, so a registry-encoded message would not
+	// round-trip cleanly with it.
+	registrySchema := `{"type":"record","name":"Unrelated","fields":[{"name":"unrelated","type":"string"}]}`
+
+	schemaFile := filepath.Join(testutil.RootDir, "internal", "testutil", "testdata", "msg.avsc")
+	value := `{"name":"Peter Mueller","num":42}`
+
+	topicName := testutil.CreateTopicWithSchema(t, "produce-avro-file-precedence-topic", "", registrySchema, srclient.Avro)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", value, "--avro-schema-file", schemaFile); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "message produced (partition=0\toffset=0)", kafkaCtl.GetStdOut())
+
+	// even though the topic has a registered (and incompatible) avro schema, --avro-schema-file
+	// must still take precedence and encode the value with the local schema, unframed.
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-keys", "--avro-schema-file", schemaFile); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	stdout := kafkaCtl.GetStdOut()
+	testutil.AssertContainSubstring(t, "test-key#{", stdout)
+	testutil.AssertContainSubstring(t, `"name":"Peter Mueller"`, stdout)
+	testutil.AssertContainSubstring(t, `"num":42`, stdout)
+}
+
 func TestProduceAvroMessageOmitDefaultValueIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 
