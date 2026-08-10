@@ -15,6 +15,7 @@ import (
 	"go.uber.org/ratelimit"
 
 	"github.com/deviceinsight/kafkactl/v5/internal"
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/deviceinsight/kafkactl/v5/internal/producer/input"
 	"github.com/deviceinsight/kafkactl/v5/internal/util"
@@ -44,6 +45,7 @@ type Flags struct {
 	ProtosetFiles      []string
 	KeyProtoType       string
 	ValueProtoType     string
+	AvroSchemaFile     string
 }
 
 const DefaultMaxMessagesBytes = 1000000
@@ -80,6 +82,17 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 
 	serializers := MessageSerializerChain{topic: topic}
 
+	if flags.AvroSchemaFile != "" {
+		source := avro.NewSchemaSource(clientContext.Avro.JSONCodec)
+
+		avroFileSerializer, err := CreateAvroFileMessageSerializer(flags.AvroSchemaFile, source)
+		if err != nil {
+			return err
+		}
+
+		serializers.serializers = append(serializers.serializers, avroFileSerializer)
+	}
+
 	if clientContext.SchemaRegistry.URL != "" {
 		client, err := internal.CreateCachingSchemaRegistry(&clientContext)
 		if err != nil {
@@ -91,6 +104,7 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 
 		serializers.serializers = append(serializers.serializers, avroSerializer, protobufSerializer, jsonSchemaSerializer)
 	}
+
 	context := clientContext.Protobuf
 	context.ProtosetFiles = append(flags.ProtosetFiles, context.ProtosetFiles...)
 	context.ProtoFiles = append(flags.ProtoFiles, context.ProtoFiles...)

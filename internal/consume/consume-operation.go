@@ -9,6 +9,7 @@ import (
 
 	"google.golang.org/protobuf/reflect/protoreflect"
 
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/protobuf"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers"
@@ -47,6 +48,8 @@ type Flags struct {
 	ProtoMarshalOptions []string
 	KeyProtoType        string
 	ValueProtoType      string
+	AvroSchemaFile      string
+	AvroSchemaHeader    string
 	IsolationLevel      string
 	IgnoreErrors        bool
 
@@ -127,6 +130,17 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 	}
 
 	deserializers = append(deserializers, deserializer)
+
+	if flags.AvroSchemaFile != "" || flags.AvroSchemaHeader != "" {
+		source := avro.NewSchemaSource(clientContext.Avro.JSONCodec)
+
+		avroFileDeserializer, err := CreateAvroFileMessageDeserializer(flags.AvroSchemaFile, flags.AvroSchemaHeader, source)
+		if err != nil {
+			return err
+		}
+		deserializers = append(deserializers, avroFileDeserializer)
+	}
+
 	deserializers = append(deserializers, &DefaultMessageDeserializer{})
 
 	if flags.Group != "" {

@@ -50,6 +50,7 @@ func NewProduceCmd() *cobra.Command {
 	cmdProduce.Flags().StringSliceVarP(&flags.ProtosetFiles, "protoset-file", "", flags.ProtosetFiles, "additional compiled protobuf description file for searching message description")
 	cmdProduce.Flags().StringVarP(&flags.KeyProtoType, "key-proto-type", "", flags.KeyProtoType, "key protobuf message type")
 	cmdProduce.Flags().StringVarP(&flags.ValueProtoType, "value-proto-type", "", flags.ValueProtoType, "value protobuf message type")
+	cmdProduce.Flags().StringVarP(&flags.AvroSchemaFile, "avro-schema-file", "", "", "avro schema (local path or http(s) url) used to encode the message value, bypassing the schema registry")
 
 	return cmdProduce
 }

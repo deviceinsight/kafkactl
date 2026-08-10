@@ -1013,6 +1013,51 @@ The `consume` command handles this automatically and no configuration is needed.
 
 An additional parameter `print-schema` can be provided to display the schema used for decoding.
 
+==== avro without a schema registry
+
+Some producers don't register their schema in a Confluent schema registry at all - for example messages following the
+https://github.com/cloudevents/spec/blob/main/cloudevents/bindings/kafka-protocol-binding.md[CloudEvents Kafka Protocol Binding]
+carry a raw, unframed avro payload and reference their schema via a `ce_dataschema` header (a URI) instead of a registry
+lookup. For this case `kafkactl` supports resolving the schema directly from a file or URL, bypassing the schema registry
+entirely.
+
+`produce` supports `--avro-schema-file <path-or-url>` to encode the value with a schema loaded from a local file or an
+`http(s)://` URL, without the Confluent wire format (magic byte + schema ID) prefix. Any headers (e.g. `ce_dataschema`)
+must be set explicitly with `-H`/`--header`, `kafkactl` does not populate them automatically.
+
+`consume` supports the same `--avro-schema-file` flag to decode with a static schema. When it is not set, passing
+`--avro-schema-header <name>` (e.g. `ce_dataschema`) makes `kafkactl` resolve the schema per message from the URI found
+in that header, so different messages on the same topic can be decoded with different schemas. `--avro-schema-header`
+is opt-in (disabled by default): any message carrying the named header is then forced through avro decoding, so
+enabling it on a topic that mixes avro and non-avro (or unreachable-schema) messages would turn those into consume
+errors. This fallback only applies to messages that don't use the Confluent wire format; if a schema registry is
+configured and a message starts with the Confluent magic byte, it is still decoded via the registry as before.
+
+Note that with `--avro-schema-header` the schema location comes from message data rather than from configuration you
+control, so anyone able to produce to the topic can make `kafkactl` read an arbitrary local file or request an
+arbitrary URL - only enable it for topics where every producer is trusted. Schemas are cached by location for the
+lifetime of the process, so restart `kafkactl consume` to pick up a schema that changed at the same URI.
+
+===== Example
+
+[,bash]
+----
+# write the avro schema to a file
+cat > schema.avsc <<'EOF'
+{"type": "record", "name": "LongList", "fields": [
+  {"name": "next", "type": ["null", "LongList"], "default": null}
+]}
+EOF
+
+# produce a message, encoding the value with the schema file, and set ce_dataschema to an
+# absolute file:// URI pointing at the same schema, as required by the CloudEvents spec
+kafkactl produce cloudevents_topic --value '{"next":{"next":{}}}' \
+  --avro-schema-file ./schema.avsc -H ce_dataschema:file://$(pwd)/schema.avsc
+
+# consume messages, resolving the schema per-message from the ce_dataschema header
+kafkactl consume cloudevents_topic --from-beginning --avro-schema-header ce_dataschema
+----
+
 === JSON schema support
 
 JSON schema support works similarly to Avro. When a schema registry is configured, `kafkactl` will automatically detect

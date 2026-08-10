@@ -10,7 +10,6 @@ import (
 	"github.com/riferrei/srclient"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/util"
-	"github.com/linkedin/goavro/v2"
 	"github.com/pkg/errors"
 )
 
@@ -57,14 +56,7 @@ func (serializer AvroMessageSerializer) encode(rawData []byte, schemaVersion int
 		output.Debugf("encode with avro schema id=%d version=%d subject=%s codec=%s", schema.ID(), schemaVersion, subject, serializer.jsonCodec)
 	}
 
-	var avroCodec *goavro.Codec
-
-	if serializer.jsonCodec == avro.Avro {
-		avroCodec, err = goavro.NewCodec(schema.Schema())
-	} else {
-		avroCodec, err = goavro.NewCodecForStandardJSONFull(schema.Schema())
-	}
-
+	avroCodec, err := avro.CompileCodec(schema.Schema(), serializer.jsonCodec)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse avro schema")
 	}
