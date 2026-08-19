@@ -1,10 +1,34 @@
 package consume
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/IBM/sarama"
 )
+
+// DeserializationError marks a failure that originates from decoding a message
+// (e.g. an invalid protobuf/avro payload or the absence of a suitable
+// deserializer). It is distinguished from infrastructure errors so that
+// consuming can optionally continue past individual undecodable messages.
+type DeserializationError struct {
+	err error
+}
+
+func (e *DeserializationError) Error() string {
+	return e.err.Error()
+}
+
+func (e *DeserializationError) Unwrap() error {
+	return e.err
+}
+
+// isDeserializationError reports whether err was caused by message
+// deserialization rather than by the consumer infrastructure.
+func isDeserializationError(err error) bool {
+	var deserErr *DeserializationError
+	return errors.As(err, &deserErr)
+}
 
 type MessageDeserializerChain []MessageDeserializer
 
@@ -27,13 +51,13 @@ func (deserializer *MessageDeserializerChain) Deserialize(consumerMsg *sarama.Co
 
 			key, err = d.DeserializeKey(consumerMsg)
 			if err != nil {
-				return fmt.Errorf("failed to deserialize key: %w", err)
+				return &DeserializationError{fmt.Errorf("failed to deserialize key: %w", err)}
 			}
 			break
 		}
 
 		if key == nil && flags.PrintKeys {
-			return fmt.Errorf("can't find suitable deserializer for key")
+			return &DeserializationError{fmt.Errorf("can't find suitable deserializer for key")}
 		}
 	}
 
@@ -45,13 +69,13 @@ func (deserializer *MessageDeserializerChain) Deserialize(consumerMsg *sarama.Co
 
 		value, err = d.DeserializeValue(consumerMsg)
 		if err != nil {
-			return fmt.Errorf("failed to deserialize value: %w", err)
+			return &DeserializationError{fmt.Errorf("failed to deserialize value: %w", err)}
 		}
 		break
 	}
 
 	if value == nil {
-		return fmt.Errorf("can't find suitable deserializer for value")
+		return &DeserializationError{fmt.Errorf("can't find suitable deserializer for value")}
 	}
 
 	// Apply filters - all filters must match (AND logic)

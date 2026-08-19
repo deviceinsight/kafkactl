@@ -48,6 +48,7 @@ type Flags struct {
 	KeyProtoType        string
 	ValueProtoType      string
 	IsolationLevel      string
+	IgnoreErrors        bool
 
 	FilterKey    string
 	FilterValue  string
@@ -260,8 +261,12 @@ func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sara
 			}
 			lastIndex := len(sortedMessages) - 1
 			for i := range sortedMessages {
-				err := deserializers.Deserialize(sortedMessages[lastIndex-i], flags, filter)
-				if err != nil {
+				msg := sortedMessages[lastIndex-i]
+				if err := deserializers.Deserialize(msg, flags, filter); err != nil {
+					if flags.IgnoreErrors && isDeserializationError(err) {
+						output.Warnf("skipping message on partition %d at offset %d: %v", msg.Partition, msg.Offset, err)
+						continue
+					}
 					return err
 				}
 			}
@@ -278,8 +283,13 @@ func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sara
 				err = deserializers.Deserialize(msg, flags, filter)
 				messageCount++
 				if err != nil {
-					close(stopConsumers)
-					break
+					if flags.IgnoreErrors && isDeserializationError(err) {
+						output.Warnf("skipping message on partition %d at offset %d: %v", msg.Partition, msg.Offset, err)
+						err = nil
+					} else {
+						close(stopConsumers)
+						break
+					}
 				}
 				if flags.MaxMessages > 0 && messageCount >= flags.MaxMessages {
 					close(stopConsumers)
