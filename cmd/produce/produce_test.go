@@ -998,6 +998,36 @@ func TestProduceLongMessageFailsIntegration(t *testing.T) {
 	}
 }
 
+func TestProduceMessageCountExcludesFailedMessagesIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	topic := testutil.CreateTopic(t, "produce-topic-count")
+
+	file, err := os.CreateTemp(os.TempDir(), "too-large-message-")
+	if err != nil {
+		t.Fatalf("unable to generate test file: %v", err)
+	}
+	defer os.Remove(file.Name())
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	// 2 MB message: passes the client-side limit configured below, but exceeds the
+	// broker's default message.max.bytes (1048588), so the broker rejects it.
+	data := bytes.Repeat([]byte("K"), 2*1024*1024)
+
+	if err := os.WriteFile(file.Name(), data, 0644); err != nil {
+		t.Fatalf("unable to write test file: %v", err)
+	}
+
+	if _, err := kafkaCtl.Execute("produce", topic, "--max-message-bytes", strconv.Itoa(3*1024*1024), "--file", file.Name()); err != nil {
+		testutil.AssertErrorContains(t, "Failed to produce message", err)
+	} else {
+		t.Fatalf("Expected producer to fail")
+	}
+
+	testutil.AssertEquals(t, "0 messages produced", kafkaCtl.GetStdOut())
+}
+
 func marshalJSON(message *dynamicpb.Message) ([]byte, error) {
 	jsonValue, err := protojson.MarshalOptions{Indent: ""}.Marshal(message)
 	if err != nil {

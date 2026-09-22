@@ -229,7 +229,6 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 				return failWithMessageCount(messageCount, "failed to parse line: %v", err.Error()) //nolint:govet
 			}
 
-			messageCount++
 			message, err := serializers.Serialize(inputMessage, flags)
 			if err != nil {
 				return errors.Wrap(err, "Failed to produce message")
@@ -238,7 +237,9 @@ func (operation *Operation) Produce(topic string, flags Flags) error {
 			_, _, err = producer.SendMessage(message)
 			if err != nil {
 				return failWithMessageCount(messageCount, "Failed to produce message: %s", err)
-			} else if !flags.Silent {
+			}
+			messageCount++
+			if !flags.Silent {
 				if messageCount%100 == 0 {
 					output.Statusf("\r%d messages produced", messageCount)
 				}
