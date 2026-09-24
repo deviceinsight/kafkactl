@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - [#345](https://github.com/deviceinsight/kafkactl/issues/345) Fix `unable to read tls.key` with `kubernetes.enabled`: the cert key is no longer read locally, so an encrypted key needs `tls.certKeyPassphrase` in config; the pod no longer uses the OS keyring
+- [#326](https://github.com/deviceinsight/kafkactl/issues/326) Load configured Protobuf marshal options, support their environment variable aliases, and preserve them in Kubernetes proxy mode.
 
 ## 5.20.0 - 2026-07-30
 

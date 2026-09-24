@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/global"
@@ -212,6 +213,12 @@ func parsePodEnvironment(context internal.ClientContext) []string {
 	envVariables = appendStrings(envVariables, global.ProtobufProtoSetFiles, context.Protobuf.ProtosetFiles)
 	envVariables = appendStrings(envVariables, global.ProtobufImportPaths, context.Protobuf.ProtoImportPaths)
 	envVariables = appendStrings(envVariables, global.ProtobufProtoFiles, context.Protobuf.ProtoFiles)
+	// Forward false values too, so the pod uses the selected context's marshal options.
+	envVariables = appendStringIfDefined(envVariables, global.ProtobufMarshalOptionsAllowPartial, strconv.FormatBool(context.Protobuf.MarshalOptions.AllowPartial))
+	envVariables = appendStringIfDefined(envVariables, global.ProtobufMarshalOptionsUseProtoNames, strconv.FormatBool(context.Protobuf.MarshalOptions.UseProtoNames))
+	envVariables = appendStringIfDefined(envVariables, global.ProtobufMarshalOptionsUseEnumNumbers, strconv.FormatBool(context.Protobuf.MarshalOptions.UseEnumNumbers))
+	envVariables = appendStringIfDefined(envVariables, global.ProtobufMarshalOptionsEmitUnpopulated, strconv.FormatBool(context.Protobuf.MarshalOptions.EmitUnpopulated))
+	envVariables = appendStringIfDefined(envVariables, global.ProtobufMarshalOptionsEmitDefaultValues, strconv.FormatBool(context.Protobuf.MarshalOptions.EmitDefaultValues))
 	envVariables = appendStringIfDefined(envVariables, global.ProducerPartitioner, context.Producer.Partitioner)
 	envVariables = appendStringIfDefined(envVariables, global.ProducerRequiredAcks, context.Producer.RequiredAcks)
 	envVariables = appendIntIfGreaterZero(envVariables, global.ProducerMaxMessageBytes, context.Producer.MaxMessageBytes)

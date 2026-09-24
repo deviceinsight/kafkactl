@@ -222,6 +222,11 @@ func CreateClientContext() (ClientContext, error) {
 		return context, err
 	}
 	context.Protobuf.ProtoFiles = viper.GetStringSlice("contexts." + context.Name + ".protobuf.protoFiles")
+	context.Protobuf.MarshalOptions.AllowPartial = viper.GetBool("contexts." + context.Name + ".protobuf.marshalOptions.allowPartial")
+	context.Protobuf.MarshalOptions.UseProtoNames = viper.GetBool("contexts." + context.Name + ".protobuf.marshalOptions.useProtoNames")
+	context.Protobuf.MarshalOptions.UseEnumNumbers = viper.GetBool("contexts." + context.Name + ".protobuf.marshalOptions.useEnumNumbers")
+	context.Protobuf.MarshalOptions.EmitUnpopulated = viper.GetBool("contexts." + context.Name + ".protobuf.marshalOptions.emitUnpopulated")
+	context.Protobuf.MarshalOptions.EmitDefaultValues = viper.GetBool("contexts." + context.Name + ".protobuf.marshalOptions.emitDefaultValues")
 	context.Producer.Partitioner = viper.GetString("contexts." + context.Name + ".producer.partitioner")
 	context.Producer.RequiredAcks = viper.GetString("contexts." + context.Name + ".producer.requiredAcks")
 	context.Producer.MaxMessageBytes = viper.GetInt("contexts." + context.Name + ".producer.maxMessageBytes")

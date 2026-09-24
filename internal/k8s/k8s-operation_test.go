@@ -1,6 +1,7 @@
 package k8s_test
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -14,6 +15,73 @@ import (
 	"github.com/deviceinsight/kafkactl/v5/internal/k8s"
 	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 )
+
+func TestProtobufMarshalOptionsArePassedToPodEnvironment(t *testing.T) {
+	testutil.StartUnitTest(t)
+
+	tests := []struct {
+		name       string
+		options    internal.ProtobufMarshalOptions
+		enabledKey string
+	}{
+		{name: "all disabled"},
+		{
+			name:       "allow partial",
+			options:    internal.ProtobufMarshalOptions{AllowPartial: true},
+			enabledKey: "PROTOBUF_MARSHALOPTIONS_ALLOWPARTIAL",
+		},
+		{
+			name:       "use proto names",
+			options:    internal.ProtobufMarshalOptions{UseProtoNames: true},
+			enabledKey: "PROTOBUF_MARSHALOPTIONS_USEPROTONAMES",
+		},
+		{
+			name:       "use enum numbers",
+			options:    internal.ProtobufMarshalOptions{UseEnumNumbers: true},
+			enabledKey: "PROTOBUF_MARSHALOPTIONS_USEENUMNUMBERS",
+		},
+		{
+			name:       "emit unpopulated",
+			options:    internal.ProtobufMarshalOptions{EmitUnpopulated: true},
+			enabledKey: "PROTOBUF_MARSHALOPTIONS_EMITUNPOPULATED",
+		},
+		{
+			name:       "emit default values",
+			options:    internal.ProtobufMarshalOptions{EmitDefaultValues: true},
+			enabledKey: "PROTOBUF_MARSHALOPTIONS_EMITDEFAULTVALUES",
+		},
+	}
+
+	keys := []string{
+		"PROTOBUF_MARSHALOPTIONS_ALLOWPARTIAL",
+		"PROTOBUF_MARSHALOPTIONS_USEPROTONAMES",
+		"PROTOBUF_MARSHALOPTIONS_USEENUMNUMBERS",
+		"PROTOBUF_MARSHALOPTIONS_EMITUNPOPULATED",
+		"PROTOBUF_MARSHALOPTIONS_EMITDEFAULTVALUES",
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var context internal.ClientContext
+			context.Protobuf.MarshalOptions = tt.options
+
+			envMap := make(map[string]string)
+			for _, envVar := range k8s.ParsePodEnvironment(context) {
+				key, value, _ := strings.Cut(envVar, "=")
+				envMap[key] = value
+			}
+
+			for _, key := range keys {
+				value, found := envMap[key]
+				if !found {
+					t.Errorf("env variable not found in parsed environment: %s", key)
+					continue
+				}
+				testutil.AssertEquals(t, strconv.FormatBool(key == tt.enabledKey), value)
+			}
+		})
+	}
+}
 
 func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {
 

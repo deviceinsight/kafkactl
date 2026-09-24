@@ -226,6 +226,8 @@ contexts:
         - "otherMessage.proto"
       protosetFiles:
         - "/usr/include/protoset/other.protoset"
+      # optional: Protobuf JSON output options used by consume (all default to false)
+      # explicit --proto-marshal-option flags override these values
       # see: https://pkg.go.dev/google.golang.org/protobuf@v1.36.6/encoding/protojson#MarshalOptions
       marshalOptions:
         allowPartial: true
@@ -506,6 +508,13 @@ e.g. the key `contexts.default.tls.certKey` has the corresponding environment va
 If environment variables for the `default` context should be set, the prefix `CONTEXTS_DEFAULT_` can be omitted.
 So, instead of `CONTEXTS_DEFAULT_TLS_CERTKEY` one can also set `TLS_CERTKEY`.
 See *root_test.go* for more examples.
+
+For example, `PROTOBUF_MARSHALOPTIONS_EMITDEFAULTVALUES=true` overrides
+`contexts.default.protobuf.marshalOptions.emitDefaultValues`.
+The other marshal options follow the same naming rules.
+These options are also passed to the pod in Kubernetes mode.
+An explicit consume flag such as `--proto-marshal-option emitDefaultValues=false`
+overrides both the configuration file and the environment variable.
 
 == Password Handling
 
