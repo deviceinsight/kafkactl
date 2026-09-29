@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- [#67](https://github.com/deviceinsight/kafkactl/issues/67) `--tail`/`--exit` no longer warn about a timeout when a partition's trailing offset(s) belong to non-data records (e.g. transaction control records) that are never delivered as a message; this is now recognized as reaching the end of the partition instead of a stall.
+
 ## 5.20.0 - 2026-07-30
 
 ### Changed

@@ -109,7 +109,20 @@ func (c *PartitionConsumer) Start(ctx context.Context, flags Flags, messages cha
 						}
 					case <-time.After(5 * time.Second):
 						if flags.Exit || flags.Tail > 0 {
-							output.Warnf("timed-out while waiting for messages (https://github.com/deviceinsight/kafkactl/issues/67)")
+							// If the partition's high water mark has already moved past
+							// lastOffset, the broker has nothing left to deliver up to our
+							// target offset: the remaining offset(s) belong to records (e.g.
+							// transaction control records) that sarama's consumer never
+							// surfaces as a Message. That's expected when offsets in the
+							// partition aren't strictly successive, not a real stall, so
+							// there's nothing more to wait for and no need to alarm the user.
+							// See https://github.com/deviceinsight/kafkactl/issues/67
+							if lastOffset >= 0 && pc.HighWaterMarkOffset() > lastOffset {
+								output.Debugf("stop consuming partition %d: high water mark %d already past limit offset %d, remaining offset(s) are non-data records",
+									partitionID, pc.HighWaterMarkOffset(), lastOffset)
+							} else {
+								output.Warnf("timed-out while waiting for messages (https://github.com/deviceinsight/kafkactl/issues/67)")
+							}
 							pc.AsyncClose()
 							break messageChannelRead
 						}
