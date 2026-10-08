@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Do not read the local TLS cert key when `kubernetes.enabled` is set (the key is mounted in the pod), fixing `unable to read tls.key` regression
+
 ## 5.20.0 - 2026-07-30
 
 ### Changed

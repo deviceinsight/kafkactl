@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/IBM/sarama"
+	"github.com/deviceinsight/kafkactl/v5/internal/credential"
 )
 
 func TestListConfigsFromEntries(t *testing.T) {
@@ -111,5 +112,23 @@ func TestSanitizeUsername(t *testing.T) {
 				t.Fatalf("expected:\n--\n%s\n--\nactual:\n--\n%s\n--", tc.want, sanitizeUsername(tc.username))
 			}
 		})
+	}
+}
+
+func TestResolvePassphraseWithMissingKeyFile(t *testing.T) {
+	resolver := credential.NewPromptCredentialResolver()
+	missingKey := "does-not-exist/tls.key"
+
+	// with kubernetes the key is mounted in the pod, so it must not be read locally
+	passphrase, err := resolvePassphrase(resolver, true, "test", missingKey, "tls.certKeyPassphrase", "label")
+	if err != nil {
+		t.Fatalf("unexpected error with kubernetes enabled: %v", err)
+	}
+	if passphrase != "" {
+		t.Fatalf("expected empty passphrase, got %q", passphrase)
+	}
+
+	if _, err := resolvePassphrase(resolver, false, "test", missingKey, "tls.certKeyPassphrase", "label"); err == nil {
+		t.Fatal("expected error for missing key file without kubernetes")
 	}
 }

@@ -175,7 +175,7 @@ func CreateClientContext() (ClientContext, error) {
 	if context.TLS.CertKey, err = resolvePath("contexts." + context.Name + ".tls.certKey"); err != nil {
 		return context, err
 	}
-	if context.TLS.Passphrase, err = resolvePassphrase(credentials, context.Name, context.TLS.CertKey, "tls.certKeyPassphrase", "TLS Cert Key Passphrase"); err != nil {
+	if context.TLS.Passphrase, err = resolvePassphrase(credentials, IsKubernetesEnabled(), context.Name, context.TLS.CertKey, "tls.certKeyPassphrase", "TLS Cert Key Passphrase"); err != nil {
 		return context, err
 	}
 
@@ -202,7 +202,7 @@ func CreateClientContext() (ClientContext, error) {
 	if context.SchemaRegistry.TLS.CertKey, err = resolvePath("contexts." + context.Name + ".schemaRegistry.tls.certKey"); err != nil {
 		return context, err
 	}
-	if context.SchemaRegistry.TLS.Passphrase, err = resolvePassphrase(credentials, context.Name, context.SchemaRegistry.TLS.CertKey, "schemaRegistry.tls.certKeyPassphrase", "Schema Registry TLS Cert Key Passphrase"); err != nil {
+	if context.SchemaRegistry.TLS.Passphrase, err = resolvePassphrase(credentials, IsKubernetesEnabled(), context.Name, context.SchemaRegistry.TLS.CertKey, "schemaRegistry.tls.certKeyPassphrase", "Schema Registry TLS Cert Key Passphrase"); err != nil {
 		return context, err
 	}
 
@@ -308,9 +308,13 @@ func resolvePassword(credentials credential.Resolver, contextName, configKey, pr
 	return credentials.ResolvePassword(fmt.Sprintf("%s.%s", contextName, configKey), promptLabel)
 }
 
-func resolvePassphrase(credentials credential.Resolver, contextName, certKeyPath, configKey, promptLabel string) (string, error) {
+func resolvePassphrase(credentials credential.Resolver, kubernetes bool, contextName, certKeyPath, configKey, promptLabel string) (string, error) {
 	if viper.IsSet("contexts." + contextName + "." + configKey) {
 		return viper.GetString("contexts." + contextName + "." + configKey), nil
+	}
+	if kubernetes {
+		// the key lives in the pod (e.g. mounted from kubernetes.tlsSecret), not on the local machine
+		return "", nil
 	}
 	return credentials.ResolveTLSPassphrase(certKeyPath, fmt.Sprintf("%s.%s", contextName, configKey), promptLabel)
 }
