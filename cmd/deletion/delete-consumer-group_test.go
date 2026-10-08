@@ -89,7 +89,7 @@ func verifyConsumerGroupDeleted(t *testing.T, kafkaCtl testutil.KafkaCtlTestComm
 		if err != nil {
 			return err
 		}
-		consumerGroups := strings.SplitN(kafkaCtl.GetStdOut(), "\n", -1)
+		consumerGroups := strings.Split(kafkaCtl.GetStdOut(), "\n")
 		if util.ContainsString(consumerGroups, groupName) {
 			return errors.New("consumer-group not yet deleted")
 		}

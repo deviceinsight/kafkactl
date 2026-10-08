@@ -5,7 +5,7 @@
 kafkactl is a command-line interface for Apache Kafka written in Go. It supports topic/consumer-group/ACL/broker/user management, message producing/consuming with Avro/Protobuf/JSON schema support, Kubernetes-proxied execution, and an external plugin system for OAuth token providers.
 
 - **Module**: `github.com/deviceinsight/kafkactl/v5`
-- **Go version**: 1.24.12
+- **Go version**: 1.27.1
 - **Kafka client**: IBM/sarama
 - **CLI framework**: spf13/cobra + spf13/viper
 - **License**: Apache 2.0
@@ -230,7 +230,7 @@ kafkactl
 
 ### Linting
 
-Configured in `.golangci.yml` with these linters: `gofmt`, `goimports`, `revive`, `govet`. Timeout: 3 minutes.
+Configured in `.golangci.yml` (golangci-lint v2 format) with: `revive` plus the v2 defaults (incl. `govet`, `staticcheck`), and `gofmt`/`goimports` as formatters.
 
 Pre-commit hook runs golangci-lint (`.pre-commit-config.yaml`).
 

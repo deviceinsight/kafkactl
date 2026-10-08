@@ -89,7 +89,7 @@ func verifyTopicDeleted(t *testing.T, kafkaCtl testutil.KafkaCtlTestCommand, top
 		if err != nil {
 			return err
 		}
-		topics := strings.SplitN(kafkaCtl.GetStdOut(), "\n", -1)
+		topics := strings.Split(kafkaCtl.GetStdOut(), "\n")
 		if util.ContainsString(topics, topicName) {
 			return errors.New("topic not yet deleted")
 		}

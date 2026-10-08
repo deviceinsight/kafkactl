@@ -79,7 +79,7 @@ func VerifyTopicExists(t *testing.T, topic string) {
 		if err != nil {
 			return err
 		}
-		topics := strings.SplitN(kafkaCtl.GetStdOut(), "\n", -1)
+		topics := strings.Split(kafkaCtl.GetStdOut(), "\n")
 		if util.ContainsString(topics, topic) {
 			return nil
 		}
@@ -149,7 +149,7 @@ func VerifyGroupExists(t *testing.T, group string) {
 		if err != nil {
 			return err
 		}
-		groups := strings.SplitN(kafkaCtl.GetStdOut(), "\n", -1)
+		groups := strings.Split(kafkaCtl.GetStdOut(), "\n")
 		if util.ContainsString(groups, group) {
 			return nil
 		}

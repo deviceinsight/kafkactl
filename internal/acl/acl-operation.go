@@ -368,15 +368,16 @@ func xor(values ...bool) bool {
 
 func printResourceAcls(outputFormat string, aclList ...ResourceACLEntry) error {
 	tableWriter := output.CreateTableWriter()
-	if outputFormat == "" {
+	switch outputFormat {
+	case "":
 		if err := tableWriter.WriteHeader("RESOURCE_TYPE", "RESOURCE_NAME", "PATTERN_TYPE", "PRINCIPAL", "HOST", "OPERATION", "PERMISSION_TYPE"); err != nil {
 			return err
 		}
-	} else if outputFormat == "json" || outputFormat == "yaml" {
+	case "json", "yaml":
 		if err := output.PrintObject(aclList, outputFormat); err != nil {
 			return err
 		}
-	} else {
+	default:
 		return errors.Errorf("unknown output format: %s", outputFormat)
 	}
 

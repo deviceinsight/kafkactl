@@ -291,9 +291,10 @@ func (operation *Operation) printTopic(topic Topic, flags DescribeTopicFlags) er
 		return errors.Errorf("unknown outputFormat: %s", flags.OutputFormat)
 	}
 
-	if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
+	switch flags.OutputFormat {
+	case "json", "yaml":
 		return output.PrintObject(topic, flags.OutputFormat)
-	} else if flags.OutputFormat == "wide" || flags.OutputFormat == "" {
+	case "wide", "":
 		for _, p := range topic.Partitions {
 			replicas := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(p.Replicas)), ","), "[]")
 			inSyncReplicas := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(p.ISRs)), ","), "[]")
@@ -722,23 +723,22 @@ func (operation *Operation) GetTopics(flags GetTopicsFlags) error {
 	tableWriter := output.CreateTableWriter()
 	var requestedFields requestedTopicFields
 
-	if flags.OutputFormat == "" {
+	switch flags.OutputFormat {
+	case "":
 		requestedFields = requestedTopicFields{partitionID: true, partitionReplicas: true}
 		if err := tableWriter.WriteHeader("TOPIC", "PARTITIONS", "REPLICATION FACTOR"); err != nil {
 			return err
 		}
-	} else if flags.OutputFormat == "compact" {
+	case "compact":
 		tableWriter.Initialize()
-	} else if flags.OutputFormat == "wide" {
+	case "wide":
 		requestedFields = requestedTopicFields{partitionID: true, partitionReplicas: true, config: NonDefaultConfigs}
 		if err := tableWriter.WriteHeader("TOPIC", "PARTITIONS", "REPLICATION FACTOR", "CONFIGS"); err != nil {
 			return err
 		}
-	} else if flags.OutputFormat == "json" {
+	case "json", "yaml":
 		requestedFields = allFields
-	} else if flags.OutputFormat == "yaml" {
-		requestedFields = allFields
-	} else {
+	default:
 		return errors.Errorf("unknown outputFormat: %s", flags.OutputFormat)
 	}
 
@@ -770,21 +770,22 @@ func (operation *Operation) GetTopics(flags GetTopicsFlags) error {
 		return topicList[i].Name < topicList[j].Name
 	})
 
-	if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
+	switch flags.OutputFormat {
+	case "json", "yaml":
 		return output.PrintObject(topicList, flags.OutputFormat)
-	} else if flags.OutputFormat == "wide" {
+	case "wide":
 		for _, t := range topicList {
 			if err := tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions)), strconv.Itoa(t.ReplicationFactor), getConfigString(t.Configs)); err != nil {
 				return err
 			}
 		}
-	} else if flags.OutputFormat == "compact" {
+	case "compact":
 		for _, t := range topicList {
 			if err := tableWriter.Write(t.Name); err != nil {
 				return err
 			}
 		}
-	} else {
+	default:
 		for _, t := range topicList {
 			if err := tableWriter.Write(t.Name, strconv.Itoa(len(t.Partitions)), strconv.Itoa(t.ReplicationFactor)); err != nil {
 				return err

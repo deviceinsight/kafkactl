@@ -32,9 +32,9 @@ func ParseTimestamp(timestamp string) (time.Time, error) {
 }
 
 func ConvertControlChars(value string) string {
-	value = strings.Replace(value, "\\n", "\n", -1)
-	value = strings.Replace(value, "\\r", "\r", -1)
-	value = strings.Replace(value, "\\t", "\t", -1)
+	value = strings.ReplaceAll(value, "\\n", "\n")
+	value = strings.ReplaceAll(value, "\\r", "\r")
+	value = strings.ReplaceAll(value, "\\t", "\t")
 	return value
 }
 

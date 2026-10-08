@@ -28,7 +28,7 @@ type topicPartitionOffsets struct {
 
 type topicPartition struct {
 	Name       string
-	Partitions []int32 `json:"," yaml:",flow"`
+	Partitions []int32 `yaml:",flow"`
 }
 
 type partitionOffset struct {
@@ -418,15 +418,16 @@ func (operation *ConsumerGroupOperation) GetConsumerGroups(flags GetConsumerGrou
 	}
 
 	for _, cg := range consumerGroups {
-		if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
+		switch flags.OutputFormat {
+		case "json", "yaml":
 			if err := output.PrintObject(cg, flags.OutputFormat); err != nil {
 				return err
 			}
-		} else if flags.OutputFormat == "wide" {
+		case "wide":
 			if err := tableWriter.Write(cg.Name, cg.ProtocolType, strings.Join(cg.Topics, ",")); err != nil {
 				return err
 			}
-		} else {
+		default:
 			if err := tableWriter.Write(cg.Name, strings.Join(cg.Topics, ",")); err != nil {
 				return err
 			}
