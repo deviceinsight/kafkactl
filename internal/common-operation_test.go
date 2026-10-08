@@ -1,11 +1,17 @@
 package internal
 
 import (
+	"encoding/pem"
+	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal/credential"
+	"github.com/deviceinsight/kafkactl/v5/internal/global"
+	"github.com/spf13/viper"
 )
 
 func TestListConfigsFromEntries(t *testing.T) {
@@ -115,20 +121,50 @@ func TestSanitizeUsername(t *testing.T) {
 	}
 }
 
-func TestResolvePassphraseWithMissingKeyFile(t *testing.T) {
-	resolver := credential.NewPromptCredentialResolver()
-	missingKey := "does-not-exist/tls.key"
-
-	// with kubernetes the key is mounted in the pod, so it must not be read locally
-	passphrase, err := resolvePassphrase(resolver, true, "test", missingKey, "tls.certKeyPassphrase", "label")
-	if err != nil {
-		t.Fatalf("unexpected error with kubernetes enabled: %v", err)
-	}
-	if passphrase != "" {
-		t.Fatalf("expected empty passphrase, got %q", passphrase)
+func TestResolvePassphraseIgnoresLocalKeyWithKubernetes(t *testing.T) {
+	encryptedKey := filepath.Join(t.TempDir(), "tls.key")
+	if err := os.WriteFile(encryptedKey, pem.EncodeToMemory(&pem.Block{Type: "ENCRYPTED PRIVATE KEY"}), 0o600); err != nil {
+		t.Fatal(err)
 	}
 
-	if _, err := resolvePassphrase(resolver, false, "test", missingKey, "tls.certKeyPassphrase", "label"); err == nil {
-		t.Fatal("expected error for missing key file without kubernetes")
+	testCases := []struct {
+		name               string
+		kubernetes         bool
+		certKey            string
+		passphrase         string
+		expectedPassphrase string
+		expectedError      string
+	}{
+		{name: "local missing key", certKey: "missing/tls.key", expectedError: "unable to read missing/tls.key"},
+		{name: "local encrypted key", certKey: encryptedKey, expectedError: "no terminal available for prompting"},
+		{name: "kubernetes missing key", kubernetes: true, certKey: "missing/tls.key"},
+		{name: "kubernetes encrypted local key", kubernetes: true, certKey: encryptedKey},
+		{name: "kubernetes with configured passphrase", kubernetes: true, certKey: encryptedKey, passphrase: "secret", expectedPassphrase: "secret"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Cleanup(viper.Reset)
+			global.NewConfig().Flags().Context = "test"
+			viper.Set("contexts.test.kubernetes.enabled", tc.kubernetes)
+			if tc.passphrase != "" {
+				viper.Set("contexts.test.tls.certKeyPassphrase", tc.passphrase)
+			}
+
+			passphrase, err := resolvePassphrase(credential.NewPromptCredentialResolver(), "test", tc.certKey, "tls.certKeyPassphrase", "label")
+
+			if tc.expectedError != "" {
+				if err == nil || !strings.Contains(err.Error(), tc.expectedError) {
+					t.Fatalf("expected error containing %q, got: %v", tc.expectedError, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if passphrase != tc.expectedPassphrase {
+				t.Fatalf("expected passphrase %q, got %q", tc.expectedPassphrase, passphrase)
+			}
+		})
 	}
 }
