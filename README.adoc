@@ -1202,7 +1202,9 @@ kafkactl alter topic my-topic --replication-factor 2
 
 ____
 :information_source: when altering replication factor, kafkactl tries to keep the number of replicas assigned to each
-broker balanced. If you need more control over the assigned replicas use `alter partition` directly.
+broker balanced and spreads the replicas of a partition across reported broker racks. Brokers whose rack is unknown
+are used after brokers on racks not yet used by the partition. If the rack lookup fails, assignment stays
+balance-only. If you need more control over the assigned replicas use `alter partition` directly.
 ____
 
 The topic configs can be edited by supplying key value pairs as follows:
