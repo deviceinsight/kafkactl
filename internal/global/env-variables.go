@@ -36,6 +36,9 @@ const (
 	ProducerMaxMessageBytes            = "PRODUCER_MAXMESSAGEBYTES"
 )
 
+// KeyringEnabled is a global setting, so it is not part of the context-scoped EnvVariables
+const KeyringEnabled = "KEYRING_ENABLED"
+
 var EnvVariables = []string{
 	RequestTimeout,
 	Brokers,

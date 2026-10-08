@@ -312,6 +312,10 @@ func resolvePassphrase(credentials credential.Resolver, contextName, certKeyPath
 	if viper.IsSet("contexts." + contextName + "." + configKey) {
 		return viper.GetString("contexts." + contextName + "." + configKey), nil
 	}
+	if IsKubernetesEnabled() {
+		// the key lives in the pod (e.g. mounted from kubernetes.tlsSecret), not on the local machine
+		return "", nil
+	}
 	return credentials.ResolveTLSPassphrase(certKeyPath, fmt.Sprintf("%s.%s", contextName, configKey), promptLabel)
 }
 

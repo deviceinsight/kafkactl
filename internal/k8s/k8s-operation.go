@@ -215,6 +215,8 @@ func parsePodEnvironment(context internal.ClientContext) []string {
 	envVariables = appendStringIfDefined(envVariables, global.ProducerPartitioner, context.Producer.Partitioner)
 	envVariables = appendStringIfDefined(envVariables, global.ProducerRequiredAcks, context.Producer.RequiredAcks)
 	envVariables = appendIntIfGreaterZero(envVariables, global.ProducerMaxMessageBytes, context.Producer.MaxMessageBytes)
+	// the pod has no OS keyring, credentials missing from the environment must fail with a clear prompt error
+	envVariables = append(envVariables, global.KeyringEnabled+"=false")
 
 	return envVariables
 }

@@ -139,3 +139,14 @@ func TestSaslCredentialsNotInPodEnvironmentWhenSaslSecretCreateIsEnabled(t *test
 		}
 	}
 }
+
+func TestKeyringDisabledInPodEnvironment(t *testing.T) {
+	environment := k8s.ParsePodEnvironment(internal.ClientContext{})
+
+	for _, envVar := range environment {
+		if envVar == global.KeyringEnabled+"=false" {
+			return
+		}
+	}
+	t.Fatalf("%s=false not found in pod environment: %v", global.KeyringEnabled, environment)
+}
