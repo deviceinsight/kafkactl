@@ -26,6 +26,7 @@ func newDeleteACLCmd() *cobra.Command {
 
 	cmdDeleteACL.Flags().StringVarP(&flags.Operation, "operation", "o", "", "operation of acl")
 	cmdDeleteACL.Flags().StringVarP(&flags.PatternType, "pattern", "", "", "pattern type. one of (any, match, prefixed, literal)")
+	cmdDeleteACL.Flags().StringVarP(&flags.ResourceName, "resource-name", "r", "", "resource name of acl (e.g. topic name)")
 
 	cmdDeleteACL.Flags().StringVarP(&flags.Principal, "principal", "p", "", "principal of acl")
 	cmdDeleteACL.Flags().StringVarP(&flags.Host, "host", "", "", "host of acl")

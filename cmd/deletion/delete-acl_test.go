@@ -169,3 +169,56 @@ func TestDeleteAclByHostIntegration(t *testing.T) {
 	testutil.AssertIntEquals(t, 1, len(acls[0].Acls))
 	testutil.AssertEquals(t, "host-b", acls[0].Acls[0].Host)
 }
+
+func TestDeleteAclByResourceNameIntegration(t *testing.T) {
+
+	testutil.StartIntegrationTestWithContext(t, "sasl-admin")
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	selectedTopic := testutil.CreateTopic(t, "acl-topic-selected")
+	remainingTopic := testutil.CreateTopic(t, "acl-topic-remaining")
+	prefix := selectedTopic[:len(selectedTopic)-1]
+
+	for _, topicName := range []string{selectedTopic, remainingTopic} {
+		if _, err := kafkaCtl.Execute("create", "acl", "--topic", topicName, "--operation", "read", "--allow", "--principal", "User:user"); err != nil {
+			t.Fatalf("failed to execute command: %v", err)
+		}
+	}
+
+	if _, err := kafkaCtl.Execute("create", "acl", "--topic", prefix, "--pattern", "prefixed", "--operation", "read", "--allow", "--principal", "User:user"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	countAcls := func(resourceName string) int {
+		if _, err := kafkaCtl.Execute("get", "acl", "--resource-name", resourceName, "-o", "yaml"); err != nil {
+			t.Fatalf("failed to execute command: %v", err)
+		}
+		entries, err := acl.FromYaml(kafkaCtl.GetStdOut())
+		if err != nil {
+			t.Fatalf("failed to read yaml: %v", err)
+		}
+		count := 0
+		for _, entry := range entries {
+			count += len(entry.Acls)
+		}
+		return count
+	}
+
+	// pattern 'any' deletes only acls with exactly this resource name
+	if _, err := kafkaCtl.Execute("delete", "acl", "--topics", "--resource-name", selectedTopic, "--operation", "any", "--pattern", "any"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertIntEquals(t, 0, countAcls(selectedTopic))
+	testutil.AssertIntEquals(t, 1, countAcls(prefix))
+	testutil.AssertIntEquals(t, 1, countAcls(remainingTopic))
+
+	// pattern 'match' also deletes prefixed acls matching the resource name
+	if _, err := kafkaCtl.Execute("delete", "acl", "--topics", "--resource-name", selectedTopic, "--operation", "any", "--pattern", "match"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertIntEquals(t, 0, countAcls(prefix))
+	testutil.AssertIntEquals(t, 1, countAcls(remainingTopic))
+}
