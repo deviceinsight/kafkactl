@@ -219,15 +219,16 @@ func (operation *Operation) GetBrokers(flags GetBrokersFlags) error {
 		return brokerList[i].ID < brokerList[j].ID
 	})
 
-	if flags.OutputFormat == "json" || flags.OutputFormat == "yaml" {
+	switch flags.OutputFormat {
+	case "json", "yaml":
 		return output.PrintObject(brokerList, flags.OutputFormat)
-	} else if flags.OutputFormat == "compact" {
+	case "compact":
 		for _, t := range brokerList {
 			if err := tableWriter.Write(t.Address); err != nil {
 				return err
 			}
 		}
-	} else {
+	default:
 		for _, t := range brokerList {
 			if err := tableWriter.Write(strconv.Itoa(int(t.ID)), t.Address); err != nil {
 				return err
