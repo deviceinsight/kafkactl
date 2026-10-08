@@ -10,10 +10,9 @@ import (
 
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// failingDeserializer decodes every message as-is except those whose value
-// equals "bad", which fail deserialization.
 type failingDeserializer struct{}
 
 func (d *failingDeserializer) CanDeserializeKey(*sarama.ConsumerMessage, Flags) bool   { return true }
@@ -24,8 +23,11 @@ func (d *failingDeserializer) DeserializeKey(msg *sarama.ConsumerMessage) (*Dese
 }
 
 func (d *failingDeserializer) DeserializeValue(msg *sarama.ConsumerMessage) (*DeserializedData, error) {
-	if string(msg.Value) == "bad" {
-		return nil, errors.New("boom")
+	switch string(msg.Value) {
+	case "bad":
+		return nil, &DeserializationError{errors.New("boom")}
+	case "config-error":
+		return nil, errors.New("type not found")
 	}
 	return &DeserializedData{data: msg.Value}, nil
 }
@@ -88,6 +90,39 @@ func TestDeserializeMessages_WithoutIgnoreErrorsAborts(t *testing.T) {
 	}
 	if !isDeserializationError(err) {
 		t.Fatalf("expected a deserialization error, got: %v", err)
+	}
+}
+
+func TestDeserializeMessages_IgnoreErrorsStillAbortsOnNonDecodeError(t *testing.T) {
+	_, _, err := drain(t, Flags{IgnoreErrors: true}, "one", "config-error", "three")
+	if err == nil || isDeserializationError(err) {
+		t.Fatalf("expected a non-deserialization error to abort, got: %v", err)
+	}
+}
+
+func TestDeserializeMessages_SkippedMessagesDoNotCountTowardMaxMessages(t *testing.T) {
+	out, _, err := drain(t, Flags{IgnoreErrors: true, MaxMessages: 2}, "one", "bad", "three", "four")
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if stdout := out.String(); !strings.Contains(stdout, "three") || strings.Contains(stdout, "four") {
+		t.Fatalf("expected exactly the first two good messages, got: %q", stdout)
+	}
+}
+
+func TestProtobufDeserializer_ClassifiesErrors(t *testing.T) {
+	descriptor := (&timestamppb.Timestamp{}).ProtoReflect().Descriptor()
+
+	_, err := (&ProtobufMessageDeserializer{valueDescriptor: descriptor}).
+		DeserializeValue(&sarama.ConsumerMessage{Value: []byte{0xff}})
+	if !isDeserializationError(err) {
+		t.Fatalf("expected an invalid payload to be a deserialization error, got: %v", err)
+	}
+
+	_, err = (&ProtobufMessageDeserializer{valueType: "Typo"}).
+		DeserializeValue(&sarama.ConsumerMessage{Value: []byte{0x08, 0x01}})
+	if err == nil || isDeserializationError(err) {
+		t.Fatalf("expected an unknown message type not to be a deserialization error, got: %v", err)
 	}
 }
 

@@ -75,7 +75,7 @@ func (deserializer *AvroMessageDeserializer) deserialize(data []byte) (*Deserial
 
 	native, _, err := avroCodec.NativeFromBinary(payload)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse avro data")
+		return nil, &DeserializationError{errors.Wrap(err, "failed to parse avro data")}
 	}
 
 	textual, err := avroCodec.TextualFromNative(nil, native)

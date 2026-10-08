@@ -68,7 +68,7 @@ func (deserializer *RegistryProtobufMessageDeserializer) deserialize(rawData []b
 	}
 	indexes, indexBytes, err := readIndexes(rawData[internal.WireFormatBytes:])
 	if err != nil {
-		return nil, err
+		return nil, &DeserializationError{err}
 	}
 	messageDescriptor, err := findMessageDescriptor(indexes, fileDesc.Messages())
 	if err != nil {

@@ -66,7 +66,7 @@ func decodeProtobuf(rawData []byte, messageDescriptor protoreflect.MessageDescri
 
 	msg := dynamicpb.NewMessage(messageDescriptor)
 	if err := proto.Unmarshal(rawData, msg); err != nil {
-		return nil, err
+		return nil, &DeserializationError{err}
 	}
 
 	jsonBytes, err := protojson.MarshalOptions{

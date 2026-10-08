@@ -262,11 +262,7 @@ func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sara
 			lastIndex := len(sortedMessages) - 1
 			for i := range sortedMessages {
 				msg := sortedMessages[lastIndex-i]
-				if err := deserializers.Deserialize(msg, flags, filter); err != nil {
-					if flags.IgnoreErrors && isDeserializationError(err) {
-						output.Warnf("skipping message on partition %d at offset %d: %v", msg.Partition, msg.Offset, err)
-						continue
-					}
+				if err := deserializers.Deserialize(msg, flags, filter); err != nil && !ignoreDeserializationError(flags, msg, err) {
 					return err
 				}
 			}
@@ -281,15 +277,14 @@ func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sara
 
 			for msg := range messages {
 				err = deserializers.Deserialize(msg, flags, filter)
+				if err != nil && ignoreDeserializationError(flags, msg, err) {
+					err = nil
+					continue
+				}
 				messageCount++
 				if err != nil {
-					if flags.IgnoreErrors && isDeserializationError(err) {
-						output.Warnf("skipping message on partition %d at offset %d: %v", msg.Partition, msg.Offset, err)
-						err = nil
-					} else {
-						close(stopConsumers)
-						break
-					}
+					close(stopConsumers)
+					break
 				}
 				if flags.MaxMessages > 0 && messageCount >= flags.MaxMessages {
 					close(stopConsumers)
@@ -307,6 +302,14 @@ func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sara
 	}
 
 	return errorGroup
+}
+
+func ignoreDeserializationError(flags Flags, msg *sarama.ConsumerMessage, err error) bool {
+	if !flags.IgnoreErrors || !isDeserializationError(err) {
+		return false
+	}
+	output.Warnf("skipping message on partition %d at offset %d: %v", msg.Partition, msg.Offset, err)
+	return true
 }
 
 func insertSorted(messages []*sarama.ConsumerMessage, message *sarama.ConsumerMessage) []*sarama.ConsumerMessage {
