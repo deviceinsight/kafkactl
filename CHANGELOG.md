@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - [#298](https://github.com/deviceinsight/kafkactl/issues/298) Support filtering ACL deletion by resource name
+- [#197](https://github.com/deviceinsight/kafkactl/issues/197) `consume --ignore-errors` continues consuming and prints a warning when a message cannot be deserialized instead of aborting
 
 ### Fixed
 - [#345](https://github.com/deviceinsight/kafkactl/issues/345) Fix `unable to read tls.key` with `kubernetes.enabled`: the cert key is no longer read locally, so an encrypted key needs `tls.certKeyPassphrase` in config; the pod no longer uses the OS keyring

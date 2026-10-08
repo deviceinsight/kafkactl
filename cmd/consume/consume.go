@@ -57,6 +57,7 @@ func NewConsumeCmd() *cobra.Command {
 	cmdConsume.Flags().StringVarP(&flags.FilterValue, "filter-value", "", "", "filter messages values with glob pattern")
 	cmdConsume.Flags().StringToStringVarP(&flags.FilterHeader, "filter-header", "", map[string]string{}, "filter messages headers with glob pattern")
 	cmdConsume.Flags().StringVarP(&flags.IsolationLevel, "isolation-level", "i", "", "isolationLevel to use. One of: ReadUncommitted|ReadCommitted")
+	cmdConsume.Flags().BoolVarP(&flags.IgnoreErrors, "ignore-errors", "", false, "continue consuming when a message cannot be deserialized, printing a warning instead of aborting")
 
 	if err := cmdConsume.RegisterFlagCompletionFunc("group", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return consumergroups.CompleteConsumerGroups(cmd, args, toComplete)

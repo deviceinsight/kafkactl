@@ -730,6 +730,15 @@ The consumer can convert protobuf messages to JSON in keys (optional) and values
 kafkactl consume my-topic --value-proto-type MyTopicValue --key-proto-type MyTopicKey --proto-file kafkamsg.proto
 ----
 
+By default the consumer aborts as soon as a message cannot be deserialized (for example an invalid protobuf or avro
+payload on the topic). To keep consuming and skip such messages, printing a warning for each one instead, use
+`--ignore-errors`:
+
+[,bash]
+----
+kafkactl consume my-topic --value-proto-type MyTopicValue --proto-file kafkamsg.proto --ignore-errors
+----
+
 To join a consumer group and consume messages as a member of the group:
 
 [,bash]

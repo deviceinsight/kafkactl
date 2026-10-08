@@ -48,6 +48,7 @@ type Flags struct {
 	KeyProtoType        string
 	ValueProtoType      string
 	IsolationLevel      string
+	IgnoreErrors        bool
 
 	FilterKey    string
 	FilterValue  string
@@ -260,8 +261,8 @@ func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sara
 			}
 			lastIndex := len(sortedMessages) - 1
 			for i := range sortedMessages {
-				err := deserializers.Deserialize(sortedMessages[lastIndex-i], flags, filter)
-				if err != nil {
+				msg := sortedMessages[lastIndex-i]
+				if err := deserializers.Deserialize(msg, flags, filter); err != nil && !ignoreDeserializationError(flags, msg, err) {
 					return err
 				}
 			}
@@ -276,6 +277,10 @@ func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sara
 
 			for msg := range messages {
 				err = deserializers.Deserialize(msg, flags, filter)
+				if err != nil && ignoreDeserializationError(flags, msg, err) {
+					err = nil
+					continue
+				}
 				messageCount++
 				if err != nil {
 					close(stopConsumers)
@@ -297,6 +302,14 @@ func deserializeMessages(ctx context.Context, flags Flags, messages <-chan *sara
 	}
 
 	return errorGroup
+}
+
+func ignoreDeserializationError(flags Flags, msg *sarama.ConsumerMessage, err error) bool {
+	if !flags.IgnoreErrors || !isDeserializationError(err) {
+		return false
+	}
+	output.Warnf("skipping message on partition %d at offset %d: %v", msg.Partition, msg.Offset, err)
+	return true
 }
 
 func insertSorted(messages []*sarama.ConsumerMessage, message *sarama.ConsumerMessage) []*sarama.ConsumerMessage {
