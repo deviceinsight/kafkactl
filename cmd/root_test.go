@@ -74,6 +74,16 @@ func TestEnvironmentVariableLoadingAliases(t *testing.T) {
 	_ = os.Setenv(global.ProtobufProtoSetFiles, "/usr/include/protosets/ps1.protoset /usr/lib/ps2.protoset")
 	_ = os.Setenv(global.ProtobufImportPaths, "/usr/include/protobuf /usr/lib/protobuf")
 	_ = os.Setenv(global.ProtobufProtoFiles, "message.proto other.proto")
+	for _, envVar := range []string{
+		global.ProtobufMarshalOptionsAllowPartial,
+		global.ProtobufMarshalOptionsUseProtoNames,
+		global.ProtobufMarshalOptionsUseEnumNumbers,
+		global.ProtobufMarshalOptionsEmitUnpopulated,
+		global.ProtobufMarshalOptionsEmitDefaultValues,
+	} {
+		t.Setenv(envVar, "true")
+		t.Setenv("CONTEXTS_DEFAULT_"+envVar, "")
+	}
 	_ = os.Setenv(global.ProducerPartitioner, "hash")
 	_ = os.Setenv(global.ProducerRequiredAcks, "WaitForAll")
 	_ = os.Setenv(global.ProducerMaxMessageBytes, "1234")
@@ -126,6 +136,11 @@ func TestEnvironmentVariableLoadingAliases(t *testing.T) {
 	testutil.AssertEquals(t, "/usr/include/protosets/ps1.protoset", viper.GetStringSlice("contexts.default.protobuf.protosetFiles")[0])
 	testutil.AssertEquals(t, "/usr/include/protobuf", viper.GetStringSlice("contexts.default.protobuf.importPaths")[0])
 	testutil.AssertEquals(t, "message.proto", viper.GetStringSlice("contexts.default.protobuf.protoFiles")[0])
+	for _, option := range []string{"allowPartial", "useProtoNames", "useEnumNumbers", "emitUnpopulated", "emitDefaultValues"} {
+		if !viper.GetBool("contexts.default.protobuf.marshalOptions." + option) {
+			t.Errorf("expected protobuf marshal option %s to be true", option)
+		}
+	}
 	testutil.AssertEquals(t, "hash", viper.GetString("contexts.default.producer.partitioner"))
 	testutil.AssertEquals(t, "WaitForAll", viper.GetString("contexts.default.producer.requiredAcks"))
 	testutil.AssertEquals(t, "1234", viper.GetString("contexts.default.producer.maxMessageBytes"))
