@@ -112,7 +112,6 @@ contexts:
       # optional tokenProvider configuration (only used for 'sasl.mechanism=oauth')
       tokenprovider:
         # plugin to use as token provider implementation (see plugin section)
-        # built-in providers: generic, gcp
         plugin: azure
         # optional: additional options passed to the plugin
         options:
@@ -587,6 +586,7 @@ Available plugins:
 
 * https://github.com/deviceinsight/kafkactl-plugins/blob/main/aws/README.adoc[aws plugin]
 * https://github.com/deviceinsight/kafkactl-plugins/blob/main/azure/README.adoc[azure plugin]
+* https://github.com/deviceinsight/kafkactl-plugins/blob/main/gcp/README.adoc[gcp plugin]
 
 === Generic Token Provider
 
@@ -643,34 +643,6 @@ curl -s --fail -X POST "$AUTH_SERVER/oauth/token" \
 ----
 
 The script is executed each time a token is needed, allowing for automatic token refresh.
-
-=== GCP Token Provider
-
-_kafkactl_ provides a built-in `gcp` token provider for https://cloud.google.com/managed-service-for-apache-kafka/docs/overview[Google Cloud Managed Service for Apache Kafka].
-It is the equivalent of the `com.google.cloud.hosted.kafka.auth.GcpLoginCallbackHandler` used by Java clients: tokens are obtained from
-https://cloud.google.com/docs/authentication/application-default-credentials[Application Default Credentials], so no secrets need to be configured.
-
-[,yaml]
-----
-contexts:
-  gcp-cluster:
-    brokers:
-      - bootstrap.CLUSTER_ID.REGION.managedkafka.PROJECT_ID.cloud.goog:9092
-    tls:
-      enabled: true
-    sasl:
-      enabled: true
-      mechanism: oauth
-      tokenprovider:
-        plugin: gcp
-        # optional: set the token subject explicitly (normally derived from the credentials)
-        # options:
-        #   principal: my-sa@my-project.iam.gserviceaccount.com
-----
-
-Credentials are resolved in the usual ADC order: `GOOGLE_APPLICATION_CREDENTIALS` (service account key or impersonation config),
-`gcloud auth application-default login`, or the GCE/GKE metadata server (e.g. Workload Identity).
-The principal needs the `roles/managedkafka.client` role.
 
 == Examples
 

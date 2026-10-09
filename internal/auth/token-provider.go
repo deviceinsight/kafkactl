@@ -18,11 +18,8 @@ func (p *pluginTokenProvider) Token() (*sarama.AccessToken, error) {
 }
 
 func LoadTokenProviderPlugin(pluginName string, options map[string]any, brokers []string) (sarama.AccessTokenProvider, error) {
-	switch pluginName {
-	case "generic":
+	if pluginName == "generic" {
 		return newGenericTokenProvider(options)
-	case "gcp":
-		return newGCPTokenProvider(options)
 	}
 
 	loadedPlugin, ok := loadedPlugins[pluginName]
