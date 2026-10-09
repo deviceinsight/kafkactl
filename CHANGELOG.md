@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 5.21.0 - 2026-10-09
+
 ### Added
 - [#298](https://github.com/deviceinsight/kafkactl/issues/298) Support filtering ACL deletion by resource name
 - [#197](https://github.com/deviceinsight/kafkactl/issues/197) `consume --ignore-errors` continues consuming and prints a warning when a message cannot be deserialized instead of aborting
