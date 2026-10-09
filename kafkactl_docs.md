@@ -528,6 +528,7 @@ kafkactl consume TOPIC [flags]
       --from-timestamp string                                                            consume data from offset of given timestamp
   -g, --group string                                                                     consumer group to join
   -h, --help                                                                             help for consume
+      --ignore-errors                                                                    continue consuming when a message cannot be deserialized, printing a warning instead of aborting
   -i, --isolation-level string                                                           isolationLevel to use. One of: ReadUncommitted|ReadCommitted
       --key-encoding string                                                              key encoding (auto-detected by default). One of: none|hex|base64
       --key-proto-type string                                                            key protobuf message type
@@ -771,17 +772,18 @@ kafkactl delete access-control-list [flags]
 ##### Options
 
 ```
-  -a, --allow              acl of permissionType 'allow'
-  -c, --cluster            delete acl for the cluster
-  -d, --deny               acl of permissionType 'deny'
-  -g, --groups             delete acl for a consumer group
-  -h, --help               help for access-control-list
-      --host string        host of acl
-  -o, --operation string   operation of acl
-      --pattern string     pattern type. one of (any, match, prefixed, literal)
-  -p, --principal string   principal of acl
-  -t, --topics             delete acl for a topic
-  -v, --validate-only      validate only
+  -a, --allow                  acl of permissionType 'allow'
+  -c, --cluster                delete acl for the cluster
+  -d, --deny                   acl of permissionType 'deny'
+  -g, --groups                 delete acl for a consumer group
+  -h, --help                   help for access-control-list
+      --host string            host of acl
+  -o, --operation string       operation of acl
+      --pattern string         pattern type. one of (any, match, prefixed, literal)
+  -p, --principal string       principal of acl
+  -r, --resource-name string   resource name of acl (e.g. topic name)
+  -t, --topics                 delete acl for a topic
+  -v, --validate-only          validate only
 ```
 
 ##### Options inherited from parent commands
