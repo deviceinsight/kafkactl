@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Built-in `gcp` token provider for SASL/OAUTHBEARER authentication against Google Cloud Managed Service for Apache Kafka using Application Default Credentials
+
 ## 5.21.0 - 2026-10-09
 
 ### Added
