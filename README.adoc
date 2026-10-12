@@ -1021,8 +1021,8 @@ carry a raw, unframed avro payload and reference their schema via a `ce_datasche
 lookup. For this case `kafkactl` supports resolving the schema directly from a file or URL, bypassing the schema registry
 entirely.
 
-`produce` supports `--avro-schema-file <path-or-url>` to encode the value with a schema loaded from a local file or an
-`http(s)://` URL, without the Confluent wire format (magic byte + schema ID) prefix. Any headers (e.g. `ce_dataschema`)
+`produce` supports `--avro-schema-file <path-or-url>` to encode the value with a schema loaded from a local file, a
+`file://` URI or an `http(s)://` URL, without the Confluent wire format (magic byte + schema ID) prefix. Any headers (e.g. `ce_dataschema`)
 must be set explicitly with `-H`/`--header`, `kafkactl` does not populate them automatically.
 
 `consume` supports the same `--avro-schema-file` flag to decode with a static schema. When it is not set, passing
@@ -1034,7 +1034,18 @@ enabling it on a topic that mixes avro and non-avro (or unreachable-schema) mess
 errors. This fallback only applies to messages that don't use the Confluent wire format; if a schema registry is
 configured and a message starts with the Confluent magic byte, it is still decoded via the registry as before.
 
-Note that with `--avro-schema-header` the schema location comes from message data rather than from configuration you
+`kafkactl` only sets the value encoding: all CloudEvents attributes, including the required `ce_id`, `ce_source`,
+`ce_specversion` and `ce_type`, and the `content-type` header, must be set with `-H`.
+
+On `consume`, both flags also handle CloudEvents in structured content mode, where the value holds the whole event
+instead of the raw avro data. Events in the JSON event format (`content-type: application/cloudevents+json`) are
+printed with their avro encoded `data_base64` member decoded into a `data` member, using the `--avro-schema-file` schema,
+else the schema referenced by the event's own `dataschema` attribute, else the one in the `--avro-schema-header` header
+(each an absolute `http://`, `https://` or `file://` URI). Events with JSON `data`, or without a schema to decode `data_base64` with, are printed as-is. Other event
+formats (e.g. `application/cloudevents-batch+json` or `application/cloudevents+protobuf`) are not decoded and are
+printed as-is as well.
+
+Note that with `--avro-schema-header`, and for structured mode events, the schema location comes from message data rather than from configuration you
 control, so anyone able to produce to the topic can make `kafkactl` read an arbitrary local file or request an
 arbitrary URL - only enable it for topics where every producer is trusted. Schemas are cached by location for the
 lifetime of the process, so restart `kafkactl consume` to pick up a schema that changed at the same URI.
@@ -1050,10 +1061,13 @@ cat > schema.avsc <<'EOF'
 ]}
 EOF
 
-# produce a message, encoding the value with the schema file, and set ce_dataschema to an
-# absolute file:// URI pointing at the same schema, as required by the CloudEvents spec
+# produce a binary mode CloudEvent: the value is encoded with the schema file, the required
+# attributes (id, source, specversion, type) and content-type are set as headers, and
+# ce_dataschema is an absolute file:// URI pointing at the same schema
 kafkactl produce cloudevents_topic --value '{"next":{"next":{}}}' \
-  --avro-schema-file ./schema.avsc -H ce_dataschema:file://$(pwd)/schema.avsc
+  --avro-schema-file ./schema.avsc \
+  -H ce_specversion:1.0 -H ce_id:$(uuidgen) -H ce_source:/kafkactl/example -H ce_type:com.example.longlist \
+  -H content-type:application/avro -H ce_dataschema:file://$(pwd)/schema.avsc
 
 # consume messages, resolving the schema per-message from the ce_dataschema header
 kafkactl consume cloudevents_topic --from-beginning --avro-schema-header ce_dataschema
