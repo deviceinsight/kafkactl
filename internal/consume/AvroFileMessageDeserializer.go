@@ -20,35 +20,23 @@ const (
 	cloudEventsJSONMediaType             = "application/cloudevents+json"
 )
 
-// contentMode is the CloudEvents Kafka protocol binding content mode of a message.
+// contentMode as defined by the CloudEvents Kafka protocol binding
 type contentMode int
 
 const (
-	// binaryContentMode: the value is the raw avro data (also used for messages that aren't CloudEvents at all).
 	binaryContentMode contentMode = iota
-	// structuredJSONContentMode: the value is a single CloudEvent in the JSON event format.
 	structuredJSONContentMode
-	// unsupportedStructuredContentMode: any other event format (batch, protobuf, avro, ...), printed as-is.
 	unsupportedStructuredContentMode
 )
 
-// AvroFileMessageDeserializer decodes avro messages without a Confluent schema registry,
-// resolving the schema either from a static file/url (--avro-schema-file) or, per message,
-// from a header (--avro-schema-header, e.g. the CloudEvents "ce_dataschema" header) whose
-// value is a URI pointing at the schema.
-//
-// CloudEvents in structured content mode with the JSON event format are supported as well:
-// their base64 encoded "data_base64" member is decoded with the static schema, the schema
-// referenced by the event's "dataschema" attribute or the one in the schema header.
+// AvroFileMessageDeserializer decodes avro values without a schema registry, using a static schema
+// (--avro-schema-file) or a per message schema uri (--avro-schema-header, e.g. ce_dataschema).
 type AvroFileMessageDeserializer struct {
 	schemaHeader string
 	staticCodec  *goavro.Codec
 	source       *avro.SchemaSource
 }
 
-// CreateAvroFileMessageDeserializer resolves schemaFile once, if set, so that a static
-// --avro-schema-file schema isn't re-fetched/re-compiled on every consumed message. When
-// schemaFile is empty, the schema is instead resolved per message from schemaHeader.
 func CreateAvroFileMessageDeserializer(schemaFile, schemaHeader string, source *avro.SchemaSource) (*AvroFileMessageDeserializer, error) {
 	deserializer := &AvroFileMessageDeserializer{schemaHeader: schemaHeader, source: source}
 
@@ -130,10 +118,8 @@ func (deserializer *AvroFileMessageDeserializer) DeserializeValue(consumerMsg *s
 	return &DeserializedData{schema: codec.Schema(), data: textual}, nil
 }
 
-// deserializeStructuredJSON decodes the "data_base64" member of a CloudEvent in the JSON event format and replaces
-// it with a "data" member holding the decoded avro data. The schema is the static one, else the one referenced by the
-// event's "dataschema" attribute, else the one referenced by the schema header. Events with JSON "data", or without a
-// schema to decode "data_base64" with, are returned unchanged.
+// deserializeStructuredJSON replaces the avro "data_base64" of a JSON format CloudEvent with the decoded "data".
+// Events with JSON "data" or without a schema are returned unchanged.
 func (deserializer *AvroFileMessageDeserializer) deserializeStructuredJSON(consumerMsg *sarama.ConsumerMessage) (*DeserializedData, error) {
 	value := consumerMsg.Value
 
@@ -164,7 +150,6 @@ func (deserializer *AvroFileMessageDeserializer) deserializeStructuredJSON(consu
 				return nil, err
 			}
 		} else if headerValue, found := findHeader(consumerMsg.Headers, deserializer.schemaHeader); found && deserializer.schemaHeader != "" {
-			// structured mode messages may carry the same headers as binary mode ones
 			if codec, err = deserializer.resolveFromMessage(string(headerValue), fmt.Sprintf("%q header", deserializer.schemaHeader)); err != nil {
 				return nil, err
 			}
@@ -199,8 +184,7 @@ func (deserializer *AvroFileMessageDeserializer) resolveFromMessage(location, or
 		return nil, &DeserializationError{errors.Errorf("%s is present but empty, can't resolve the avro schema", origin)}
 	}
 	if !avro.IsSchemaURI(location) {
-		// only absolute uris are accepted from message data, so that a plain path in a message
-		// can't make kafkactl read files relative to the working directory
+		// plain paths in message data could read arbitrary relative files
 		return nil, &DeserializationError{errors.Errorf("%s value %q is not an http(s) or file uri", origin, location)}
 	}
 	return deserializer.source.Resolve(location)
@@ -220,8 +204,7 @@ func decodeAvro(codec *goavro.Codec, data []byte) ([]byte, error) {
 	return textual, nil
 }
 
-// messageContentMode determines the content mode as defined by the CloudEvents Kafka protocol binding: a content-type
-// header prefixed with "application/cloudevents" denotes structured content mode, anything else binary content mode.
+// messageContentMode: a content-type prefixed with "application/cloudevents" means structured mode, else binary mode
 func messageContentMode(consumerMsg *sarama.ConsumerMessage) contentMode {
 	contentType, found := findHeader(consumerMsg.Headers, cloudEventsContentTypeHeader)
 	if !found {

@@ -12,8 +12,7 @@ type jsonEventMember struct {
 	value json.RawMessage
 }
 
-// jsonEvent is a CloudEvent in the JSON event format. Members are kept as raw JSON in their original order, so that
-// re-encoding the event only changes the members that were explicitly replaced.
+// jsonEvent keeps the members of a JSON format CloudEvent raw and in order, so re-encoding only changes replaced ones.
 type jsonEvent struct {
 	members []jsonEventMember
 }
@@ -64,7 +63,6 @@ func (event *jsonEvent) get(name string) (json.RawMessage, bool) {
 	return nil, false
 }
 
-// replace substitutes the member oldName with a member newName holding value, at the same position.
 func (event *jsonEvent) replace(oldName, newName string, value json.RawMessage) {
 	for i, member := range event.members {
 		if member.name == oldName {

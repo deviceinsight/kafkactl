@@ -7,9 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// AvroFileMessageSerializer encodes avro messages without a Confluent schema registry,
-// using a schema resolved once from a static file/url (--avro-schema-file). Unlike
-// AvroMessageSerializer, no Confluent wire-format prefix is added to the encoded value.
+// AvroFileMessageSerializer encodes avro values with --avro-schema-file, without the Confluent wire-format prefix.
 type AvroFileMessageSerializer struct {
 	codec *goavro.Codec
 }

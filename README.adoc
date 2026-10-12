@@ -1015,40 +1015,26 @@ An additional parameter `print-schema` can be provided to display the schema use
 
 ==== avro without a schema registry
 
-Some producers don't register their schema in a Confluent schema registry at all - for example messages following the
+Some producers don't use a schema registry: messages following the
 https://github.com/cloudevents/spec/blob/main/cloudevents/bindings/kafka-protocol-binding.md[CloudEvents Kafka Protocol Binding]
-carry a raw, unframed avro payload and reference their schema via a `ce_dataschema` header (a URI) instead of a registry
-lookup. For this case `kafkactl` supports resolving the schema directly from a file or URL, bypassing the schema registry
-entirely.
+carry a raw avro payload and reference their schema with a URI in the `ce_dataschema` header. For this case, schemas
+can be loaded from a local file, a `file://` URI or an `http(s)://` URL.
 
-`produce` supports `--avro-schema-file <path-or-url>` to encode the value with a schema loaded from a local file, a
-`file://` URI or an `http(s)://` URL, without the Confluent wire format (magic byte + schema ID) prefix. Any headers (e.g. `ce_dataschema`)
-must be set explicitly with `-H`/`--header`, `kafkactl` does not populate them automatically.
+`produce --avro-schema-file` encodes the value without the Confluent wire format prefix. Headers, including the
+CloudEvents attributes (`ce_id`, `ce_source`, `ce_specversion`, `ce_type`, ...) and `content-type`, must be set with `-H`.
 
-`consume` supports the same `--avro-schema-file` flag to decode with a static schema. When it is not set, passing
-`--avro-schema-header <name>` (e.g. `ce_dataschema`) makes `kafkactl` resolve the schema per message from the URI found
-in that header, so different messages on the same topic can be decoded with different schemas. The header value must be
-an absolute `http://`, `https://` or `file://` URI; plain file paths are rejected. `--avro-schema-header`
-is opt-in (disabled by default): any message carrying the named header is then forced through avro decoding, so
-enabling it on a topic that mixes avro and non-avro (or unreachable-schema) messages would turn those into consume
-errors. This fallback only applies to messages that don't use the Confluent wire format; if a schema registry is
-configured and a message starts with the Confluent magic byte, it is still decoded via the registry as before.
+`consume --avro-schema-file` decodes all values with a static schema. `consume --avro-schema-header <name>` resolves
+the schema per message from the URI in that header, which must be an absolute `http(s)://` or `file://` URI. Messages
+in the Confluent wire format are still decoded via the schema registry, if one is configured.
 
-`kafkactl` only sets the value encoding: all CloudEvents attributes, including the required `ce_id`, `ce_source`,
-`ce_specversion` and `ce_type`, and the `content-type` header, must be set with `-H`.
+CloudEvents in structured content mode are supported for the JSON event format
+(`content-type: application/cloudevents+json`): the avro encoded `data_base64` is printed decoded as `data`, using the
+`--avro-schema-file` schema, else the event's `dataschema`, else the `--avro-schema-header` header. Other event
+formats are printed as-is.
 
-On `consume`, both flags also handle CloudEvents in structured content mode, where the value holds the whole event
-instead of the raw avro data. Events in the JSON event format (`content-type: application/cloudevents+json`) are
-printed with their avro encoded `data_base64` member decoded into a `data` member, using the `--avro-schema-file` schema,
-else the schema referenced by the event's own `dataschema` attribute, else the one in the `--avro-schema-header` header
-(each an absolute `http://`, `https://` or `file://` URI). Events with JSON `data`, or without a schema to decode `data_base64` with, are printed as-is. Other event
-formats (e.g. `application/cloudevents-batch+json` or `application/cloudevents+protobuf`) are not decoded and are
-printed as-is as well.
-
-Note that with `--avro-schema-header`, and for structured mode events, the schema location comes from message data rather than from configuration you
-control, so anyone able to produce to the topic can make `kafkactl` read an arbitrary local file or request an
-arbitrary URL - only enable it for topics where every producer is trusted. Schemas are cached by location for the
-lifetime of the process, so restart `kafkactl consume` to pick up a schema that changed at the same URI.
+With `--avro-schema-header` or structured mode events, the schema location comes from message data, so anyone able
+to produce to the topic can make `kafkactl` read a local file or request a URL. Only use it for topics with trusted
+producers. Schemas are cached by location until `kafkactl` exits.
 
 ===== Example
 
