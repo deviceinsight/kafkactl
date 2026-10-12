@@ -1,6 +1,7 @@
 package consume
 
 import (
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -166,7 +167,7 @@ func TestAvroFileMessageDeserializer_DeserializeValueFromHeader(t *testing.T) {
 	msg := &sarama.ConsumerMessage{
 		Value: binaryValue,
 		Headers: []*sarama.RecordHeader{
-			{Key: []byte("ce_dataschema"), Value: []byte(schemaFile)},
+			{Key: []byte("ce_dataschema"), Value: []byte(fileURI(schemaFile))},
 		},
 	}
 
@@ -200,4 +201,47 @@ func TestAvroFileMessageDeserializer_DeserializeValueFromEmptyHeader(t *testing.
 	if !strings.Contains(err.Error(), "empty") {
 		t.Fatalf("expected error to mention the header being empty, got: %v", err)
 	}
+}
+
+func TestAvroFileMessageDeserializer_DeserializeValueFromHeaderWithPlainPath(t *testing.T) {
+	t.Parallel()
+
+	schemaFile := writeTestSchemaFile(t)
+
+	deserializer := createTestDeserializer(t, "", "ce_dataschema")
+
+	msg := &sarama.ConsumerMessage{
+		Value: []byte("some-avro-bytes"),
+		Headers: []*sarama.RecordHeader{
+			{Key: []byte("ce_dataschema"), Value: []byte(schemaFile)},
+		},
+	}
+
+	_, err := deserializer.DeserializeValue(msg)
+	if err == nil {
+		t.Fatal("expected error for a plain path in the schema header, got nil")
+	}
+	if !isDeserializationError(err) {
+		t.Fatalf("expected a DeserializationError, got: %v", err)
+	}
+}
+
+func TestAvroFileMessageDeserializer_DeserializeValueInvalidPayload(t *testing.T) {
+	t.Parallel()
+
+	schemaFile := writeTestSchemaFile(t)
+
+	deserializer := createTestDeserializer(t, schemaFile, "")
+
+	_, err := deserializer.DeserializeValue(&sarama.ConsumerMessage{Value: []byte{0xff, 0xff, 0xff}})
+	if err == nil {
+		t.Fatal("expected error for invalid avro payload, got nil")
+	}
+	if !isDeserializationError(err) {
+		t.Fatalf("expected a DeserializationError so that --ignore-errors can skip it, got: %v", err)
+	}
+}
+
+func fileURI(path string) string {
+	return (&url.URL{Scheme: "file", Path: filepath.ToSlash(path)}).String()
 }

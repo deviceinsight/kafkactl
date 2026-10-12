@@ -1027,7 +1027,8 @@ must be set explicitly with `-H`/`--header`, `kafkactl` does not populate them a
 
 `consume` supports the same `--avro-schema-file` flag to decode with a static schema. When it is not set, passing
 `--avro-schema-header <name>` (e.g. `ce_dataschema`) makes `kafkactl` resolve the schema per message from the URI found
-in that header, so different messages on the same topic can be decoded with different schemas. `--avro-schema-header`
+in that header, so different messages on the same topic can be decoded with different schemas. The header value must be
+an absolute `http://`, `https://` or `file://` URI; plain file paths are rejected. `--avro-schema-header`
 is opt-in (disabled by default): any message carrying the named header is then forced through avro decoding, so
 enabling it on a topic that mixes avro and non-avro (or unreachable-schema) messages would turn those into consume
 errors. This fallback only applies to messages that don't use the Confluent wire format; if a schema registry is

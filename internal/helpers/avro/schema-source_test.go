@@ -3,6 +3,7 @@ package avro
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sync/atomic"
@@ -28,6 +29,53 @@ func TestSchemaSourceResolveFromFile(t *testing.T) {
 	}
 	if codec == nil {
 		t.Fatal("expected codec, got nil")
+	}
+}
+
+func TestSchemaSourceResolveFromFileURI(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	schemaFile := filepath.Join(dir, "test.avsc")
+	if err := os.WriteFile(schemaFile, []byte(testSchema), 0o600); err != nil {
+		t.Fatalf("failed to write schema file: %v", err)
+	}
+
+	source := NewSchemaSource(Standard)
+
+	codec, err := source.Resolve((&url.URL{Scheme: "file", Path: filepath.ToSlash(schemaFile)}).String())
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if codec == nil {
+		t.Fatal("expected codec, got nil")
+	}
+}
+
+func TestSchemaSourceResolveFromFileURIWithRemoteHost(t *testing.T) {
+	t.Parallel()
+
+	source := NewSchemaSource(Standard)
+
+	if _, err := source.Resolve("file://remote-host/schemas/test.avsc"); err == nil {
+		t.Fatal("expected error for file uri with remote host, got nil")
+	}
+}
+
+func TestIsSchemaURI(t *testing.T) {
+	t.Parallel()
+
+	for location, expected := range map[string]bool{
+		"http://example.com/schema.avsc":  true,
+		"https://example.com/schema.avsc": true,
+		"file:///tmp/schema.avsc":         true,
+		"/tmp/schema.avsc":                false,
+		"schema.avsc":                     false,
+		"urn:example:schema":              false,
+	} {
+		if got := IsSchemaURI(location); got != expected {
+			t.Errorf("IsSchemaURI(%q) = %v, expected %v", location, got, expected)
+		}
 	}
 }
 

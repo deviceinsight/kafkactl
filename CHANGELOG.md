@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- [#337](https://github.com/deviceinsight/kafkactl/issues/337) Support decoding/encoding Avro messages without a schema registry, via `--avro-schema-file` (`produce`/`consume`) and `--avro-schema-header` (`consume`, opt-in, e.g. `ce_dataschema` for CloudEvents-style per-message schema URIs)
+
 ## 5.21.0 - 2026-10-09
 
 ### Added
@@ -18,8 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [#345](https://github.com/deviceinsight/kafkactl/issues/345) Fix `unable to read tls.key` with `kubernetes.enabled`: the cert key is no longer read locally, so an encrypted key needs `tls.certKeyPassphrase` in config; the pod no longer uses the OS keyring
 - [#326](https://github.com/deviceinsight/kafkactl/issues/326) Load configured Protobuf marshal options, support their environment variable aliases, and preserve them in Kubernetes proxy mode.
-### Added
-- [#337](https://github.com/deviceinsight/kafkactl/issues/337) Support decoding/encoding Avro messages without a schema registry, via `--avro-schema-file` (`produce`/`consume`) and `--avro-schema-header` (`consume`, opt-in, e.g. `ce_dataschema` for CloudEvents-style per-message schema URIs)
 
 ## 5.20.0 - 2026-07-30
 

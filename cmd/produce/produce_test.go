@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -134,7 +135,7 @@ func TestProduceConsumeAvroSchemaFromHeaderIntegration(t *testing.T) {
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	if _, err := kafkaCtl.Execute("produce", topicName, "--key", "test-key", "--value", value,
-		"--avro-schema-file", schemaFile, "-H", fmt.Sprintf("ce_dataschema:%s", schemaFile)); err != nil {
+		"--avro-schema-file", schemaFile, "-H", "ce_dataschema:"+(&url.URL{Scheme: "file", Path: filepath.ToSlash(schemaFile)}).String()); err != nil {
 		t.Fatalf("failed to execute command: %v", err)
 	}
 

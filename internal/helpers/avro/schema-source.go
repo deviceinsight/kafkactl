@@ -3,6 +3,7 @@ package avro
 import (
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -57,10 +58,37 @@ func (source *SchemaSource) Resolve(location string) (*goavro.Codec, error) {
 }
 
 func (source *SchemaSource) fetch(location string) (string, error) {
-	if strings.HasPrefix(location, "http://") || strings.HasPrefix(location, "https://") {
+	switch {
+	case strings.HasPrefix(location, "http://") || strings.HasPrefix(location, "https://"):
 		return source.fetchURL(location)
+	case strings.HasPrefix(location, "file://"):
+		fileURL, err := url.Parse(location)
+		if err != nil {
+			return "", err
+		}
+		if fileURL.Host != "" && fileURL.Host != "localhost" {
+			return "", errors.Errorf("unsupported file uri host %q", fileURL.Host)
+		}
+		path := fileURL.Path
+		if len(path) >= 3 && path[0] == '/' && path[2] == ':' {
+			// windows drive letter, e.g. file:///C:/schemas/x.avsc
+			path = path[1:]
+		}
+		return source.fetchFile(path)
+	default:
+		return source.fetchFile(location)
 	}
-	return source.fetchFile(location)
+}
+
+// IsSchemaURI reports whether location is an absolute uri supported by Resolve (http, https or file),
+// as opposed to a plain file path.
+func IsSchemaURI(location string) bool {
+	for _, scheme := range []string{"http://", "https://", "file://"} {
+		if strings.HasPrefix(location, scheme) {
+			return true
+		}
+	}
+	return false
 }
 
 func (source *SchemaSource) fetchURL(location string) (string, error) {

@@ -78,7 +78,12 @@ func (deserializer *AvroFileMessageDeserializer) DeserializeValue(consumerMsg *s
 
 		location := string(headerValue)
 		if location == "" {
-			return nil, errors.Errorf("%q header is present but empty, can't resolve the avro schema", deserializer.schemaHeader)
+			return nil, &DeserializationError{errors.Errorf("%q header is present but empty, can't resolve the avro schema", deserializer.schemaHeader)}
+		}
+		if !avro.IsSchemaURI(location) {
+			// only absolute uris are accepted from message data, so that a plain path in a header
+			// can't make kafkactl read files relative to the working directory
+			return nil, &DeserializationError{errors.Errorf("%q header value %q is not an http(s) or file uri", deserializer.schemaHeader, location)}
 		}
 
 		var err error
@@ -90,7 +95,7 @@ func (deserializer *AvroFileMessageDeserializer) DeserializeValue(consumerMsg *s
 
 	native, _, err := codec.NativeFromBinary(consumerMsg.Value)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse avro data")
+		return nil, &DeserializationError{errors.Wrap(err, "failed to parse avro data")}
 	}
 
 	textual, err := codec.TextualFromNative(nil, native)
