@@ -4,29 +4,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"mime"
-	"strings"
 
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
+	"github.com/deviceinsight/kafkactl/v5/internal/helpers/cloudevents"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/linkedin/goavro/v2"
 	"github.com/pkg/errors"
-)
-
-const (
-	cloudEventsContentTypeHeader         = "content-type"
-	cloudEventsStructuredMediaTypePrefix = "application/cloudevents"
-	cloudEventsJSONMediaType             = "application/cloudevents+json"
-)
-
-// contentMode as defined by the CloudEvents Kafka protocol binding
-type contentMode int
-
-const (
-	binaryContentMode contentMode = iota
-	structuredJSONContentMode
-	unsupportedStructuredContentMode
 )
 
 // AvroFileMessageDeserializer decodes avro values without a schema registry, using a static schema
@@ -60,10 +44,10 @@ func (deserializer *AvroFileMessageDeserializer) CanDeserializeValue(consumerMsg
 		return false
 	}
 
-	switch messageContentMode(consumerMsg) {
-	case structuredJSONContentMode:
+	switch contentModeOf(consumerMsg) {
+	case cloudevents.StructuredJSONMode:
 		return true
-	case unsupportedStructuredContentMode:
+	case cloudevents.UnsupportedStructuredMode:
 		return false
 	}
 
@@ -71,11 +55,7 @@ func (deserializer *AvroFileMessageDeserializer) CanDeserializeValue(consumerMsg
 		return true
 	}
 
-	if deserializer.schemaHeader == "" {
-		return false
-	}
-
-	_, found := findHeader(consumerMsg.Headers, deserializer.schemaHeader)
+	_, found := deserializer.findSchemaHeader(consumerMsg)
 	return found
 }
 
@@ -91,14 +71,14 @@ func (deserializer *AvroFileMessageDeserializer) DeserializeValue(consumerMsg *s
 		return &DeserializedData{}, nil
 	}
 
-	if messageContentMode(consumerMsg) == structuredJSONContentMode {
+	if contentModeOf(consumerMsg) == cloudevents.StructuredJSONMode {
 		return deserializer.deserializeStructuredJSON(consumerMsg)
 	}
 
 	codec := deserializer.staticCodec
 
 	if codec == nil {
-		headerValue, found := findHeader(consumerMsg.Headers, deserializer.schemaHeader)
+		headerValue, found := deserializer.findSchemaHeader(consumerMsg)
 		if !found {
 			return nil, &DeserializationError{errors.Errorf("message has no %q header to resolve the avro schema from", deserializer.schemaHeader)}
 		}
@@ -123,24 +103,24 @@ func (deserializer *AvroFileMessageDeserializer) DeserializeValue(consumerMsg *s
 func (deserializer *AvroFileMessageDeserializer) deserializeStructuredJSON(consumerMsg *sarama.ConsumerMessage) (*DeserializedData, error) {
 	value := consumerMsg.Value
 
-	event, err := parseJSONEvent(value)
+	event, err := cloudevents.ParseJSONEvent(value)
 	if err != nil {
 		return nil, &DeserializationError{errors.Wrap(err, "failed to parse structured mode cloudevent")}
 	}
 
-	encodedData, found := event.get("data_base64")
+	encodedData, found := event.Get("data_base64")
 	if !found {
 		return &DeserializedData{data: value}, nil
 	}
 
-	if _, found := event.get("data"); found {
+	if _, found := event.Get("data"); found {
 		return nil, &DeserializationError{errors.New("structured mode cloudevent must not contain both \"data\" and \"data_base64\"")}
 	}
 
 	codec := deserializer.staticCodec
 
 	if codec == nil {
-		if rawSchemaURI, found := event.get("dataschema"); found {
+		if rawSchemaURI, found := event.Get("dataschema"); found {
 			var schemaURI string
 			if err := json.Unmarshal(rawSchemaURI, &schemaURI); err != nil {
 				return nil, &DeserializationError{errors.Wrap(err, "cloudevent \"dataschema\" attribute is not a string")}
@@ -149,7 +129,7 @@ func (deserializer *AvroFileMessageDeserializer) deserializeStructuredJSON(consu
 			if codec, err = deserializer.resolveFromMessage(schemaURI, "cloudevent \"dataschema\" attribute"); err != nil {
 				return nil, err
 			}
-		} else if headerValue, found := findHeader(consumerMsg.Headers, deserializer.schemaHeader); found && deserializer.schemaHeader != "" {
+		} else if headerValue, found := deserializer.findSchemaHeader(consumerMsg); found {
 			if codec, err = deserializer.resolveFromMessage(string(headerValue), fmt.Sprintf("%q header", deserializer.schemaHeader)); err != nil {
 				return nil, err
 			}
@@ -173,9 +153,24 @@ func (deserializer *AvroFileMessageDeserializer) deserializeStructuredJSON(consu
 		return nil, err
 	}
 
-	event.replace("data_base64", "data", textual)
+	event.Replace("data_base64", "data", textual)
 
-	return &DeserializedData{schema: codec.Schema(), data: event.marshal()}, nil
+	return &DeserializedData{schema: codec.Schema(), data: event.Marshal()}, nil
+}
+
+// contentModeOf bridges kafka headers to the cloudevents binding, which takes the content-type value.
+func contentModeOf(consumerMsg *sarama.ConsumerMessage) cloudevents.ContentMode {
+	contentType, _ := findHeader(consumerMsg.Headers, cloudevents.ContentTypeHeader)
+	return cloudevents.ContentModeOf(string(contentType))
+}
+
+// findSchemaHeader looks up the configured --avro-schema-header. Without one configured there is
+// nothing to look up: searching for the empty name would match a header with an empty key.
+func (deserializer *AvroFileMessageDeserializer) findSchemaHeader(consumerMsg *sarama.ConsumerMessage) ([]byte, bool) {
+	if deserializer.schemaHeader == "" {
+		return nil, false
+	}
+	return findHeader(consumerMsg.Headers, deserializer.schemaHeader)
 }
 
 // resolveFromMessage resolves a schema location taken from message data (a header or a cloudevent attribute).
@@ -208,35 +203,4 @@ func decodeAvro(codec *goavro.Codec, data []byte) ([]byte, error) {
 	}
 
 	return textual, nil
-}
-
-// messageContentMode: a content-type prefixed with "application/cloudevents" means structured mode, else binary mode
-func messageContentMode(consumerMsg *sarama.ConsumerMessage) contentMode {
-	contentType, found := findHeader(consumerMsg.Headers, cloudEventsContentTypeHeader)
-	if !found {
-		return binaryContentMode
-	}
-
-	mediaType, _, err := mime.ParseMediaType(string(contentType))
-	if err != nil {
-		mediaType = strings.ToLower(strings.TrimSpace(string(contentType)))
-	}
-
-	switch {
-	case mediaType == cloudEventsJSONMediaType:
-		return structuredJSONContentMode
-	case strings.HasPrefix(mediaType, cloudEventsStructuredMediaTypePrefix):
-		return unsupportedStructuredContentMode
-	default:
-		return binaryContentMode
-	}
-}
-
-func findHeader(headers []*sarama.RecordHeader, name string) ([]byte, bool) {
-	for _, header := range headers {
-		if header.Key != nil && string(header.Key) == name {
-			return decodeAMQPValue(header.Value), true
-		}
-	}
-	return nil, false
 }

@@ -1,8 +1,10 @@
-package consume
+package cloudevents
 
 import (
 	"bytes"
 	"encoding/json"
+	stderrors "errors"
+	"io"
 
 	"github.com/pkg/errors"
 )
@@ -12,20 +14,20 @@ type jsonEventMember struct {
 	value json.RawMessage
 }
 
-// jsonEvent keeps the members of a JSON format CloudEvent raw and in order, so re-encoding only changes replaced ones.
-type jsonEvent struct {
+// JSONEvent keeps the members of a JSON format CloudEvent raw and in order, so re-encoding only changes replaced ones.
+type JSONEvent struct {
 	members []jsonEventMember
 }
 
-func parseJSONEvent(value []byte) (*jsonEvent, error) {
+func ParseJSONEvent(value []byte) (*JSONEvent, error) {
+
 	decoder := json.NewDecoder(bytes.NewReader(value))
-	decoder.UseNumber()
 
 	if token, err := decoder.Token(); err != nil || token != json.Delim('{') {
 		return nil, errors.New("event is not a json object")
 	}
 
-	event := &jsonEvent{}
+	event := &JSONEvent{}
 
 	for decoder.More() {
 		token, err := decoder.Token()
@@ -33,8 +35,12 @@ func parseJSONEvent(value []byte) (*jsonEvent, error) {
 			return nil, err
 		}
 
-		var member jsonEventMember
-		member.name = token.(string)
+		name, ok := token.(string)
+		if !ok {
+			return nil, errors.Errorf("expected a member name, got %v", token)
+		}
+
+		member := jsonEventMember{name: name}
 
 		if err := decoder.Decode(&member.value); err != nil {
 			return nil, err
@@ -47,14 +53,16 @@ func parseJSONEvent(value []byte) (*jsonEvent, error) {
 		return nil, errors.New("event is not a json object")
 	}
 
-	if _, err := decoder.Token(); err == nil {
+	// only a clean EOF means the object was the whole value. Anything else is trailing data,
+	// whether it parses as a further token or is malformed, and must not be silently dropped.
+	if _, err := decoder.Token(); !stderrors.Is(err, io.EOF) {
 		return nil, errors.New("unexpected data after the event json object")
 	}
 
 	return event, nil
 }
 
-func (event *jsonEvent) get(name string) (json.RawMessage, bool) {
+func (event *JSONEvent) Get(name string) (json.RawMessage, bool) {
 	for _, member := range event.members {
 		if member.name == name {
 			return member.value, true
@@ -63,7 +71,7 @@ func (event *jsonEvent) get(name string) (json.RawMessage, bool) {
 	return nil, false
 }
 
-func (event *jsonEvent) replace(oldName, newName string, value json.RawMessage) {
+func (event *JSONEvent) Replace(oldName, newName string, value json.RawMessage) {
 	for i, member := range event.members {
 		if member.name == oldName {
 			event.members[i] = jsonEventMember{name: newName, value: value}
@@ -72,7 +80,7 @@ func (event *jsonEvent) replace(oldName, newName string, value json.RawMessage) 
 	}
 }
 
-func (event *jsonEvent) marshal() []byte {
+func (event *JSONEvent) Marshal() []byte {
 	var buffer bytes.Buffer
 
 	buffer.WriteByte('{')
