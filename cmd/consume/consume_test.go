@@ -3,6 +3,7 @@ package consume_test
 import (
 	"encoding/hex"
 	"fmt"
+	"io"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -19,6 +20,7 @@ import (
 
 	"github.com/deviceinsight/kafkactl/v5/internal/testutil"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"gopkg.in/yaml.v2"
 )
 
 func TestConsumeWithKeyAndValueIntegration(t *testing.T) {
@@ -679,7 +681,37 @@ func TestConsumeTombstoneWithProtoFileIntegration(t *testing.T) {
 	}
 
 	record := strings.ReplaceAll(kafkaCtl.GetStdOut(), "\n", " ")
-	testutil.AssertEquals(t, "partition: 0 offset: 0 value: null", record)
+	testutil.AssertEquals(t, "--- partition: 0 offset: 0 value: null", record)
+}
+
+func TestConsumeMultipleMessagesAsYamlIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	topicName := testutil.CreateTopic(t, "consume-yaml")
+
+	testutil.ProduceMessage(t, topicName, "key-1", "value-1", 0, 0)
+	testutil.ProduceMessage(t, topicName, "key-2", "value-2", 0, 1)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--print-keys", "-o", "yaml"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	decoder := yaml.NewDecoder(strings.NewReader(kafkaCtl.GetStdOut()))
+
+	var keys []string
+	for {
+		var msg struct{ Key string }
+		if err := decoder.Decode(&msg); err == io.EOF {
+			break
+		} else if err != nil {
+			t.Fatalf("output is not valid yaml: %v", err)
+		}
+		keys = append(keys, msg.Key)
+	}
+
+	testutil.AssertEquals(t, "key-1,key-2", strings.Join(keys, ","))
 }
 
 func TestProtobufConsumeProtosetFileIntegration(t *testing.T) {
