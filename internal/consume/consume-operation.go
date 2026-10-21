@@ -110,38 +110,10 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 		}
 	}
 
-	var deserializers MessageDeserializerChain
-	var protobufConfig internal.ProtobufConfig
-
-	if protobufConfig, err = addFlagsToProtobufConfig(clientContext.Protobuf, flags); err != nil {
-		return err
-	}
-
-	if schemaRegistryClient != nil {
-		avroDeserializer := AvroMessageDeserializer{topic: topic, registry: schemaRegistryClient, jsonCodec: clientContext.Avro.JSONCodec}
-		protobufDeserializer := RegistryProtobufMessageDeserializer{config: protobufConfig, registry: schemaRegistryClient}
-		jsonSchemaDeserializer := JSONSchemaMessageDeserializer{topic: topic, registry: schemaRegistryClient}
-		deserializers = append(deserializers, &avroDeserializer, &protobufDeserializer, &jsonSchemaDeserializer)
-	}
-
-	deserializer, err := CreateProtobufMessageDeserializer(protobufConfig, protoreflect.FullName(flags.KeyProtoType), protoreflect.FullName(flags.ValueProtoType))
+	deserializers, err := createDeserializerChain(topic, flags, clientContext, schemaRegistryClient)
 	if err != nil {
 		return err
 	}
-
-	deserializers = append(deserializers, deserializer)
-
-	if flags.AvroSchemaFile != "" || flags.AvroSchemaHeader != "" {
-		source := avro.NewSchemaSource(clientContext.Avro.JSONCodec)
-
-		avroFileDeserializer, err := CreateAvroFileMessageDeserializer(flags.AvroSchemaFile, flags.AvroSchemaHeader, source)
-		if err != nil {
-			return err
-		}
-		deserializers = append(deserializers, avroFileDeserializer)
-	}
-
-	deserializers = append(deserializers, &DefaultMessageDeserializer{})
 
 	if flags.Group != "" {
 		if flags.Exit {
@@ -208,6 +180,42 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 	}
 
 	return nil
+}
+
+func createDeserializerChain(topic string, flags Flags, clientContext internal.ClientContext,
+	schemaRegistryClient *internal.CachingSchemaRegistry,
+) (MessageDeserializerChain, error) {
+	var deserializers MessageDeserializerChain
+
+	protobufConfig, err := addFlagsToProtobufConfig(clientContext.Protobuf, flags)
+	if err != nil {
+		return nil, err
+	}
+
+	if flags.AvroSchemaFile != "" || flags.AvroSchemaHeader != "" {
+		source := avro.NewSchemaSource(clientContext.Avro.JSONCodec)
+
+		avroFileDeserializer, err := CreateAvroFileMessageDeserializer(flags.AvroSchemaFile, flags.AvroSchemaHeader, source)
+		if err != nil {
+			return nil, err
+		}
+		deserializers = append(deserializers, avroFileDeserializer)
+	}
+
+	if schemaRegistryClient != nil {
+		avroDeserializer := AvroMessageDeserializer{topic: topic, registry: schemaRegistryClient, jsonCodec: clientContext.Avro.JSONCodec}
+		protobufDeserializer := RegistryProtobufMessageDeserializer{config: protobufConfig, registry: schemaRegistryClient}
+		jsonSchemaDeserializer := JSONSchemaMessageDeserializer{topic: topic, registry: schemaRegistryClient}
+		deserializers = append(deserializers, &avroDeserializer, &protobufDeserializer, &jsonSchemaDeserializer)
+	}
+
+	protoDeserializer, err := CreateProtobufMessageDeserializer(protobufConfig,
+		protoreflect.FullName(flags.KeyProtoType), protoreflect.FullName(flags.ValueProtoType))
+	if err != nil {
+		return nil, err
+	}
+
+	return append(deserializers, protoDeserializer, &DefaultMessageDeserializer{}), nil
 }
 
 func addFlagsToProtobufConfig(protobufConfig internal.ProtobufConfig, flags Flags) (internal.ProtobufConfig, error) {
