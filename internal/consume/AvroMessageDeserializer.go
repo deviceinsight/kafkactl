@@ -5,7 +5,6 @@ import (
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
-	"github.com/linkedin/goavro/v2"
 	"github.com/pkg/errors"
 	"github.com/riferrei/srclient"
 )
@@ -59,15 +58,8 @@ func (deserializer *AvroMessageDeserializer) deserialize(data []byte) (*Deserial
 
 	payload := deserializer.registry.ExtractPayload(data)
 
-	var avroCodec *goavro.Codec
-
-	if deserializer.jsonCodec == avro.Avro {
-		avroCodec, err = goavro.NewCodec(schema.Schema())
-	} else {
-		avroCodec, err = goavro.NewCodecForStandardJSONFull(schema.Schema())
-	}
-
-	if avroCodec == nil {
+	avroCodec, err := avro.CompileCodec(schema.Schema(), deserializer.jsonCodec)
+	if err != nil {
 		return nil, errors.Wrap(err, "failed to initialize avro codec")
 	}
 

@@ -45,7 +45,7 @@ func TestScriptTokenProvider_Token_FileNotFound(t *testing.T) {
 }
 
 func TestScriptTokenProvider_Token_FileNotExecutable(t *testing.T) {
-	scriptContent := `#!/bin/bash
+	scriptContent := `#!/usr/bin/env bash
 echo '{"token":"test-token"}'
 `
 	scriptPath := createTestScript(t, scriptContent, false)
@@ -59,7 +59,7 @@ echo '{"token":"test-token"}'
 }
 
 func TestScriptTokenProvider_Token_ErrorReturned(t *testing.T) {
-	scriptContent := `#!/bin/bash
+	scriptContent := `#!/usr/bin/env bash
 echo "Error message" >&2
 exit 1
 `
@@ -75,7 +75,7 @@ exit 1
 }
 
 func TestScriptTokenProvider_Token_InvalidJSON(t *testing.T) {
-	scriptContent := `#!/bin/bash
+	scriptContent := `#!/usr/bin/env bash
 echo 'not valid json'
 `
 	scriptPath := createTestScript(t, scriptContent, true)
@@ -90,7 +90,7 @@ echo 'not valid json'
 }
 
 func TestScriptTokenProvider_Token_JSONWithoutTokenField(t *testing.T) {
-	scriptContent := `#!/bin/bash
+	scriptContent := `#!/usr/bin/env bash
 echo '{"extensions":{"key":"value"}}'
 `
 	scriptPath := createTestScript(t, scriptContent, true)
@@ -104,7 +104,7 @@ echo '{"extensions":{"key":"value"}}'
 }
 
 func TestScriptTokenProvider_Token_JSONWithEmptyToken(t *testing.T) {
-	scriptContent := `#!/bin/bash
+	scriptContent := `#!/usr/bin/env bash
 echo '{"token":""}'
 `
 	scriptPath := createTestScript(t, scriptContent, true)
@@ -118,7 +118,7 @@ echo '{"token":""}'
 }
 
 func TestScriptTokenProvider_Token_Success(t *testing.T) {
-	scriptContent := `#!/bin/bash
+	scriptContent := `#!/usr/bin/env bash
 echo '{"token":"my-access-token"}'
 `
 	scriptPath := createTestScript(t, scriptContent, true)
@@ -133,7 +133,7 @@ echo '{"token":"my-access-token"}'
 }
 
 func TestScriptTokenProvider_Token_SuccessWithExtensions(t *testing.T) {
-	scriptContent := `#!/bin/bash
+	scriptContent := `#!/usr/bin/env bash
 echo '{"token":"my-access-token","extensions":{"key1":"value1","key2":"value2"}}'
 `
 	scriptPath := createTestScript(t, scriptContent, true)
@@ -148,7 +148,7 @@ echo '{"token":"my-access-token","extensions":{"key1":"value1","key2":"value2"}}
 }
 
 func TestScriptTokenProvider_Token_WithArguments(t *testing.T) {
-	scriptContent := `#!/bin/bash
+	scriptContent := `#!/usr/bin/env bash
 echo '{"token":"token-with-args-'$1'-'$2'"}'
 `
 	scriptPath := createTestScript(t, scriptContent, true)

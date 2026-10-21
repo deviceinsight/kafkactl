@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"strings"
 	"testing"
 
 	"github.com/IBM/sarama"
+	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -143,5 +145,53 @@ func TestIsDeserializationError(t *testing.T) {
 	}
 	if !errors.Is(deser, inner) {
 		t.Fatal("DeserializationError must unwrap to its cause")
+	}
+}
+
+func chainTypes(t *testing.T, chain MessageDeserializerChain) []string {
+	t.Helper()
+	names := make([]string, 0, len(chain))
+	for _, d := range chain {
+		names = append(names, fmt.Sprintf("%T", d))
+	}
+	return names
+}
+
+// unframed avro frequently starts with a 0x00 byte (a null union or a zero varint) followed by
+// bytes that form a valid schema id, which AvroMessageDeserializer's wire-format heuristic would
+// then claim. An explicitly requested schema must therefore be tried first.
+func TestCreateDeserializerChain_AvroFileDeserializerPrecedesRegistry(t *testing.T) {
+	t.Parallel()
+
+	registry := &internal.CachingSchemaRegistry{}
+
+	for name, flags := range map[string]Flags{
+		"schema file":   {AvroSchemaFile: writeTestSchemaFile(t)},
+		"schema header": {AvroSchemaHeader: "ce_dataschema"},
+	} {
+		chain, err := createDeserializerChain("topic", flags, internal.ClientContext{}, registry)
+		if err != nil {
+			t.Fatalf("%s: failed to create chain: %v", name, err)
+		}
+
+		types := chainTypes(t, chain)
+		if len(types) == 0 || types[0] != "*consume.AvroFileMessageDeserializer" {
+			t.Errorf("%s: expected the avro file deserializer first, got %v", name, types)
+		}
+	}
+}
+
+func TestCreateDeserializerChain_WithoutAvroFlags(t *testing.T) {
+	t.Parallel()
+
+	chain, err := createDeserializerChain("topic", Flags{}, internal.ClientContext{}, &internal.CachingSchemaRegistry{})
+	if err != nil {
+		t.Fatalf("failed to create chain: %v", err)
+	}
+
+	for _, name := range chainTypes(t, chain) {
+		if name == "*consume.AvroFileMessageDeserializer" {
+			t.Fatal("did not expect an avro file deserializer without --avro-schema-file/--avro-schema-header")
+		}
 	}
 }

@@ -135,3 +135,12 @@ func toSortedArray(headers map[string]string) []string {
 	}
 	return column
 }
+
+func findHeader(headers []*sarama.RecordHeader, name string) ([]byte, bool) {
+	for _, header := range headers {
+		if header.Key != nil && string(header.Key) == name {
+			return decodeAMQPValue(header.Value), true
+		}
+	}
+	return nil, false
+}
