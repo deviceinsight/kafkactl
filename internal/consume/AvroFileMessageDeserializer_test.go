@@ -227,6 +227,32 @@ func TestAvroFileMessageDeserializer_DeserializeValueFromHeaderWithPlainPath(t *
 	}
 }
 
+// a schema uri taken from the message can be unreachable without anything being wrong with the
+// setup, so --ignore-errors must be able to skip it rather than the whole consume aborting
+func TestAvroFileMessageDeserializer_DeserializeValueFromHeaderWithUnresolvableURI(t *testing.T) {
+	t.Parallel()
+
+	deserializer := createTestDeserializer(t, "", "ce_dataschema")
+
+	msg := &sarama.ConsumerMessage{
+		Value: []byte("some-avro-bytes"),
+		Headers: []*sarama.RecordHeader{
+			{Key: []byte("ce_dataschema"), Value: []byte(fileURI(filepath.Join(t.TempDir(), "gone.avsc")))},
+		},
+	}
+
+	_, err := deserializer.DeserializeValue(msg)
+	if err == nil {
+		t.Fatal("expected error for an unresolvable schema uri, got nil")
+	}
+	if !isDeserializationError(err) {
+		t.Fatalf("expected a DeserializationError so that --ignore-errors can skip it, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), "ce_dataschema") {
+		t.Fatalf("expected the error to name the header it came from, got: %v", err)
+	}
+}
+
 func TestAvroFileMessageDeserializer_DeserializeValueInvalidPayload(t *testing.T) {
 	t.Parallel()
 
@@ -379,6 +405,7 @@ func TestAvroFileMessageDeserializer_DeserializeStructuredJSONInvalid(t *testing
 	t.Parallel()
 
 	schemaFile := writeTestSchemaFile(t)
+	missingSchema := fileURI(filepath.Join(t.TempDir(), "gone.avsc"))
 	deserializer := createTestDeserializer(t, "", "ce_dataschema")
 
 	for name, event := range map[string]string{
@@ -390,6 +417,7 @@ func TestAvroFileMessageDeserializer_DeserializeStructuredJSONInvalid(t *testing
 		"dataschema plain path":    `{"data_base64":"AAAA","dataschema":"` + schemaFile + `"}`,
 		"dataschema not a string":  `{"data_base64":"AAAA","dataschema":42}`,
 		"data_base64 not a string": `{"data_base64":42,"dataschema":"` + fileURI(schemaFile) + `"}`,
+		"unresolvable dataschema":  `{"data_base64":"AAAA","dataschema":"` + missingSchema + `"}`,
 	} {
 		_, err := deserializer.DeserializeValue(structuredJSONMessage(event))
 		if err == nil {

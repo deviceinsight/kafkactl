@@ -100,7 +100,7 @@ func (deserializer *AvroFileMessageDeserializer) DeserializeValue(consumerMsg *s
 	if codec == nil {
 		headerValue, found := findHeader(consumerMsg.Headers, deserializer.schemaHeader)
 		if !found {
-			return nil, errors.Errorf("message has no %q header to resolve the avro schema from", deserializer.schemaHeader)
+			return nil, &DeserializationError{errors.Errorf("message has no %q header to resolve the avro schema from", deserializer.schemaHeader)}
 		}
 
 		var err error
@@ -187,7 +187,13 @@ func (deserializer *AvroFileMessageDeserializer) resolveFromMessage(location, or
 		// plain paths in message data could read arbitrary relative files
 		return nil, &DeserializationError{errors.Errorf("%s value %q is not an http(s) or file uri", origin, location)}
 	}
-	return deserializer.source.Resolve(location)
+
+	codec, err := deserializer.source.Resolve(location)
+	if err != nil {
+		// the location came from the message, so a broken one is bad data rather than bad config
+		return nil, &DeserializationError{errors.Wrap(err, origin)}
+	}
+	return codec, nil
 }
 
 func decodeAvro(codec *goavro.Codec, data []byte) ([]byte, error) {
@@ -198,7 +204,7 @@ func decodeAvro(codec *goavro.Codec, data []byte) ([]byte, error) {
 
 	textual, err := codec.TextualFromNative(nil, native)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to convert data to avro data")
+		return nil, &DeserializationError{errors.Wrap(err, "failed to convert avro data to json")}
 	}
 
 	return textual, nil
