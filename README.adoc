@@ -586,6 +586,7 @@ Available plugins:
 
 * https://github.com/deviceinsight/kafkactl-plugins/blob/main/aws/README.adoc[aws plugin]
 * https://github.com/deviceinsight/kafkactl-plugins/blob/main/azure/README.adoc[azure plugin]
+* https://github.com/deviceinsight/kafkactl-plugins/blob/main/gcp/README.adoc[gcp plugin]
 
 === Generic Token Provider
 
