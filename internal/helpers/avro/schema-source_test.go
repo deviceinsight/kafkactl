@@ -188,3 +188,32 @@ func TestSchemaSourceRejectsOversizedSchema(t *testing.T) {
 		t.Fatalf("expected a size limit error, got: %v", err)
 	}
 }
+
+func TestFileURIPath(t *testing.T) {
+	t.Parallel()
+
+	for location, expected := range map[string]string{
+		"file:///tmp/schema.avsc":           "/tmp/schema.avsc",
+		"file://localhost/tmp/schema.avsc":  "/tmp/schema.avsc",
+		"file:///with%20space/schema.avsc":  "/with space/schema.avsc",
+		"file:///C:/schemas/schema.avsc":    "C:/schemas/schema.avsc",
+		"file:///c:/schemas/schema.avsc":    "c:/schemas/schema.avsc",
+		"file:///tmp/c:notadriveletter.txt": "/tmp/c:notadriveletter.txt",
+		// known limitation: a unix path whose first component is a single character followed by a
+		// colon is indistinguishable from a windows drive letter, and loses its leading slash
+		"file:///x:y/schema.avsc": "x:y/schema.avsc",
+	} {
+		path, err := fileURIPath(location)
+		if err != nil {
+			t.Errorf("%s: expected no error, got %v", location, err)
+			continue
+		}
+		if path != expected {
+			t.Errorf("fileURIPath(%q) = %q, expected %q", location, path, expected)
+		}
+	}
+
+	if _, err := fileURIPath("file://remote-host/schemas/schema.avsc"); err == nil {
+		t.Error("expected an error for a file uri with a remote host, got nil")
+	}
+}

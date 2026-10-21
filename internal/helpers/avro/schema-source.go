@@ -76,22 +76,33 @@ func (source *SchemaSource) fetch(location string) (string, error) {
 	case strings.HasPrefix(location, "http://") || strings.HasPrefix(location, "https://"):
 		return source.fetchURL(location)
 	case strings.HasPrefix(location, "file://"):
-		fileURL, err := url.Parse(location)
+		path, err := fileURIPath(location)
 		if err != nil {
 			return "", err
-		}
-		if fileURL.Host != "" && fileURL.Host != "localhost" {
-			return "", errors.Errorf("unsupported file uri host %q", fileURL.Host)
-		}
-		path := fileURL.Path
-		if len(path) >= 3 && path[0] == '/' && path[2] == ':' {
-			// windows drive letter, e.g. file:///C:/schemas/x.avsc
-			path = path[1:]
 		}
 		return source.fetchFile(path)
 	default:
 		return source.fetchFile(location)
 	}
+}
+
+func fileURIPath(location string) (string, error) {
+	fileURL, err := url.Parse(location)
+	if err != nil {
+		return "", err
+	}
+
+	if fileURL.Host != "" && fileURL.Host != "localhost" {
+		return "", errors.Errorf("unsupported file uri host %q", fileURL.Host)
+	}
+
+	path := fileURL.Path
+	if len(path) >= 3 && path[0] == '/' && path[2] == ':' {
+		// windows drive letter, e.g. file:///C:/schemas/x.avsc
+		path = path[1:]
+	}
+
+	return path, nil
 }
 
 // IsSchemaURI reports whether location is an absolute uri supported by Resolve (http, https or file),
