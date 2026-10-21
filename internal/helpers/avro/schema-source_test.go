@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"testing"
 )
@@ -137,5 +138,53 @@ func TestSchemaSourceResolveInvalidSchema(t *testing.T) {
 
 	if _, err := source.Resolve(schemaFile); err == nil {
 		t.Fatal("expected error for invalid schema, got nil")
+	}
+}
+
+func TestSchemaSourceCachesFailures(t *testing.T) {
+	t.Parallel()
+
+	var requestCount int32
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		atomic.AddInt32(&requestCount, 1)
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	source := NewSchemaSource(Standard)
+
+	for i := range 3 {
+		if _, err := source.Resolve(server.URL); err == nil {
+			t.Fatalf("attempt %d: expected error for 404 response, got nil", i)
+		}
+	}
+
+	// an unresolvable location is retried once per message otherwise, each time waiting for the timeout
+	if got := atomic.LoadInt32(&requestCount); got != 1 {
+		t.Fatalf("expected the failure to be cached after one request, got %d requests", got)
+	}
+}
+
+func TestSchemaSourceRejectsOversizedSchema(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		for written := 0; written <= maxSchemaBytes; written += 1024 {
+			if _, err := w.Write(make([]byte, 1024)); err != nil {
+				return
+			}
+		}
+	}))
+	defer server.Close()
+
+	source := NewSchemaSource(Standard)
+
+	_, err := source.Resolve(server.URL)
+	if err == nil {
+		t.Fatal("expected error for an oversized schema, got nil")
+	}
+	if !strings.Contains(err.Error(), "larger than the maximum") {
+		t.Fatalf("expected a size limit error, got: %v", err)
 	}
 }

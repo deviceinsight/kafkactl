@@ -6,53 +6,67 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/linkedin/goavro/v2"
 	"github.com/pkg/errors"
 )
 
-const httpRequestTimeout = 5 * time.Second
+const (
+	httpRequestTimeout = 5 * time.Second
+
+	// safety-guard: read at most 1MB
+	maxSchemaBytes   = 1 << 20
+	maxCachedSchemas = 1024
+)
+
+// cachedSchema memoizes a resolution attempt. Failures are cached too: without
+// --ignore-errors they abort anyway, and with it an unresolvable location would
+// otherwise be retried, and time out, once per message.
+type cachedSchema struct {
+	codec *goavro.Codec
+	err   error
+}
 
 // SchemaSource resolves an avro schema from a local file path or an http(s) URL into a
-// compiled codec, caching the compiled codec by location for the process lifetime.
+// compiled codec, caching the result by location for the process lifetime.
 type SchemaSource struct {
 	jsonCodec  JSONCodec
 	httpClient *http.Client
-	mutex      sync.Mutex
-	cache      map[string]*goavro.Codec
+	cache      *lru.Cache[string, cachedSchema]
 }
 
 func NewSchemaSource(jsonCodec JSONCodec) *SchemaSource {
+	cache, _ := lru.New[string, cachedSchema](maxCachedSchemas)
+
 	return &SchemaSource{
 		jsonCodec:  jsonCodec,
 		httpClient: &http.Client{Timeout: httpRequestTimeout},
-		cache:      make(map[string]*goavro.Codec),
+		cache:      cache,
 	}
 }
 
 func (source *SchemaSource) Resolve(location string) (*goavro.Codec, error) {
-	source.mutex.Lock()
-	codec, ok := source.cache[location]
-	source.mutex.Unlock()
-	if ok {
-		return codec, nil
+	if cached, ok := source.cache.Get(location); ok {
+		return cached.codec, cached.err
 	}
 
+	codec, err := source.resolve(location)
+	source.cache.Add(location, cachedSchema{codec: codec, err: err})
+	return codec, err
+}
+
+func (source *SchemaSource) resolve(location string) (*goavro.Codec, error) {
 	schema, err := source.fetch(location)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to resolve avro schema from %s", location)
 	}
 
-	codec, err = CompileCodec(schema, source.jsonCodec)
+	codec, err := CompileCodec(schema, source.jsonCodec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse avro schema from %s", location)
 	}
-
-	source.mutex.Lock()
-	source.cache[location] = codec
-	source.mutex.Unlock()
 
 	return codec, nil
 }
@@ -102,18 +116,30 @@ func (source *SchemaSource) fetchURL(location string) (string, error) {
 		return "", errors.Errorf("unexpected status code %d", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return string(body), nil
+	return readLimited(resp.Body)
 }
 
 func (source *SchemaSource) fetchFile(location string) (string, error) {
-	body, err := os.ReadFile(location)
+	file, err := os.Open(location)
 	if err != nil {
 		return "", err
 	}
+	defer file.Close()
+
+	return readLimited(file)
+}
+
+// readLimited reads a schema, refusing anything larger than maxSchemaBytes rather than
+// buffering whatever the location happens to serve.
+func readLimited(reader io.Reader) (string, error) {
+	body, err := io.ReadAll(io.LimitReader(reader, maxSchemaBytes+1))
+	if err != nil {
+		return "", err
+	}
+
+	if len(body) > maxSchemaBytes {
+		return "", errors.Errorf("schema is larger than the maximum of %d bytes", maxSchemaBytes)
+	}
+
 	return string(body), nil
 }
