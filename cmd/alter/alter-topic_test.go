@@ -78,6 +78,31 @@ func TestAlterTopicPartitionsIntegration(t *testing.T) {
 	}
 }
 
+func TestAlterTopicPartitionsAndReplicationFactorIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+	topicName := testutil.CreateTopic(t, "example-combined-rf-", "--partitions", "3", "--replication-factor", "1")
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("alter", "topic", topicName, "--partitions", "6", "--replication-factor", "3"); err != nil {
+		testutil.AssertErrorContains(t, "version of API is not supported", err)
+		return
+	}
+	if _, err := kafkaCtl.Execute("describe", "topic", topicName, "-o", "yaml"); err != nil {
+		t.Fatal(err)
+	}
+	result, err := topic.FromYaml(kafkaCtl.GetStdOut())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Partitions) != 6 {
+		t.Fatalf("expected six partitions, got %d", len(result.Partitions))
+	}
+	for _, partition := range result.Partitions {
+		if len(partition.Replicas) != 3 {
+			t.Fatalf("partition %d has RF=%d, want 3", partition.ID, len(partition.Replicas))
+		}
+	}
+}
+
 func TestAlterTopicIncreaseReplicationFactorIntegration(t *testing.T) {
 
 	testutil.StartIntegrationTest(t)

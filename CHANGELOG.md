@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- [#358](https://github.com/deviceinsight/kafkactl/issues/358) Include newly created partitions when changing partition count and replication factor together.
+
 ### Added
 - [#337](https://github.com/deviceinsight/kafkactl/issues/337) Support decoding/encoding Avro messages without a schema registry, via `--avro-schema-file` (`produce`/`consume`) and `--avro-schema-header` (`consume`, opt-in, e.g. `ce_dataschema` for CloudEvents-style per-message schema URIs), including CloudEvents in structured content mode with the JSON event format
 
