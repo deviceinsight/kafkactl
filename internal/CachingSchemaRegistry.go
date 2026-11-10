@@ -1,6 +1,7 @@
 package internal
 
 import (
+	ctx "context"
 	"encoding/binary"
 	"fmt"
 	"net/http"
@@ -24,13 +25,26 @@ type CachingSchemaRegistry struct {
 }
 
 func CreateCachingSchemaRegistry(context *ClientContext) (*CachingSchemaRegistry, error) {
+	oauthEnabled := context.SchemaRegistry.OAuth.ClientID != ""
 	timeout := context.SchemaRegistry.RequestTimeout
 
 	if context.SchemaRegistry.RequestTimeout <= 0 {
 		timeout = 5 * time.Second
+
+		if oauthEnabled {
+			// increased timeout as OAuth cost more time in initial round
+			timeout = 15 * time.Second
+		}
 	}
 
-	httpClient := &http.Client{Timeout: timeout}
+	var httpClient *http.Client
+
+	if oauthEnabled {
+		httpClient = context.SchemaRegistry.OAuth.Client(ctx.Background())
+		httpClient.Timeout = timeout
+	} else {
+		httpClient = &http.Client{Timeout: timeout}
+	}
 
 	if context.SchemaRegistry.TLS.Enabled {
 		output.Debugf("schemaRegistry TLS is enabled.")
@@ -40,8 +54,12 @@ func CreateCachingSchemaRegistry(context *ClientContext) (*CachingSchemaRegistry
 			return nil, errors.Wrap(err, "failed to setup schemaRegistry tls config")
 		}
 
-		httpClient.Transport = &http.Transport{
-			TLSClientConfig: tlsConfig,
+		// note here we kinda assume it must be EITHER TLS or OAUTH, but NOT BOTH.
+		// reason: these two approach uses different Transport
+		if httpClient.Transport == nil {
+			httpClient.Transport = &http.Transport{
+				TLSClientConfig: tlsConfig,
+			}
 		}
 	}
 

@@ -12,6 +12,7 @@ import (
 
 	"github.com/deviceinsight/kafkactl/v5/internal/credential"
 	"github.com/deviceinsight/kafkactl/v5/internal/helpers/avro"
+	"golang.org/x/oauth2/clientcredentials"
 
 	"github.com/deviceinsight/kafkactl/v5/internal/auth"
 
@@ -46,6 +47,7 @@ type SchemaRegistryConfig struct {
 	TLS            TLSConfig
 	Username       string
 	Password       string
+	OAuth          clientcredentials.Config
 }
 
 type ProtobufConfig struct {
@@ -215,6 +217,14 @@ func CreateClientContext() (ClientContext, error) {
 			return context, err
 		}
 	}
+
+	context.SchemaRegistry.OAuth.ClientID = viper.GetString("contexts." + context.Name + ".schemaRegistry.oauth.clientId")
+	if context.SchemaRegistry.OAuth.ClientID != "" {
+		context.SchemaRegistry.OAuth.ClientSecret = viper.GetString("contexts." + context.Name + ".schemaRegistry.oauth.clientSecret")
+		context.SchemaRegistry.OAuth.Scopes = viper.GetStringSlice("contexts." + context.Name + ".schemaRegistry.oauth.scopes")
+		context.SchemaRegistry.OAuth.TokenURL = viper.GetString("contexts." + context.Name + ".schemaRegistry.oauth.tokenUrl")
+	}
+
 	if context.Protobuf.ProtosetFiles, err = resolvePaths("contexts." + context.Name + ".protobuf.protosetFiles"); err != nil {
 		return context, err
 	}

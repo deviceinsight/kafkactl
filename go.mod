@@ -21,6 +21,7 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78
 	github.com/zalando/go-keyring v0.2.8
 	go.uber.org/ratelimit v0.3.1
+	golang.org/x/oauth2 v0.38.0
 	golang.org/x/sync v0.23.0
 	golang.org/x/term v0.46.0
 	google.golang.org/protobuf v1.36.12
