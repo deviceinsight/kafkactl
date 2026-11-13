@@ -372,21 +372,7 @@ func (operation *Operation) AlterTopic(topic string, flags AlterTopicFlags) erro
 
 	if flags.ReplicationFactor > 0 {
 
-		var allBrokers = client.Brokers()
-
-		var availableBrokers []*sarama.Broker
-		for _, broker := range allBrokers {
-			connected, err := broker.Connected()
-			if err != nil {
-				output.Debugf("error checking broker %d connectivity: %v", broker.ID(), err)
-				continue
-			}
-			if connected {
-				availableBrokers = append(availableBrokers, broker)
-			} else {
-				output.Warnf("broker %d (%s) is not available and will be excluded from replica assignment", broker.ID(), broker.Addr())
-			}
-		}
+		availableBrokers := availableReplicaBrokers(client)
 
 		if len(availableBrokers) == 0 {
 			return errors.Errorf("no available brokers found for topic '%s'", topic)
