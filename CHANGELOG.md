@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - [#298](https://github.com/deviceinsight/kafkactl/issues/298) Support filtering ACL deletion by resource name
+- [#137](https://github.com/deviceinsight/kafkactl/issues/137) Spread replicas across racks when altering replication factor
 - [#197](https://github.com/deviceinsight/kafkactl/issues/197) `consume --ignore-errors` continues consuming and prints a warning when a message cannot be deserialized instead of aborting
 
 ### Changed
