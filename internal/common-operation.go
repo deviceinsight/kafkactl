@@ -218,11 +218,14 @@ func CreateClientContext() (ClientContext, error) {
 		}
 	}
 
-	context.SchemaRegistry.OAuth.ClientID = viper.GetString("contexts." + context.Name + ".schemaRegistry.oauth.clientId")
-	if context.SchemaRegistry.OAuth.ClientID != "" {
-		context.SchemaRegistry.OAuth.ClientSecret = viper.GetString("contexts." + context.Name + ".schemaRegistry.oauth.clientSecret")
-		context.SchemaRegistry.OAuth.Scopes = viper.GetStringSlice("contexts." + context.Name + ".schemaRegistry.oauth.scopes")
-		context.SchemaRegistry.OAuth.TokenURL = viper.GetString("contexts." + context.Name + ".schemaRegistry.oauth.tokenUrl")
+	oauthKey := "contexts." + context.Name + ".schemaRegistry.oauth."
+	context.SchemaRegistry.OAuth.ClientID = viper.GetString(oauthKey + "clientId")
+	context.SchemaRegistry.OAuth.ClientSecret = viper.GetString(oauthKey + "clientSecret")
+	context.SchemaRegistry.OAuth.Scopes = viper.GetStringSlice(oauthKey + "scopes")
+	context.SchemaRegistry.OAuth.TokenURL = viper.GetString(oauthKey + "tokenUrl")
+
+	if err = validateSchemaRegistryOAuth(context.SchemaRegistry); err != nil {
+		return context, err
 	}
 
 	if context.Protobuf.ProtosetFiles, err = resolvePaths("contexts." + context.Name + ".protobuf.protosetFiles"); err != nil {
@@ -480,6 +483,20 @@ func sanitizeUsername(u string) string {
 
 // setupTlsConfig takes the paths to a tls certificate, CA, and certificate key in
 // a PEM format and returns a constructed tls.Config object.
+func validateSchemaRegistryOAuth(config SchemaRegistryConfig) error {
+	oauth := config.OAuth
+	if oauth.ClientID == "" && oauth.ClientSecret == "" && oauth.TokenURL == "" && len(oauth.Scopes) == 0 {
+		return nil
+	}
+	if oauth.ClientID == "" || oauth.ClientSecret == "" || oauth.TokenURL == "" {
+		return errors.New("schemaRegistry.oauth requires clientId, clientSecret and tokenUrl")
+	}
+	if config.Username != "" {
+		return errors.New("schemaRegistry.username and schemaRegistry.oauth are mutually exclusive")
+	}
+	return nil
+}
+
 func setupTLSConfig(tlsConfig TLSConfig) (*tls.Config, error) {
 	if !tlsConfig.Enabled {
 		return nil, errors.Errorf("tls should be enabled at this point")

@@ -12,6 +12,7 @@ import (
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/pkg/errors"
 	"github.com/riferrei/srclient"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -37,14 +38,7 @@ func CreateCachingSchemaRegistry(context *ClientContext) (*CachingSchemaRegistry
 		}
 	}
 
-	var httpClient *http.Client
-
-	if oauthEnabled {
-		httpClient = context.SchemaRegistry.OAuth.Client(ctx.Background())
-		httpClient.Timeout = timeout
-	} else {
-		httpClient = &http.Client{Timeout: timeout}
-	}
+	httpClient := &http.Client{Timeout: timeout}
 
 	if context.SchemaRegistry.TLS.Enabled {
 		output.Debugf("schemaRegistry TLS is enabled.")
@@ -54,12 +48,17 @@ func CreateCachingSchemaRegistry(context *ClientContext) (*CachingSchemaRegistry
 			return nil, errors.Wrap(err, "failed to setup schemaRegistry tls config")
 		}
 
-		// note here we kinda assume it must be EITHER TLS or OAUTH, but NOT BOTH.
-		// reason: these two approach uses different Transport
-		if httpClient.Transport == nil {
-			httpClient.Transport = &http.Transport{
-				TLSClientConfig: tlsConfig,
-			}
+		httpClient.Transport = &http.Transport{
+			TLSClientConfig: tlsConfig,
+		}
+	}
+
+	if oauthEnabled {
+		// the token endpoint is called with this client, so it shares the timeout and TLS settings
+		oauthCtx := ctx.WithValue(ctx.Background(), oauth2.HTTPClient, httpClient)
+		httpClient = &http.Client{
+			Transport: context.SchemaRegistry.OAuth.Client(oauthCtx).Transport,
+			Timeout:   timeout,
 		}
 	}
 

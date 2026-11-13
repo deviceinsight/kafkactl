@@ -28,6 +28,10 @@ const (
 	SchemaRegistryTLSInsecure               = "SCHEMAREGISTRY_TLS_INSECURE"
 	SchemaRegistryUsername                  = "SCHEMAREGISTRY_USERNAME"
 	SchemaRegistryPassword                  = "SCHEMAREGISTRY_PASSWORD"
+	SchemaRegistryOAuthClientID             = "SCHEMAREGISTRY_OAUTH_CLIENTID"
+	SchemaRegistryOAuthClientSecret         = "SCHEMAREGISTRY_OAUTH_CLIENTSECRET"
+	SchemaRegistryOAuthScopes               = "SCHEMAREGISTRY_OAUTH_SCOPES"
+	SchemaRegistryOAuthTokenURL             = "SCHEMAREGISTRY_OAUTH_TOKENURL"
 	ProtobufProtoSetFiles                   = "PROTOBUF_PROTOSETFILES"
 	ProtobufImportPaths                     = "PROTOBUF_IMPORTPATHS"
 	ProtobufProtoFiles                      = "PROTOBUF_PROTOFILES"
@@ -72,6 +76,10 @@ var EnvVariables = []string{
 	SchemaRegistryTLSInsecure,
 	SchemaRegistryUsername,
 	SchemaRegistryPassword,
+	SchemaRegistryOAuthClientID,
+	SchemaRegistryOAuthClientSecret,
+	SchemaRegistryOAuthScopes,
+	SchemaRegistryOAuthTokenURL,
 	ProtobufProtoSetFiles,
 	ProtobufImportPaths,
 	ProtobufProtoFiles,

@@ -216,14 +216,14 @@ contexts:
         certKeyPassphrase: my-passphrase
         # set insecure to true to ignore all tls verification (defaults to false)
         insecure: false
-      
+
       # optional: oauth config for schema registry
       oauth:
-        clientid: my-client-id
-        clientsecret: my-client-secret
+        clientId: my-client-id
+        clientSecret: my-client-secret
         scopes:
           - my-scope
-        tokenurl: https://my-token-url
+        tokenUrl: https://my-token-url
 
     # optional: default protobuf messages search paths
     protobuf:
