@@ -613,7 +613,7 @@ func TestProduceTombstoneIntegration(t *testing.T) {
 	}
 
 	record := strings.ReplaceAll(kafkaCtl.GetStdOut(), "\n", " ")
-	testutil.AssertEquals(t, "partition: 0 offset: 0 value: null", record)
+	testutil.AssertEquals(t, "--- partition: 0 offset: 0 value: null", record)
 }
 
 func TestProduceFromBase64Integration(t *testing.T) {

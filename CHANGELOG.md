@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#337](https://github.com/deviceinsight/kafkactl/issues/337) Support decoding/encoding Avro messages without a schema registry, via `--avro-schema-file` (`produce`/`consume`) and `--avro-schema-header` (`consume`, opt-in, e.g. `ce_dataschema` for CloudEvents-style per-message schema URIs), including CloudEvents in structured content mode with the JSON event format
 - [#365](https://github.com/deviceinsight/kafkactl/issues/365) Support OAuth authentication with Schema Registry
 
+### Fixed
+- [#351](https://github.com/deviceinsight/kafkactl/issues/351) `consume -o yaml` starts every message with `---`, so the output is a valid stream of yaml documents
 ## 5.21.0 - 2026-10-09
 
 ### Added

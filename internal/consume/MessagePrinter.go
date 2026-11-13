@@ -129,5 +129,9 @@ func printMessage(msg *message, flags Flags) error {
 		output.PrintStrings(strings.Join(row[:], flags.Separator))
 		return nil
 	}
+	if flags.OutputFormat == "yaml" {
+		// start a new document for every message, so that the output is a valid yaml stream
+		output.PrintStrings("---")
+	}
 	return output.PrintObject(msg, flags.OutputFormat)
 }
