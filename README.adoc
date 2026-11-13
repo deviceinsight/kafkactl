@@ -581,6 +581,8 @@ contexts:
 When running in Kubernetes mode, use `saslSecret` to avoid passing credentials as plaintext environment variables in the pod.
 See <<Running in Kubernetes>> for the full `saslSecret` configuration options.
 
+`saslSecret` only covers the SASL credentials. The Schema Registry password and OAuth client secret are passed to the pod as plaintext environment variables.
+
 == Plugins
 
 _kafkactl_ supports plugins to cope with specifics when using Kafka-compatible clusters available from cloud providers such as Azure or AWS.

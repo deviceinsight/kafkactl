@@ -218,11 +218,9 @@ func CreateClientContext() (ClientContext, error) {
 		}
 	}
 
-	oauthKey := "contexts." + context.Name + ".schemaRegistry.oauth."
-	context.SchemaRegistry.OAuth.ClientID = viper.GetString(oauthKey + "clientId")
-	context.SchemaRegistry.OAuth.ClientSecret = viper.GetString(oauthKey + "clientSecret")
-	context.SchemaRegistry.OAuth.Scopes = viper.GetStringSlice(oauthKey + "scopes")
-	context.SchemaRegistry.OAuth.TokenURL = viper.GetString(oauthKey + "tokenUrl")
+	if context.SchemaRegistry.OAuth, err = loadSchemaRegistryOAuth(credentials, context.Name); err != nil {
+		return context, err
+	}
 
 	if err = validateSchemaRegistryOAuth(context.SchemaRegistry); err != nil {
 		return context, err
@@ -483,6 +481,26 @@ func sanitizeUsername(u string) string {
 
 // setupTlsConfig takes the paths to a tls certificate, CA, and certificate key in
 // a PEM format and returns a constructed tls.Config object.
+func loadSchemaRegistryOAuth(credentials credential.Resolver, contextName string) (clientcredentials.Config, error) {
+	prefix := "contexts." + contextName + ".schemaRegistry.oauth."
+	oauth := clientcredentials.Config{
+		ClientID:     viper.GetString(prefix + "clientId"),
+		ClientSecret: viper.GetString(prefix + "clientSecret"),
+		Scopes:       viper.GetStringSlice(prefix + "scopes"),
+		TokenURL:     viper.GetString(prefix + "tokenUrl"),
+	}
+
+	// skip resolving without a tokenUrl, so that misconfiguration fails validation instead of prompting
+	if oauth.ClientID != "" && oauth.TokenURL != "" {
+		var err error
+		if oauth.ClientSecret, err = resolvePassword(credentials, contextName, "schemaRegistry.oauth.clientSecret", "Schema Registry OAuth Client Secret"); err != nil {
+			return oauth, err
+		}
+	}
+
+	return oauth, nil
+}
+
 func validateSchemaRegistryOAuth(config SchemaRegistryConfig) error {
 	oauth := config.OAuth
 	if oauth.ClientID == "" && oauth.ClientSecret == "" && oauth.TokenURL == "" && len(oauth.Scopes) == 0 {
