@@ -168,3 +168,69 @@ func TestResolvePassphraseIgnoresLocalKeyWithKubernetes(t *testing.T) {
 		})
 	}
 }
+
+type fakeCredentialResolver struct {
+	password string
+	asked    []string
+}
+
+func (f *fakeCredentialResolver) ResolvePassword(fieldName, _ string) (string, error) {
+	f.asked = append(f.asked, fieldName)
+	return f.password, nil
+}
+
+func (f *fakeCredentialResolver) ResolveTLSPassphrase(string, string, string) (string, error) {
+	return "", nil
+}
+
+func (f *fakeCredentialResolver) Flush() error { return nil }
+
+func TestLoadSchemaRegistryOAuthClientSecret(t *testing.T) {
+	testCases := []struct {
+		name           string
+		config         map[string]string
+		expectedSecret string
+		expectedAsked  []string
+	}{
+		{
+			name:           "secret from config is not prompted",
+			config:         map[string]string{"clientId": "id", "tokenUrl": "https://token", "clientSecret": "from-config"},
+			expectedSecret: "from-config",
+		},
+		{
+			name:           "missing secret is resolved via keyring or prompt",
+			config:         map[string]string{"clientId": "id", "tokenUrl": "https://token"},
+			expectedSecret: "from-resolver",
+			expectedAsked:  []string{"test.schemaRegistry.oauth.clientSecret"},
+		},
+		{
+			name:   "no prompt without client id",
+			config: map[string]string{"tokenUrl": "https://token"},
+		},
+		{
+			name:   "no prompt without token url",
+			config: map[string]string{"clientId": "id"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Cleanup(viper.Reset)
+			for key, value := range tc.config {
+				viper.Set("contexts.test.schemaRegistry.oauth."+key, value)
+			}
+			resolver := &fakeCredentialResolver{password: "from-resolver"}
+
+			oauth, err := loadSchemaRegistryOAuth(resolver, "test")
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if oauth.ClientSecret != tc.expectedSecret {
+				t.Fatalf("expected secret %q, got %q", tc.expectedSecret, oauth.ClientSecret)
+			}
+			if !reflect.DeepEqual(resolver.asked, tc.expectedAsked) {
+				t.Fatalf("expected resolver calls %v, got %v", tc.expectedAsked, resolver.asked)
+			}
+		})
+	}
+}

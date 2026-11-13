@@ -217,6 +217,14 @@ contexts:
         # set insecure to true to ignore all tls verification (defaults to false)
         insecure: false
 
+      # optional: oauth config for schema registry
+      oauth:
+        clientId: my-client-id
+        clientSecret: my-client-secret
+        scopes:
+          - my-scope
+        tokenUrl: https://my-token-url
+
     # optional: default protobuf messages search paths
     protobuf:
       importPaths:
@@ -572,6 +580,8 @@ contexts:
 
 When running in Kubernetes mode, use `saslSecret` to avoid passing credentials as plaintext environment variables in the pod.
 See <<Running in Kubernetes>> for the full `saslSecret` configuration options.
+
+`saslSecret` only covers the SASL credentials. The Schema Registry password and OAuth client secret are passed to the pod as plaintext environment variables.
 
 == Plugins
 
