@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - [#351](https://github.com/deviceinsight/kafkactl/issues/351) `consume -o yaml` starts every message with `---`, so the output is a valid stream of yaml documents
+- [#352](https://github.com/deviceinsight/kafkactl/issues/352) `--config-file` stores the current context next to the given config file, like `KAFKA_CTL_CONFIG` does
 ## 5.21.0 - 2026-10-09
 
 ### Added
