@@ -7,13 +7,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-func waitForTopicPartitions(client sarama.Client, name string, count int32) error {
+func waitForTopicPartitions(client sarama.Client, topic string, count int32) error {
 	deadline := time.Now().Add(client.Config().Admin.Timeout)
 	for {
-		if err := client.RefreshMetadata(name); err != nil {
+		if err := client.RefreshMetadata(topic); err != nil {
 			return err
 		}
-		partitions, err := client.Partitions(name)
+		partitions, err := client.Partitions(topic)
 		if err != nil {
 			return err
 		}
@@ -22,7 +22,7 @@ func waitForTopicPartitions(client sarama.Client, name string, count int32) erro
 		}
 		remaining := time.Until(deadline)
 		if remaining <= 0 {
-			return errors.Errorf("topic %q has %d partitions in metadata, expected at least %d", name, len(partitions), count)
+			return errors.Errorf("topic %q has %d partitions in metadata, expected at least %d", topic, len(partitions), count)
 		}
 		time.Sleep(min(50*time.Millisecond, remaining))
 	}
