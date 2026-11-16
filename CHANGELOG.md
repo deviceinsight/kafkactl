@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- [#359](https://github.com/deviceinsight/kafkactl/issues/359) Include every partition ID when polling replication reassignment status.
 - [#357](https://github.com/deviceinsight/kafkactl/issues/357) Open lazy broker connections before excluding brokers from replication-factor changes.
 
 ### Added
