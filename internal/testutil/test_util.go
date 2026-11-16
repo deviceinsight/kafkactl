@@ -226,6 +226,15 @@ func AssertErrorContains(t *testing.T, expected string, err error) {
 	}
 }
 
+// SkipIfAPIUnsupported skips the test if err says the broker lacks a required Kafka API, otherwise fails it.
+func SkipIfAPIUnsupported(t *testing.T, err error) {
+	t.Helper()
+	if strings.Contains(err.Error(), "version of API is not supported") {
+		t.Skipf("broker does not support required API: %v", err)
+	}
+	t.Fatalf("unexpected error: %v", err)
+}
+
 func AssertContainSubstring(t *testing.T, expected, actual string) {
 	t.Helper()
 	if !strings.Contains(actual, expected) {
