@@ -9,7 +9,7 @@ import (
 func availableReplicaBrokers(client sarama.Client) []*sarama.Broker {
 	var openedBrokers []*sarama.Broker
 	for _, broker := range client.Brokers() {
-		// Open first; Connected does not initiate connections.
+		// Broker connections are lazy and Connected() doesn't open connections, so open them in advance.
 		if err := broker.Open(client.Config()); err != nil && !errors.Is(err, sarama.ErrAlreadyConnected) {
 			output.Warnf("unable to open broker %d (%s): %v", broker.ID(), broker.Addr(), err)
 			continue
@@ -17,7 +17,7 @@ func availableReplicaBrokers(client sarama.Client) []*sarama.Broker {
 		openedBrokers = append(openedBrokers, broker)
 	}
 
-	// Open dials asynchronously. Start all attempts before waiting for results.
+	// Open() runs async and Connected() waits for it, so the Open() above run in parallel.
 	var availableBrokers []*sarama.Broker
 	for _, broker := range openedBrokers {
 		connected, err := broker.Connected()
