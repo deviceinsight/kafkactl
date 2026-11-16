@@ -115,6 +115,10 @@ func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {
 	context.SchemaRegistry.TLS.Insecure = true
 	context.SchemaRegistry.Username = "avro-user"
 	context.SchemaRegistry.Password = "avro-pass"
+	context.SchemaRegistry.OAuth.ClientID = "avro-client-id"
+	context.SchemaRegistry.OAuth.ClientSecret = "avro-client-secret"
+	context.SchemaRegistry.OAuth.Scopes = []string{"scope-a", "scope-b"}
+	context.SchemaRegistry.OAuth.TokenURL = "https://token.example.com"
 	context.Protobuf.ProtosetFiles = []string{"/usr/include/protosets/ps1.protoset", "/usr/lib/ps2.protoset"}
 	context.Protobuf.ProtoImportPaths = []string{"/usr/include/protobuf", "/usr/lib/protobuf"}
 	context.Protobuf.ProtoFiles = []string{"message.proto", "other.proto"}
@@ -162,6 +166,10 @@ func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {
 	testutil.AssertEquals(t, "true", envMap[global.SchemaRegistryTLSInsecure])
 	testutil.AssertEquals(t, "avro-user", envMap[global.SchemaRegistryUsername])
 	testutil.AssertEquals(t, "avro-pass", envMap[global.SchemaRegistryPassword])
+	testutil.AssertEquals(t, "avro-client-id", envMap[global.SchemaRegistryOAuthClientID])
+	testutil.AssertEquals(t, "avro-client-secret", envMap[global.SchemaRegistryOAuthClientSecret])
+	testutil.AssertEquals(t, "scope-a scope-b", envMap[global.SchemaRegistryOAuthScopes])
+	testutil.AssertEquals(t, "https://token.example.com", envMap[global.SchemaRegistryOAuthTokenURL])
 	testutil.AssertEquals(t, "/usr/include/protosets/ps1.protoset /usr/lib/ps2.protoset", envMap[global.ProtobufProtoSetFiles])
 	testutil.AssertEquals(t, "/usr/include/protobuf /usr/lib/protobuf", envMap[global.ProtobufImportPaths])
 	testutil.AssertEquals(t, "message.proto other.proto", envMap[global.ProtobufProtoFiles])

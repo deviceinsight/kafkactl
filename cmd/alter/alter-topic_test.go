@@ -78,6 +78,30 @@ func TestAlterTopicPartitionsIntegration(t *testing.T) {
 	}
 }
 
+func TestAlterTopicPartitionsAndReplicationFactorIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+	topicName := testutil.CreateTopic(t, "example-combined-rf-", "--partitions", "3", "--replication-factor", "1")
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("alter", "topic", topicName, "--partitions", "6", "--replication-factor", "3"); err != nil {
+		testutil.SkipIfAPIUnsupported(t, err)
+	}
+	if _, err := kafkaCtl.Execute("describe", "topic", topicName, "-o", "yaml"); err != nil {
+		t.Fatal(err)
+	}
+	result, err := topic.FromYaml(kafkaCtl.GetStdOut())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Partitions) != 6 {
+		t.Fatalf("expected six partitions, got %d", len(result.Partitions))
+	}
+	for _, partition := range result.Partitions {
+		if len(partition.Replicas) != 3 {
+			t.Fatalf("partition %d has RF=%d, want 3", partition.ID, len(partition.Replicas))
+		}
+	}
+}
+
 func TestAlterTopicIncreaseReplicationFactorIntegration(t *testing.T) {
 
 	testutil.StartIntegrationTest(t)
@@ -89,8 +113,7 @@ func TestAlterTopicIncreaseReplicationFactorIntegration(t *testing.T) {
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	if _, err := kafkaCtl.Execute("alter", "topic", topicName, "--replication-factor", "3"); err != nil {
-		testutil.AssertErrorContains(t, "version of API is not supported", err)
-		return
+		testutil.SkipIfAPIUnsupported(t, err)
 	}
 
 	checkReplicas := func(_ uint) error {
@@ -122,6 +145,35 @@ func TestAlterTopicIncreaseReplicationFactorIntegration(t *testing.T) {
 	}
 }
 
+func TestAlterTopicSinglePartitionReplicationFactorIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+	topicName := testutil.CreateTopic(t, "example-single-rf-", "--partitions", "1", "--replication-factor", "1")
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+	if _, err := kafkaCtl.Execute("alter", "topic", topicName, "--replication-factor", "3"); err != nil {
+		testutil.SkipIfAPIUnsupported(t, err)
+	}
+	checkReplicas := func(_ uint) error {
+		if _, err := kafkaCtl.Execute("describe", "topic", topicName, "-o", "yaml"); err != nil {
+			return err
+		}
+		result, err := topic.FromYaml(kafkaCtl.GetStdOut())
+		if err != nil {
+			return err
+		}
+		if len(result.Partitions) != 1 || len(result.Partitions[0].Replicas) != 3 {
+			return errors.Newf("expected one partition with three replicas, got %+v", result)
+		}
+		return nil
+	}
+	if err := retry.Retry(
+		checkReplicas,
+		strategy.Limit(5),
+		strategy.Backoff(backoff.Linear(10*time.Millisecond)),
+	); err != nil {
+		t.Fatalf("could not check Replicas for topic %s: %v", topicName, err)
+	}
+}
+
 func TestAlterTopicDecreaseReplicationFactorIntegration(t *testing.T) {
 
 	testutil.StartIntegrationTest(t)
@@ -133,8 +185,7 @@ func TestAlterTopicDecreaseReplicationFactorIntegration(t *testing.T) {
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	if _, err := kafkaCtl.Execute("alter", "topic", topicName, "--replication-factor", "1"); err != nil {
-		testutil.AssertErrorContains(t, "version of API is not supported", err)
-		return
+		testutil.SkipIfAPIUnsupported(t, err)
 	}
 
 	checkReplicas := func(_ uint) error {

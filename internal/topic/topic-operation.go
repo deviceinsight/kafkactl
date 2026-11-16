@@ -367,26 +367,20 @@ func (operation *Operation) AlterTopic(topic string, flags AlterTopicFlags) erro
 				return errors.Errorf("Could not create partitions for topic '%s': %v", topic, err)
 			}
 			output.Infof("partitions have been created")
+			if flags.ReplicationFactor > 0 {
+				if err = waitForTopicPartitions(client, topic, flags.Partitions); err != nil {
+					return errors.Wrap(err, "failed to refresh topic after creating partitions")
+				}
+				if t, err = readTopic(&client, &admin, topic, allFields); err != nil {
+					return errors.Wrap(err, "failed to read topic after creating partitions")
+				}
+			}
 		}
 	}
 
 	if flags.ReplicationFactor > 0 {
 
-		var allBrokers = client.Brokers()
-
-		var availableBrokers []*sarama.Broker
-		for _, broker := range allBrokers {
-			connected, err := broker.Connected()
-			if err != nil {
-				output.Debugf("error checking broker %d connectivity: %v", broker.ID(), err)
-				continue
-			}
-			if connected {
-				availableBrokers = append(availableBrokers, broker)
-			} else {
-				output.Warnf("broker %d (%s) is not available and will be excluded from replica assignment", broker.ID(), broker.Addr())
-			}
-		}
+		availableBrokers := availableReplicaBrokers(client)
 
 		if len(availableBrokers) == 0 {
 			return errors.Errorf("no available brokers found for topic '%s'", topic)
@@ -449,18 +443,12 @@ func (operation *Operation) AlterTopic(topic string, flags AlterTopicFlags) erro
 				return errors.Errorf("Could not reassign partition replicas for topic '%s': %v", topic, err)
 			}
 
-			partitions := make([]int32, len(t.Partitions))
-
-			for _, p := range t.Partitions {
-				partitions[0] = p.ID
-			}
-
 			const maxReassignmentWait = 10 * time.Minute
 			deadline := time.Now().Add(maxReassignmentWait)
 			assignmentRunning := true
 
 			for assignmentRunning {
-				status, err := admin.ListPartitionReassignments(topic, partitions)
+				status, err := listTopicReassignments(admin, topic, t.Partitions)
 				if err != nil {
 					return errors.Errorf("Could query reassignment status for topic '%s': %v", topic, err)
 				}
@@ -915,23 +903,23 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 	// read partitions in parallel
 	for _, p := range ps {
 
-		go func(partitionId int32) {
+		go func(partitionID int32) {
 
-			np := Partition{ID: partitionId}
+			np := Partition{ID: partitionID}
 
 			if requestedFields.partitionOffset {
-				if np.OldestOffset, err = (*client).GetOffset(name, partitionId, sarama.OffsetOldest); err != nil {
-					output.Warnf("unable to read oldest offset for topic %s partition %d", name, partitionId)
+				if np.OldestOffset, err = (*client).GetOffset(name, partitionID, sarama.OffsetOldest); err != nil {
+					output.Warnf("unable to read oldest offset for topic %s partition %d", name, partitionID)
 				}
 
-				if np.NewestOffset, err = (*client).GetOffset(name, partitionId, sarama.OffsetNewest); err != nil {
-					output.Warnf("unable to read newest offset for topic %s partition %d", name, partitionId)
+				if np.NewestOffset, err = (*client).GetOffset(name, partitionID, sarama.OffsetNewest); err != nil {
+					output.Warnf("unable to read newest offset for topic %s partition %d", name, partitionID)
 				}
 			}
 
 			if requestedFields.partitionLeader {
-				if led, err = (*client).Leader(name, partitionId); err != nil {
-					output.Warnf("unable to read leader for topic %s partition %d", name, partitionId)
+				if led, err = (*client).Leader(name, partitionID); err != nil {
+					output.Warnf("unable to read leader for topic %s partition %d", name, partitionID)
 					np.Leader = "none"
 				} else {
 					np.Leader = led.Addr()
@@ -939,16 +927,17 @@ func readTopic(client *sarama.Client, admin *sarama.ClusterAdmin, name string, r
 			}
 
 			if requestedFields.partitionReplicas {
-				if np.Replicas, err = (*client).Replicas(name, partitionId); err != nil {
-					output.Warnf("unable to read replicas for topic %s partition %d", name, partitionId)
-				} else {
-					sort.Slice(np.Replicas, func(i, j int) bool { return np.Replicas[i] < np.Replicas[j] })
+				if np.Replicas, err = (*client).Replicas(name, partitionID); err != nil {
+					output.Warnf("unable to read replicas for topic %s partition %d", name, partitionID)
 				}
+				// sarama can return replica IDs together with ErrReplicaNotAvailable;
+				// keep those IDs but normalize them so output stays deterministic.
+				sort.Slice(np.Replicas, func(i, j int) bool { return np.Replicas[i] < np.Replicas[j] })
 			}
 
 			if requestedFields.partitionISRs {
-				if np.ISRs, err = (*client).InSyncReplicas(name, partitionId); err != nil {
-					output.Warnf("unable to read inSyncReplicas for topic %s partition %d", name, partitionId)
+				if np.ISRs, err = (*client).InSyncReplicas(name, partitionID); err != nil {
+					output.Warnf("unable to read inSyncReplicas for topic %s partition %d", name, partitionID)
 				} else {
 					sort.Slice(np.ISRs, func(i, j int) bool { return np.ISRs[i] < np.ISRs[j] })
 				}

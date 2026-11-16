@@ -17,11 +17,12 @@ type AvroMessageDeserializer struct {
 
 func (deserializer *AvroMessageDeserializer) canDeserialize(consumerMsg *sarama.ConsumerMessage, data []byte) bool {
 	schemaID, err := deserializer.registry.ExtractSchemaID(data)
+
 	if err == nil {
 		schema, schemaErr := deserializer.registry.GetSchema(schemaID)
 		if schemaErr != nil {
 			output.Debugf("schema not found. id=%d partition=%d, offset=%d error=%v", schemaID,
-				consumerMsg.Partition, consumerMsg.Offset, err)
+				consumerMsg.Partition, consumerMsg.Offset, schemaErr)
 			return false
 		}
 		isAvroSchema := schema.SchemaType() == nil || *schema.SchemaType() == srclient.Avro
