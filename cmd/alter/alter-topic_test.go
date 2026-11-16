@@ -83,8 +83,7 @@ func TestAlterTopicPartitionsAndReplicationFactorIntegration(t *testing.T) {
 	topicName := testutil.CreateTopic(t, "example-combined-rf-", "--partitions", "3", "--replication-factor", "1")
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 	if _, err := kafkaCtl.Execute("alter", "topic", topicName, "--partitions", "6", "--replication-factor", "3"); err != nil {
-		testutil.AssertErrorContains(t, "version of API is not supported", err)
-		return
+		testutil.SkipIfAPIUnsupported(t, err)
 	}
 	if _, err := kafkaCtl.Execute("describe", "topic", topicName, "-o", "yaml"); err != nil {
 		t.Fatal(err)
