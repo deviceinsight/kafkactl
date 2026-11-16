@@ -1,6 +1,7 @@
 package internal
 
 import (
+	ctx "context"
 	"encoding/binary"
 	"fmt"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
 	"github.com/pkg/errors"
 	"github.com/riferrei/srclient"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -24,10 +26,16 @@ type CachingSchemaRegistry struct {
 }
 
 func CreateCachingSchemaRegistry(context *ClientContext) (*CachingSchemaRegistry, error) {
+	oauthEnabled := context.SchemaRegistry.OAuth.ClientID != ""
 	timeout := context.SchemaRegistry.RequestTimeout
 
 	if context.SchemaRegistry.RequestTimeout <= 0 {
 		timeout = 5 * time.Second
+
+		if oauthEnabled {
+			// increased timeout as OAuth cost more time in initial round
+			timeout = 15 * time.Second
+		}
 	}
 
 	httpClient := &http.Client{Timeout: timeout}
@@ -42,6 +50,15 @@ func CreateCachingSchemaRegistry(context *ClientContext) (*CachingSchemaRegistry
 
 		httpClient.Transport = &http.Transport{
 			TLSClientConfig: tlsConfig,
+		}
+	}
+
+	if oauthEnabled {
+		// the token endpoint is called with this client, so it shares the timeout and TLS settings
+		oauthCtx := ctx.WithValue(ctx.Background(), oauth2.HTTPClient, httpClient)
+		httpClient = &http.Client{
+			Transport: context.SchemaRegistry.OAuth.Client(oauthCtx).Transport,
+			Timeout:   timeout,
 		}
 	}
 

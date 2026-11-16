@@ -16,8 +16,7 @@ func TestGetTopicsShowsMinReplicationFactorOfPartitionsIntegration(t *testing.T)
 	kafkaCtl := testutil.CreateKafkaCtlCommand()
 
 	if _, err := kafkaCtl.Execute("alter", "partition", topicName, "0", "--replicas", "101,102"); err != nil {
-		testutil.AssertErrorContains(t, "version of API is not supported", err)
-		return
+		testutil.SkipIfAPIUnsupported(t, err)
 	}
 
 	if _, err := kafkaCtl.Execute("get", "topics"); err != nil {

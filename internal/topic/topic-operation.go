@@ -380,21 +380,7 @@ func (operation *Operation) AlterTopic(topic string, flags AlterTopicFlags) erro
 
 	if flags.ReplicationFactor > 0 {
 
-		var allBrokers = client.Brokers()
-
-		var availableBrokers []*sarama.Broker
-		for _, broker := range allBrokers {
-			connected, err := broker.Connected()
-			if err != nil {
-				output.Debugf("error checking broker %d connectivity: %v", broker.ID(), err)
-				continue
-			}
-			if connected {
-				availableBrokers = append(availableBrokers, broker)
-			} else {
-				output.Warnf("broker %d (%s) is not available and will be excluded from replica assignment", broker.ID(), broker.Addr())
-			}
-		}
+		availableBrokers := availableReplicaBrokers(client)
 
 		if len(availableBrokers) == 0 {
 			return errors.Errorf("no available brokers found for topic '%s'", topic)
@@ -445,18 +431,12 @@ func (operation *Operation) AlterTopic(topic string, flags AlterTopicFlags) erro
 				return errors.Errorf("Could not reassign partition replicas for topic '%s': %v", topic, err)
 			}
 
-			partitions := make([]int32, len(t.Partitions))
-
-			for _, p := range t.Partitions {
-				partitions[0] = p.ID
-			}
-
 			const maxReassignmentWait = 10 * time.Minute
 			deadline := time.Now().Add(maxReassignmentWait)
 			assignmentRunning := true
 
 			for assignmentRunning {
-				status, err := admin.ListPartitionReassignments(topic, partitions)
+				status, err := listTopicReassignments(admin, topic, t.Partitions)
 				if err != nil {
 					return errors.Errorf("Could query reassignment status for topic '%s': %v", topic, err)
 				}
