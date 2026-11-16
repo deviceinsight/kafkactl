@@ -2,6 +2,8 @@ package topic
 
 import (
 	"testing"
+
+	"github.com/IBM/sarama"
 )
 
 func TestGetTargetReplicasDecrease(t *testing.T) {
@@ -165,5 +167,38 @@ func TestGetTargetReplicasNotEnoughBrokers(t *testing.T) {
 	}
 	if err.Error() != "not enough brokers" {
 		t.Fatalf("expected 'not enough brokers' error, got: %v", err)
+	}
+}
+
+// sortReadClient is a minimal stub that returns replica IDs together with
+// ErrReplicaNotAvailable, as sarama does for a partition whose replica broker
+// is offline.
+type sortReadClient struct {
+	sarama.Client
+}
+
+func (c *sortReadClient) Partitions(string) ([]int32, error) {
+	return []int32{0}, nil
+}
+
+func (c *sortReadClient) Replicas(string, int32) ([]int32, error) {
+	return []int32{3, 1, 2}, sarama.ErrReplicaNotAvailable
+}
+
+func TestReadTopicSortsReplicasEvenWhenBrokerUnavailable(t *testing.T) {
+	var client sarama.Client = &sortReadClient{}
+	fields := requestedTopicFields{partitionID: true, partitionReplicas: true, config: NoConfigs}
+	topic, err := readTopic(&client, nil, "example-events", fields)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if topic.ReplicationFactor != 3 {
+		t.Fatalf("expected RF=3, got %d", topic.ReplicationFactor)
+	}
+	replicas := topic.Partitions[0].Replicas
+	for i := 1; i < len(replicas); i++ {
+		if replicas[i-1] >= replicas[i] {
+			t.Fatalf("replicas not sorted even though a replica broker is unavailable: %v", replicas)
+		}
 	}
 }
