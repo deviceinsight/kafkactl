@@ -367,6 +367,14 @@ func (operation *Operation) AlterTopic(topic string, flags AlterTopicFlags) erro
 				return errors.Errorf("Could not create partitions for topic '%s': %v", topic, err)
 			}
 			output.Infof("partitions have been created")
+			if flags.ReplicationFactor > 0 {
+				if err = waitForTopicPartitions(client, topic, flags.Partitions); err != nil {
+					return errors.Wrap(err, "failed to refresh topic after creating partitions")
+				}
+				if t, err = readTopic(&client, &admin, topic, allFields); err != nil {
+					return errors.Wrap(err, "failed to read topic after creating partitions")
+				}
+			}
 		}
 	}
 
