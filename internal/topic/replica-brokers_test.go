@@ -76,7 +76,7 @@ func TestAvailableReplicaBrokersOpensIdleConnections(t *testing.T) {
 		counts[broker.ID()] = 0
 	}
 	counts[1] = 1
-	if replicas, err := getTargetReplicas([]int32{1}, counts, 3); err != nil || len(replicas) != 3 {
+	if replicas, err := getTargetReplicas([]int32{1}, counts, 3, nil); err != nil || len(replicas) != 3 {
 		t.Fatalf("cannot increase RF with healthy peers: replicas=%v, err=%v", replicas, err)
 	}
 }

@@ -390,6 +390,17 @@ func (operation *Operation) AlterTopic(topic string, flags AlterTopicFlags) erro
 			return errors.Errorf("Replication factor for topic '%s' must not exceed the number of available brokers (%d available)", topic, len(availableBrokers))
 		}
 
+		// client.Brokers() may hold the seed broker without its rack, so use DescribeCluster
+		var brokerRacks map[int32]string
+		if clusterBrokers, _, err := admin.DescribeCluster(); err != nil {
+			output.Warnf("unable to read broker racks, falling back to balance-only replica assignment: %v", err)
+		} else {
+			brokerRacks = make(map[int32]string, len(clusterBrokers))
+			for _, broker := range clusterBrokers {
+				brokerRacks[broker.ID()] = broker.Rack()
+			}
+		}
+
 		// Only include available brokers in the replica count map.
 		// Replicas on unavailable brokers will be preferentially removed by getTargetReplicas
 		// because they won't have an entry in this map.
@@ -410,7 +421,7 @@ func (operation *Operation) AlterTopic(topic string, flags AlterTopicFlags) erro
 
 		for _, partition := range t.Partitions {
 
-			var replicas, err = getTargetReplicas(partition.Replicas, brokerReplicaCount, flags.ReplicationFactor)
+			var replicas, err = getTargetReplicas(partition.Replicas, brokerReplicaCount, flags.ReplicationFactor, brokerRacks)
 			if err != nil {
 				return errors.Wrap(err, "unable to determine target replicas")
 			}
@@ -617,7 +628,7 @@ func (operation *Operation) CloneTopic(sourceTopic, targetTopic string) error {
 	return nil
 }
 
-func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int, targetReplicationFactor int16) ([]int32, error) {
+func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int, targetReplicationFactor int16, brokerRacks map[int32]string) ([]int32, error) {
 
 	replicas := currentReplicas
 
@@ -634,7 +645,15 @@ func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int
 			if availableI != availableJ {
 				return availableI
 			}
-			return brokerReplicaCount[brokerI] < brokerReplicaCount[brokerJ] || (brokerReplicaCount[brokerI] == brokerReplicaCount[brokerJ] && brokerI < brokerJ)
+			rankI := replicaKeepRank(brokerI, replicas, brokerRacks)
+			rankJ := replicaKeepRank(brokerJ, replicas, brokerRacks)
+			if rankI != rankJ {
+				return rankI < rankJ
+			}
+			if brokerReplicaCount[brokerI] != brokerReplicaCount[brokerJ] {
+				return brokerReplicaCount[brokerI] < brokerReplicaCount[brokerJ]
+			}
+			return brokerI < brokerJ
 		})
 
 		lastReplica := replicas[len(replicas)-1]
@@ -671,7 +690,15 @@ func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int
 		sort.Slice(unusedBrokerIDs, func(i, j int) bool {
 			brokerI := unusedBrokerIDs[i]
 			brokerJ := unusedBrokerIDs[j]
-			return brokerReplicaCount[brokerI] < brokerReplicaCount[brokerJ] || (brokerReplicaCount[brokerI] == brokerReplicaCount[brokerJ] && brokerI > brokerJ)
+			rankI := replicaAddRank(brokerI, replicas, brokerRacks)
+			rankJ := replicaAddRank(brokerJ, replicas, brokerRacks)
+			if rankI != rankJ {
+				return rankI < rankJ
+			}
+			if brokerReplicaCount[brokerI] != brokerReplicaCount[brokerJ] {
+				return brokerReplicaCount[brokerI] < brokerReplicaCount[brokerJ]
+			}
+			return brokerI > brokerJ
 		})
 
 		replicas = append(replicas, unusedBrokerIDs[0])
@@ -680,6 +707,38 @@ func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int
 	}
 
 	return replicas, nil
+}
+
+// replicaAddRank: lower is added first. 0 rack unused by the partition, 1 unknown rack, 2 rack already used.
+func replicaAddRank(brokerID int32, replicas []int32, brokerRacks map[int32]string) int {
+	rack := brokerRacks[brokerID]
+	if rack == "" {
+		return 1
+	}
+	for _, replica := range replicas {
+		if brokerRacks[replica] == rack {
+			return 2
+		}
+	}
+	return 0
+}
+
+// replicaKeepRank: lower is kept. 0 unique rack, 1 unknown rack, 2 rack shared with another replica.
+func replicaKeepRank(brokerID int32, replicas []int32, brokerRacks map[int32]string) int {
+	rack := brokerRacks[brokerID]
+	if rack == "" {
+		return 1
+	}
+	shared := 0
+	for _, replica := range replicas {
+		if brokerRacks[replica] == rack {
+			shared++
+		}
+	}
+	if shared > 1 {
+		return 2
+	}
+	return 0
 }
 
 func (operation *Operation) GetTopics(flags GetTopicsFlags) error {
