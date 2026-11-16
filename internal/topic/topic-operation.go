@@ -390,8 +390,7 @@ func (operation *Operation) AlterTopic(topic string, flags AlterTopicFlags) erro
 			return errors.Errorf("Replication factor for topic '%s' must not exceed the number of available brokers (%d available)", topic, len(availableBrokers))
 		}
 
-		// DescribeCluster returns brokers with rack set. client.Brokers() keeps the
-		// seed broker when the address is unchanged, and that object has an empty rack.
+		// client.Brokers() may hold the seed broker without its rack, so use DescribeCluster
 		var brokerRacks map[int32]string
 		if clusterBrokers, _, err := admin.DescribeCluster(); err != nil {
 			output.Warnf("unable to read broker racks, falling back to balance-only replica assignment: %v", err)
@@ -641,10 +640,8 @@ func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int
 			_, availableI := brokerReplicaCount[brokerI]
 			_, availableJ := brokerReplicaCount[brokerJ]
 
-			// Keep order, so the last element is removed. Unavailable brokers (absent
-			// from brokerReplicaCount) sort last. Then a unique known rack, an unknown
-			// rack, and a known rack shared with another replica still in the slice.
-			// Then the lower replica count, then the lower broker ID.
+			// Unavailable brokers (not in brokerReplicaCount) should be sorted to the end
+			// so they are removed first when decreasing replication factor
 			if availableI != availableJ {
 				return availableI
 			}
@@ -693,9 +690,6 @@ func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int
 		sort.Slice(unusedBrokerIDs, func(i, j int) bool {
 			brokerI := unusedBrokerIDs[i]
 			brokerJ := unusedBrokerIDs[j]
-			// Add order, so the first element is appended. An unused known rack, then
-			// an unknown rack, then a known rack this partition already uses. Then the
-			// lower replica count, then the higher broker ID.
 			rankI := replicaAddRank(brokerI, replicas, brokerRacks)
 			rankJ := replicaAddRank(brokerJ, replicas, brokerRacks)
 			if rankI != rankJ {
@@ -715,9 +709,7 @@ func getTargetReplicas(currentReplicas []int32, brokerReplicaCount map[int32]int
 	return replicas, nil
 }
 
-// replicaAddRank ranks a broker that may be appended to a partition. Lower is chosen
-// first: 0 known rack not yet used, 1 unknown or empty rack, 2 known rack already used.
-// A nil rack map or an empty rack string is unknown.
+// replicaAddRank: lower is added first. 0 rack unused by the partition, 1 unknown rack, 2 rack already used.
 func replicaAddRank(brokerID int32, replicas []int32, brokerRacks map[int32]string) int {
 	rack := brokerRacks[brokerID]
 	if rack == "" {
@@ -731,9 +723,7 @@ func replicaAddRank(brokerID int32, replicas []int32, brokerRacks map[int32]stri
 	return 0
 }
 
-// replicaKeepRank ranks a replica while shrinking a partition. Lower is kept:
-// 0 unique known rack, 1 unknown or empty rack, 2 known rack shared with another
-// replica still in the slice. Only non-empty racks count as shared.
+// replicaKeepRank: lower is kept. 0 unique rack, 1 unknown rack, 2 rack shared with another replica.
 func replicaKeepRank(brokerID int32, replicas []int32, brokerRacks map[int32]string) int {
 	rack := brokerRacks[brokerID]
 	if rack == "" {
