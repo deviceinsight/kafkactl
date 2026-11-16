@@ -178,12 +178,18 @@ func (c *config) Init() error {
 
 	configFile := resolveProjectConfigFileFromWorkingDir()
 
+	var explicitConfigFile *string
+
 	switch {
 	case c.flags.ConfigFile != "":
-		configFile = &c.flags.ConfigFile
+		explicitConfigFile = &c.flags.ConfigFile
 	case os.Getenv(ConfigEnvVariable) != "":
 		envConfig := os.Getenv(ConfigEnvVariable)
-		configFile = &envConfig
+		explicitConfigFile = &envConfig
+	}
+
+	if explicitConfigFile != nil {
+		configFile = explicitConfigFile
 	}
 
 	mapEnvVariables()
@@ -192,7 +198,7 @@ func (c *config) Init() error {
 		if isUnknownError(err) {
 			return fmt.Errorf("error reading config file: %s (%v)", viper.ConfigFileUsed(), err.Error())
 		}
-		err = generateDefaultConfig(configFileName, viper.GetViper())
+		err = generateDefaultConfig(configFileName, viper.GetViper(), explicitConfigFile)
 		if err != nil {
 			return fmt.Errorf("error generating default config file: %v", err.Error())
 		}
@@ -203,10 +209,10 @@ func (c *config) Init() error {
 	if os.Getenv(WritableConfigEnvVariable) != "" {
 		envConfig := os.Getenv(WritableConfigEnvVariable)
 		writableConfigFile = &envConfig
-	} else if os.Getenv(ConfigEnvVariable) != "" {
-		// use config file provided via env as base path
-		envConfig := filepath.Join(path.Dir(os.Getenv(ConfigEnvVariable)), writableConfigFileName+".yml")
-		writableConfigFile = &envConfig
+	} else if explicitConfigFile != nil {
+		// use config file provided via flag or env as base path
+		baseConfig := filepath.Join(path.Dir(*explicitConfigFile), writableConfigFileName+".yml")
+		writableConfigFile = &baseConfig
 	}
 
 	c.writableConfig = viper.New()
@@ -214,7 +220,7 @@ func (c *config) Init() error {
 		if isUnknownError(err) {
 			return fmt.Errorf("error reading config file: %s (%v)", c.writableConfig.ConfigFileUsed(), err.Error())
 		}
-		err = generateDefaultConfig(writableConfigFileName, c.writableConfig)
+		err = generateDefaultConfig(writableConfigFileName, c.writableConfig, writableConfigFile)
 		if err != nil {
 			return fmt.Errorf("error generating default config file: %v", err.Error())
 		}
@@ -319,20 +325,14 @@ func mapEnvVariables() {
 }
 
 // generateDefaultConfig generates default config in case there is no config
-func generateDefaultConfig(name string, viperInstance *viper.Viper) error {
+func generateDefaultConfig(name string, viperInstance *viper.Viper, configFile *string) error {
 
 	filename := name + ".yml"
 	cfgFile := filepath.Join(os.ExpandEnv(configPaths[0]), filename)
 
-	if name == configFileName && os.Getenv(ConfigEnvVariable) != "" {
-		// use config file provided via env
-		cfgFile = os.Getenv(ConfigEnvVariable)
-	} else if name == writableConfigFileName && os.Getenv(WritableConfigEnvVariable) != "" {
-		// use config file provided via env
-		cfgFile = os.Getenv(WritableConfigEnvVariable)
-	} else if name == writableConfigFileName && os.Getenv(ConfigEnvVariable) != "" {
-		// use config file provided via env as base path
-		cfgFile = filepath.Join(path.Dir(os.Getenv(ConfigEnvVariable)), filename)
+	if configFile != nil {
+		// use config file provided via flag or env
+		cfgFile = *configFile
 	} else if runtime.GOOS == "windows" {
 		// use different configFile when running on windows
 		for _, configPath := range configPaths {
