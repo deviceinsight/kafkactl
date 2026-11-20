@@ -58,6 +58,7 @@ func NewConsumeCmd() *cobra.Command {
 	cmdConsume.Flags().StringVarP(&flags.FilterKey, "filter-key", "", "", "filter messages keys with glob pattern")
 	cmdConsume.Flags().StringVarP(&flags.FilterValue, "filter-value", "", "", "filter messages values with glob pattern")
 	cmdConsume.Flags().StringToStringVarP(&flags.FilterHeader, "filter-header", "", map[string]string{}, "filter messages headers with glob pattern")
+	cmdConsume.Flags().StringVarP(&flags.Partitioner, "partitioner", "", "", "only consume the partition that the --filter-key is mapped to by this partitioning scheme. Can be `murmur2`, `hash` or `hash-ref`")
 	cmdConsume.Flags().StringVarP(&flags.IsolationLevel, "isolation-level", "i", "", "isolationLevel to use. One of: ReadUncommitted|ReadCommitted")
 	cmdConsume.Flags().BoolVarP(&flags.IgnoreErrors, "ignore-errors", "", false, "continue consuming when a message cannot be deserialized, printing a warning instead of aborting")
 

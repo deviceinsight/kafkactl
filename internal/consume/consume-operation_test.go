@@ -195,3 +195,63 @@ func TestCreateDeserializerChain_WithoutAvroFlags(t *testing.T) {
 		}
 	}
 }
+
+func TestKeyPartitionMatchesJavaClient(t *testing.T) {
+	t.Parallel()
+
+	// Utils.murmur2 of the Java client hashes "21" to -973932308 and "foobar" to -790332482.
+	for key, expected := range map[string]int32{"21": 340, "foobar": 166} {
+		partition, err := keyPartition("topic", key, "murmur2", 1000)
+		if err != nil {
+			t.Fatalf("unexpected error for key %q: %v", key, err)
+		}
+		if partition != expected {
+			t.Fatalf("expected key %q in partition %d, got %d", key, expected, partition)
+		}
+	}
+}
+
+func TestKeyPartitionRejectsPartitionersNotDerivedFromKey(t *testing.T) {
+	t.Parallel()
+
+	for _, partitioner := range []string{"random", "manual"} {
+		if _, err := keyPartition("topic", "key", partitioner, 4); err == nil {
+			t.Fatalf("expected an error for partitioner %q", partitioner)
+		}
+	}
+}
+
+func TestValidatePartitioner(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		flags   Flags
+		wantErr string
+	}{
+		{name: "without partitioner", flags: Flags{FilterKey: "user-*"}},
+		{name: "with key", flags: Flags{Partitioner: "murmur2", FilterKey: "user-1"}},
+		{name: "without key", flags: Flags{Partitioner: "murmur2"}, wantErr: "requires --filter-key"},
+		{name: "with glob pattern", flags: Flags{Partitioner: "murmur2", FilterKey: "user-*"}, wantErr: "not a glob pattern"},
+		{name: "with group", flags: Flags{Partitioner: "murmur2", FilterKey: "user-1", Group: "group"}, wantErr: "--group and --partitioner"},
+		{name: "with partitions", flags: Flags{Partitioner: "murmur2", FilterKey: "user-1", Partitions: []int{1}}, wantErr: "--partitions and --partitioner"},
+		{name: "with unsupported partitioner", flags: Flags{Partitioner: "random", FilterKey: "user-1"}, wantErr: "does not derive the partition from the key"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := validatePartitioner(tt.flags)
+			if tt.wantErr == "" {
+				if err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
+				t.Fatalf("expected an error containing %q, got %v", tt.wantErr, err)
+			}
+		})
+	}
+}

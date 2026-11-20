@@ -1016,6 +1016,27 @@ func TestConsumeFilterByKeyAlternativesIntegration(t *testing.T) {
 	testutil.AssertEquals(t, "admin-456#value2", messages[1])
 }
 
+func TestConsumeFilterKeyWithPartitionerIntegration(t *testing.T) {
+	testutil.StartIntegrationTest(t)
+
+	topicName := testutil.CreateTopic(t, "consume-filter-topic", "--partitions", "4")
+
+	// The default murmur2 partitioner maps user-1 and user-2 to partition 0 and user-3 to partition 3.
+	testutil.ProduceMessage(t, topicName, "user-1", "value1", 0, 0)
+	testutil.ProduceMessage(t, topicName, "user-3", "value3", 3, 0)
+	testutil.ProduceMessage(t, topicName, "user-2", "value2", 0, 1)
+	// Only the partition of the key is consumed, so a message with the key on another partition is not.
+	testutil.ProduceMessageOnPartition(t, topicName, "user-3", "value4", 1, 0)
+
+	kafkaCtl := testutil.CreateKafkaCtlCommand()
+
+	if _, err := kafkaCtl.Execute("consume", topicName, "--from-beginning", "--exit", "--filter-key", "user-3", "--partitioner", "murmur2", "--print-keys"); err != nil {
+		t.Fatalf("failed to execute command: %v", err)
+	}
+
+	testutil.AssertEquals(t, "user-3#value3", strings.TrimSpace(kafkaCtl.GetStdOut()))
+}
+
 func TestConsumeFilterByValueIntegration(t *testing.T) {
 	testutil.StartIntegrationTest(t)
 

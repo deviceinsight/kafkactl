@@ -324,13 +324,8 @@ func parsePartitioner(partitioner string, flags Flags) (sarama.PartitionerConstr
 			return sarama.NewManualPartitioner, nil
 		}
 		return NewJVMCompatiblePartitioner, nil
-	case "murmur2":
-		// https://github.com/IBM/sarama/issues/1424
-		return NewJVMCompatiblePartitioner, nil
-	case "hash":
-		return sarama.NewHashPartitioner, nil
-	case "hash-ref":
-		return sarama.NewReferenceHashPartitioner, nil
+	case "murmur2", "hash", "hash-ref":
+		return PartitionerForKey(partitioner)
 	case "random":
 		return sarama.NewRandomPartitioner, nil
 	case "manual":
@@ -340,6 +335,22 @@ func parsePartitioner(partitioner string, flags Flags) (sarama.PartitionerConstr
 		return sarama.NewManualPartitioner, nil
 	default:
 		return nil, errors.Errorf("partitioner %s not supported", flags.Partitioner)
+	}
+}
+
+// PartitionerForKey returns the partitioner of a partitioning scheme that derives the partition from the
+// message key: murmur2, hash or hash-ref.
+func PartitionerForKey(partitioner string) (sarama.PartitionerConstructor, error) {
+	switch partitioner {
+	case "murmur2":
+		// https://github.com/IBM/sarama/issues/1424
+		return NewJVMCompatiblePartitioner, nil
+	case "hash":
+		return sarama.NewHashPartitioner, nil
+	case "hash-ref":
+		return sarama.NewReferenceHashPartitioner, nil
+	default:
+		return nil, errors.Errorf("partitioner %s does not derive the partition from the key", partitioner)
 	}
 }
 
