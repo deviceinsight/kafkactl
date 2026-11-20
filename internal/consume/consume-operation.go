@@ -19,6 +19,8 @@ import (
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal"
 	"github.com/deviceinsight/kafkactl/v5/internal/output"
+	"github.com/deviceinsight/kafkactl/v5/internal/producer"
+	"github.com/gobwas/glob"
 	"github.com/pkg/errors"
 )
 
@@ -56,6 +58,7 @@ type Flags struct {
 	FilterKey    string
 	FilterValue  string
 	FilterHeader map[string]string
+	Partitioner  string
 }
 
 type ConsumedMessage struct {
@@ -75,6 +78,10 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 		client        sarama.Client
 		topExists     bool
 	)
+
+	if err = validatePartitioner(flags); err != nil {
+		return err
+	}
 
 	if clientContext, err = internal.CreateClientContext(); err != nil {
 		return err
@@ -138,8 +145,24 @@ func (operation *Operation) Consume(topic string, flags Flags) error {
 
 	var consumer Consumer
 
+	partitions := flags.Partitions
+	if flags.Partitioner != "" {
+		topicPartitions, err := client.Partitions(topic)
+		if err != nil {
+			return errors.Wrap(err, "failed to get the list of partitions")
+		}
+
+		partition, err := keyPartition(topic, flags.FilterKey, flags.Partitioner, int32(len(topicPartitions)))
+		if err != nil {
+			return err
+		}
+
+		output.Debugf("Consuming partition %d, which the %s partitioner maps the key to", partition, flags.Partitioner)
+		partitions = []int{int(partition)}
+	}
+
 	if flags.Group == "" {
-		consumer, err = CreatePartitionConsumer(&client, topic, flags.Partitions)
+		consumer, err = CreatePartitionConsumer(&client, topic, partitions)
 	} else {
 		consumer, err = CreateGroupConsumer(&client, topic, flags.Group)
 	}
@@ -232,6 +255,49 @@ func addFlagsToProtobufConfig(protobufConfig internal.ProtobufConfig, flags Flag
 	}
 
 	return protobufConfig, nil
+}
+
+// validatePartitioner checks the flags that restrict consuming to the partition of the --filter-key.
+func validatePartitioner(flags Flags) error {
+	if flags.Partitioner == "" {
+		return nil
+	}
+
+	if flags.FilterKey == "" {
+		return errors.New("parameter --partitioner requires --filter-key")
+	}
+
+	if glob.QuoteMeta(flags.FilterKey) != flags.FilterKey {
+		return errors.New("parameter --partitioner requires --filter-key to be a key, not a glob pattern")
+	}
+
+	if flags.Group != "" {
+		return errors.New("parameters --group and --partitioner cannot be used together")
+	}
+
+	if len(flags.Partitions) > 0 {
+		return errors.New("parameters --partitions and --partitioner cannot be used together")
+	}
+
+	_, err := producer.PartitionerForKey(flags.Partitioner)
+	return err
+}
+
+// keyPartition returns the partition, out of numPartitions, that the partitioner maps the key to.
+func keyPartition(topic, key, partitioner string, numPartitions int32) (int32, error) {
+	partitionerConstructor, err := producer.PartitionerForKey(partitioner)
+	if err != nil {
+		return 0, err
+	}
+
+	message := &sarama.ProducerMessage{Topic: topic, Key: sarama.StringEncoder(key)}
+
+	partition, err := partitionerConstructor(topic).Partition(message, numPartitions)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to determine the partition of the key")
+	}
+
+	return partition, nil
 }
 
 func applyConsumerConfigs(config *sarama.Config, clientContext internal.ClientContext, flags Flags) error {

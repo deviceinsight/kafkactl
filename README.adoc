@@ -814,6 +814,16 @@ Examples of glob patterns:
 --filter-header "trace-id=abc-???"
 ----
 
+When messages are partitioned by key, `--partitioner` consumes only the partition that `--filter-key` is mapped to,
+instead of reading all partitions. It names the partitioning scheme the messages were produced with: `murmur2`
+(the default of `kafkactl produce` and the Java client), `hash` or `hash-ref`. `--filter-key` has to be the exact key
+rather than a glob pattern:
+
+[,bash]
+----
+kafkactl consume my-topic --from-beginning --filter-key user-123 --partitioner murmur2
+----
+
 === Producing messages
 
 Producing messages can be done in multiple ways. If we want to produce a message with `key='my-key'`,
