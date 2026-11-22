@@ -86,6 +86,12 @@ func TestProtobufMarshalOptionsArePassedToPodEnvironment(t *testing.T) {
 func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {
 
 	var context internal.ClientContext
+	for _, variable := range k8s.ParsePodEnvironment(context) {
+		if strings.HasPrefix(variable, global.ConsumerSessionTimeout+"=") {
+			t.Fatalf("unexpected pod environment entry %s", variable)
+		}
+	}
+	context.Consumer.SessionTimeout = 45 * time.Second
 	context.RequestTimeout = 30 * time.Second
 	context.Brokers = []string{"broker1:9092", "broker2:9092"}
 	context.TLS.Enabled = true
@@ -142,6 +148,7 @@ func TestAllAvailableEnvironmentVariablesAreParsed(t *testing.T) {
 	}
 
 	testutil.AssertEquals(t, "broker1:9092 broker2:9092", envMap[global.Brokers])
+	testutil.AssertEquals(t, "45s", envMap[global.ConsumerSessionTimeout])
 	testutil.AssertEquals(t, "30s", envMap[global.RequestTimeout])
 	testutil.AssertEquals(t, "true", envMap[global.TLSEnabled])
 	testutil.AssertEquals(t, "my-ca", envMap[global.TLSCa])

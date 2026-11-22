@@ -7,12 +7,36 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/IBM/sarama"
 	"github.com/deviceinsight/kafkactl/v5/internal/credential"
 	"github.com/deviceinsight/kafkactl/v5/internal/global"
 	"github.com/spf13/viper"
 )
+
+func TestConsumerSessionTimeout(t *testing.T) {
+	t.Cleanup(viper.Reset)
+	global.NewConfig().Flags().Context = "test"
+	for setting, want := range map[string]time.Duration{"": sarama.NewConfig().Consumer.Group.Session.Timeout, "30s": 30 * time.Second} {
+		viper.Reset()
+		viper.Set("contexts.test.requestTimeout", "5s")
+		if setting != "" {
+			viper.Set("contexts.test.consumer.sessionTimeout", setting)
+		}
+		context, err := CreateClientContext()
+		if err != nil {
+			t.Fatal(err)
+		}
+		config, err := CreateClientConfig(&context)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if config.Consumer.Group.Session.Timeout != want || config.Admin.Timeout != 5*time.Second {
+			t.Fatalf("got consumer timeout %v and admin timeout %v, want %v and 5s", config.Consumer.Group.Session.Timeout, config.Admin.Timeout, want)
+		}
+	}
+}
 
 func TestListConfigsFromEntries(t *testing.T) {
 	testCases := []struct {
