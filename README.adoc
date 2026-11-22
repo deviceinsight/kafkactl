@@ -256,6 +256,8 @@ contexts:
       maxMessageBytes: 1000000
 
     consumer:
+      # optional: consumer group session timeout (defaults to 10s)
+      sessionTimeout: 30s
       # optional: isolationLevel (defaults to ReadCommitted)
       isolationLevel: ReadUncommitted
 

@@ -1,6 +1,7 @@
 package global
 
 const (
+	ConsumerSessionTimeout                  = "CONSUMER_SESSIONTIMEOUT"
 	RequestTimeout                          = "REQUESTTIMEOUT"
 	Brokers                                 = "BROKERS"
 	TLSEnabled                              = "TLS_ENABLED"
@@ -49,6 +50,7 @@ const (
 const KeyringEnabled = "KEYRING_ENABLED"
 
 var EnvVariables = []string{
+	ConsumerSessionTimeout,
 	RequestTimeout,
 	Brokers,
 	TLSEnabled,

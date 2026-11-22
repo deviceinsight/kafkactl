@@ -196,6 +196,9 @@ func parsePodEnvironment(context internal.ClientContext) []string {
 	envVariables = appendStringIfDefined(envVariables, global.SaslMechanism, context.Sasl.Mechanism)
 	envVariables = appendStringIfDefined(envVariables, global.SaslTokenProviderPlugin, context.Sasl.TokenProvider.PluginName)
 	envVariables = appendMapIfDefined(envVariables, global.SaslTokenProviderOptions, context.Sasl.TokenProvider.Options)
+	if context.Consumer.SessionTimeout > 0 {
+		envVariables = appendStringIfDefined(envVariables, global.ConsumerSessionTimeout, context.Consumer.SessionTimeout.String())
+	}
 	envVariables = appendStringIfDefined(envVariables, global.RequestTimeout, context.RequestTimeout.String())
 	envVariables = appendStringIfDefined(envVariables, global.ClientID, context.ClientID)
 	envVariables = appendStringIfDefined(envVariables, global.KafkaVersion, context.KafkaVersion.String())

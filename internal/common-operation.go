@@ -113,6 +113,7 @@ type K8sConfig struct {
 
 type ConsumerConfig struct {
 	IsolationLevel string
+	SessionTimeout time.Duration
 }
 
 type ProducerConfig struct {
@@ -243,6 +244,7 @@ func CreateClientContext() (ClientContext, error) {
 	context.Producer.MaxMessageBytes = viper.GetInt("contexts." + context.Name + ".producer.maxMessageBytes")
 	context.Producer.ValueSerializer = viper.GetString("contexts." + context.Name + ".producer.valueSerializer")
 	context.Producer.KeySerializer = viper.GetString("contexts." + context.Name + ".producer.keySerializer")
+	context.Consumer.SessionTimeout = viper.GetDuration("contexts." + context.Name + ".consumer.sessionTimeout")
 	context.Consumer.IsolationLevel = viper.GetString("contexts." + context.Name + ".consumer.isolationLevel")
 	context.Sasl.Enabled = viper.GetBool("contexts." + context.Name + ".sasl.enabled")
 	context.Sasl.Username = viper.GetString("contexts." + context.Name + ".sasl.username")
@@ -355,6 +357,10 @@ func CreateClientConfig(context *ClientContext) (*sarama.Config, error) {
 	config := sarama.NewConfig()
 	config.Version = context.KafkaVersion
 	config.ClientID = GetClientID(context, "kafkactl-")
+
+	if context.Consumer.SessionTimeout > 0 {
+		config.Consumer.Group.Session.Timeout = context.Consumer.SessionTimeout
+	}
 
 	if context.RequestTimeout > 0 {
 		output.Debugf("using admin request timeout: %s", context.RequestTimeout.String())
